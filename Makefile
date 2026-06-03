@@ -1,6 +1,6 @@
 # Makefile for VPEMaster Flask Application
 
-.PHONY: help install install-test-deps test test-verbose test-coverage test-watch test-file test-class test-method run clean
+.PHONY: help install install-test-deps test test-fast test-chat-fast test-chat-mock test-verbose test-coverage test-watch test-file test-class test-method run clean
 
 # Default target
 help:
@@ -13,6 +13,9 @@ help:
 	@echo ""
 	@echo "Testing:"
 	@echo "  make test              - Run all tests"
+	@echo "  make test-fast         - Run all tests in parallel"
+	@echo "  make test-chat-fast    - Run chat AI tests in parallel"
+	@echo "  make test-chat-mock    - Run mocked offline chat AI tests"
 	@echo "  make test-verbose      - Run tests with verbose output"
 	@echo "  make test-coverage     - Run tests with coverage report"
 	@echo "  make test-watch        - Run tests in watch mode (auto-rerun)"
@@ -47,6 +50,14 @@ test:
 test-fast:
 	@echo "Running tests in parallel..."
 	@pytest -n auto tests/
+
+test-chat-fast:
+	@echo "Running chat AI tests in parallel..."
+	@pytest -n auto tests/test_chat_feature.py tests/test_chat_tools_ai.py
+
+test-chat-mock:
+	@echo "Running mocked offline chat AI tests..."
+	@pytest tests/test_chat_tools_fast.py
 
 test-smart:
 	@echo "Running only tests affected by code changes..."

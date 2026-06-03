@@ -298,11 +298,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         let welcome = '';
                         if (isZh) {
                             welcome = data.mode === 'ai'
-                                ? "你好！我是您的 Memory Maker AI 助手。我可以帮助您预订角色、签到联系人、创建会议、记录级别成就并查询记录。问我任何问题吧！"
+                                ? "你好！我是您的 Memory Maker AI 助手。我可以帮助您预订角色、签到联系人、创建会议、记录级别成就并查询记录。输入 `/help` 查看斜杠命令，或者问我任何问题！"
                                 : "你好！命令终端已激活。输入 `/help` 查看可用命令列表。";
                         } else {
                             welcome = data.mode === 'ai' 
-                                ? "Hello! I am your Memory Maker AI Assistant. I can help you book roles, check in contacts, create meetings, complete levels, and look up records. Ask me anything!"
+                                ? "Hello! I am your Memory Maker AI Assistant. I can help you book roles, check in contacts, create meetings, complete levels, and look up records. Type `/help` to see available slash commands, or ask me anything!"
                                 : "Hello! Command Terminal is active. Type `/help` to see list of available commands.";
                         }
                         appendMessage('assistant', welcome);
@@ -336,11 +336,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     let welcome = '';
                     if (isZh) {
                         welcome = isAi
-                            ? "历史记录已清除。问我任何问题吧！"
+                            ? "历史记录已清除。输入 `/help` 查看斜杠命令，或者问我任何问题！"
                             : "历史记录已清除。输入 `/help` 查看命令。";
                     } else {
                         welcome = isAi
-                            ? "History cleared. Ask me anything!"
+                            ? "History cleared. Type `/help` to see available slash commands, or ask me anything!"
                             : "History cleared. Type `/help` for commands.";
                     }
                     appendMessage('assistant', welcome);
@@ -401,6 +401,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 // If user closed panel while loading, show notification dot
                 if (!panel.classList.contains('open')) {
                     unreadDot.style.display = 'block';
+                }
+
+                // Auto-refresh agenda table if on agenda page and update occurred
+                let shouldRefreshAgenda = false;
+                if (data.executed_tools && data.executed_tools.length > 0) {
+                    const modifyingTools = [
+                        'assign_role',
+                        'cancel_role',
+                        'manage_meeting_roles',
+                        'update_meeting_status',
+                        'manage_meeting_sessions',
+                        'update_project_details',
+                        'manage_waitlist',
+                        'create_meeting'
+                    ];
+                    shouldRefreshAgenda = data.executed_tools.some(tool => modifyingTools.includes(tool.name));
+                } else {
+                    const trimmed = text.trim();
+                    if (trimmed.startsWith('/')) {
+                        const cmd = trimmed.split(/\s+/)[0].toLowerCase();
+                        const modifyingCommands = [
+                            '/create-meeting',
+                            '/assign',
+                            '/cancel-role',
+                            '/status',
+                            '/waitlist'
+                        ];
+                        shouldRefreshAgenda = modifyingCommands.includes(cmd);
+                    }
+                }
+
+                if (shouldRefreshAgenda && typeof window.refreshAgendaTable === 'function') {
+                    window.refreshAgendaTable();
                 }
             } else {
                 const isZh = (typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN');

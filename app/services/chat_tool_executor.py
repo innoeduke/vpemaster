@@ -5,7 +5,7 @@ from app.models import (
     Meeting, Contact, SessionLog, SessionType, MeetingRole, 
     ChatMessage, Achievement, Roster, Ticket, Vote, ContactClub,
     ContactPath, Pathway, User, UserClub, Club, ExComm, ExcommOfficer,
-    Project, PathwayProject, Waitlist
+    Project, PathwayProject, Waitlist, OwnerMeetingRoles
 )
 from app.auth.permissions import Permissions
 from app.auth.utils import is_authorized
@@ -336,7 +336,6 @@ class ChatToolExecutor:
             return {
                 'success': True,
                 'message': f"Successfully created Meeting #{meeting_number} for {meeting_date_str} using template '{template_name}'.",
-                'meeting_id': meeting.id,
                 'meeting_number': meeting_number,
                 'redirect_url': redirect_url
             }
@@ -2291,3 +2290,214 @@ class ChatToolExecutor:
         except Exception as e:
             db.session.rollback()
             return {'success': False, 'message': f"Failed to delete session: {str(e)}"}
+
+    @classmethod
+    def tool_update_project_details(cls, params, user, club_id):
+        meeting_ident = params.get('meeting_identifier')
+        if not meeting_ident:
+            return {'success': False, 'message': "Meeting identifier is required."}
+
+        contact_name = params.get('contact_name')
+        if not contact_name:
+            return {'success': False, 'message': "Contact name is required."}
+
+        meeting = cls.resolve_meeting(meeting_ident, club_id)
+        if not meeting:
+            return {'success': False, 'message': f"Meeting '{meeting_ident}' not found."}
+
+        # Check permissions
+        if meeting.status in ('finished', 'cancelled'):
+            return {'success': False, 'message': f"Meeting #{meeting.Meeting_Number} is {meeting.status}; project modifications are not allowed."}
+        if meeting.status == 'running':
+            return {'success': False, 'message': f"Meeting #{meeting.Meeting_Number} is currently running; please finish it before editing project details."}
+
+        contact = cls.resolve_contact(contact_name, club_id)
+        if not contact:
+            return {'success': False, 'message': f"Contact '{contact_name}' not found."}
+
+        user_contact = user.get_contact(club_id) if user else None
+        current_user_contact_id = user_contact.id if user_contact else None
+        is_admin = is_authorized(Permissions.AGENDA_EDIT) or is_authorized(Permissions.BOOKING_ASSIGN_ALL)
+        is_self = (current_user_contact_id and contact.id == current_user_contact_id)
+
+        if not is_admin:
+            if not is_self:
+                return {'success': False, 'message': "You do not have permission to manage other contacts' project details."}
+            if not is_authorized(Permissions.BOOKING_BOOK_OWN):
+                return {'success': False, 'message': "You do not have permission to manage your own project details."}
+
+        project_obj = None
+        pathway_obj = None
+
+        project_code_val = params.get('project_code')
+        if project_code_val:
+            code_str = project_code_val.strip()
+            # Handle generic project codes like TM1.0
+            if code_str.upper() in ('TM1.0', 'TM 1.0', 'GENERIC'):
+                from app.constants import ProjectID
+                project_obj = db.session.get(Project, ProjectID.GENERIC)
+                pathway_obj = Pathway.query.filter_by(name='Non Pathway').first()
+            else:
+                import re
+                m = re.match(r"^([A-Za-z]+)[-_\s]*(\d+(?:\.\d+)*)$", code_str)
+                if not m:
+                    return {'success': False, 'message': f"Invalid project code format '{project_code_val}'. Expected format like 'EH4.1' or 'PM1.1'."}
+                abbr, suffix = m.group(1), m.group(2)
+                pathway_obj = Pathway.query.filter((Pathway.abbr.ilike(abbr)) | (Pathway.name.ilike(abbr))).first()
+                if not pathway_obj:
+                    return {'success': False, 'message': f"Pathway with abbreviation or name '{abbr}' not found."}
+
+                pps = PathwayProject.query.filter_by(path_id=pathway_obj.id, code=suffix).all()
+                if not pps:
+                    return {'success': False, 'message': f"Project code '{suffix}' not found in pathway '{pathway_obj.name}'."}
+
+                if len(pps) > 1:
+                    # Ambiguity found. Try filtering by project_name if provided
+                    project_name_val = params.get('project_name')
+                    if project_name_val:
+                        matched_pp = None
+                        for pp in pps:
+                            if pp.project and project_name_val.lower() in pp.project.Project_Name.lower():
+                                matched_pp = pp
+                                break
+                        if matched_pp:
+                            project_obj = matched_pp.project
+                        else:
+                            options = [f"* {pp.project.Project_Name}" for pp in pps if pp.project]
+                            return {
+                                'success': False,
+                                'message': f"Multiple projects in pathway '{pathway_obj.name}' share code '{suffix}', but none matched '{project_name_val}'. Options:\n" + "\n".join(options)
+                            }
+                    else:
+                        options = [f"* {pp.project.Project_Name}" for pp in pps if pp.project]
+                        return {
+                            'success': False,
+                            'message': f"Multiple projects in pathway '{pathway_obj.name}' share code '{suffix}'. Please specify the project name. Options:\n" + "\n".join(options)
+                        }
+                else:
+                    project_obj = pps[0].project
+
+        project_name_val = params.get('project_name')
+        if project_name_val and not project_obj:
+            name_str = project_name_val.strip()
+            projects = Project.query.filter(Project.Project_Name.ilike(f"%{name_str}%")).all()
+            if not projects:
+                return {'success': False, 'message': f"Project matching '{project_name_val}' not found in library."}
+            if len(projects) > 1:
+                exact_matches = [p for p in projects if p.Project_Name.lower() == name_str.lower()]
+                if len(exact_matches) == 1:
+                    project_obj = exact_matches[0]
+                else:
+                    lines = [f"* {p.Project_Name}" for p in projects]
+                    return {
+                        'success': False,
+                        'message': f"Multiple projects matched '{project_name_val}':\n" + "\n".join(lines) + "\n\nPlease specify the exact project name."
+                    }
+            else:
+                project_obj = projects[0]
+
+            pathway_name_val = params.get('pathway_name')
+            if pathway_name_val:
+                pathway_obj = Pathway.query.filter((Pathway.name.ilike(pathway_name_val)) | (Pathway.abbr.ilike(pathway_name_val))).first()
+                if not pathway_obj:
+                    return {'success': False, 'message': f"Pathway '{pathway_name_val}' not found."}
+            else:
+                pp, path_obj = project_obj.resolve_context()
+                if path_obj:
+                    pathway_obj = path_obj
+
+        pathway_name_val = params.get('pathway_name')
+        if pathway_name_val and not pathway_obj:
+            pathway_obj = Pathway.query.filter((Pathway.name.ilike(pathway_name_val)) | (Pathway.abbr.ilike(pathway_name_val))).first()
+            if not pathway_obj:
+                return {'success': False, 'message': f"Pathway '{pathway_name_val}' not found."}
+
+        # Find targets to update
+        omrs = OwnerMeetingRoles.query.filter_by(meeting_id=meeting.id, contact_id=contact.id).all()
+        target_logs = []
+        for omr in omrs:
+            if omr.session_log_id:
+                log = db.session.get(SessionLog, omr.session_log_id)
+                if log and log.session_type and (log.session_type.Valid_for_Project or log.session_type.Title in ('Prepared Speech', 'Presentation', 'Keynote Speaker', 'Topics Speaker')):
+                    target_logs.append(log)
+
+        # Waitlist entries
+        wl_entries = Waitlist.query.join(SessionLog).filter(
+            SessionLog.meeting_id == meeting.id,
+            Waitlist.contact_id == contact.id
+        ).all()
+
+        if not target_logs and not wl_entries:
+            return {'success': False, 'message': f"No booked speech roles or waitlisted speech roles found for {contact.Name} in Meeting #{meeting.Meeting_Number}."}
+
+        speech_title = params.get('speech_title')
+        updated_agenda = False
+        updated_waitlist = False
+
+        # Update Agenda logs
+        for log in target_logs:
+            if speech_title is not None:
+                log.Session_Title = speech_title
+            if project_obj:
+                log.Project_ID = project_obj.id
+            if pathway_obj:
+                log.update_pathway(pathway_obj.name)
+            # Recompute project code
+            log.project_code = log.derive_project_code(contact)
+            # Update durations if project changed
+            if project_obj:
+                log.update_durations({'project_id': project_obj.id}, project_obj)
+            updated_agenda = True
+
+        # Update Waitlists / Planners
+        if wl_entries:
+            from app.models.planner import Planner
+            for wl in wl_entries:
+                session_type = wl.session_log.session_type if wl.session_log else None
+                role_id = session_type.role_id if session_type else None
+                if role_id and contact.user_id:
+                    plan = Planner.query.filter_by(
+                        user_id=contact.user_id,
+                        meeting_id=meeting.id,
+                        meeting_role_id=role_id
+                    ).first()
+                    if not plan:
+                        plan = Planner(
+                            user_id=contact.user_id,
+                            meeting_id=meeting.id,
+                            meeting_role_id=role_id,
+                            club_id=club_id
+                        )
+                        db.session.add(plan)
+                    if speech_title is not None:
+                        plan.title = speech_title
+                    if project_obj:
+                        plan.project_id = project_obj.id
+                    if pathway_obj:
+                        plan.pathway = pathway_obj.name
+                    plan.status = 'waitlist'
+                    updated_waitlist = True
+
+        try:
+            if updated_agenda:
+                from app.agenda_routes import _recalculate_start_times
+                _recalculate_start_times([meeting])
+                RoleService._clear_meeting_cache(meeting.id)
+
+            db.session.commit()
+
+            # Build success message
+            details = []
+            if speech_title is not None:
+                details.append(f"Title to \"{speech_title}\"")
+            if project_obj:
+                details.append(f"Project to \"{project_obj.Project_Name}\"")
+            if pathway_obj:
+                details.append(f"Pathway to \"{pathway_obj.name}\"")
+
+            details_str = ", ".join(details) if details else "no field changes specified"
+            msg = f"Successfully updated speech details ({details_str}) for **{contact.Name}** in Meeting #{meeting.Meeting_Number}."
+            return {'success': True, 'message': msg}
+        except Exception as e:
+            db.session.rollback()
+            return {'success': False, 'message': f"Failed to update project details: {str(e)}"}

@@ -75,4 +75,13 @@ This document defines core rules, constraints, and intent-to-tool mappings for a
 * **Move semantics**: `insert_position` is 1-based and clamped to `[1, current_max_seq]`. The tool renumbers the surrounding rows so the result is always a contiguous `1..N` sequence.
 * **Delete semantics**: Cancels any owner assignment and clears waitlists for the target log before deletion. Renumbers the remaining rows to `1..N`.
 
+## 10. Speech/Project Details Management (`update_project_details`)
+* **Scope**: Use this tool to change/update a project assignment, pathway, or speech title for a speaker. This updates the details on both their booked agenda slot (SessionLog) and/or waitlist planner entry.
+* **Resolution logic**:
+  - The tool accepts a user-friendly `project_code` (e.g. `EH4.1`) or `project_name` (e.g. `Ice Breaker`) and maps it under the hood.
+  - If a `project_code` corresponds to multiple elective projects (e.g., `EH4.2` has multiple options), the tool will fail and return all possible elective project names. In this case, you must request clarification from the user or provide the `project_name` argument alongside the code.
+* **Permission rules**: Requires `AGENDA_EDIT` or `BOOKING_ASSIGN_ALL` permission. Normal members can only modify their own speech details and must have `BOOKING_BOOK_OWN`.
+* **Meeting limits**: Refuses to update projects for running, finished, or cancelled meetings.
+
+
 

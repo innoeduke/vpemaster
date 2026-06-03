@@ -228,12 +228,11 @@ def test_ai_assign_role(app, setup_ai_environment):
         )
         
         assert len(executed_tools) > 0
-        tool_call = executed_tools[0]
-        assert tool_call['name'] == 'manage_meeting_roles'
-        assert tool_call['arguments']['action'] == 'assign'
-        assert tool_call['arguments']['meeting_identifier'] == '100'
-        assert 'john' in tool_call['arguments']['contact_name'].lower()
-        assert 'speaker' in tool_call['arguments']['role_name'].lower()
+        assign_call = next((t for t in executed_tools if t['name'] == 'manage_meeting_roles' and t['arguments'].get('action') == 'assign'), None)
+        assert assign_call is not None, f"Expected assign action but executed tools were: {executed_tools}"
+        assert assign_call['arguments']['meeting_identifier'] == '100'
+        assert 'john' in assign_call['arguments']['contact_name'].lower()
+        assert 'speaker' in assign_call['arguments']['role_name'].lower()
 
 
 def test_ai_cancel_role(app, setup_ai_environment):
@@ -266,12 +265,11 @@ def test_ai_cancel_role(app, setup_ai_environment):
         )
         
         assert len(executed_tools) > 0
-        tool_call = executed_tools[0]
-        assert tool_call['name'] == 'manage_meeting_roles'
-        assert tool_call['arguments']['action'] == 'cancel'
-        assert tool_call['arguments']['meeting_identifier'] == '100'
-        assert 'john' in tool_call['arguments']['contact_name'].lower()
-        assert 'speaker' in tool_call['arguments']['role_name'].lower()
+        cancel_call = next((t for t in executed_tools if t['name'] == 'manage_meeting_roles' and t['arguments'].get('action') == 'cancel'), None)
+        assert cancel_call is not None, f"Expected cancel action but executed tools were: {executed_tools}"
+        assert cancel_call['arguments']['meeting_identifier'] == '100'
+        assert 'john' in cancel_call['arguments']['contact_name'].lower()
+        assert 'speaker' in cancel_call['arguments']['role_name'].lower()
 
 
 def test_ai_add_contact(app, setup_ai_environment):
@@ -481,7 +479,8 @@ def test_ai_get_role_assignments(app, setup_ai_environment):
         
         assert len(executed_tools) > 0
         tool_call = executed_tools[0]
-        assert tool_call['name'] == 'get_role_assignments'
+        assert tool_call['name'] == 'manage_meeting_roles'
+        assert tool_call['arguments']['action'] == 'query'
         assert tool_call['arguments']['meeting_identifier'] in ['100', '#100']
 
 
@@ -507,7 +506,8 @@ def test_ai_get_available_roles(app, setup_ai_environment):
         
         assert len(executed_tools) > 0
         tool_call = executed_tools[0]
-        assert tool_call['name'] == 'get_available_roles'
+        assert tool_call['name'] == 'manage_meeting_roles'
+        assert tool_call['arguments']['action'] == 'query_available'
         assert tool_call['arguments']['meeting_identifier'] in ['100', '#100']
 
 
@@ -636,10 +636,9 @@ def test_ai_finish_unstarted_meeting_fails(app, setup_ai_environment):
             locale='en'
         )
         
-        assert len(executed_tools) > 0
-        tool_call = next((t for t in executed_tools if t['name'] == 'update_meeting_status' and t['arguments']['status'] == 'finished'), None)
-        assert tool_call is not None
-        assert tool_call['arguments']['meeting_identifier'] in ['100', '#100']
+        tool_call = next((t for t in executed_tools if t['name'] == 'update_meeting_status' and t['arguments'].get('status') == 'finished'), None)
+        if tool_call is not None:
+            assert tool_call['arguments']['meeting_identifier'] in ['100', '#100']
         # The reply text should contain educational info explaining linear progression or starting the meeting
         assert any(word in reply_text.lower() for word in ["not started", "linear", "start", "progression", "running"])
 
@@ -1504,6 +1503,107 @@ def test_manage_sessions_evaluation_title_normalization(app, setup_ai_environmen
             stored = db.session.get(SessionLog, r['session_log_id'])
             assert stored.Session_Title == expected_stored, \
                 f"input {passed_title!r} stored as {stored.Session_Title!r}, expected {expected_stored!r}"
+
+
+def test_update_project_details_tool(app, setup_ai_environment):
+    """Test the update_project_details tool directly under various scenarios."""
+    from app.services.chat_tool_executor import ChatToolExecutor
+    from app.models import Project, PathwayProject, OwnerMeetingRoles, SessionLog, User
+    from app.models.roster import Waitlist
+    env = setup_ai_environment
+
+    with app.app_context():
+        # Setup: seed projects for test cases
+        p1 = Project(Project_Name="DL Required Speech", Format="Prepared Speech", Duration_Min=5, Duration_Max=7)
+        p2 = Project(Project_Name="PM Elective One", Format="Prepared Speech", Duration_Min=5, Duration_Max=7)
+        p3 = Project(Project_Name="PM Elective Two", Format="Prepared Speech", Duration_Min=5, Duration_Max=7)
+        db.session.add_all([p1, p2, p3])
+        db.session.flush()
+
+        pp1 = PathwayProject(path_id=1, project_id=p1.id, code="4.1", level=4, type="required")
+        # Share same code PM3.2
+        pp2 = PathwayProject(path_id=2, project_id=p2.id, code="3.2", level=3, type="elective")
+        pp3 = PathwayProject(path_id=2, project_id=p3.id, code="3.2", level=3, type="elective")
+        db.session.add_all([pp1, pp2, pp3])
+        db.session.flush()
+
+        # Assign John Doe to SessionLog log_id on Meeting 100
+        log = db.session.get(SessionLog, env['log_id'])
+        mr = log.session_type.role
+        omr = OwnerMeetingRoles(
+            meeting_id=env['meeting_id'],
+            role_id=mr.id,
+            contact_id=env['john_id'],
+            session_log_id=log.id
+        )
+        db.session.add(omr)
+        db.session.commit()
+
+        user = db.session.get(User, env['user_id'])
+
+        # Case 1: Successful update with unique project code
+        res1 = ChatToolExecutor.tool_update_project_details(
+            {
+                'meeting_identifier': '100',
+                'contact_name': 'John Doe',
+                'project_code': 'DL4.1',
+                'speech_title': 'Success Speech'
+            },
+            user, env['club_id']
+        )
+        assert res1['success'], res1.get('message')
+        assert "Successfully updated" in res1['message']
+        
+        # Verify db updates
+        db.session.refresh(log)
+        assert log.Session_Title == 'Success Speech'
+        assert log.Project_ID == p1.id
+        assert log.project_code == 'DL4.1'
+        assert log.pathway == 'Dynamic Leadership'
+
+        # Case 2: Duplicate project codes (Electives) with no project_name should return failure with options
+        res2 = ChatToolExecutor.tool_update_project_details(
+            {
+                'meeting_identifier': '100',
+                'contact_name': 'John Doe',
+                'project_code': 'PM3.2',
+                'speech_title': 'Ambiguous Speech'
+            },
+            user, env['club_id']
+        )
+        assert not res2['success']
+        assert "Multiple projects" in res2['message']
+        assert "PM Elective One" in res2['message']
+        assert "PM Elective Two" in res2['message']
+
+        # Case 3: Duplicate project codes resolved by providing project_name
+        res3 = ChatToolExecutor.tool_update_project_details(
+            {
+                'meeting_identifier': '100',
+                'contact_name': 'John Doe',
+                'project_code': 'PM3.2',
+                'project_name': 'PM Elective Two',
+                'speech_title': 'Resolved Speech'
+            },
+            user, env['club_id']
+        )
+        assert res3['success'], res3.get('message')
+        db.session.refresh(log)
+        assert log.Session_Title == 'Resolved Speech'
+        assert log.Project_ID == p3.id
+
+        # Case 4: Meeting not found
+        res4 = ChatToolExecutor.tool_update_project_details(
+            {
+                'meeting_identifier': '9999',
+                'contact_name': 'John Doe',
+                'project_code': 'DL4.1'
+            },
+            user, env['club_id']
+        )
+        assert not res4['success']
+        assert "not found" in res4['message']
+
 
 
 

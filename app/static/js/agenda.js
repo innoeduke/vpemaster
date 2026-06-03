@@ -427,6 +427,122 @@ document.addEventListener("DOMContentLoaded", () => {
   // Ensure the function is global so the close button onclick works
   window.closeMeetingDetailsModal = closeMeetingDetailsModal;
 
+  window.refreshAgendaTable = function() {
+    const meetingId = meetingFilter ? meetingFilter.value : null;
+    if (!meetingId) return;
+
+    fetch(`/api/agenda/get_logs/${meetingId}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // 1. Update project speakers dataset
+          if (data.project_speakers) {
+            projectSpeakers = data.project_speakers;
+            if (tableContainer) {
+              tableContainer.dataset.projectSpeakers = JSON.stringify(projectSpeakers);
+            }
+          }
+
+          // 2. Re-render table rows
+          if (data.logs_data) {
+            renderTableRows(data.logs_data);
+          }
+
+          // 3. Update meeting metadata dynamically
+          if (data.meeting_info) {
+            // Update Title
+            const titleEl = document.querySelector(".meeting-title.view-mode");
+            if (titleEl) {
+              const linkEl = titleEl.querySelector("a");
+              if (linkEl) {
+                linkEl.textContent = data.meeting_info.title;
+              } else {
+                titleEl.textContent = data.meeting_info.title;
+              }
+            }
+
+            // Update Subtitle
+            const subtitleEl = document.querySelector(".subtitle.view-mode");
+            if (subtitleEl) {
+              if (data.meeting_info.subtitle) {
+                subtitleEl.textContent = data.meeting_info.subtitle;
+                subtitleEl.style.display = "";
+              } else {
+                subtitleEl.style.display = "none";
+              }
+            }
+
+            // Update WOD (Word of the Day)
+            const wodDisplay = document.querySelector(".wod-display");
+            if (data.meeting_info.wod) {
+              if (wodDisplay) {
+                const letterSpan = wodDisplay.querySelector(".letter span:last-child");
+                if (letterSpan) {
+                  letterSpan.textContent = `"${data.meeting_info.wod}"`;
+                }
+                wodDisplay.style.display = "";
+              }
+            } else if (wodDisplay) {
+              wodDisplay.style.display = "none";
+            }
+
+            // Update Meeting Status Display & Button
+            const newStatus = data.meeting_info.status;
+            const statusDisplayElement = document.querySelector(".meeting-status-display");
+            const button = document.getElementById("meeting-status-btn");
+            if (statusDisplayElement && newStatus) {
+              statusDisplayElement.className = `meeting-status-display status-${newStatus.replace(/ /g, "-")}`;
+              let iconClass = "";
+              if (newStatus === "unpublished") iconClass = "fa-eye-slash";
+              else if (newStatus === "not started") iconClass = "fa-play-circle";
+              else if (newStatus === "running") iconClass = "fa-broadcast-tower";
+              else if (newStatus === "finished") iconClass = "fa-check-circle";
+              else if (newStatus === "cancelled") iconClass = "fa-ban";
+
+              const statusText = newStatus.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+              statusDisplayElement.innerHTML = `<i class="fas fa-fw ${iconClass}"></i>${statusText}`;
+
+              if (button) {
+                button.dataset.currentStatus = newStatus;
+                button.className = "btn"; // Reset class list base
+                button.disabled = false;
+                button.style.display = "";
+
+                if (newStatus === "not started") {
+                  button.textContent = "Start";
+                  button.classList.add("btn-primary");
+                  button.title = "Start to let audience vote.";
+                } else if (newStatus === "running") {
+                  button.textContent = "Stop";
+                  button.classList.add("btn-primary");
+                  button.title = "Stop to end voting and show results.";
+                } else if (newStatus === "finished") {
+                  const canDelete = agendaContent && agendaContent.dataset.canDelete === "true";
+                  if (canDelete) {
+                    button.textContent = "Delete";
+                    button.classList.add("btn-secondary");
+                    button.title = "";
+                  } else {
+                    button.style.display = "none";
+                  }
+                } else if (newStatus === "cancelled") {
+                  button.textContent = "Cancelled";
+                  button.disabled = true;
+                  button.classList.add("btn-secondary");
+                  button.title = "";
+                } else if (newStatus === "unpublished") {
+                  button.textContent = "Publish";
+                  button.classList.add("btn-success");
+                  button.title = "Publish to allow members to book roles.";
+                }
+              }
+            }
+          }
+        }
+      })
+      .catch(err => console.error("Error refreshing agenda table:", err));
+  };
+
   function toggleEditMode(enable) {
     isEditing = enable;
     agendaContent.classList.toggle("edit-mode-active", enable);

@@ -520,7 +520,7 @@
 
   {% if current_user.is_authenticated and (is_authorized(Permissions.CHAT_AI) or is_authorized(Permissions.CHAT_COMMANDS)) %}
     {% include 'partials/_chat_widget.html' %}
-    <script src="{{ url_for('static', filename='js/chat.js') }}?v=1.0.3"></script>
+    <script src="{{ url_for('static', filename='js/chat.js') }}?v={{ range(1, 10000) | random }}"></script>
   {% endif %}
 </body>
 

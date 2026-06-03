@@ -1650,7 +1650,15 @@ def get_logs(meeting_id):
         logs_data, _ = _get_processed_logs_data(meeting_id, is_authorized(Permissions.MEDIA_ACCESS))
         project_speakers = _get_project_speakers(meeting_id)
         
-        return jsonify(success=True, logs_data=logs_data, project_speakers=project_speakers)
+        meeting_info = {
+            'id': meeting.id,
+            'status': meeting.status,
+            'title': meeting.Meeting_Title or f"Meeting {meeting.Meeting_Number}",
+            'subtitle': meeting.Subtitle or '',
+            'wod': meeting.WOD or ''
+        }
+        
+        return jsonify(success=True, logs_data=logs_data, project_speakers=project_speakers, meeting_info=meeting_info)
     except Exception as e:
         return jsonify(success=False, message=str(e)), 500
 

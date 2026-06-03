@@ -406,6 +406,40 @@ CHAT_TOOLS = [
             },
             "required": ["action", "meeting_identifier"]
         }
+    },
+    {
+        "name": "update_project_details",
+        "description": "Update the project, pathway, and speech title details of a booked speaker or waitlisted speaker for a meeting.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "meeting_identifier": {
+                    "type": "string",
+                    "description": "Meeting number (e.g. '350') or meeting date (YYYY-MM-DD). Required."
+                },
+                "contact_name": {
+                    "type": "string",
+                    "description": "The full name of the member/speaker. Required."
+                },
+                "project_code": {
+                    "type": "string",
+                    "description": "Optional project code (e.g. 'EH4.1', 'PM1.1', 'TM1.0'). Maps automatically to the correct project and pathway. If multiple projects share this code (like Electives), the tool fails and returns all matching projects so the user can choose or provide a project_name."
+                },
+                "project_name": {
+                    "type": "string",
+                    "description": "Optional project name (e.g. 'Ice Breaker')."
+                },
+                "speech_title": {
+                    "type": "string",
+                    "description": "Optional speech title to set."
+                },
+                "pathway_name": {
+                    "type": "string",
+                    "description": "Optional pathway name (e.g. 'Engaging Humor')."
+                }
+            },
+            "required": ["meeting_identifier", "contact_name"]
+        }
     }
 ]
 
@@ -444,6 +478,35 @@ class ChatService:
         return anthropic.Anthropic(api_key=api_key, base_url=base_url)
 
     @classmethod
+    def _messages_create_with_retry(cls, client, **kwargs):
+        import time
+        import anthropic
+        
+        api_retries = 0
+        max_api_retries = 5
+        backoff = 1.0
+        
+        while True:
+            try:
+                return client.messages.create(**kwargs)
+            except anthropic.RateLimitError as e:
+                api_retries += 1
+                if api_retries > max_api_retries:
+                    current_app.logger.error(f"RateLimitError: Max retries exceeded. Request parameters: {kwargs}")
+                    raise e
+                current_app.logger.warning(f"RateLimitError encountered. Retrying in {backoff} seconds... (Attempt {api_retries}/{max_api_retries})")
+                time.sleep(backoff)
+                backoff *= 2.0
+            except (anthropic.APIConnectionError, anthropic.APITimeoutError) as e:
+                api_retries += 1
+                if api_retries > max_api_retries:
+                    current_app.logger.error(f"Connection/Timeout Error: Max retries exceeded. Request parameters: {kwargs}")
+                    raise e
+                current_app.logger.warning(f"Transient API error: {str(e)}. Retrying in {backoff} seconds... (Attempt {api_retries}/{max_api_retries})")
+                time.sleep(backoff)
+                backoff *= 1.5
+
+    @classmethod
     def generate_summary(cls, previous_summary, new_messages_text):
         """
         Uses the LLM to update or create a running summary of the chat history.
@@ -461,7 +524,8 @@ class ChatService:
         user_prompt = f"Previous summary:\n{previous_summary or 'No previous summary.'}\n\nNew messages:\n{new_messages_text}\n\nProvide the updated summary:"
         
         try:
-            response = client.messages.create(
+            response = cls._messages_create_with_retry(
+                client,
                 model=model_name,
                 system=system_prompt,
                 messages=[
@@ -505,7 +569,8 @@ class ChatService:
             f"5. If a contact name is ambiguous, call the search contact tool first or ask the user for clarification.\n"
             f"6. Always confirm the execution of operational changes (creating, assigning, checking in, completions, status updates) in a polite, concise manner, but only after executing the appropriate tool and verifying its success.\n"
             f"7. Never claim, assume, or confirm that an action succeeded or was completed unless the tool execution returned `success=True`. If the tool failed, report the failure reason faithfully to the user. Specifically, starting a meeting requires calling `update_meeting_status` with `status='running'`, and finishing/ending/completing a meeting requires calling `update_meeting_status` with `status='finished'`.\n"
-            f"8. The scope of this chat window is strictly limited to the current club '{club_name}' (ID: {club_id}). You must only query, create, or modify meetings, contacts, roles, achievements, or officers that belong to this club."
+            f"8. The scope of this chat window is strictly limited to the current club '{club_name}' (ID: {club_id}). You must only query, create, or modify meetings, contacts, roles, achievements, or officers that belong to this club.\n"
+            f"9. Never disclose any internal database IDs (such as database meeting ID, contact ID, session log ID, etc.) in your messages to the user. These are internal database primary keys and should not be shown. Only refer to meetings by their Meeting Number (e.g. Meeting #983)."
         )
         return prompt
 
@@ -532,7 +597,7 @@ class ChatService:
                     meeting = Meeting.query.filter_by(club_id=club_id, Meeting_Number=num).first()
                     if meeting:
                         context_parts.append(
-                            f"- Meeting #{meeting.Meeting_Number} exists (ID: {meeting.id}, Date: {meeting.Meeting_Date}, Status: {meeting.status}, Title: '{meeting.Meeting_Title or 'N/A'}')"
+                            f"- Meeting #{meeting.Meeting_Number} exists (Date: {meeting.Meeting_Date}, Status: {meeting.status}, Title: '{meeting.Meeting_Title or 'N/A'}')"
                         )
                 except ValueError:
                     continue
@@ -547,7 +612,7 @@ class ChatService:
             ).order_by(Meeting.Meeting_Date.asc()).limit(3).all()
             for m in upcoming:
                 context_parts.append(
-                    f"- Upcoming/Active Meeting #{m.Meeting_Number}: Date={m.Meeting_Date}, Status='{m.status}', Title='{m.Meeting_Title or 'N/A'}' (ID: {m.id})"
+                    f"- Upcoming/Active Meeting #{m.Meeting_Number}: Date={m.Meeting_Date}, Status='{m.status}', Title='{m.Meeting_Title or 'N/A'}'"
                 )
 
         # 3. Look for potential contact names (capitalized words or specific name substrings)
@@ -749,7 +814,8 @@ class ChatService:
             while turn < max_turns:
                 turn += 1
                 
-                response = client.messages.create(
+                response = cls._messages_create_with_retry(
+                    client,
                     model=model_name,
                     system=system_prompt,
                     messages=messages_run,
