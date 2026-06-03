@@ -17,12 +17,17 @@ document.addEventListener('DOMContentLoaded', function() {
     let lastCustomWidth = '';
     let lastCustomHeight = '';
 
+    const isZh = (typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN');
+    const txtMaximize = isZh ? '最大化' : 'Maximize';
+    const txtMinimize = isZh ? '最小化' : 'Minimize';
+    const txtRestore = isZh ? '还原' : 'Restore';
+
     // Helper to revert panel to non-maximized state
     function removeMaximizedState() {
         if (panel.classList.contains('maximized')) {
             panel.classList.remove('maximized');
             if (maximizeBtn) {
-                maximizeBtn.title = "Maximize";
+                maximizeBtn.title = txtMaximize;
                 maximizeBtn.innerHTML = '<i class="fa fa-expand"></i>';
             }
             panel.style.width = lastCustomWidth || '';
@@ -246,6 +251,15 @@ document.addEventListener('DOMContentLoaded', function() {
             unreadDot.style.display = 'none'; // Clear unread dot
             inputText.focus();
             
+            // On mobile view, opening the chat should show it maximized/full screen by default
+            if (window.innerWidth <= 576) {
+                panel.classList.add('maximized');
+                if (maximizeBtn) {
+                    maximizeBtn.title = txtMinimize;
+                    maximizeBtn.innerHTML = '<i class="fa fa-compress"></i>';
+                }
+            }
+            
             if (!historyLoaded) {
                 loadHistory();
             }
@@ -260,6 +274,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (maximizeBtn) {
         maximizeBtn.addEventListener('click', function() {
+            if (window.innerWidth <= 576) {
+                // On mobile, the resize/maximize button acts as a minimize button to close/hide the panel
+                panel.classList.remove('open');
+                removeMaximizedState();
+                toggleBtn.classList.remove('active');
+                return;
+            }
+
             const isMaximized = panel.classList.contains('maximized');
             if (isMaximized) {
                 removeMaximizedState();
@@ -268,7 +290,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 lastCustomHeight = panel.style.height;
                 
                 panel.classList.add('maximized');
-                maximizeBtn.title = "Restore";
+                maximizeBtn.title = txtRestore;
                 maximizeBtn.innerHTML = '<i class="fa fa-compress"></i>';
                 
                 panel.style.width = '';
