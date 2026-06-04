@@ -92,19 +92,16 @@ def test_list_clubs_sysadmin(client, sysadmin_user):
     assert response.status_code == 200
     assert b'Club Management' in response.data
 
-def test_list_clubs_forbidden(client, regular_user):
-    """Test that regular users cannot view the clubs list."""
+def test_list_clubs_regular_user_access(client, regular_user):
+    """Test that regular users can view the clubs list but not admin controls."""
     with client.session_transaction() as sess:
         sess['_user_id'] = str(regular_user.id)
         sess['_fresh'] = True
 
-    response = client.get('/clubs', follow_redirects=True)
-    # Should redirect or show error
-    # Adjust assertion based on actual behavior (redirect to dashboard likely)
-    assert response.status_code in [200, 403]
-    # Assuming redirect to dashboard or login
-    if response.status_code == 200:
-        assert b'Club Management' not in response.data
+    response = client.get('/clubs')
+    assert response.status_code == 200
+    assert b'Club Management' in response.data
+    assert b'Create New Club' not in response.data
 
 def test_create_club(client, sysadmin_user, app):
     """Test creating a new club."""

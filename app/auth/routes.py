@@ -20,7 +20,7 @@ def lookup_user_clubs():
     login_identifier = request.json.get('username', '').strip()
     
     if not login_identifier:
-        return jsonify({'clubs': []})
+        return jsonify({'exists': False, 'clubs': []})
     
     # Find user by username, email, or phone
     user = User.query.filter(
@@ -33,7 +33,7 @@ def lookup_user_clubs():
     ).first()
     
     if not user:
-        return jsonify({'clubs': []})
+        return jsonify({'exists': False, 'clubs': []})
     
     # Get user's associated clubs
     from ..models.user_club import UserClub
@@ -65,7 +65,7 @@ def lookup_user_clubs():
                     'is_home': uc.is_home
                 })
     
-    return jsonify({'clubs': clubs_data})
+    return jsonify({'exists': True, 'clubs': clubs_data})
 
 # Login route
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -116,10 +116,7 @@ def login():
                 flash('Account is inactive.', 'error')
                 return redirect(url_for('auth_bp.login'))
 
-            # Prevent login if user is not linked to any club
-            if not user.is_sysadmin and len(user.club_memberships) == 0:
-                flash('Your account is not linked to any club. Please contact an administrator.', 'error')
-                return redirect(url_for('auth_bp.login'))
+
 
             login_user(user, remember=True)
             
@@ -365,3 +362,87 @@ def reset_token(token):
                   return redirect(url_for('auth_bp.login'))
                   
     return render_template('auth/reset_token.html')
+
+
+@auth_bp.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('main_bp.index'))
+        
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        first_name = request.form.get('first_name', '').strip()
+        last_name = request.form.get('last_name', '').strip()
+        email = request.form.get('email', '').strip()
+        phone = request.form.get('phone', '').strip()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        
+        # Validations
+        if not username or not first_name or not last_name or not email or not password:
+            flash('All fields except phone number are required.', 'error')
+            return render_template('auth/register.html')
+            
+        # Username validation: standard alphanumeric checks
+        if not username.isalnum() and '_' not in username:
+            flash('Username must contain only letters, numbers, or underscores.', 'error')
+            return render_template('auth/register.html')
+            
+        # Check duplicate username
+        if User.query.filter_by(username=username).first():
+            flash('Username is already taken.', 'error')
+            return render_template('auth/register.html')
+            
+        # Check duplicate email
+        if User.query.filter_by(email=email).first():
+            flash('Email address is already registered.', 'error')
+            return render_template('auth/register.html')
+            
+        # Password strength validation
+        if len(password) < 8:
+            flash('Password must be at least 8 characters long.', 'error')
+            return render_template('auth/register.html')
+        if password != confirm_password:
+            flash('Passwords do not match.', 'error')
+            return render_template('auth/register.html')
+        if not any(c.isupper() for c in password) or \
+           not any(c.islower() for c in password) or \
+           not any(c.isdigit() for c in password):
+            flash('Password must contain at least one uppercase letter, one lowercase letter, and one number.', 'error')
+            return render_template('auth/register.html')
+            
+        # Create user
+        from datetime import date
+        new_user = User(
+            username=username,
+            email=email,
+            phone=phone if phone else None,
+            _first_name=first_name,
+            _last_name=last_name,
+            created_at=date.today(),
+            status='active'
+        )
+        new_user.set_password(password)
+        
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+            flash('Registration successful! Please log in.', 'success')
+            return redirect(url_for('auth_bp.login'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'An error occurred: {str(e)}', 'error')
+            return render_template('auth/register.html')
+            
+    return render_template('auth/register.html')
+
+
+@auth_bp.route('/register/check_username', methods=['POST'])
+def check_username():
+    username = request.json.get('username', '').strip()
+    if not username:
+        return jsonify({'available': True})
+    
+    # Check duplicate username
+    user_exists = User.query.filter_by(username=username).first() is not None
+    return jsonify({'available': not user_exists})

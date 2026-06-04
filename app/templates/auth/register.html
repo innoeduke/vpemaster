@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Register</title>
+  <link rel="preconnect" href="https://fonts.loli.net">
+  <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
+  <link
+    href="https://fonts.loli.net/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@500;600&display=swap"
+    rel="stylesheet">
+  {% assets "css_all" %}
+  <link rel="stylesheet" href="{{ ASSET_URL }}">
+  {% endassets %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/fontawesome.min.css') }}" />
+</head>
+
+<body>
+  <div class="login-container">
+    <div class="login-content-wrapper">
+      <img src="{{ url_for('static', filename='images/logo.webp') }}" alt="Memory Maker Logo" class="login-logo" />
+      <h2 style="margin-bottom: 5px;">Create Account</h2>
+      <p style="color: #888; font-size: 0.9em; margin-bottom: 20px;">Join Memory Maker to request club membership.</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="alert-container">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('auth_bp.register') }}" class="login-form">
+        <div>
+          <label for="username">Username:</label>
+          <input type="text" id="username" name="username" required placeholder="Letters, numbers, or underscores" autocomplete="username" style="margin-bottom: 8px;" />
+          <div id="username-feedback" style="font-size: 0.85em; margin-bottom: 12px; display: none; font-weight: 500;"></div>
+        </div>
+        
+        <div style="display: flex; gap: 10px;">
+          <div style="flex: 1;">
+            <label for="first_name">First Name:</label>
+            <input type="text" id="first_name" name="first_name" required placeholder="First Name" />
+          </div>
+          <div style="flex: 1;">
+            <label for="last_name">Last Name:</label>
+            <input type="text" id="last_name" name="last_name" required placeholder="Last Name" />
+          </div>
+        </div>
+
+        <div>
+          <label for="email">Email Address:</label>
+          <input type="email" id="email" name="email" required placeholder="example@email.com" autocomplete="email" />
+        </div>
+
+        <div>
+          <label for="phone">Phone Number (Optional):</label>
+          <input type="tel" id="phone" name="phone" placeholder="Optional phone number" autocomplete="tel" />
+        </div>
+
+        <div>
+          <label for="password">Password:</label>
+          <input type="password" id="password" name="password" required placeholder="Min 8 chars, 1 uppercase, 1 lowercase, 1 number" autocomplete="new-password" />
+        </div>
+
+        <div>
+          <label for="confirm_password">Confirm Password:</label>
+          <input type="password" id="confirm_password" name="confirm_password" required placeholder="Repeat password" autocomplete="new-password" />
+        </div>
+
+        <div>
+          <button type="submit" class="btn btn-primary" style="height: 40px">
+            Register
+          </button>
+        </div>
+      </form>
+
+      <div style="text-align: center; margin-top: 15px;">
+        <span style="color: #666;">Already have an account?</span>
+        <a href="{{ url_for('auth_bp.login') }}" class="login-link" style="font-weight: 600; color: #004165; text-decoration: none; margin-left: 5px;">
+          Log In
+        </a>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const usernameInput = document.getElementById('username');
+      const usernameFeedback = document.getElementById('username-feedback');
+      const submitBtn = document.querySelector('.login-form button[type="submit"]');
+      let checkTimeout = null;
+
+      usernameInput.addEventListener('input', function() {
+          clearTimeout(checkTimeout);
+          const username = this.value.trim();
+          
+          if (!username) {
+              usernameFeedback.style.display = 'none';
+              submitBtn.disabled = false;
+              return;
+          }
+
+          // Basic format check
+          const isAlphanumericOrUnderscore = /^[a-zA-Z0-9_]+$/.test(username);
+          if (!isAlphanumericOrUnderscore) {
+              usernameFeedback.style.display = 'block';
+              usernameFeedback.style.color = '#e53e3e';
+              usernameFeedback.textContent = 'Username must contain only letters, numbers, or underscores.';
+              submitBtn.disabled = true;
+              return;
+          }
+
+          checkTimeout = setTimeout(() => {
+              fetch("{{ url_for('auth_bp.check_username') }}", {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ username: username })
+              })
+              .then(response => response.json())
+              .then(data => {
+                  usernameFeedback.style.display = 'block';
+                  if (data.available) {
+                      usernameFeedback.style.color = '#38a169';
+                      usernameFeedback.textContent = 'Username is available.';
+                      submitBtn.disabled = false;
+                  } else {
+                      usernameFeedback.style.color = '#e53e3e';
+                      usernameFeedback.textContent = 'Username is already taken.';
+                      submitBtn.disabled = true;
+                  }
+              })
+              .catch(err => {
+                  console.error('Error checking username:', err);
+              });
+          }, 300);
+      });
+      // Pre-fill username from query param if present
+      const urlParams = new URLSearchParams(window.location.search);
+      const usernameParam = urlParams.get('username');
+      if (usernameParam) {
+          usernameInput.value = usernameParam;
+          usernameInput.dispatchEvent(new Event('input'));
+      }
+    });
+  </script>
+</body>
+
+</html>

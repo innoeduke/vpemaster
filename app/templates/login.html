@@ -41,15 +41,17 @@
           <select id="club_names" name="club_names" required>
           </select>
         </div>
-        <div>
-          <label for="password">Password:</label>
-          <input type="password" id="password" name="password" autocomplete="current-password" required />
+        <div id="password-section">
+          <div>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" autocomplete="current-password" required />
+          </div>
+          <div class="forgot-password-container">
+            <a href="{{ url_for('auth_bp.reset_password_request') }}" class="login-link">Forgot Password?</a>
+          </div>
         </div>
-        <div class="forgot-password-container">
-          <a href="{{ url_for('auth_bp.reset_password_request') }}" class="login-link">Forgot Password?</a>
-        </div>
         <div>
-          <button type="submit" class="btn btn-primary" style="height: 40px">
+          <button id="submit-btn" type="submit" class="btn btn-primary" style="height: 40px">
             Login
           </button>
         </div>
@@ -150,6 +152,33 @@
         });
       }
 
+      const submitBtn = document.getElementById('submit-btn');
+      const loginForm = document.querySelector('.login-form');
+      const passwordSection = document.getElementById('password-section');
+      const passwordInput = document.getElementById('password');
+      let isRegisterMode = false;
+
+      const setRegisterMode = (isRegister) => {
+        isRegisterMode = isRegister;
+        if (isRegister) {
+          submitBtn.textContent = 'Register';
+          passwordSection.style.display = 'none';
+          passwordInput.removeAttribute('required');
+        } else {
+          submitBtn.textContent = 'Login';
+          passwordSection.style.display = 'block';
+          passwordInput.setAttribute('required', 'required');
+        }
+      };
+
+      loginForm.addEventListener('submit', function (e) {
+        if (isRegisterMode) {
+          e.preventDefault();
+          const username = usernameInput.value.trim();
+          window.location.href = "{{ url_for('auth_bp.register') }}?username=" + encodeURIComponent(username);
+        }
+      });
+
       const updateGuestLink = () => {
         const clubId = clubSelector.value;
         const baseUrl = "{{ url_for('agenda_bp.agenda') }}";
@@ -161,8 +190,7 @@
           clubSelectorContainer.style.display = 'none';
           clubSelector.innerHTML = '';
           clubSelector.removeAttribute('required');
-          // clean up custom select if it exists? 
-          // actually just hiding container is enough, but we should probably destroy/reset it
+          setRegisterMode(false);
           return;
         }
 
@@ -176,6 +204,12 @@
           });
 
           const data = await response.json();
+
+          if (data.exists === false) {
+            setRegisterMode(true);
+          } else {
+            setRegisterMode(false);
+          }
 
           if (data.clubs && data.clubs.length > 0) {
             // Populate club selector
@@ -214,6 +248,7 @@
           clubSelectorContainer.style.display = 'none';
           clubSelector.innerHTML = '';
           clubSelector.removeAttribute('required');
+          setRegisterMode(false);
         }
       };
 

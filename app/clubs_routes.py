@@ -13,10 +13,6 @@ clubs_bp = Blueprint('clubs_bp', __name__)
 @clubs_bp.route('/clubs')
 @login_required
 def list_clubs():
-    if not is_authorized(Permissions.SETTINGS_EDIT):
-        flash('You do not have permission to view this page.', 'danger')
-        return redirect(url_for('agenda_bp.agenda'))
-    
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 12, type=int)
     search_query = request.args.get('q', '').strip()
@@ -35,7 +31,20 @@ def list_clubs():
     pagination = clubs_query.order_by(Club.club_no).paginate(page=page, per_page=per_page, error_out=False)
     clubs = pagination.items
     
-    return render_template('clubs.html', clubs=clubs, pagination=pagination, search_query=search_query)
+    pending_club_ids = []
+    if current_user.is_authenticated:
+        from app.models import Message
+        import re
+        pending_messages = Message.query.filter(
+            Message.sender_id == current_user.id,
+            Message.body.like(f"%[JOIN_REQUEST:{current_user.id}:%")
+        ).all()
+        for msg in pending_messages:
+            match = re.search(r'\[JOIN_REQUEST:\d+:(\d+)\]', msg.body)
+            if match and "[Responded:" not in msg.body:
+                pending_club_ids.append(int(match.group(1)))
+    
+    return render_template('clubs.html', clubs=clubs, pagination=pagination, search_query=search_query, pending_club_ids=pending_club_ids)
 
 @clubs_bp.route('/clubs/new', methods=['GET', 'POST'])
 @login_required
@@ -457,4 +466,129 @@ def respond_home_proposal():
     msg.read = True
     db.session.commit()
     
+    return jsonify({'success': True})
+
+
+@clubs_bp.route('/clubs/<int:club_id>/request_join', methods=['POST'])
+@login_required
+def request_join_club(club_id):
+    club = db.session.get(Club, club_id)
+    if not club:
+        return jsonify({'success': False, 'error': 'Club not found'}), 404
+        
+    # Check if already a member
+    from app.models import UserClub
+    uc = UserClub.query.filter_by(user_id=current_user.id, club_id=club_id).first()
+    if uc:
+        return jsonify({'success': False, 'error': 'You are already a member of this club.'}), 400
+        
+    # Check if a pending request already exists
+    from app.models import Message
+    existing = Message.query.filter(
+        Message.sender_id == current_user.id,
+        Message.body.like(f"%[JOIN_REQUEST:{current_user.id}:{club_id}]%"),
+        ~Message.body.like("%[Responded:%")
+    ).first()
+    if existing:
+        return jsonify({'success': False, 'error': 'You already have a pending join request for this club.'}), 400
+
+    # Identify Club Admins
+    from app.models import User
+    members = User.query.join(UserClub).filter(UserClub.club_id == club_id).all()
+    admins = [m for m in members if m.has_club_permission(Permissions.SETTINGS_EDIT, club_id)]
+    
+    if not admins:
+        sysadmin = User.query.filter_by(username='sysadmin').first()
+        if sysadmin:
+            admins = [sysadmin]
+            
+    if not admins:
+        return jsonify({'success': False, 'error': 'No club administrator found to approve your request.'}), 400
+        
+    # Send Join Request message to all admins of the club
+    for admin in admins:
+        msg = Message(
+            sender_id=current_user.id,
+            recipient_id=admin.id,
+            subject=f"Join Request: {club.club_name} from {current_user.display_name}",
+            body=f"User {current_user.display_name} ({current_user.email or current_user.username}) has requested to join {club.club_name} as a member.\n\n[JOIN_REQUEST:{current_user.id}:{club_id}]"
+        )
+        db.session.add(msg)
+        
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Your request to join the club has been sent.'})
+
+
+@clubs_bp.route('/clubs/respond_join_request', methods=['POST'])
+@login_required
+def respond_join_request():
+    data = request.json
+    message_id = data.get('message_id')
+    action = data.get('action')
+    
+    from app.models import Message
+    msg = db.session.get(Message, message_id)
+    if not msg:
+        return jsonify({'success': False, 'error': 'Message not found'}), 404
+        
+    import re
+    match = re.search(r'\[JOIN_REQUEST:(\d+):(\d+)\]', msg.body)
+    if not match:
+        return jsonify({'success': False, 'error': 'Invalid request format'}), 400
+        
+    requestor_id = int(match.group(1))
+    target_club_id = int(match.group(2))
+    
+    # Check if current user is authorized to manage settings for this club
+    if not current_user.has_club_permission(Permissions.SETTINGS_EDIT, target_club_id) and not current_user.is_sysadmin:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        
+    from app.models import User, Club, UserClub
+    requestor = db.session.get(User, requestor_id)
+    target_club = db.session.get(Club, target_club_id)
+    
+    if not requestor or not target_club:
+        return jsonify({'success': False, 'error': 'User or Club no longer exists'}), 404
+        
+    response_subject = f"Join Request Response: {target_club.club_name}"
+    
+    if action == 'approve':
+        # Check if already a member
+        uc = UserClub.query.filter_by(user_id=requestor_id, club_id=target_club_id).first()
+        if not uc:
+            requestor.ensure_contact(club_id=target_club_id)
+            from app.models import AuthRole
+            user_role = AuthRole.query.filter_by(name='User').first()
+            requestor.set_club_role(target_club_id, role_id=user_role.id if user_role else None)
+            
+        # Send message to user
+        reply = Message(
+            sender_id=current_user.id,
+            recipient_id=requestor_id,
+            subject=response_subject,
+            body=f"Your request to join **{target_club.club_name}** has been **APPROVED**."
+        )
+        db.session.add(reply)
+        
+    elif action == 'reject':
+        reply = Message(
+            sender_id=current_user.id,
+            recipient_id=requestor_id,
+            subject=response_subject,
+            body=f"Your request to join **{target_club.club_name}** was **REJECTED**."
+        )
+        db.session.add(reply)
+    else:
+        return jsonify({'success': False, 'error': 'Invalid action'}), 400
+        
+    # Mark all duplicate join messages as responded & read to avoid cluttering other admins' inboxes
+    all_related_msgs = Message.query.filter(
+        Message.body.like(f"%[JOIN_REQUEST:{requestor_id}:{target_club_id}]%")
+    ).all()
+    action_text = 'APPROVED' if action == 'approve' else 'REJECTED'
+    for m in all_related_msgs:
+        m.body = re.sub(r'\[JOIN_REQUEST:\d+:\d+\]', f"\n\n[Responded: {action_text}]", m.body)
+        m.read = True
+        
+    db.session.commit()
     return jsonify({'success': True})

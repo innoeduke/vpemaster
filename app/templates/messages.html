@@ -212,6 +212,8 @@
         const homeRequestMatch = msg.body.match(/\[HOME_CLUB_REQUEST:(\d+):(\d+)\]/);
         // Handle Home Club Proposals (Admin -> User)
         const homeProposalMatch = msg.body.match(/\[HOME_CLUB_PROPOSAL:(\d+):(\d+)\]/);
+        // Handle User Join Requests (User requesting Admin)
+        const joinRequestMatch = msg.body.match(/\[JOIN_REQUEST:(\d+):(\d+)\]/);
         
         // Clear previous actions if any (though we reset textContent below so simpler)
         
@@ -224,6 +226,9 @@
         }
         if (homeProposalMatch) {
             displayBody = displayBody.replace(homeProposalMatch[0], '');
+        }
+        if (joinRequestMatch) {
+            displayBody = displayBody.replace(joinRequestMatch[0], '');
         }
 
         const bodyEl = document.getElementById('detail-body');
@@ -292,6 +297,23 @@
                             <i class="fas fa-check"></i> Approve
                         </button>
                         <button onclick="respondToHomeProposal(${msg.id}, 'reject')" class="btn btn-join btn-join-reject">
+                            <i class="fas fa-times"></i> Reject
+                        </button>
+                    </div>
+                </div>
+            `;
+            bodyEl.insertAdjacentHTML('beforeend', actionsHtml);
+        }
+
+        if (joinRequestMatch && isInbox) {
+             const actionsHtml = `
+                <div class="message-actions join-request-card">
+                    <h3 class="join-request-title" style="color: #2b6cb0; border-left: 4px solid #3182ce;">Club Join Request</h3>
+                    <div class="join-request-actions">
+                        <button onclick="respondToUserJoinRequest(${msg.id}, 'approve')" class="btn btn-join btn-join-accept">
+                            <i class="fas fa-check"></i> Approve
+                        </button>
+                        <button onclick="respondToUserJoinRequest(${msg.id}, 'reject')" class="btn btn-join btn-join-reject">
                             <i class="fas fa-times"></i> Reject
                         </button>
                     </div>
@@ -542,6 +564,53 @@
         })
         .catch(err => {
             showToast('Error processing proposal', 'error');
+            btn.innerHTML = originalText;
+            if (container) {
+                 container.querySelectorAll('button').forEach(b => b.disabled = false);
+            } else {
+                 btn.disabled = false;
+            }
+        });
+    }
+
+    function respondToUserJoinRequest(messageId, action) {
+        const btn = event.target.closest('button');
+        const container = btn.closest('.message-actions');
+        if (container) {
+            container.querySelectorAll('button').forEach(b => b.disabled = true);
+        } else {
+             btn.disabled = true;
+        }
+        
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+        fetch('/clubs/respond_join_request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message_id: messageId,
+                action: action
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(action === 'approve' ? 'Request Approved.' : 'Request Rejected.', 'success');
+                closeMessageDetailModal();
+                loadMessages(currentTab);
+            } else {
+                showToast(data.error || 'Action failed', 'error');
+                btn.innerHTML = originalText;
+                if (container) {
+                     container.querySelectorAll('button').forEach(b => b.disabled = false);
+                } else {
+                     btn.disabled = false;
+                }
+            }
+        })
+        .catch(err => {
+            showToast('Error processing request', 'error');
             btn.innerHTML = originalText;
             if (container) {
                  container.querySelectorAll('button').forEach(b => b.disabled = false);

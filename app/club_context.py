@@ -205,6 +205,10 @@ def authorized_club_required(f):
                 # Relaxed: Any valid membership record grants access
                 return f(*args, **kwargs)
             
+            # Non-member authenticated user: purely permission-based check
+            if current_user.has_club_permission(Permissions.MEETING_VIEW_PUBLISHED, club_id):
+                return f(*args, **kwargs)
+            
             # If we fall through here, the authenticated user is unauthorized for this club
             abort(403)
             

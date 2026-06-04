@@ -374,10 +374,12 @@
                     {% endif %}
                 </div>
             </form>
+            {% if is_authorized(Permissions.SETTINGS_EDIT) %}
             <a href="{{ url_for('clubs_bp.create_club') }}" class="btn btn-primary btn-create">
                 <i class="fas fa-plus"></i>
                 {{ _('Create New Club') }}
             </a>
+            {% endif %}
         </div>
     </div>
     
@@ -517,9 +519,13 @@
                             <span class="club-no">{{ club.club_no }}</span>
                         </td>
                         <td>
+                            {% if is_authorized(Permissions.SETTINGS_EDIT) %}
                             <a href="{{ url_for('clubs_bp.edit_club', club_id=club.id) }}" class="club-name">
                                 {{ club.club_name }}
                             </a>
+                            {% else %}
+                            <span class="club-name" style="cursor: default;">{{ club.club_name }}</span>
+                            {% endif %}
                             <div class="club-meta">
                                 {% if club.short_name %}
                                 <span>{{ club.short_name }}</span>
@@ -563,6 +569,7 @@
                         </td>
                         <td>
                             <div class="action-btns">
+                                {% if is_authorized(Permissions.SETTINGS_EDIT) %}
                                 <a href="{{ url_for('users_bp.user_form', club_id=club.id, role='ClubAdmin') }}" class="action-btn" title="{{ _('Create ClubAdmin') }}">
                                     <i class="fas fa-user-shield"></i>
                                 </a>
@@ -572,6 +579,22 @@
                                 <button type="button" class="action-btn delete" data-bs-toggle="modal" data-bs-target="#deleteModal{{ club.id }}" title="{{ _('Delete Club') }}">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
+                                {% else %}
+                                    {% set user_club = current_user.get_user_club(club.id) %}
+                                    {% if user_club %}
+                                        {% if user_club.is_home %}
+                                        <span class="badge" style="background-color: #ebf8ff; color: #2b6cb0; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600;">Home Club</span>
+                                        {% else %}
+                                        <span class="badge" style="background-color: #c6f6d5; color: #22543d; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600;">Member</span>
+                                        {% endif %}
+                                    {% elif club.id in pending_club_ids %}
+                                        <span class="badge" style="background-color: #feebc8; color: #7b341e; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600;">Pending Approval</span>
+                                    {% else %}
+                                        <button onclick="requestJoinClub(this, {{ club.id }})" class="btn btn-secondary" style="height: 32px; padding: 0 12px; font-size: 0.85em; font-weight: 600; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
+                                            <i class="fas fa-sign-in-alt"></i> Request to Join
+                                        </button>
+                                    {% endif %}
+                                {% endif %}
                             </div>
                         </td>
                     </tr>
@@ -717,5 +740,35 @@
             }
         });
     });
+
+    function requestJoinClub(btn, clubId) {
+        btn.disabled = true;
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        
+        fetch(`/clubs/${clubId}/request_join`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const td = btn.parentElement;
+                td.innerHTML = '<span class="badge" style="background-color: #feebc8; color: #7b341e; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600;">Pending Approval</span>';
+                alert(data.message);
+            } else {
+                alert(data.error || 'Failed to send request.');
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        })
+        .catch(err => {
+            alert('An error occurred.');
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        });
+    }
 </script>
 {% endblock %}

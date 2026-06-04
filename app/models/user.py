@@ -258,6 +258,10 @@ class User(UserMixin, db.Model):
         # Get UserClub record for this club
         uc = self.get_user_club(club_id)
         if not uc:
+            from .role import Role
+            guest_role = Role.get_by_name('Guest')
+            if guest_role:
+                return guest_role.has_permission(permission_name)
             return False
             
         # Check permissions of all roles assigned in this club (bitmask-aware)
