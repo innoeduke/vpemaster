@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('Club Management') }}{% endblock %}
+{% block title %}{{ _('Club Directory') }}{% endblock %}
 
 {% block flash_messages %}{% endblock %}
 
@@ -16,8 +16,8 @@
     .clubs-header {
         display: flex;
         justify-content: space-between;
-        align-items: flex-end;
-        margin-bottom: 30px;
+        align-items: center;
+        margin-bottom: 25px;
         border-bottom: 2px solid #eef2f7;
         padding-bottom: 15px;
     }
@@ -30,148 +30,61 @@
         font-size: 2rem;
     }
 
-    .club-list-card {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-        border: 1px solid #eef2f7;
-        overflow: hidden;
+    .header-actions {
+        display: flex;
+        gap: 15px;
+        align-items: center;
     }
 
-    .table {
-        margin-bottom: 0;
-    }
-
-    .table thead th {
-        background-color: #fcfdfe;
-        color: #004165;
-        font-family: 'Montserrat', sans-serif;
-        font-weight: 700;
-        text-transform: uppercase;
-        font-size: 0.8em;
-        letter-spacing: 0.08em;
-        border-top: none;
-        border-bottom: 2px solid #eef2f7;
-        padding: 18px 20px;
-    }
-
-    .table tbody td {
-        padding: 20px;
-        vertical-align: middle;
-        border-bottom: 1px solid #f8f9fa;
-        color: #444;
-    }
-
-    .club-no {
-        background-color: #f1f4f8;
-        color: #004165;
-        padding: 6px 10px;
-        border-radius: 6px;
-        font-weight: 700;
-        font-family: 'Montserrat', sans-serif;
-        font-size: 0.85em;
+    /* Search styling */
+    .search-form {
         display: inline-block;
     }
 
-    .club-name {
-        color: #004165;
-        font-weight: 700;
-        font-size: 1.05em;
+    .search-container {
+        position: relative;
+        width: 300px;
+    }
+
+    .search-input {
+        padding-left: 35px;
+        padding-right: 30px;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        height: 42px;
+        transition: all 0.2s;
+    }
+
+    .search-input:focus {
+        box-shadow: 0 0 0 3px rgba(0, 65, 101, 0.1);
+        border-color: #004165;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #adb5bd;
+        pointer-events: none;
+    }
+
+    .clear-search {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #adb5bd;
         text-decoration: none;
-        transition: color 0.2s;
-        display: block;
-        margin-bottom: 4px;
-    }
-
-    .club-name:hover {
-        color: #772432;
-    }
-
-    .club-meta {
-        font-size: 0.85em;
-        color: #888;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .org-info {
-        font-weight: 600;
-        color: #555;
-    }
-
-    .schedule-info {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-    }
-
-    .schedule-item {
-        font-size: 0.9em;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .schedule-item i {
-        width: 14px;
-        color: #999;
-    }
-
-    .action-btns {
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-    }
-
-    .action-btn {
-        width: 32px;
-        height: 32px;
-        padding: 0;
+        width: 20px;
+        height: 20px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 6px;
-        transition: all 0.2s;
-        border: 1px solid #dee2e6;
-        background: #f8f9fa;
-        color: #495057;
-        cursor: pointer;
-        text-decoration: none;
     }
 
-    .action-btn i {
-        font-size: 0.9em;
-    }
-
-    .action-btn:hover {
-        background: #e9ecef;
-        color: #004165;
-        border-color: #adb5bd;
-    }
-
-    .action-btn.delete:hover {
-        background: #fff5f5;
-        color: #dc3545;
-        border-color: #feb2b2;
-    }
-
-    .empty-state {
-        padding: 80px 40px;
-        text-align: center;
-        background: #fafbfc;
-    }
-
-    .empty-state i {
-        font-size: 4rem;
-        color: #e2e8f0;
-        margin-bottom: 20px;
-    }
-
-    .empty-state p {
-        color: #64748b;
-        font-size: 1.1rem;
-        margin-bottom: 25px;
+    .clear-search:hover {
+        color: #666;
     }
 
     .btn-create {
@@ -196,158 +109,676 @@
         box-shadow: 0 6px 15px rgba(119, 36, 50, 0.3);
     }
 
-    /* Mobile Responsive Card View - Compact */
-    @media (max-width: 768px) {
-        .clubs-container {
-            padding: 10px;
-        }
+    /* View Toggle Container */
+    .view-toggle-container {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-bottom: 25px;
+    }
 
+    .view-toggles {
+        display: flex;
+        background: #f1f3f5;
+        padding: 4px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .view-toggle-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.85em;
+        border: none;
+        background: transparent;
+        color: #4a5568;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .view-toggle-btn:hover {
+        color: #2d3748;
+    }
+
+    .view-toggle-btn.active {
+        background: white;
+        color: #772432;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Grid View */
+    .clubs-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 25px;
+        margin-bottom: 30px;
+    }
+
+    .club-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #eef2f7;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    .club-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+    }
+
+    .home-club-highlight {
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        background: linear-gradient(145deg, #ffffff, #fffefe);
+    }
+
+    .club-card-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 18px;
+        position: relative;
+        border-bottom: 1px solid #eef2f7;
+        padding-bottom: 15px;
+    }
+
+    .club-logo-wrapper {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 2px solid #eef2f7;
+        background: #f7fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .club-card-logo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .club-title-wrapper {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .club-card-name {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #004165;
+        margin: 0 0 6px 0;
+        line-height: 1.3;
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+        word-break: break-word;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .club-card-name a {
+        color: #004165;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+    .club-card-name a:hover {
+        color: #772432;
+    }
+
+    .club-card-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.8em;
+    }
+
+    .club-card-abbr {
+        background: #ebf8ff;
+        color: #2b6cb0;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 700;
+    }
+
+    .club-card-no {
+        color: #718096;
+        font-weight: 600;
+    }
+
+    .btn-favorite {
+        background: none;
+        border: none;
+        padding: 6px;
+        cursor: pointer;
+        color: #cbd5e0;
+        font-size: 1.3rem;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-favorite:hover {
+        transform: scale(1.2);
+    }
+
+    .btn-follow-badge {
+        background-color: transparent;
+        color: #004165;
+        border: 1px solid #004165;
+        padding: 5px 12px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        height: 30px;
+    }
+
+    .btn-follow-badge:hover {
+        background-color: rgba(0, 65, 101, 0.05);
+        color: #002d47;
+        border-color: #002d47;
+    }
+
+    .btn-follow-badge.followed {
+        background-color: transparent;
+        color: #718096;
+        border: 1px solid #cbd5e0;
+    }
+
+    .btn-follow-badge.followed:hover {
+        background-color: #fee2e2;
+        color: #ef4444;
+        border-color: #fca5a5;
+    }
+
+    .btn-favorite .star-icon.fas {
+        color: #ecc94b;
+        text-shadow: 0 0 2px rgba(236, 201, 75, 0.4);
+    }
+
+    .btn-favorite .star-icon.far:hover {
+        color: #ecc94b;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+    }
+
+    .home-badge {
+        background-color: #fef3c7;
+        color: #d97706;
+    }
+
+    .member-badge {
+        background-color: #d1fae5;
+        color: #059669;
+    }
+
+    .club-card-body {
+        margin-bottom: 20px;
+        flex: 1;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 12px;
+        color: #4a5568;
+        font-size: 0.9rem;
+    }
+
+    .info-icon {
+        color: #a0aec0;
+        margin-top: 3px;
+        width: 16px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    .info-text {
+        line-height: 1.4;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Next Meeting Box */
+    .next-meeting-box {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 14px;
+        border: 1px solid #edf2f7;
+        margin-top: 15px;
+    }
+
+    .next-meeting-box.has-meeting {
+        border-left: 4px solid #004165;
+        background: #f0f7fc;
+    }
+
+    .next-meeting-header {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #718096;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .next-meeting-header i {
+        color: #4a5568;
+    }
+
+    .next-meeting-content {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .meeting-date-time {
+        font-weight: 700;
+        color: #2d3748;
+        font-size: 0.85rem;
+    }
+
+    .meeting-title {
+        color: #4a5568;
+        font-size: 0.85rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-style: italic;
+    }
+
+    .meeting-type-badge {
+        display: inline-block;
+        background: #e2e8f0;
+        color: #4a5568;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 4px;
+        align-self: flex-start;
+        margin-top: 2px;
+    }
+
+    .next-meeting-empty {
+        font-size: 0.85rem;
+        color: #a0aec0;
+        font-style: italic;
+    }
+
+    .club-card-footer {
+        border-top: 1px solid #eef2f7;
+        padding-top: 15px;
+        margin-top: auto;
+    }
+
+    .card-action-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .admin-actions {
+        display: flex;
+        gap: 6px;
+    }
+
+    .btn-card-admin {
+        width: 34px;
+        height: 34px;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: #4a5568;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .btn-card-admin:hover {
+        background: #edf2f7;
+        color: #004165;
+        border-color: #cbd5e0;
+    }
+
+    .btn-card-admin.delete-btn:hover {
+        background: #fff5f5;
+        color: #e53e3e;
+        border-color: #fed7d7;
+    }
+
+    .membership-actions-wrapper {
+        flex: 1;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .badge-pending-join {
+        background-color: #feebc8;
+        color: #c05621;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .badge-pending-quit {
+        background-color: #fed7d7;
+        color: #c53030;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-join {
+        background-color: #772432 !important;
+        border-color: #772432 !important;
+        color: white !important;
+        font-weight: 600;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        min-width: 110px;
+        justify-content: center;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid #772432;
+    }
+
+    .btn-join:hover {
+        background-color: #5d1c27 !important;
+        border-color: #5d1c27 !important;
+    }
+
+    .btn-enter {
+        background-color: #ebf8ff !important;
+        border: 1px solid #90cdf4 !important;
+        color: #2b6cb0 !important;
+        font-weight: 600;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        min-width: 110px;
+        justify-content: center;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-left: auto;
+    }
+
+    .btn-enter:hover {
+        background-color: #bee3f8 !important;
+        border-color: #63b3ed !important;
+    }
+
+    .btn-enter:disabled {
+        background-color: #edf2f7 !important;
+        border-color: #e2e8f0 !important;
+        color: #a0aec0 !important;
+        cursor: not-allowed;
+    }
+
+    .btn-cancel-request {
+        background-color: white !important;
+        border: 1px solid #cbd5e0 !important;
+        color: #4a5568 !important;
+        font-weight: 600;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        min-width: 110px;
+        justify-content: center;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-cancel-request:hover {
+        background-color: #f7fafc !important;
+        border-color: #a0aec0 !important;
+        color: #2d3748 !important;
+    }
+
+    .btn-quit {
+        background-color: white !important;
+        border-color: #e53e3e !important;
+        color: #e53e3e !important;
+        font-weight: 600;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid #e53e3e;
+    }
+
+    .btn-quit:hover {
+        background-color: #fff5f5 !important;
+        color: #c53030 !important;
+    }
+
+    /* Table View styles mapping */
+    .club-list-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 1px solid #eef2f7;
+        overflow: hidden;
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table thead th {
+        background-color: #fcfdfe;
+        color: #004165;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.75em;
+        letter-spacing: 0.1em;
+        border-top: none;
+        border-bottom: 2px solid #eef2f7;
+        border-left: none;
+        border-right: none;
+        padding: 14px 20px;
+    }
+
+    .table tbody td {
+        padding: 16px 20px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f5f9;
+        border-left: none;
+        border-right: none;
+        color: #444;
+    }
+
+    .table tbody tr {
+        transition: background-color 0.15s;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f8fafc;
+    }
+
+    .club-table-logo-cell {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .club-table-logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 1px solid #eef2f7;
+    }
+
+    .club-table-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .club-table-name {
+        font-weight: 700;
+        color: #004165;
+        text-decoration: none;
+    }
+
+    .club-table-name:hover {
+        color: #772432;
+    }
+
+    .club-table-address {
+        font-size: 0.85em;
+        color: #718096;
+        margin-top: 4px;
+    }
+
+    .table-meeting-date {
+        font-weight: 700;
+        color: #2d3748;
+    }
+
+    .table-meeting-title {
+        font-size: 0.85em;
+        color: #718096;
+        font-style: italic;
+    }
+
+    .table-meeting-type {
+        display: inline-block;
+        background: #e2e8f0;
+        color: #4a5568;
+        font-size: 0.7em;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin-top: 4px;
+    }
+
+    .table-actions-cell {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .table-actions-cell .membership-actions-wrapper {
+        flex: none;
+        display: inline-flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 0;
+    }
+
+    .table-actions-cell .btn-favorite {
+        margin: 0 4px;
+        color: #cbd5e0;
+        transition: transform 0.2s;
+    }
+
+    .table-actions-cell .btn-favorite:hover {
+        transform: scale(1.2);
+    }
+
+    .empty-state {
+        padding: 80px 40px;
+        text-align: center;
+        background: #fafbfc;
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        color: #e2e8f0;
+        margin-bottom: 20px;
+    }
+
+    .empty-state p {
+        color: #64748b;
+        font-size: 1.1rem;
+        margin-bottom: 25px;
+    }
+
+    @media (max-width: 768px) {
         .clubs-header {
             flex-direction: column;
-            align-items: center;
-            text-align: center;
-            gap: 12px;
-            margin-bottom: 15px;
+            align-items: stretch;
+            gap: 15px;
         }
-
-        .clubs-header h1 {
-            font-size: 1.5rem; /* Reduced */
+        .header-actions {
+            flex-direction: column;
+            width: 100%;
         }
-
+        .search-form, .search-container {
+            width: 100%;
+        }
         .btn-create {
             width: 100%;
             justify-content: center;
-            padding: 10px; /* Reduced */
-            font-size: 0.9em;
         }
-
-        /* COMPLETELY remove wrapper styles */
-        .club-list-card,
-        .table-responsive,
-        .table {
-            background: transparent !important;
-            box-shadow: none !important;
-            border: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-        }
-
-        .table-responsive {
-            overflow: visible !important;
-        }
-
-        .table thead {
-            display: none;
-        }
-
-        .table tbody {
-            display: block;
-            border: none !important;
-        }
-
-        /* The Card */
-        .table tr {
-            display: grid;
-            grid-template-columns: 1fr;
-            grid-template-rows: auto auto auto auto auto;
-            background: white;
-            border-radius: 8px; /* Slightly tighter radius */
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06); /* Lighter shadow */
-            margin-bottom: 16px; /* Reduced margin */
-            border: 1px solid #eef2f7;
-            overflow: visible !important; /* Fix clipping */
-            position: relative;
-        }
-
-        .table td {
-            padding: 8px 12px; /* Reduced padding */
-            border: none;
-            display: block;
-        }
-
-        /* 1. Club No - Row 1 */
-        .table td:nth-child(1) {
-            grid-column: 1 / -1;
-            grid-row: 1 / 2;
-            padding-bottom: 2px;
-        }
-        
-        .club-no {
-            font-size: 0.75rem; /* Smaller */
-            padding: 3px 6px;
-        }
-
-        /* 2. Club Name - Row 2 */
-        .table td:nth-child(2) {
-            grid-column: 1 / -1;
-            grid-row: 2 / 3;
-            padding-top: 2px;
-            padding-bottom: 10px;
-        }
-
-        .club-name {
-            font-size: 1.1rem; /* Smaller */
-            font-weight: 700;
-        }
-        
-        .club-meta {
-            margin-top: 4px;
-            font-size: 0.8em;
-        }
-
-        /* 3. Org Info - Row 3 */
-        .table td:nth-child(3) {
-            grid-column: 1 / -1;
-            grid-row: 3 / 4;
-            border-top: 1px solid #f0f2f5 !important;
-            color: #666;
-            padding-top: 8px;
-            padding-bottom: 4px;
-            font-size: 0.85em; /* Smaller */
-        }
-
-        /* 4. Schedule - Row 4 */
-        .table td:nth-child(4) {
-             grid-column: 1 / -1;
-             grid-row: 4 / 5;
-             padding-top: 4px;
-             padding-bottom: 12px;
-             font-size: 0.85em;
-        }
-
-        .schedule-item i {
-            width: 12px;
-        }
-
-        /* 5. Actions - Footer Row */
-        .table td:nth-child(5) {
-            grid-column: 1 / -1;
-            grid-row: 5 / 6;
-            background-color: #f8f9fa;
-            border-top: 1px solid #eef2f7 !important;
-            padding: 10px 12px; /* Reduced padding */
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            
-            border-bottom-left-radius: 8px;
-            border-bottom-right-radius: 8px;
-        }
-
-        .action-btn {
-            width: 36px; /* Reduced from 44px */
-            height: 36px;
-            font-size: 1rem;
-            background: white;
-            border: 1px solid #dee2e6;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            border-radius: 6px;
-            margin: 0; /* Validate no margins causing overflow */
-        }
-
-        .empty-state {
-            grid-column: 1 / -1;
-            display: block !important;
+        .view-toggle-container {
+            justify-content: center;
         }
     }
 </style>
@@ -356,7 +787,7 @@
 {% block content %}
 <div class="clubs-container">
     <div class="clubs-header">
-        <h1>{{ _('Club Management') }}</h1>
+        <h1>{{ _('Club Directory') }}</h1>
         <div class="header-actions">
             <!-- Search Form -->
             <form method="GET" action="{{ url_for('clubs_bp.list_clubs') }}" id="searchForm" class="search-form">
@@ -374,7 +805,7 @@
                     {% endif %}
                 </div>
             </form>
-            {% if is_authorized(Permissions.SETTINGS_EDIT) %}
+            {% if current_user.is_sysadmin %}
             <a href="{{ url_for('clubs_bp.create_club') }}" class="btn btn-primary btn-create">
                 <i class="fas fa-plus"></i>
                 {{ _('Create New Club') }}
@@ -382,112 +813,19 @@
             {% endif %}
         </div>
     </div>
+
+    <!-- Toggle between Grid and Table views -->
+    <div class="view-toggle-container">
+        <div class="view-toggles">
+            <button id="btn-grid-view" class="view-toggle-btn active">
+                <i class="fas fa-th-large"></i> {{ _('Grid') }}
+            </button>
+            <button id="btn-table-view" class="view-toggle-btn">
+                <i class="fas fa-list"></i> {{ _('Table') }}
+            </button>
+        </div>
+    </div>
     
-    <style>
-        /* Header Actions Layout */
-        .header-actions {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-
-        /* Search styling */
-        .search-form {
-            display: inline-block;
-        }
-
-        .search-container {
-            position: relative;
-            width: 300px;
-        }
-
-        .search-input {
-            padding-left: 35px;
-            padding-right: 30px;
-            border-radius: 8px;
-            border: 1px solid #dee2e6;
-            height: 42px; /* Match button height approx */
-            transition: all 0.2s;
-        }
-
-        .search-input:focus {
-            box-shadow: 0 0 0 3px rgba(0, 65, 101, 0.1);
-            border-color: #004165;
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #adb5bd;
-            pointer-events: none;
-        }
-
-        .clear-search {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #adb5bd;
-            text-decoration: none;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .clear-search:hover {
-            color: #666;
-        }
-
-        /* Desktop Fix: clean top border for first row */
-        @media (min-width: 769px) {
-            .table-responsive .table tbody tr:first-child td {
-                border-top: none;
-            }
-        }
-        
-        /* Mobile Search Adjustment */
-        @media (max-width: 768px) {
-            .header-actions {
-                flex-direction: column;
-                width: 100%;
-                gap: 10px;
-            }
-            
-            .search-form, .search-container {
-                width: 100%;
-            }
-
-            /* Adjust header items alignment from previous steps if needed */
-            .clubs-header {
-                align-items: stretch; /* Allow full width children */
-            }
-        }
-    </style>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.querySelector('.search-input');
-            let timeout = null;
-
-            // Auto-submit on typing with debounce
-            searchInput.addEventListener('input', function() {
-                clearTimeout(timeout);
-                timeout = setTimeout(function() {
-                    document.getElementById('searchForm').submit();
-                }, 500); // 500ms delay
-            });
-            
-            // Focus input if searching (optional UX improvement)
-            {% if search_query %}
-            searchInput.focus();
-            {% endif %}
-        });
-    </script>
-
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
@@ -500,113 +838,231 @@
         {% endif %}
     {% endwith %}
 
-    <div class="club-list-card">
+    <!-- GRID VIEW -->
+    <div id="clubs-grid-view" class="clubs-grid" style="display: none;">
+        {% for club in clubs %}
+            {% set is_home = (club.id == home_club_id) %}
+            {% set user_club = user_memberships.get(club.id) %}
+            {% set is_member = user_club is not none %}
+            {% set is_favorite = club.id in user_favorites %}
+            {% set next_meeting = next_meeting_by_club.get(club.id) %}
+            
+            <div class="club-card {% if is_home %}home-club-highlight{% endif %}" data-club-id="{{ club.id }}">
+                <div class="club-card-header">
+                    <div class="club-logo-wrapper">
+                        <img src="{{ url_for('static', filename=club.effective_logo_url) }}" alt="Club Logo" class="club-card-logo">
+                    </div>
+                    <div class="club-title-wrapper">
+                        <h3 class="club-card-name" style="margin: 0;">
+                            {% if current_user.is_sysadmin %}
+                            <a href="{{ url_for('clubs_bp.edit_club', club_id=club.id) }}">{{ club.club_name }}</a>
+                            {% else %}
+                            {{ club.club_name }}
+                            {% endif %}
+                        </h3>
+                    </div>
+                </div>
+                
+                <div class="club-card-body">
+                    <div class="club-card-badges-row" style="display: flex; gap: 8px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;">
+                        {% if is_home %}
+                        <div class="status-badge home-badge" style="margin-bottom: 0;">
+                            <i class="fas fa-home"></i> {{ _('Home Club') }}
+                        </div>
+                        {% elif is_member %}
+                        <div class="status-badge member-badge" style="margin-bottom: 0;">
+                            <i class="fas fa-check-circle"></i> {{ _('Member') }}
+                        </div>
+                        {% endif %}
+                        
+                        <button class="btn-follow-badge {% if is_favorite %}followed{% endif %}" onclick="toggleFavorite(this, {{ club.id }})" style="margin-bottom: 0;">
+                            {% if is_favorite %}
+                                <i class="fas fa-minus"></i> {{ _('Unfollow') }}
+                            {% else %}
+                                <i class="fas fa-plus"></i> {{ _('Follow') }}
+                            {% endif %}
+                        </button>
+                    </div>
+                    
+                    <!-- Next Meeting Box -->
+                    <div class="next-meeting-box {% if next_meeting %}has-meeting{% endif %}">
+                        <div class="next-meeting-header">
+                            <i class="far fa-calendar-alt"></i> <span>{{ _('Next Meeting') }}</span>
+                        </div>
+                        {% if next_meeting %}
+                        <div class="next-meeting-content">
+                            <div class="meeting-date-time">
+                                <span class="meeting-date">{{ next_meeting.Meeting_Date.strftime('%Y-%m-%d') }} ({{ next_meeting.Meeting_Date.strftime('%a').lower() }})</span>
+                                {% if next_meeting.Start_Time %}
+                                <span class="meeting-time">@ {{ next_meeting.Start_Time.strftime('%H:%M') }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="meeting-title" title="{{ next_meeting.Meeting_Title }}">{{ next_meeting.Meeting_Title or _('Untitled Meeting') }}</div>
+                        </div>
+                        {% else %}
+                        <div class="next-meeting-empty">
+                            {{ _('No upcoming meetings') }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="club-card-footer">
+                    <div class="card-action-container">
+                        {% if current_user.is_sysadmin %}
+                            <div class="admin-actions">
+                                <a href="{{ url_for('users_bp.user_form', club_id=club.id, role='ClubAdmin') }}" class="btn-card-admin" title="{{ _('Create ClubAdmin') }}">
+                                    <i class="fas fa-user-shield"></i>
+                                </a>
+                                <a href="{{ url_for('clubs_bp.edit_club', club_id=club.id) }}" class="btn-card-admin" title="{{ _('Edit Club') }}">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </a>
+                                <button type="button" class="btn-card-admin delete-btn" data-bs-toggle="modal" data-bs-target="#deleteModal{{ club.id }}" title="{{ _('Delete Club') }}">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="membership-actions-wrapper">
+                            {% if not is_member %}
+                                {% if club.id in pending_club_ids %}
+                                    <button class="btn btn-cancel-request" onclick="cancelJoinRequest(this, {{ club.id }})">
+                                        <i class="fas fa-times-circle"></i> {{ _('Cancel Request') }}
+                                    </button>
+                                {% else %}
+                                    <button class="btn btn-join" onclick="requestJoinClub(this, {{ club.id }})">
+                                        <i class="fas fa-user-plus"></i> {{ _('Join') }}
+                                    </button>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                        
+                        {% if club.id == get_current_club_id() %}
+                        <button class="btn btn-enter" disabled>
+                            <i class="fas fa-check-circle"></i> {{ _('Entered') }}
+                        </button>
+                        {% else %}
+                        <button class="btn btn-enter" onclick="enterClub(this, {{ club.id }})">
+                            <i class="fas fa-sign-in-alt"></i> {{ _('Enter') }}
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="empty-state" style="grid-column: 1/-1;">
+                <i class="fas fa-layer-group"></i>
+                <p>{{ _("No clubs match your criteria.") }}</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- TABLE VIEW -->
+    <div id="clubs-table-view" class="club-list-card" style="display: none;">
         <div class="table-responsive">
             <table class="table align-middle">
                 <thead>
                     <tr>
-                        <th style="width: 140px;">{{ _('Club No') }}</th>
-                        <th>{{ _('Club Identity') }}</th>
-                        <th>{{ _('Organisation') }}</th>
-                        <th>{{ _('Schedule') }}</th>
-                        <th style="width: 120px; text-align: right;">{{ _('Actions') }}</th>
+                        <th>{{ _('Club Name') }}</th>
+                        <th>{{ _('Next Meeting') }}</th>
+                        <th style="width: 280px; text-align: right;">{{ _('Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for club in clubs %}
-                    <tr>
+                    {% set is_home = (club.id == home_club_id) %}
+                    {% set user_club = user_memberships.get(club.id) %}
+                    {% set is_member = user_club is not none %}
+                    {% set is_favorite = club.id in user_favorites %}
+                    {% set next_meeting = next_meeting_by_club.get(club.id) %}
+                    
+                    <tr data-club-id="{{ club.id }}">
                         <td>
-                            <span class="club-no">{{ club.club_no }}</span>
+                            <div class="club-table-logo-cell">
+                                <div class="club-table-logo">
+                                    <img src="{{ url_for('static', filename=club.effective_logo_url) }}" alt="Logo">
+                                </div>
+                                <div>
+                                    {% if is_home %}
+                                    <div style="margin-bottom: 3px;">
+                                        <span class="badge" style="font-size: 0.6em; background-color: #fef3c7; color: #d97706; font-weight: 700; padding: 2px 6px; border-radius: 3px; letter-spacing: 0.03em;">Home</span>
+                                    </div>
+                                    {% elif is_member %}
+                                    <div style="margin-bottom: 3px;">
+                                        <span class="badge" style="font-size: 0.6em; background-color: #d1fae5; color: #059669; font-weight: 700; padding: 2px 6px; border-radius: 3px; letter-spacing: 0.03em;">Member</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if current_user.is_sysadmin %}
+                                    <a href="{{ url_for('clubs_bp.edit_club', club_id=club.id) }}" class="club-table-name">
+                                        {{ club.club_name }}
+                                    </a>
+                                    {% else %}
+                                    <span class="club-table-name" style="color: #004165; cursor: default;">{{ club.club_name }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </td>
                         <td>
-                            {% if is_authorized(Permissions.SETTINGS_EDIT) %}
-                            <a href="{{ url_for('clubs_bp.edit_club', club_id=club.id) }}" class="club-name">
-                                {{ club.club_name }}
-                            </a>
+                            {% if next_meeting %}
+                            <div>
+                                <span style="font-weight: 600; color: #2d3748; font-size: 0.9rem;">{{ next_meeting.Meeting_Date.strftime('%Y-%m-%d') }} ({{ next_meeting.Meeting_Date.strftime('%a').lower() }})</span>
+                                {% if next_meeting.Start_Time %}
+                                <span class="text-muted small">@ {{ next_meeting.Start_Time.strftime('%H:%M') }}</span>
+                                {% endif %}
+                                <div style="font-size: 0.8em; color: #718096; margin-top: 2px;">{{ next_meeting.type }}</div>
+                            </div>
                             {% else %}
-                            <span class="club-name" style="cursor: default;">{{ club.club_name }}</span>
+                            <span class="text-muted small" style="font-style: italic;">{{ _('No upcoming meetings') }}</span>
                             {% endif %}
-                            <div class="club-meta">
-                                {% if club.short_name %}
-                                <span>{{ club.short_name }}</span>
-                                {% endif %}
-                                {% if club.website %}
-                                <a href="{{ club.website }}" target="_blank" class="text-muted" style="text-decoration: none;">
-                                    <i class="fas fa-link fa-xs"></i>
-                                    {{ club.website | replace('https://', '') | replace('http://', '') | truncate(30) }}
-                                </a>
-                                {% endif %}
-                            </div>
                         </td>
                         <td>
-                            <div class="org-info">
-                                {% if club.district %}D{{ club.district }}{% endif %}
-                                {% if club.division %}<span class="text-muted mx-1">/</span> Div {{ club.division }}{% endif %}
-                                {% if club.area %}<span class="text-muted mx-1">/</span> Area {{ club.area }}{% endif %}
-                                {% if not club.district and not club.division and not club.area %}
-                                <span class="text-muted italic small">{{ _('Not specified') }}</span>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="schedule-info">
-                                {% if club.meeting_date %}
-                                <div class="schedule-item">
-                                    <i class="far fa-calendar-alt"></i>
-                                    {{ club.meeting_date }}
+                            <div class="table-actions-cell">
+                                {% if current_user.is_sysadmin %}
+                                <div class="admin-actions">
+                                    <a href="{{ url_for('users_bp.user_form', club_id=club.id, role='ClubAdmin') }}" class="btn-card-admin" title="{{ _('Create ClubAdmin') }}">
+                                        <i class="fas fa-user-shield"></i>
+                                    </a>
+                                    <a href="{{ url_for('clubs_bp.edit_club', club_id=club.id) }}" class="btn-card-admin" title="{{ _('Edit Club') }}">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </a>
+                                    <button type="button" class="btn-card-admin delete-btn" data-bs-toggle="modal" data-bs-target="#deleteModal{{ club.id }}" title="{{ _('Delete Club') }}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
                                 </div>
                                 {% endif %}
-                                {% if club.meeting_time %}
-                                <div class="schedule-item">
-                                    <i class="far fa-clock"></i>
-                                    {{ club.meeting_time.strftime('%H:%M') }}
+                                
+                                <div class="membership-actions-wrapper">
+                                    {% if not is_member %}
+                                        {% if club.id in pending_club_ids %}
+                                            <button class="btn btn-cancel-request" onclick="cancelJoinRequest(this, {{ club.id }})" style="margin: 0; padding: 6px 12px; font-size: 0.85rem; border-radius: 6px; height: 34px;">
+                                                <i class="fas fa-times-circle"></i> {{ _('Cancel Request') }}
+                                            </button>
+                                        {% else %}
+                                            <button class="btn btn-join" onclick="requestJoinClub(this, {{ club.id }})" style="margin: 0; padding: 6px 12px; font-size: 0.85rem; border-radius: 6px; height: 34px;">
+                                                <i class="fas fa-user-plus"></i> {{ _('Join') }}
+                                            </button>
+                                        {% endif %}
+                                    {% endif %}
                                 </div>
-                                {% endif %}
-                                {% if not club.meeting_date and not club.meeting_time %}
-                                <span class="text-muted italic small">{{ _('TBD') }}</span>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="action-btns">
-                                {% if is_authorized(Permissions.SETTINGS_EDIT) %}
-                                <a href="{{ url_for('users_bp.user_form', club_id=club.id, role='ClubAdmin') }}" class="action-btn" title="{{ _('Create ClubAdmin') }}">
-                                    <i class="fas fa-user-shield"></i>
-                                </a>
-                                <a href="{{ url_for('clubs_bp.edit_club', club_id=club.id) }}" class="action-btn" title="{{ _('Edit Club') }}">
-                                    <i class="fas fa-pencil-alt"></i>
-                                </a>
-                                <button type="button" class="action-btn delete" data-bs-toggle="modal" data-bs-target="#deleteModal{{ club.id }}" title="{{ _('Delete Club') }}">
-                                    <i class="fas fa-trash-alt"></i>
+                                
+                                {% if club.id == get_current_club_id() %}
+                                <button class="btn btn-enter" disabled style="padding: 6px 12px; border-radius: 6px; height: 34px;">
+                                    <i class="fas fa-check-circle"></i> {{ _('Entered') }}
                                 </button>
                                 {% else %}
-                                    {% set user_club = current_user.get_user_club(club.id) %}
-                                    {% if user_club %}
-                                        {% if user_club.is_home %}
-                                        <span class="badge" style="background-color: #ebf8ff; color: #2b6cb0; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600;">Home Club</span>
-                                        {% else %}
-                                        <span class="badge" style="background-color: #c6f6d5; color: #22543d; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600;">Member</span>
-                                        {% endif %}
-                                    {% elif club.id in pending_club_ids %}
-                                        <span class="badge" style="background-color: #feebc8; color: #7b341e; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600;">Pending Approval</span>
-                                    {% else %}
-                                        <button onclick="requestJoinClub(this, {{ club.id }})" class="btn btn-secondary" style="height: 32px; padding: 0 12px; font-size: 0.85em; font-weight: 600; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
-                                            <i class="fas fa-sign-in-alt"></i> Request to Join
-                                        </button>
-                                    {% endif %}
+                                <button class="btn btn-enter" onclick="enterClub(this, {{ club.id }})" style="padding: 6px 12px; border-radius: 6px; height: 34px;">
+                                    <i class="fas fa-sign-in-alt"></i> {{ _('Enter') }}
+                                </button>
                                 {% endif %}
                             </div>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5">
+                        <td colspan="3">
                             <div class="empty-state">
                                 <i class="fas fa-layer-group"></i>
-                                <p>{{ _("You haven't added any clubs yet.") }}</p>
-                                <a href="{{ url_for('clubs_bp.create_club') }}" class="btn btn-primary">
-                                    {{ _('Add Your First Club') }}
-                                </a>
+                                <p>{{ _("No clubs match your criteria.") }}</p>
                             </div>
                         </td>
                     </tr>
@@ -617,7 +1073,7 @@
     </div>
 
     {% if pagination and pagination.pages > 1 %}
-    <div class="pagination-container">
+    <div class="pagination-container mt-4">
         <div class="pagination-info">
             {% if get_locale() == 'zh_CN' %}
             显示第 {{ (pagination.page - 1) * pagination.per_page + 1 }} - {{ [pagination.page * pagination.per_page, pagination.total]|min }} 家俱乐部，共 {{ pagination.total }} 家
@@ -628,7 +1084,7 @@
         
         <div class="pagination-controls">
             <!-- First Page -->
-            <a href="{{ url_for('clubs_bp.list_clubs', page=1, per_page=pagination.per_page) }}" 
+            <a href="{{ url_for('clubs_bp.list_clubs', page=1, per_page=pagination.per_page, q=search_query) }}" 
             class="pagination-btn" 
             title="{{ _('First Page') }}"
             {% if pagination.page == 1 %}style="pointer-events: none; opacity: 0.5;"{% endif %}>
@@ -636,7 +1092,7 @@
             </a>
 
             <!-- Prev Page -->
-            <a href="{{ url_for('clubs_bp.list_clubs', page=pagination.prev_num, per_page=pagination.per_page) if pagination.has_prev else '#' }}" 
+            <a href="{{ url_for('clubs_bp.list_clubs', page=pagination.prev_num, per_page=pagination.per_page, q=search_query) if pagination.has_prev else '#' }}" 
             class="pagination-btn" 
             title="{{ _('Previous Page') }}"
             {% if not pagination.has_prev %}style="pointer-events: none; opacity: 0.5;"{% endif %}>
@@ -648,7 +1104,7 @@
             </span>
             
             <!-- Next Page -->
-            <a href="{{ url_for('clubs_bp.list_clubs', page=pagination.next_num, per_page=pagination.per_page) if pagination.has_next else '#' }}" 
+            <a href="{{ url_for('clubs_bp.list_clubs', page=pagination.next_num, per_page=pagination.per_page, q=search_query) if pagination.has_next else '#' }}" 
             class="pagination-btn" 
             title="{{ _('Next Page') }}"
             {% if not pagination.has_next %}style="pointer-events: none; opacity: 0.5;"{% endif %}>
@@ -656,7 +1112,7 @@
             </a>
 
             <!-- Last Page -->
-            <a href="{{ url_for('clubs_bp.list_clubs', page=pagination.pages, per_page=pagination.per_page) }}" 
+            <a href="{{ url_for('clubs_bp.list_clubs', page=pagination.pages, per_page=pagination.per_page, q=search_query) }}" 
             class="pagination-btn" 
             title="{{ _('Last Page') }}"
             {% if pagination.page == pagination.pages %}style="pointer-events: none; opacity: 0.5;"{% endif %}>
@@ -668,7 +1124,7 @@
             <label for="pageSizeSelect">{{ _('Show:') }}</label>
             <select id="pageSizeSelect" class="page-size-select" onchange="window.location.href=this.value">
             {% for size in [12, 25, 50, 100] %}
-            <option value="{{ url_for('clubs_bp.list_clubs', page=1, per_page=size) }}" {% if pagination.per_page == size %}selected{% endif %}>{{ size }}</option>
+            <option value="{{ url_for('clubs_bp.list_clubs', page=1, per_page=size, q=search_query) }}" {% if pagination.per_page == size %}selected{% endif %}>{{ size }}</option>
             {% endfor %}
             </select>
             <span>{{ _('per page') }}</span>
@@ -706,8 +1162,52 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Toggle view logic
+        const btnGrid = document.getElementById('btn-grid-view');
+        const btnTable = document.getElementById('btn-table-view');
+        const gridView = document.getElementById('clubs-grid-view');
+        const tableView = document.getElementById('clubs-table-view');
+
+        function setView(view) {
+            if (view === 'grid') {
+                btnGrid.classList.add('active');
+                btnTable.classList.remove('active');
+                gridView.style.display = 'grid';
+                tableView.style.display = 'none';
+                localStorage.setItem('club_directory_view', 'grid');
+            } else {
+                btnGrid.classList.remove('active');
+                btnTable.classList.add('active');
+                gridView.style.display = 'none';
+                tableView.style.display = 'block';
+                localStorage.setItem('club_directory_view', 'table');
+            }
+        }
+
+        btnGrid.addEventListener('click', () => setView('grid'));
+        btnTable.addEventListener('click', () => setView('table'));
+
+        // Load saved view preference or default to grid
+        const savedView = localStorage.getItem('club_directory_view') || 'grid';
+        setView(savedView);
+
+        // Auto-submit search on typing with debounce
+        const searchInput = document.querySelector('.search-input');
+        let timeout = null;
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                clearTimeout(timeout);
+                timeout = setTimeout(function() {
+                    document.getElementById('searchForm').submit();
+                }, 500);
+            });
+            {% if search_query %}
+            searchInput.focus();
+            {% endif %}
+        }
+
         // Handle opening modals
-        const deleteButtons = document.querySelectorAll('.action-btn.delete');
+        const deleteButtons = document.querySelectorAll('[data-bs-target^="#deleteModal"]');
         deleteButtons.forEach(btn => {
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -741,10 +1241,56 @@
         });
     });
 
+    // Toggle Favorite Action (AJAX)
+    function toggleFavorite(btn, clubId) {
+        btn.disabled = true;
+        
+        fetch(`/clubs/${clubId}/favorite`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Network error');
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Update table row star icon if exists
+                document.querySelectorAll(`[data-club-id="${clubId}"] .btn-favorite`).forEach(favoriteBtn => {
+                    const iconClass = data.is_favorite ? 'fas fa-star star-icon' : 'far fa-star star-icon';
+                    const titleText = data.is_favorite ? "{{ _('Unfollow') }}" : "{{ _('Follow') }}";
+                    favoriteBtn.innerHTML = `<i class="${iconClass}"></i>`;
+                    favoriteBtn.title = titleText;
+                });
+                
+                // Update card badge button if exists
+                document.querySelectorAll(`[data-club-id="${clubId}"] .btn-follow-badge`).forEach(badgeBtn => {
+                    if (data.is_favorite) {
+                        badgeBtn.classList.add('followed');
+                        badgeBtn.innerHTML = `<i class="fas fa-minus"></i> {{ _('Unfollow') }}`;
+                    } else {
+                        badgeBtn.classList.remove('followed');
+                        badgeBtn.innerHTML = `<i class="fas fa-plus"></i> {{ _('Follow') }}`;
+                    }
+                });
+            } else {
+                alert(data.error || 'Failed to toggle follow status.');
+            }
+            btn.disabled = false;
+        })
+        .catch(err => {
+            alert('An error occurred while toggling follow status.');
+            btn.disabled = false;
+        });
+    }
+
+    // Request to Join Action (AJAX)
     function requestJoinClub(btn, clubId) {
         btn.disabled = true;
         const originalHtml = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ _("Sending...") }}';
         
         fetch(`/clubs/${clubId}/request_join`, {
             method: 'POST',
@@ -752,20 +1298,151 @@
                 'Content-Type': 'application/json'
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) throw new Error('Network error');
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
-                const td = btn.parentElement;
-                td.innerHTML = '<span class="badge" style="background-color: #feebc8; color: #7b341e; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600;">Pending Approval</span>';
+                // Update all instances of actions wrapper for this club
+                document.querySelectorAll(`[data-club-id="${clubId}"] .membership-actions-wrapper`).forEach(wrapper => {
+                    if (wrapper.closest('tr')) {
+                        // Table row style
+                        wrapper.innerHTML = '<button class="btn btn-cancel-request" onclick="cancelJoinRequest(this, ' + clubId + ')" style="margin: 0; padding: 6px 12px; font-size: 0.85rem; border-radius: 6px; height: 34px;"><i class="fas fa-times-circle"></i> {{ _("Cancel Request") }}</button>';
+                    } else {
+                        // Card style
+                        wrapper.innerHTML = '<button class="btn btn-cancel-request" onclick="cancelJoinRequest(this, ' + clubId + ')"><i class="fas fa-times-circle"></i> {{ _("Cancel Request") }}</button>';
+                    }
+                });
                 alert(data.message);
             } else {
-                alert(data.error || 'Failed to send request.');
+                alert(data.error || 'Failed to request join.');
                 btn.disabled = false;
                 btn.innerHTML = originalHtml;
             }
         })
         .catch(err => {
-            alert('An error occurred.');
+            alert('An error occurred while requesting to join.');
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        });
+    }
+
+    // Cancel Join Request Action (AJAX)
+    function cancelJoinRequest(btn, clubId) {
+        if (!confirm('{{ _("Are you sure you want to cancel your join request?") }}')) {
+            return;
+        }
+        btn.disabled = true;
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ _("Cancelling...") }}';
+        
+        fetch(`/clubs/${clubId}/cancel_join`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Network error');
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Replace cancel button with Join button
+                document.querySelectorAll(`[data-club-id="${clubId}"] .membership-actions-wrapper`).forEach(wrapper => {
+                    if (wrapper.closest('tr')) {
+                        wrapper.innerHTML = '<button class="btn btn-join" onclick="requestJoinClub(this, ' + clubId + ')" style="margin: 0; padding: 6px 12px; font-size: 0.85rem; border-radius: 6px; height: 34px;"><i class="fas fa-user-plus"></i> {{ _("Join") }}</button>';
+                    } else {
+                        wrapper.innerHTML = '<button class="btn btn-join" onclick="requestJoinClub(this, ' + clubId + ')"><i class="fas fa-user-plus"></i> {{ _("Join") }}</button>';
+                    }
+                });
+                alert(data.message);
+            } else {
+                alert(data.error || 'Failed to cancel request.');
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        })
+        .catch(err => {
+            alert('An error occurred while cancelling the request.');
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        });
+    }
+
+    // Request to Quit Action (AJAX)
+    function requestQuitClub(btn, clubId) {
+        if (!confirm('{{ _("Are you sure you want to request to leave this club?") }}')) {
+            return;
+        }
+        btn.disabled = true;
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ _("Sending...") }}';
+        
+        fetch(`/clubs/${clubId}/request_quit`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Network error');
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Update all instances of actions wrapper for this club
+                document.querySelectorAll(`[data-club-id="${clubId}"] .membership-actions-wrapper`).forEach(wrapper => {
+                    if (wrapper.closest('tr')) {
+                        // Table row style
+                        wrapper.innerHTML = '<span class="badge badge-pending-quit"><i class="fas fa-spinner fa-spin"></i> {{ _("Pending Quit") }}</span>';
+                    } else {
+                        // Card style
+                        wrapper.innerHTML = '<span class="badge badge-pending-quit"><i class="fas fa-spinner fa-spin"></i> {{ _("Pending Quit Approval") }}</span>';
+                    }
+                });
+                alert(data.message);
+            } else {
+                alert(data.error || 'Failed to request quit.');
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        })
+        .catch(err => {
+            alert('An error occurred while requesting to quit.');
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        });
+    }
+
+    // Enter Club Action (AJAX)
+    function enterClub(btn, clubId) {
+        btn.disabled = true;
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ _("Entering...") }}';
+        
+        fetch(`/clubs/${clubId}/enter`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Network error');
+            return response.json();
+        })
+        .then(data => {
+            if (data.success && data.redirect_url) {
+                window.location.href = data.redirect_url;
+            } else {
+                alert(data.error || 'Failed to enter club.');
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        })
+        .catch(err => {
+            alert('An error occurred while entering the club.');
             btn.disabled = false;
             btn.innerHTML = originalHtml;
         });

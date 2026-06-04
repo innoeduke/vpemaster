@@ -8,6 +8,13 @@ from sqlalchemy import event
 from .base import db
 
 
+user_favorite_clubs = db.Table(
+    'user_favorite_clubs',
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
+    db.Column('club_id', db.Integer, db.ForeignKey('clubs.id', ondelete='CASCADE'), primary_key=True)
+)
+
+
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -71,6 +78,12 @@ class User(UserMixin, db.Model):
     messages_received = db.relationship('Message',
                                         foreign_keys='Message.recipient_id',
                                         backref='recipient', lazy='dynamic')
+    favorite_clubs = db.relationship(
+        'Club',
+        secondary=user_favorite_clubs,
+        lazy='dynamic',
+        backref=db.backref('favorited_by_users', lazy='dynamic')
+    )
     # contact relationship removed, use UserClub.contact instead
     # Actually, lines 71-79 covers roles relationship. first_name lines are 32-45.
     roles = db.relationship(

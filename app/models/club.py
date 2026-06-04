@@ -20,6 +20,7 @@ class Club(db.Model):
     website = db.Column(db.String(255), nullable=True)
     logo_url = db.Column(db.String(255), nullable=True, default='images/club_logo.webp')
     founded_date = db.Column(db.Date, nullable=True)
+    status = db.Column(db.String(50), nullable=False, default='active')
     current_excomm_id = db.Column(db.Integer, db.ForeignKey('excomm.id', use_alter=True, name='fk_club_current_excomm'), nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
@@ -94,6 +95,7 @@ class Club(db.Model):
             'website': self.website,
             'logo_url': self.logo_url,
             'founded_date': self.founded_date.isoformat() if self.founded_date else None,
+            'status': self.status,
             'current_excomm_id': self.current_excomm_id,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None

@@ -170,11 +170,11 @@
         </li>
         {% endif %}
 
-        {% if current_user.is_authenticated and current_user.primary_role_name == 'SysAdmin' %}
+        {% if current_user.is_authenticated %}
         <li class="{% if request.endpoint and request.endpoint.startswith('clubs_bp') %}active{% endif %}">
-          <a href="{{ url_for('clubs_bp.list_clubs') }}" title="{{ _('Manage club and system settings') }}">
+          <a href="{{ url_for('clubs_bp.list_clubs') }}" title="{{ _('View club directory') }}">
             <i class="fas fa-network-wired nav-icon"></i>
-            <span>{{ _('Manage Clubs') }}</span>
+            <span>{{ _('Club Directory') }}</span>
           </a>
         </li>
         {% endif %}
@@ -344,10 +344,10 @@
                 </a>
               </li>
               {% endif %}
-              {% if current_user.is_authenticated and current_user.primary_role_name == 'SysAdmin' %}
+              {% if current_user.is_authenticated %}
               <li class="{% if request.endpoint and request.endpoint.startswith('clubs_bp') %}submenu-active{% endif %}">
                 <a href="{{ url_for('clubs_bp.list_clubs') }}">
-                  <i class="fas fa-network-wired"></i> {{ _('Manage Clubs') }}
+                  <i class="fas fa-network-wired"></i> {{ _('Club Directory') }}
                 </a>
               </li>
               {% endif %}

@@ -90,7 +90,7 @@ def test_list_clubs_sysadmin(client, sysadmin_user):
 
     response = client.get('/clubs')
     assert response.status_code == 200
-    assert b'Club Management' in response.data
+    assert b'Club Directory' in response.data
 
 def test_list_clubs_regular_user_access(client, regular_user):
     """Test that regular users can view the clubs list but not admin controls."""
@@ -100,7 +100,7 @@ def test_list_clubs_regular_user_access(client, regular_user):
 
     response = client.get('/clubs')
     assert response.status_code == 200
-    assert b'Club Management' in response.data
+    assert b'Club Directory' in response.data
     assert b'Create New Club' not in response.data
 
 def test_create_club(client, sysadmin_user, app):
