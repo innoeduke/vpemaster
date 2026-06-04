@@ -532,7 +532,18 @@ function sortTableByColumn(table, columnIndex, asc = true, sortType = null) {
 
   // Re-add the sorted rows
   tbody.append(...sortedRows);
+
+  // Notify paginator if one is attached to this table
+  if (window.activePaginators) {
+    Object.values(window.activePaginators).forEach(paginator => {
+      if (paginator.tableId === table.id) {
+        paginator.currentPage = 1;
+        paginator.update();
+      }
+    });
+  }
 }
+
 
 /**
  * REUSABLE HELPER: Attaches click listeners to a table's sortable headers.

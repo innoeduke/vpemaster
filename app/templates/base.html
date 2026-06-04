@@ -123,6 +123,15 @@
         {% endif %}
 
         <li class="nav-divider"></li>
+        {% if is_authorized(Permissions.MEMBERS_MANAGE) %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('users_bp') %}active{% endif %}">
+          <a href="{{ url_for('users_bp.show_users') }}" title="{{ _('Manage club members and users') }}">
+            <i class="fas fa-users-cog nav-icon"></i>
+            <span>{{ _('Members') }}</span>
+          </a>
+        </li>
+        {% endif %}
+
         {% if is_authorized(Permissions.ROSTER_VIEW) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
           <a href="{{ url_for('contacts_bp.show_contacts') }}" title="{{ _('Manage club contacts and members') }}">
@@ -153,7 +162,7 @@
 
         {% if is_authorized(Permissions.SETTINGS_VIEW) and current_user.primary_role_name != 'Guest' %}
         <li class="{% if request.endpoint and request.endpoint.startswith('settings_bp') %}active{% endif %}">
-          <a href="{{ url_for('settings_bp.settings', default_tab='user-settings') }}"
+          <a href="{{ url_for('settings_bp.settings') }}"
             title="{{ _('Configure system and club settings') }}">
             <i class="fas fa-cog nav-icon"></i>
             <span>{{ _('Settings') }}</span>
@@ -292,13 +301,20 @@
           {% endif %}
 
           <!-- 3. Management Dropdown -->
-          {% set management_active = request.endpoint and (request.endpoint.startswith('contacts_bp') or request.endpoint.startswith('tools_bp') or request.endpoint.startswith('lucky_draw_bp') or request.endpoint.startswith('pathways_bp') or request.endpoint.startswith('uploads_bp') or request.endpoint.startswith('settings_bp') or request.endpoint.startswith('clubs_bp')) %}
+          {% set management_active = request.endpoint and (request.endpoint.startswith('contacts_bp') or request.endpoint.startswith('tools_bp') or request.endpoint.startswith('lucky_draw_bp') or request.endpoint.startswith('pathways_bp') or request.endpoint.startswith('uploads_bp') or request.endpoint.startswith('settings_bp') or request.endpoint.startswith('clubs_bp') or request.endpoint.startswith('users_bp')) %}
           <li class="nav-dropdown-wrapper {% if management_active %}active{% endif %}">
             <a href="#" class="nav-dropdown-trigger">
               <span>{{ _('Management') }}</span>
               <i class="fas fa-caret-down dropdown-arrow"></i>
             </a>
             <ul class="nav-submenu">
+              {% if is_authorized(Permissions.MEMBERS_MANAGE) %}
+              <li class="{% if request.endpoint and request.endpoint.startswith('users_bp') %}submenu-active{% endif %}">
+                <a href="{{ url_for('users_bp.show_users') }}">
+                  <i class="fas fa-users-cog"></i> {{ _('Members') }}
+                </a>
+              </li>
+              {% endif %}
               {% if is_authorized(Permissions.ROSTER_VIEW) %}
               <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}submenu-active{% endif %}">
                 <a href="{{ url_for('contacts_bp.show_contacts') }}">
@@ -320,9 +336,10 @@
                 </a>
               </li>
               {% endif %}
+
               {% if is_authorized(Permissions.SETTINGS_VIEW) and current_user.primary_role_name != 'Guest' %}
               <li class="{% if request.endpoint and request.endpoint.startswith('settings_bp') %}submenu-active{% endif %}">
-                <a href="{{ url_for('settings_bp.settings', default_tab='user-settings') }}">
+                <a href="{{ url_for('settings_bp.settings') }}">
                   <i class="fas fa-cog"></i> {{ _('Settings') }}
                 </a>
               </li>

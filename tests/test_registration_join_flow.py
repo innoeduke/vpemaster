@@ -64,6 +64,16 @@ def test_registration_and_join_flow(client, app, default_club, seeded_permission
         assert check_resp.status_code == 200
         assert check_resp.json['available'] is False
 
+        # Check a free email
+        check_resp = client.post('/register/check_email', json={'email': 'brand_new_email@test.com'})
+        assert check_resp.status_code == 200
+        assert check_resp.json['available'] is True
+
+        # Check a taken email
+        check_resp = client.post('/register/check_email', json={'email': 'admin@test.com'})
+        assert check_resp.status_code == 200
+        assert check_resp.json['available'] is False
+
         # POST registration with weak password
         resp = client.post('/register', data={
             'username': 'new_user',
@@ -87,6 +97,17 @@ def test_registration_and_join_flow(client, app, default_club, seeded_permission
         assert resp.status_code == 200
         assert b'Registration successful' in resp.data
 
+        # Try to register with duplicate email (should fail)
+        resp_dup = client.post('/register', data={
+            'username': 'another_user',
+            'first_name': 'Another',
+            'last_name': 'User',
+            'email': 'new_user@test.com',
+            'password': 'Password123',
+            'confirm_password': 'Password123'
+        }, follow_redirects=True)
+        assert b'Email address is already registered' in resp_dup.data
+
     with app.app_context():
         user = User.query.filter_by(username='new_user').first()
         assert user is not None
@@ -94,11 +115,22 @@ def test_registration_and_join_flow(client, app, default_club, seeded_permission
         assert user.first_name == 'New'
         assert user.last_name == 'User'
         assert len(user.club_memberships) == 0
+        assert user.status == 'unverified'
+        token = user.get_verification_token()
         new_user_id = user.id
 
     # 2. Test Login for user with 0 club memberships
     with client:
-        # Login should succeed and redirect to main index
+        # Login should fail and warn about verification
+        login_resp = client.post('/login', data={'username': 'new_user', 'password': 'Password123'}, follow_redirects=True)
+        assert b'Please verify your email address before logging in' in login_resp.data
+
+        # Verify email using the token
+        verify_resp = client.get(f'/verify_email/{token}', follow_redirects=True)
+        assert verify_resp.status_code == 200
+        assert b'Your email address has been verified' in verify_resp.data
+
+        # Login should now succeed and redirect to main index
         login_resp = client.post('/login', data={'username': 'new_user', 'password': 'Password123'}, follow_redirects=False)
         assert login_resp.status_code == 302
 
@@ -152,3 +184,44 @@ def test_registration_and_join_flow(client, app, default_club, seeded_permission
         msg_after = db.session.get(Message, message_id)
         assert "[Responded: APPROVED]" in msg_after.body
         assert msg_after.read is True
+
+
+def test_email_uniqueness_on_profile_update(client, app):
+    with app.app_context():
+        from app import db
+        # Create user 1
+        u1 = User(username="user_one", email="one@test.com")
+        u1.set_password("Password123")
+        # Create user 2
+        u2 = User(username="user_two", email="two@test.com")
+        u2.set_password("Password123")
+        db.session.add_all([u1, u2])
+        db.session.commit()
+
+    with client:
+        # Log in as user 1
+        client.post('/login', data={'username': 'user_one', 'password': 'Password123'})
+        
+        # Try to change email to user 2's email (two@test.com)
+        resp = client.post('/profile', data={
+            'action': 'update_profile',
+            'first_name': 'User',
+            'last_name': 'One',
+            'email': 'two@test.com'
+        }, follow_redirects=True)
+        
+        assert b'Email address is already registered' in resp.data
+
+        # Change email to a unique one (three@test.com) - should succeed
+        resp = client.post('/profile', data={
+            'action': 'update_profile',
+            'first_name': 'User',
+            'last_name': 'One',
+            'email': 'three@test.com'
+        }, follow_redirects=True)
+        
+        assert b'Profile updated successfully' in resp.data
+
+    with app.app_context():
+        u1_updated = User.query.filter_by(username="user_one").first()
+        assert u1_updated.email == 'three@test.com'

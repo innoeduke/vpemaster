@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app, jsonify, abort
 from . import db
 from .models import User, Contact, Pathway, Message
 from .auth.utils import is_authorized, login_required
@@ -64,7 +64,15 @@ def _save_user_data(user=None, **kwargs):
 
         # Update other fields
         user.phone = kwargs.get('phone')
-        user.email = kwargs.get('email') if kwargs.get('email') is not None else None
+        email = kwargs.get('email')
+        if email:
+            email = email.strip()
+            existing_email_user = User.query.filter_by(email=email).first()
+            if existing_email_user and existing_email_user.id != user.id:
+                raise ValueError("Email address is already registered.")
+            user.email = email
+        else:
+            user.email = None
 
 
     # Link existing contact if provided
@@ -129,18 +137,38 @@ def _save_user_data(user=None, **kwargs):
 @users_bp.route('/users')
 @login_required
 def show_users():
-    if not is_authorized(Permissions.SETTINGS_VIEW):
-        return redirect(url_for('agenda_bp.agenda'))
+    if not is_authorized(Permissions.MEMBERS_MANAGE):
+        abort(403)
 
-    return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
+    from .models import AuthRole
+    club_id = get_current_club_id()
+    
+    # Auth Roles for User Modal - SysAdmin is now account-based, so filter it out
+    all_auth_roles_query = AuthRole.query.filter(
+        (AuthRole.club_id == club_id) | (AuthRole.club_id.is_(None))
+    ).order_by(AuthRole.level.desc()).all()
+    all_auth_roles = [{'id': r.id, 'name': r.name, 'level': r.level} for r in all_auth_roles_query if r.name not in ('Guest', 'SysAdmin')]
+
+    # Get Club name context
+    club_name = None
+    if club_id:
+        from .models import Club
+        club = db.session.get(Club, club_id)
+        if club:
+            club_name = club.club_name
+
+    return render_template('users.html', 
+                           club_id=club_id,
+                           club_name=club_name,
+                           all_auth_roles=all_auth_roles)
 
 
 @users_bp.route('/user/form', defaults={'user_id': None}, methods=['GET', 'POST'])
 @users_bp.route('/user/form/<int:user_id>', methods=['GET', 'POST'])
 @login_required
 def user_form(user_id):
-    if not is_authorized(Permissions.SETTINGS_VIEW):
-        return redirect(url_for('agenda_bp.agenda'))
+    if not is_authorized(Permissions.MEMBERS_MANAGE):
+        abort(403)
 
     from .models import AuthRole, UserClub
 
@@ -196,13 +224,17 @@ def user_form(user_id):
             
             action = 'updated' if user else 'created'
             flash(f'User {request.form.get("username")} {action} successfully.', 'success')
+        except ValueError as e:
+            db.session.rollback()
+            flash(str(e), 'error')
+            return redirect(url_for('users_bp.user_form', user_id=user_id))
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f'Error saving user: {e}', exc_info=True)
             flash(f'Error saving user: {e}', 'error')
             return redirect(url_for('users_bp.user_form', user_id=user_id))
 
-        return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
+        return redirect(url_for('users_bp.show_users'))
 
     current_user_is_sysadmin = current_user.is_authenticated and current_user.is_sysadmin
     all_auth_roles = AuthRole.query.filter(
@@ -281,6 +313,8 @@ def user_form(user_id):
 @users_bp.route('/user/check_duplicates', methods=['POST'])
 @login_required
 def check_duplicates():
+    if not is_authorized(Permissions.MEMBERS_MANAGE):
+        abort(403)
     """Checks for potential duplicate users or contacts."""
     data = request.json
     username = data.get('username', '').strip()
@@ -428,8 +462,8 @@ def check_duplicates():
 @users_bp.route('/user/delete/<int:user_id>', methods=['POST'])
 @login_required
 def delete_user(user_id):
-    if not is_authorized(Permissions.SETTINGS_VIEW):
-        return redirect(url_for('agenda_bp.agenda'))
+    if not is_authorized(Permissions.MEMBERS_MANAGE):
+        abort(403)
 
     user = db.get_or_404(User, user_id)
     current_club_id = get_current_club_id()
@@ -497,24 +531,24 @@ def delete_user(user_id):
         db.session.rollback()
         flash('An error occurred during deletion.', 'error')
         
-    return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
+    return redirect(url_for('users_bp.show_users'))
 
 
 @users_bp.route('/user/bulk_import', methods=['POST'])
 @login_required
 def bulk_import_users():
-    if not is_authorized(Permissions.SETTINGS_VIEW):
+    if not is_authorized(Permissions.MEMBERS_MANAGE):
         flash("You don't have permission to perform this action.", 'error')
-        return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
+        return redirect(url_for('users_bp.show_users'))
 
     if 'file' not in request.files:
         flash('No file part', 'error')
-        return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
+        return redirect(url_for('users_bp.show_users'))
 
     file = request.files['file']
     if file.filename == '':
         flash('No selected file', 'error')
-        return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
+        return redirect(url_for('users_bp.show_users'))
 
     if file and file.filename.endswith('.csv'):
         stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
@@ -542,6 +576,13 @@ def bulk_import_users():
                 failed_users.append(
                     f"Skipping user '{username}': User already exists.")
                 continue
+
+            if email:
+                email = email.strip()
+                if User.query.filter_by(email=email).first():
+                    failed_users.append(
+                        f"Skipping user '{username}': Email '{email}' is already registered.")
+                    continue
 
             contact = Contact.query.filter_by(Name=fullname).first()
             contact_id = contact.id if contact else None
@@ -571,7 +612,7 @@ def bulk_import_users():
     else:
         flash('Invalid file type. Please upload a .csv file.', 'error')
 
-    return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
+    return redirect(url_for('users_bp.show_users'))
 
 
 @users_bp.route('/user/request_join', methods=['POST'])

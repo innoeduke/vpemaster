@@ -41,7 +41,8 @@ class UserRefactorTestCase(unittest.TestCase):
         # 2. Key Permissions
         perm_settings = Permission(name=Permissions.SETTINGS_VIEW, description="View Settings")
         perm_sysadmin = Permission(name=Permissions.SYSADMIN, description="Super Admin")
-        db.session.add_all([perm_settings, perm_sysadmin])
+        perm_members_manage = Permission(name=Permissions.MEMBERS_MANAGE, description="Manage Members")
+        db.session.add_all([perm_settings, perm_sysadmin, perm_members_manage])
         
         # 3. Roles
         self.role_admin = AuthRole(name="SysAdmin", description="Admin Role", level=10)
@@ -52,13 +53,14 @@ class UserRefactorTestCase(unittest.TestCase):
         # Assign permissions
         self.role_admin.permissions.append(perm_settings)
         self.role_admin.permissions.append(perm_sysadmin)
+        self.role_admin.permissions.append(perm_members_manage)
         
         # 4. Create Admin User
         self.admin_contact = Contact(Name="Admin User", Type="Member")
         db.session.add(self.admin_contact)
         db.session.flush()
         
-        self.admin_user = User(username="admin", email="admin@test.com")
+        self.admin_user = User(username="sysadmin", email="admin@test.com")
         self.admin_user.set_password("password")
         db.session.add(self.admin_user)
         db.session.flush() # Ensure ID is generated
@@ -77,7 +79,7 @@ class UserRefactorTestCase(unittest.TestCase):
 
     def login(self):
         return self.client.post('/login', data=dict(
-            username='admin',
+            username='sysadmin',
             password='password',
             club_names=self.club.id
         ), follow_redirects=True)

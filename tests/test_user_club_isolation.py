@@ -63,7 +63,7 @@ def test_user_role_isolation(client, app, db_session):
         db_session.commit()
         
         # Create SysAdmin user to perform the edit
-        admin = User(username="sysadmin_iso", email="admin@iso.com")
+        admin = User(username="sysadmin", email="admin@iso.com")
         admin.set_password("password")
         db_session.add(admin)
         db_session.commit()

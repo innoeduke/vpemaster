@@ -103,6 +103,19 @@ class User(UserMixin, db.Model):
         except:
             return None
         return db.session.get(User, user_id)
+
+    def get_verification_token(self, expires_sec=86400):
+        s = Serializer(current_app.config['SECRET_KEY'])
+        return s.dumps({'verification_user_id': self.id})
+
+    @staticmethod
+    def verify_verification_token(token, expires_sec=86400):
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            user_id = s.loads(token, max_age=expires_sec).get('verification_user_id')
+        except:
+            return None
+        return db.session.get(User, user_id)
     
     @property
     def contact_id(self):

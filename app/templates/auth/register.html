@@ -53,7 +53,8 @@
 
         <div>
           <label for="email">Email Address:</label>
-          <input type="email" id="email" name="email" required placeholder="example@email.com" autocomplete="email" />
+          <input type="email" id="email" name="email" required placeholder="example@email.com" autocomplete="email" style="margin-bottom: 8px;" />
+          <div id="email-feedback" style="font-size: 0.85em; margin-bottom: 12px; display: none; font-weight: 500;"></div>
         </div>
 
         <div>
@@ -90,16 +91,28 @@
     document.addEventListener('DOMContentLoaded', function () {
       const usernameInput = document.getElementById('username');
       const usernameFeedback = document.getElementById('username-feedback');
+      const emailInput = document.getElementById('email');
+      const emailFeedback = document.getElementById('email-feedback');
       const submitBtn = document.querySelector('.login-form button[type="submit"]');
-      let checkTimeout = null;
+      
+      let usernameTimeout = null;
+      let emailTimeout = null;
+      
+      let usernameStatus = 'empty';
+      let emailStatus = 'empty';
+      
+      function updateSubmitButton() {
+          submitBtn.disabled = (usernameStatus === 'invalid' || emailStatus === 'invalid');
+      }
 
       usernameInput.addEventListener('input', function() {
-          clearTimeout(checkTimeout);
+          clearTimeout(usernameTimeout);
           const username = this.value.trim();
           
           if (!username) {
               usernameFeedback.style.display = 'none';
-              submitBtn.disabled = false;
+              usernameStatus = 'empty';
+              updateSubmitButton();
               return;
           }
 
@@ -109,11 +122,12 @@
               usernameFeedback.style.display = 'block';
               usernameFeedback.style.color = '#e53e3e';
               usernameFeedback.textContent = 'Username must contain only letters, numbers, or underscores.';
-              submitBtn.disabled = true;
+              usernameStatus = 'invalid';
+              updateSubmitButton();
               return;
           }
 
-          checkTimeout = setTimeout(() => {
+          usernameTimeout = setTimeout(() => {
               fetch("{{ url_for('auth_bp.check_username') }}", {
                   method: 'POST',
                   headers: {
@@ -127,18 +141,68 @@
                   if (data.available) {
                       usernameFeedback.style.color = '#38a169';
                       usernameFeedback.textContent = 'Username is available.';
-                      submitBtn.disabled = false;
+                      usernameStatus = 'valid';
                   } else {
                       usernameFeedback.style.color = '#e53e3e';
                       usernameFeedback.textContent = 'Username is already taken.';
-                      submitBtn.disabled = true;
+                      usernameStatus = 'invalid';
                   }
+                  updateSubmitButton();
               })
               .catch(err => {
                   console.error('Error checking username:', err);
               });
           }, 300);
       });
+
+      emailInput.addEventListener('input', function() {
+          clearTimeout(emailTimeout);
+          const email = this.value.trim();
+          
+          if (!email) {
+              emailFeedback.style.display = 'none';
+              emailStatus = 'empty';
+              updateSubmitButton();
+              return;
+          }
+
+          // Basic email format validation regex
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(email)) {
+              emailFeedback.style.display = 'none';
+              emailStatus = 'empty';
+              updateSubmitButton();
+              return;
+          }
+
+          emailTimeout = setTimeout(() => {
+              fetch("{{ url_for('auth_bp.check_email') }}", {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ email: email })
+              })
+              .then(response => response.json())
+              .then(data => {
+                  emailFeedback.style.display = 'block';
+                  if (data.available) {
+                      emailFeedback.style.color = '#38a169';
+                      emailFeedback.textContent = 'Email address is available.';
+                      emailStatus = 'valid';
+                  } else {
+                      emailFeedback.style.color = '#e53e3e';
+                      emailFeedback.textContent = 'Email address is already registered.';
+                      emailStatus = 'invalid';
+                  }
+                  updateSubmitButton();
+              })
+              .catch(err => {
+                  console.error('Error checking email:', err);
+              });
+          }, 300);
+      });
+
       // Pre-fill username from query param if present
       const urlParams = new URLSearchParams(window.location.search);
       const usernameParam = urlParams.get('username');

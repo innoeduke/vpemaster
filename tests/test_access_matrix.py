@@ -97,7 +97,7 @@ class AccessMatrixTestCase(unittest.TestCase):
                 Permissions.SETTINGS_VIEW, Permissions.ROSTER_VIEW, Permissions.ROSTER_EDIT,
                 Permissions.SPEECH_LOGS_MANAGE, Permissions.VOTING_VIEW_RESULTS,
                 Permissions.VOTING_TRACK_PROGRESS, Permissions.LIBRARY_VIEW, Permissions.LUCKY_DRAW_EDIT,
-                Permissions.MEDIA_MANAGE
+                Permissions.MEDIA_MANAGE, Permissions.MEMBERS_MANAGE
             ],
             'ClubAdmin': [
                 Permissions.MEETING_VIEW_PUBLISHED, Permissions.MEETING_MANAGE, 
@@ -105,7 +105,7 @@ class AccessMatrixTestCase(unittest.TestCase):
                 Permissions.SPEECH_LOGS_MANAGE,
                 Permissions.VOTING_VIEW_RESULTS, Permissions.VOTING_TRACK_PROGRESS,
                 Permissions.LIBRARY_VIEW, Permissions.LUCKY_DRAW_EDIT,
-                Permissions.MEDIA_MANAGE
+                Permissions.MEDIA_MANAGE, Permissions.MEMBERS_MANAGE
             ],
             'Staff': [
                 Permissions.MEETING_VIEW_PUBLISHED, Permissions.ROSTER_VIEW, 
@@ -267,11 +267,14 @@ class AccessMatrixTestCase(unittest.TestCase):
                  # For now, check 200 is accessible.
                  pass
 
-            if '/settings' in resource_template or '/users' in resource_template:
+            if '/settings' in resource_template:
                  if Permissions.SETTINGS_VIEW not in perms:
                      expected_code = 302
-                 elif '/users' in resource_template:
-                     expected_code = 302 # Redirect to settings tab
+            elif '/users' in resource_template:
+                 if Permissions.MEMBERS_MANAGE not in perms:
+                     expected_code = 403
+                 else:
+                     expected_code = 200
 
         # 4. Execute
         url = resource_template

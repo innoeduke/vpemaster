@@ -1,6 +1,19 @@
 from flask import render_template, current_app, url_for
 from flask_mail import Message
 from .. import mail
+import time
+
+def _send_mail_with_retry(msg, retries=3, delay=2):
+    """Sends email with retry logic to mitigate transient network/SSL EOF issues."""
+    for attempt in range(retries):
+        try:
+            mail.send(msg)
+            return True
+        except Exception as e:
+            print(f"DEBUG: SMTP send attempt {attempt + 1} failed: {e}")
+            if attempt == retries - 1:
+                raise e
+            time.sleep(delay)
 
 def send_reset_email(user):
     token = user.get_reset_token()
@@ -30,9 +43,32 @@ If you did not make this request then simply ignore this email and no changes wi
     print(f"DEBUG: Password Reset Link for {user.username}: {reset_url}")
     
     try:
-        mail.send(msg)
+        _send_mail_with_retry(msg)
     except Exception as e:
         print(f"Error sending email: {e}")
         # Make sure to re-raise or handle appropriately if email is critical.
         # usually we don't want to crash the app, but user needs to know.
+        raise e
+
+def send_verification_email(user):
+    token = user.get_verification_token()
+    msg = Message('Verify Your Email Address',
+                  sender=current_app.config['MAIL_DEFAULT_SENDER'],
+                  recipients=[user.email])
+    
+    verify_url = url_for('auth_bp.verify_email', token=token, _external=True)
+    
+    msg.body = f'''Hello {user.username},
+    
+Please click on the following link to verify your email address and activate your account:
+{verify_url}
+
+If you did not register for an account, please ignore this email.
+'''
+    print(f"DEBUG: Email Verification Link for {user.username}: {verify_url}")
+    
+    try:
+        _send_mail_with_retry(msg)
+    except Exception as e:
+        print(f"Error sending email: {e}")
         raise e

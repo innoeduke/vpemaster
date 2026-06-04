@@ -951,13 +951,13 @@ def delete_ticket(id):
 @login_required
 @authorized_club_required
 def get_settings_users():
-    if not is_authorized(Permissions.SETTINGS_VIEW):
+    if not is_authorized(Permissions.MEMBERS_MANAGE):
         return jsonify(success=False, message="Permission denied"), 403
 
     club_id = get_current_club_id()
     
-    # Users: Filter by club membership
-    if club_id:
+    # Users: Filter by club membership (Exception: sysadmin in Technical Support sees all)
+    if club_id and not (current_user.is_sysadmin and club_id == GLOBAL_CLUB_ID):
         all_users = User.query.join(UserClub).filter(
             UserClub.club_id == club_id,
             User.status != 'deleted'
@@ -974,6 +974,22 @@ def get_settings_users():
     # Batch populate contacts for the current club to avoid N+1 queries
     User.populate_contacts(all_users, club_id)
     
+    # For sysadmin in Tech Support club: batch-load first available contacts as fallback for users not in this club
+    if current_user.is_sysadmin and club_id == GLOBAL_CLUB_ID:
+        missing_contact_users = [u for u in all_users if not u.contact]
+        if missing_contact_users:
+            ucs = UserClub.query.filter(
+                UserClub.user_id.in_([u.id for u in missing_contact_users])
+            ).options(
+                db.joinedload(UserClub.contact).joinedload(Contact.mentor)
+            ).all()
+            missing_contact_map = {}
+            for uc in ucs:
+                if uc.user_id not in missing_contact_map:
+                    missing_contact_map[uc.user_id] = uc.contact
+            for u in missing_contact_users:
+                u._current_contact = missing_contact_map.get(u.id)
+    
     users_data = []
     for user in all_users:
         contact = user.contact
@@ -981,6 +997,13 @@ def get_settings_users():
         # Determine best role and path like in template
         user_roles = user.get_roles_for_club(club_id)
         role_ids = [r['id'] for r in user_roles]
+        
+        display_roles = user_roles
+        if not display_roles:
+            # Fallback to roles in their home club or first membership to display their role badge
+            fallback_uc = next((uc for uc in user.club_memberships if uc.club_id != club_id), None)
+            if fallback_uc:
+                display_roles = user.get_roles_for_club(fallback_uc.club_id)
         
         role_priority = {
             'sysadmin': 100,
@@ -998,7 +1021,7 @@ def get_settings_users():
             best_role = {'name': 'SysAdmin', 'award_category': 'sysadmin'}
             max_prio = 100
             
-        for role in user_roles:
+        for role in display_roles:
             if role['name'] not in ('Guest', 'SysAdmin'):
                 category = role.get('award_category') or 'other'
                 prio = role_priority.get(category, 50)
@@ -1022,8 +1045,8 @@ def get_settings_users():
             
         users_data.append({
             'id': user.id,
-            'first_name': user.first_name or '',
-            'last_name': user.last_name or '',
+            'first_name': user.first_name or (contact.first_name if contact else '') or '',
+            'last_name': user.last_name or (contact.last_name if contact else '') or '',
             'username': user.username or '',
             'contact_name': contact.Name if contact else '',
             'contact_id': contact.id if contact else '',

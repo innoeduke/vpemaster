@@ -136,9 +136,7 @@
     </div>
 
     <div class="nav-tabs">
-      <button class="nav-item active" onclick="openTab(event, 'user-settings')">
-        {{ _('Users') }}</button>
-      <button class="nav-item" onclick="openTab(event, 'excomm-settings')">
+      <button class="nav-item active" onclick="openTab(event, 'excomm-settings')">
         {{ _('Excomm') }}
       </button>
       <button class="nav-item" onclick="openTab(event, 'agenda-settings')">
@@ -456,65 +454,7 @@
       {% endif %}
     </div>
 
-    <div id="user-settings" class="tab-content">
-      <div class="settings-header">
-        <h2>{{ _('User Management') }}</h2>
-        <div class="button-group">
-          <button type="button" class="btn btn-success" style="flex-grow: 0;" onclick="openUserModal()">{{ _('Add New') }}</button>
-          <form action="{{ url_for('users_bp.bulk_import_users') }}" method="post" enctype="multipart/form-data"
-            id="bulk-import-form">
-            <input type="file" name="file" id="bulk-import-file" />
-            <button type="button" class="btn btn-info" id="bulk-import-btn">
-              {{ _('Bulk Import') }}
-            </button>
-          </form>
-        </div>
-      </div>
-      <table id="user-settings-table">
-        <thead>
-          <tr>
-            <th class="sortable" data-column-index="0">{{ _('No.') }}</th>
-            <th class="sortable" data-column-index="1">{{ _('Full Name (Username)') }}</th>
-            <th class="sortable" data-column-index="2">{{ _('Roles') }}</th>
-            <th class="sortable" data-column-index="3">{{ _('Email') }}</th>
-            <th class="sortable" data-column-index="4">{{ _('Phone') }}</th>
-            <th class="sortable" data-column-index="5">{{ _('Mentor') }}</th>
-            <th class="sortable" data-column-index="6">{{ _('Current Path') }}</th>
-            <th class="sortable" data-column-index="7">{{ _('Next Project') }}</th>
-            <th data-column-index="8">{{ _('Actions') }}</th>
-          </tr>
-        </thead>
-        <tbody id="users-table-body">
-          <tr>
-            <td colspan="9" class="text-center py-4">
-              <i class="fas fa-spinner fa-spin fa-2x"></i>
-              <p class="mt-2 text-muted">{{ _('Loading users...') }}</p>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="pagination-container" id="user-pagination">
-        <div class="pagination-info" id="user-pagination-info">{{ _('Showing 0 - 0 of 0 users') }}</div>
-        <div class="pagination-controls">
-          <button class="pagination-btn first-page-btn" title="{{ _('First Page') }}"><i class="fas fa-angle-double-left"></i></button>
-          <button class="pagination-btn prev-page-btn" title="{{ _('Previous Page') }}"><i class="fas fa-angle-left"></i></button>
-          <span class="page-indicator">
-            {{ _('Page') }} <span class="current-page-display">1</span> {{ _('of') }} <span class="total-pages-display">1</span>
-          </span>
-          <button class="pagination-btn next-page-btn" title="{{ _('Next Page') }}"><i class="fas fa-angle-right"></i></button>
-          <button class="pagination-btn last-page-btn" title="{{ _('Last Page') }}"><i class="fas fa-angle-double-right"></i></button>
-        </div>
-        <div class="pagination-size">
-          <label>{{ _('Show:') }}</label>
-          <select class="page-size-select">
-            <option value="10" selected>10</option>
-            <option value="25">25</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
-          </select>
-        </div>
-      </div>
-    </div>
+
 
     <!-- TICKETS TAB -->
     <div id="tickets-settings" class="tab-content" style="display: none;">
@@ -649,7 +589,6 @@
   </div>
   {% include '_session_modal.html' %}
   {% include '_role_modal.html' %}
-  {% include 'partials/_user_modal.html' %}
   {% include '_ticket_modal.html' %}
   {% include '_auth_role_modal.html' %}
 </div>

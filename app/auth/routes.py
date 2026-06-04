@@ -112,7 +112,10 @@ def login():
         time.sleep(0.1)
 
         if user and user.check_password(password):
-            if user.status != 'active':
+            if user.status == 'unverified':
+                flash('Please verify your email address before logging in.', 'warning')
+                return redirect(url_for('auth_bp.login'))
+            elif user.status != 'active':
                 flash('Account is inactive.', 'error')
                 return redirect(url_for('auth_bp.login'))
 
@@ -230,9 +233,15 @@ def profile(contact_id=None):
                  flash('You do not have permission to modify this profile.', 'error')
                  return redirect(url_for('auth_bp.profile', contact_id=contact_id))
 
+            email = request.form.get('email', '').strip()
+            if email:
+                existing_email_user = User.query.filter_by(email=email).first()
+                if existing_email_user and existing_email_user.id != user.id:
+                    flash('Email address is already registered.', 'error')
+                    return redirect(url_for('auth_bp.profile', contact_id=contact_id))
             user.first_name = request.form.get('first_name')
             user.last_name = request.form.get('last_name')
-            user.email = request.form.get('email')
+            user.email = email
             if user.contact:
                 user.contact.Phone_Number = request.form.get('phone_number')
                 user.contact.Bio = request.form.get('bio')
@@ -420,14 +429,28 @@ def register():
             _first_name=first_name,
             _last_name=last_name,
             created_at=date.today(),
-            status='active'
+            status='unverified'
         )
         new_user.set_password(password)
         
         try:
             db.session.add(new_user)
+            db.session.flush()
+            
+            # Send verification email
+            from .email import send_verification_email
+            email_sent = True
+            try:
+                send_verification_email(new_user)
+            except Exception as mail_err:
+                current_app.logger.error(f"Failed to send verification email: {mail_err}")
+                email_sent = False
+            
             db.session.commit()
-            flash('Registration successful! Please log in.', 'success')
+            if email_sent:
+                flash('Registration successful! Please check your email to verify your account.', 'success')
+            else:
+                flash('Registration successful, but we could not send the verification email. If you are in development, check the console logs for the verification link.', 'warning')
             return redirect(url_for('auth_bp.login'))
         except Exception as e:
             db.session.rollback()
@@ -446,3 +469,34 @@ def check_username():
     # Check duplicate username
     user_exists = User.query.filter_by(username=username).first() is not None
     return jsonify({'available': not user_exists})
+
+
+@auth_bp.route('/register/check_email', methods=['POST'])
+def check_email():
+    email = request.json.get('email', '').strip()
+    if not email:
+        return jsonify({'available': True})
+    
+    # Check duplicate email
+    email_exists = User.query.filter_by(email=email).first() is not None
+    return jsonify({'available': not email_exists})
+
+
+@auth_bp.route('/verify_email/<token>')
+def verify_email(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('main_bp.index'))
+    
+    user = User.verify_verification_token(token)
+    if user is None:
+        flash('The verification link is invalid or has expired.', 'warning')
+        return redirect(url_for('auth_bp.login'))
+        
+    if user.status == 'active':
+        flash('Account already verified. Please log in.', 'info')
+        return redirect(url_for('auth_bp.login'))
+        
+    user.status = 'active'
+    db.session.commit()
+    flash('Your email address has been verified! You can now log in.', 'success')
+    return redirect(url_for('auth_bp.login'))

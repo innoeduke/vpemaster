@@ -855,7 +855,7 @@ document.addEventListener("DOMContentLoaded", () => {
     openTab(null, savedTab);
   } else {
     // Default to general if nothing is set
-    openTab(null, "user-settings");
+    openTab(null, "excomm-settings");
   }
 
   // --- 2. Modal Logic ---

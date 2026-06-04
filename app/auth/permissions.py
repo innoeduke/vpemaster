@@ -133,7 +133,8 @@ class Permissions:
     VOTING_VIEW_RESULTS = 'VOTING_VIEW_RESULTS'
     VOTING_TRACK_PROGRESS = 'VOTING_TRACK_PROGRESS'
 
-    # Member Speeches (Category: speech_logs)
+    # Members (Category: members)
+    MEMBERS_MANAGE = 'MEMBERS_MANAGE'
     SPEECH_LOGS_MANAGE = 'SPEECH_LOGS_MANAGE'
 
     # Roster & Contacts (Category: roster)
