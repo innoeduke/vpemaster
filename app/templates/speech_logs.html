@@ -49,8 +49,8 @@
 </script>
 
 <script src="{{ url_for('static', filename='js/speech_modal.js') }}?v={{ range(1, 10000) | random }}"></script>
-<script src="{{ url_for('static', filename='js/search.js') }}"></script>
-<script src="{{ url_for('static', filename='js/speech_logs.js') }}"></script>
+<script src="{{ url_for('static', filename='js/search.js') }}?v={{ range(1, 10000) | random }}"></script>
+<script src="{{ url_for('static', filename='js/speech_logs.js') }}?v={{ range(1, 10000) | random }}"></script>
 
 {% block speech_log_scripts %}
 <script>

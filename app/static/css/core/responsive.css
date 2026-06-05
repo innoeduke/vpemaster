@@ -396,8 +396,8 @@
         min-width: 0;
         flex-shrink: 0;
         box-sizing: border-box;
-        position: relative !important;
-        overflow: visible !important;
+        position: relative;
+        overflow: visible;
     }
 
     .header-club-badge:hover {

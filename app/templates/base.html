@@ -141,12 +141,29 @@
         </li>
         {% endif %}
 
-        {% if current_user.is_authenticated or is_authorized(Permissions.LIBRARY_VIEW) %}
-        <li
-          class="{% if request.endpoint and (request.endpoint.startswith('tools_bp') or request.endpoint.startswith('lucky_draw_bp') or request.endpoint.startswith('pathways_bp')) %}active{% endif %}">
-          <a href="{{ url_for('tools_bp.tools') }}" title="{{ _('Access helpful club tools') }}">
-            <i class="fas fa-tools nav-icon"></i>
-            <span>{{ _('Tools') }}</span>
+        {% if is_authorized(Permissions.LIBRARY_VIEW) %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('pathways_bp') %}active{% endif %}">
+          <a href="{{ url_for('pathways_bp.pathway_library') }}" title="{{ _('Pathway Library') }}">
+            <i class="fas fa-landmark nav-icon"></i>
+            <span>{{ _('Pathway Library') }}</span>
+          </a>
+        </li>
+        {% endif %}
+
+        {% if is_authorized(Permissions.MEETING_MANAGE) %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('lucky_draw_bp') %}active{% endif %}">
+          <a href="{{ url_for('lucky_draw_bp.lucky_draw') }}" title="{{ _('Lucky Draw') }}">
+            <i class="fas fa-gift nav-icon"></i>
+            <span>{{ _('Lucky Draw') }}</span>
+          </a>
+        </li>
+        {% endif %}
+
+        {% if is_authorized(Permissions.LIBRARY_VIEW) %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('tools_bp.validator') %}active{% endif %}">
+          <a href="{{ url_for('tools_bp.validator') }}" title="{{ _('Level Validator') }}">
+            <i class="fas fa-link nav-icon"></i>
+            <span>{{ _('Level Validator') }}</span>
           </a>
         </li>
         {% endif %}
@@ -304,12 +321,19 @@
             </ul>
           </li>
 
-          <!-- 2. Personal Dropdown -->
-          {% if (is_authorized(Permissions.BOOKING_OWN) and has_meetings) or current_user.is_authenticated %}
-          {% set personal_active = request.endpoint and (request.endpoint.startswith('speech_logs_bp') or request.endpoint.startswith('planner_bp')) %}
-          <li class="nav-dropdown-wrapper {% if personal_active %}active{% endif %}">
+          <!-- 2. Tools Dropdown -->
+          {% if current_user.is_authenticated or is_authorized(Permissions.LIBRARY_VIEW) %}
+          {% set tools_active = request.endpoint and (
+            request.endpoint.startswith('speech_logs_bp') or 
+            request.endpoint.startswith('planner_bp') or 
+            request.endpoint.startswith('pathways_bp') or 
+            request.endpoint.startswith('lucky_draw_bp') or 
+            request.endpoint.startswith('tools_bp') or 
+            request.endpoint.startswith('uploads_bp')
+          ) %}
+          <li class="nav-dropdown-wrapper {% if tools_active %}active{% endif %}">
             <a href="#" class="nav-dropdown-trigger">
-              <span>{{ _('Personal') }}</span>
+              <span>{{ _('Tools') }}</span>
               <i class="fas fa-caret-down dropdown-arrow"></i>
             </a>
             <ul class="nav-submenu">
@@ -327,12 +351,46 @@
                 </a>
               </li>
               {% endif %}
+              {% if is_authorized(Permissions.LIBRARY_VIEW) %}
+              <li class="{% if request.endpoint and request.endpoint.startswith('pathways_bp') %}submenu-active{% endif %}">
+                <a href="{{ url_for('pathways_bp.pathway_library') }}">
+                  <i class="fas fa-landmark"></i> {{ _('Pathway Library') }}
+                </a>
+              </li>
+              {% endif %}
+              {% if is_authorized(Permissions.MEETING_MANAGE) %}
+              <li class="{% if request.endpoint and request.endpoint.startswith('lucky_draw_bp') %}submenu-active{% endif %}">
+                <a href="{{ url_for('lucky_draw_bp.lucky_draw') }}">
+                  <i class="fas fa-gift"></i> {{ _('Lucky Draw') }}
+                </a>
+              </li>
+              {% endif %}
+              {% if is_authorized(Permissions.LIBRARY_VIEW) %}
+              <li class="{% if request.endpoint and request.endpoint.startswith('tools_bp.validator') %}submenu-active{% endif %}">
+                <a href="{{ url_for('tools_bp.validator') }}">
+                  <i class="fas fa-link"></i> {{ _('Level Validator') }}
+                </a>
+              </li>
+              {% endif %}
+              {% if is_authorized(Permissions.MEDIA_MANAGE) %}
+              <li class="{% if request.endpoint and request.endpoint.startswith('uploads_bp') %}submenu-active{% endif %}">
+                <a href="{{ url_for('uploads_bp.manage_uploads') }}">
+                  <i class="fas fa-cloud-upload-alt"></i> {{ _('Upload') }}
+                </a>
+              </li>
+              {% endif %}
             </ul>
           </li>
           {% endif %}
 
           <!-- 3. Management Dropdown -->
-          {% set management_active = request.endpoint and (request.endpoint.startswith('contacts_bp') or request.endpoint.startswith('tools_bp') or request.endpoint.startswith('lucky_draw_bp') or request.endpoint.startswith('pathways_bp') or request.endpoint.startswith('uploads_bp') or request.endpoint.startswith('settings_bp') or request.endpoint.startswith('clubs_bp') or request.endpoint.startswith('users_bp')) %}
+          {% set management_active = request.endpoint and (
+            request.endpoint.startswith('users_bp') or 
+            request.endpoint.startswith('contacts_bp') or 
+            request.endpoint.startswith('settings_bp') or 
+            request.endpoint.startswith('clubs_bp')
+          ) %}
+          {% if is_authorized(Permissions.MEMBERS_MANAGE) or is_authorized(Permissions.ROSTER_VIEW) or (is_authorized(Permissions.SETTINGS_VIEW) and current_user.primary_role_name != 'Guest') %}
           <li class="nav-dropdown-wrapper {% if management_active %}active{% endif %}">
             <a href="#" class="nav-dropdown-trigger">
               <span>{{ _('Management') }}</span>
@@ -353,21 +411,6 @@
                 </a>
               </li>
               {% endif %}
-              {% if current_user.is_authenticated or is_authorized(Permissions.LIBRARY_VIEW) %}
-              <li class="{% if request.endpoint and (request.endpoint.startswith('tools_bp') or request.endpoint.startswith('lucky_draw_bp') or request.endpoint.startswith('pathways_bp')) %}submenu-active{% endif %}">
-                <a href="{{ url_for('tools_bp.tools') }}">
-                  <i class="fas fa-tools"></i> {{ _('Tools') }}
-                </a>
-              </li>
-              {% endif %}
-              {% if is_authorized(Permissions.MEDIA_MANAGE) %}
-              <li class="{% if request.endpoint and request.endpoint.startswith('uploads_bp') %}submenu-active{% endif %}">
-                <a href="{{ url_for('uploads_bp.manage_uploads') }}">
-                  <i class="fas fa-cloud-upload-alt"></i> {{ _('Upload') }}
-                </a>
-              </li>
-              {% endif %}
-
               {% if is_authorized(Permissions.SETTINGS_VIEW) and current_user.primary_role_name != 'Guest' %}
               <li class="{% if request.endpoint and request.endpoint.startswith('settings_bp') %}submenu-active{% endif %}">
                 <a href="{{ url_for('settings_bp.settings') }}">
@@ -375,9 +418,9 @@
                 </a>
               </li>
               {% endif %}
-
             </ul>
           </li>
+          {% endif %}
         </ul>
       </div>
       
@@ -470,8 +513,8 @@
   {% include '_delete_modal.html' %}
   {% include '_usage_warning_modal.html' %}
   <script src="{{ url_for('static', filename='vendor/js/Sortable.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/search.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}?v={{ range(1, 10000) | random }}"></script>
+  <script src="{{ url_for('static', filename='js/search.js') }}?v={{ range(1, 10000) | random }}"></script>
   {% include '_report_bug_modal.html' %}
   {% block scripts %}{% endblock %}
 

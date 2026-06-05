@@ -451,8 +451,8 @@
 
 /* Club Dropdown Switcher */
 .dropdown-club-wrapper {
-    position: relative !important;
-    overflow: visible !important; /* Allow the dropdown menu to overflow */
+    position: relative;
+    overflow: visible; /* Allow the dropdown menu to overflow */
 }
 
 /* Caret icon inside the badge */

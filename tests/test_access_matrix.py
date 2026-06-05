@@ -249,8 +249,8 @@ class AccessMatrixTestCase(unittest.TestCase):
 
             # Resource Logic
             if '/lucky_draw' in resource_template:
-                # Open to all logged-in users
-                pass
+                if Permissions.MEETING_MANAGE not in perms:
+                    expected_code = 403
             
             if '/roster' in resource_template:
                 if Permissions.ROSTER_VIEW not in perms:

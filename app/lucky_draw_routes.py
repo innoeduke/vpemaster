@@ -14,8 +14,11 @@ lucky_draw_bp = Blueprint('lucky_draw_bp', __name__)
 @login_required
 @authorized_club_required
 def lucky_draw():
-    # Open to all logged-in users in the club
-    has_lucky_draw_access = True
+    if not is_authorized(Permissions.MEETING_MANAGE):
+        from flask import abort
+        abort(403)
+
+    has_lucky_draw_access = is_authorized(Permissions.MEETING_MANAGE)
     has_pathways_access = is_authorized(Permissions.LIBRARY_VIEW)
 
     # Get current meeting (using same logic as agenda page)
