@@ -40,11 +40,22 @@ depends_on = None
 
 def upgrade():
     bind = op.get_bind()
+    inspector = sa.inspect(bind)
+
+    def rp_columns():
+        return [c['name'] for c in inspector.get_columns('role_permissions')]
+
+    def rp_indexes():
+        return [i['name'] for i in inspector.get_indexes('role_permissions')]
+
+    def rp_unique_constraints():
+        return [u['name'] for u in inspector.get_unique_constraints('role_permissions')]
 
     # 1. Add club_id as nullable (we backfill before enforcing NOT NULL).
-    with op.batch_alter_table('role_permissions') as batch_op:
-        batch_op.add_column(sa.Column('club_id', sa.Integer(), nullable=True))
-        batch_op.create_index('ix_role_permissions_club_id', ['club_id'])
+    if 'club_id' not in rp_columns():
+        with op.batch_alter_table('role_permissions') as batch_op:
+            batch_op.add_column(sa.Column('club_id', sa.Integer(), nullable=True))
+            batch_op.create_index('ix_role_permissions_club_id', ['club_id'])
 
     # 2. Add a non-unique index on role_id BEFORE dropping the old unique,
     #    so the FK role_permissions.role_id -> auth_roles.id still has a
@@ -52,40 +63,53 @@ def upgrade():
     #    one backing an FK.) The new unique we'll add in step 6 starts with
     #    role_id too, so this helper becomes redundant after step 6; we
     #    drop it there to avoid a duplicate-prefix index.
-    with op.batch_alter_table('role_permissions') as batch_op:
-        batch_op.create_index('ix_role_permissions_role_id', ['role_id'])
-        batch_op.drop_constraint('unique_role_permission', type_='unique')
+    if 'ix_role_permissions_role_id' not in rp_indexes():
+        with op.batch_alter_table('role_permissions') as batch_op:
+            batch_op.create_index('ix_role_permissions_role_id', ['role_id'])
 
-    # 3 + 4. Backfill: assign the 81 existing rows to SHLTMC, then copy
-    #         them to every other active club (excluding the super club).
-    #         First, drop any orphan rows whose permission_id no longer
-    #         exists in the permissions table -- the FK to permissions is
-    #         enforced for new inserts, so we can't re-insert these when
-    #         copying to the other clubs. These rows are meaningless (no
-    #         permission name to resolve), so removing them is a clean fix.
-    op.execute(
-        sa.text(
-            "DELETE FROM role_permissions "
-            "WHERE permission_id NOT IN (SELECT id FROM permissions)"
-        )
-    )
+    if 'unique_role_permission' in rp_unique_constraints():
+        with op.batch_alter_table('role_permissions') as batch_op:
+            batch_op.drop_constraint('unique_role_permission', type_='unique')
+
+    # 3. Drop any orphan rows whose permission_id no longer exists in the
+    #    permissions table -- the FK to permissions is enforced for new
+    #    inserts, so we can't re-insert these when copying to the other
+    #    clubs. These rows are meaningless (no permission name to resolve),
+    #    so removing them is a clean fix. Idempotent: re-running on an
+    #    already-clean table is a no-op.
+    bind.execute(sa.text(
+        "DELETE FROM role_permissions "
+        "WHERE permission_id NOT IN (SELECT id FROM permissions)"
+    ))
 
     shltmc_id = bind.execute(
         sa.text("SELECT id FROM clubs WHERE club_no = '00868941'")
     ).scalar()
 
     if shltmc_id is not None:
-        bind.execute(
-            sa.text("UPDATE role_permissions SET club_id = :cid"),
-            {"cid": shltmc_id},
-        )
+        # 4a. Assign the original rows to SHLTMC. Idempotent: if any row
+        #     already has club_id set (e.g. partial re-run), we leave it.
+        if bind.execute(sa.text(
+            "SELECT COUNT(*) FROM role_permissions WHERE club_id IS NULL"
+        )).scalar() > 0:
+            bind.execute(
+                sa.text("UPDATE role_permissions SET club_id = :cid WHERE club_id IS NULL"),
+                {"cid": shltmc_id},
+            )
 
+        # 4b. Copy SHLTMC's rows to every other active club (excluding the
+        #     super club). Idempotent: skip any club that already has rows.
         other_active_ids = [row[0] for row in bind.execute(sa.text(
             "SELECT id FROM clubs "
             "WHERE status = 'active' AND club_no != '000001' AND id != :shltmc"
         ), {"shltmc": shltmc_id}).fetchall()]
 
         for other_id in other_active_ids:
+            existing = bind.execute(sa.text(
+                "SELECT COUNT(*) FROM role_permissions WHERE club_id = :cid"
+            ), {"cid": other_id}).scalar()
+            if existing > 0:
+                continue
             bind.execute(
                 sa.text(
                     "INSERT INTO role_permissions (role_id, permission_id, club_id) "
@@ -96,15 +120,26 @@ def upgrade():
             )
 
     # 5. Enforce NOT NULL and add the per-club unique constraint.
-    with op.batch_alter_table('role_permissions') as batch_op:
-        batch_op.alter_column('club_id', existing_type=sa.Integer(), nullable=False)
-        batch_op.create_unique_constraint(
-            'unique_role_permission_club',
-            ['role_id', 'permission_id', 'club_id'],
-        )
-        # Drop the helper role_id index now that the new unique (which
-        # starts with role_id) backs the role_id FK.
-        batch_op.drop_index('ix_role_permissions_role_id')
+    club_id_col = next(
+        (c for c in inspector.get_columns('role_permissions') if c['name'] == 'club_id'),
+        None,
+    )
+    if club_id_col is not None and club_id_col.get('nullable', True):
+        with op.batch_alter_table('role_permissions') as batch_op:
+            batch_op.alter_column('club_id', existing_type=sa.Integer(), nullable=False)
+
+    if 'unique_role_permission_club' not in rp_unique_constraints():
+        with op.batch_alter_table('role_permissions') as batch_op:
+            batch_op.create_unique_constraint(
+                'unique_role_permission_club',
+                ['role_id', 'permission_id', 'club_id'],
+            )
+
+    # Drop the helper role_id index now that the new unique (which starts
+    # with role_id) backs the role_id FK.
+    if 'ix_role_permissions_role_id' in rp_indexes():
+        with op.batch_alter_table('role_permissions') as batch_op:
+            batch_op.drop_index('ix_role_permissions_role_id')
 
 
 def downgrade():
