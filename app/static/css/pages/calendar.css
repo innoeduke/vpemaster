@@ -369,17 +369,21 @@
         min-width: 0;
     }
     .calendar-page-container .date-filter-group {
+        display: flex;
         flex-direction: row;
         gap: 12px;
         width: 100%;
         justify-content: center;
     }
     .calendar-page-container .date-input-wrapper {
-        flex: 0 1 150px;
+        flex: 1 1 0;
+        width: 0;
         min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
     }
     .calendar-page-container .date-input-wrapper input[type="date"] {
-        width: 100%;
+        width: 100% !important;
         font-size: 0.75rem;
         padding: 6px 8px;
         height: 34px;

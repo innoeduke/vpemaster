@@ -381,6 +381,7 @@ body .profile-section .autocomplete-results-dropdown {
 		width: auto;
 		min-width: 100px;
 		padding: 8px 16px;
+		flex-grow: 0;
 	}
 
 	/* Global Row Standardization */

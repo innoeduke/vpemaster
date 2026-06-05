@@ -7,6 +7,50 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components/profile-sections.css') }}">
 <style>
+    .about-club-container:not(.edit-mode) #cancel-club-btn {
+        display: none !important;
+    }
+
+    /* Button layout & width overrides to prevent stretching and centering */
+    .about-club-container .settings-header .button-group {
+        width: auto !important;
+        justify-content: flex-end !important;
+        margin-left: auto !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 12px !important;
+    }
+
+    .about-club-container .settings-header .btn {
+        flex: none !important;
+        width: auto !important;
+        min-width: 100px !important;
+    }
+
+    /* Modal-style buttons for Cancel and Save */
+    #cancel-club-btn {
+        background-color: transparent !important;
+        color: #555 !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    #cancel-club-btn:hover {
+        background-color: rgba(0, 0, 0, 0.05) !important;
+        color: #333 !important;
+    }
+
+    .about-club-container.edit-mode #edit-club-btn {
+        background-color: #772432 !important; /* Official Toastmasters Maroon */
+        color: #fff !important;
+        border: none !important;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    }
+    .about-club-container.edit-mode #edit-club-btn:hover {
+        background-color: #5e1c27 !important; /* Darker maroon */
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15) !important;
+        transform: translateY(-1px) !important;
+    }
+
     .about-club-container {
         max-width: 1200px;
         margin: 0 auto;
@@ -72,15 +116,24 @@
             }
     
             body .about-club-container .settings-header {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 15px;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 10px;
                 margin-bottom: 25px;
             }
     
             body .about-club-container .settings-header h1 {
                 font-size: 1.5rem;
-                margin-bottom: 5px;
+                margin-bottom: 0;
+                flex: none;
+                min-width: auto;
+            }
+
+            body .about-club-container .settings-header .header-actions {
+                margin-left: auto;
+                width: auto;
             }
         }
 
@@ -477,8 +530,9 @@
             isEditing = true;
             document.querySelector('.about-club-container').classList.add('edit-mode');
             editBtn.innerHTML = '<i class="fas fa-save"></i> Save';
-            editBtn.classList.remove('btn-primary');
+            editBtn.classList.remove('btn-info');
             editBtn.classList.add('btn-success');
+            editBtn.style.backgroundColor = '';
             cancelBtn.style.display = 'inline-block';
 
             const logoEditDiv = document.getElementById('club-logo-edit');
@@ -543,8 +597,8 @@
             document.querySelector('.about-club-container').classList.remove('edit-mode');
             editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
             editBtn.classList.remove('btn-success');
-            editBtn.classList.add('btn-primary');
-            editBtn.style.backgroundColor = '#004165';
+            editBtn.classList.add('btn-info');
+            editBtn.style.backgroundColor = '';
             cancelBtn.style.display = 'none';
 
             const logoEditDiv = document.getElementById('club-logo-edit');
@@ -625,7 +679,7 @@
                         document.querySelector('.about-club-container').classList.remove('edit-mode');
                         editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
                         editBtn.classList.remove('btn-success');
-                        editBtn.classList.add('btn-primary');
+                        editBtn.classList.add('btn-info');
                         editBtn.style.backgroundColor = '';
                         cancelBtn.style.display = 'none';
 
