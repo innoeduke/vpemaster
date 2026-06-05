@@ -9,7 +9,7 @@ let allContactsCache = []; // Cache of all contacts from API
 let filteredContacts = []; // Contacts after applying search filter
 let currentPage = 1;
 let pageSize = 10;
-let sortColumnIndex = 2; // Metrics
+let sortColumnIndex = 3; // Metrics
 let sortDirection = 'desc';
 let selectedContactIds = new Set(); // Globally tracked selected IDs
 
@@ -77,13 +77,13 @@ function applyFilters() {
   // Filter by search term
   if (searchTerm) {
     filteredContacts = filteredContacts.filter(contact => {
-      const typeLabel = contact.user_role || 'Guest';
+      const typeLabel = getContactTypeLabel(contact);
       const searchableText = [
         contact.Name,
         contact.Phone_Number,
         contact.Email,
-        contact.Date_Created,
         contact.Member_ID,
+        contact.Home_Club,
         typeLabel
       ].join(' ').toUpperCase();
 
@@ -101,18 +101,29 @@ function applyFilters() {
 }
 
 /**
+ * Returns the displayed type label for a contact (e.g. Officer title, Member, or Guest)
+ */
+function getContactTypeLabel(contact) {
+  if (contact.is_officer && contact.officer_title) {
+    return contact.officer_title;
+  }
+  const isMember = contact.Type === 'Member' || contact.Type === 'Past Member';
+  return isMember ? 'Member' : 'Guest';
+}
+
+/**
  * Returns a sortable string value for a contact based on column index
  */
 function getContactSortValue(contact, index) {
   switch (index) {
     case 0: return (contact.Name || '').toLowerCase();
-    case 1: return (contact.user_role || 'Guest').toLowerCase();
-    case 2:
+    case 1: return getContactTypeLabel(contact).toLowerCase();
+    case 2: return (contact.Home_Club || '').toLowerCase();
+    case 3:
       // Participation: [Attendance]_[Role Count]_[Qualified]_[TT Count]_[Awards]
       return `${String(contact.attendance_count || 0).padStart(3, '0')}_${String(contact.role_count || 0).padStart(3, '0')}_${contact.is_qualified ? '1' : '0'}_${String(contact.tt_count || 0).padStart(3, '0')}_${String(contact.award_count || 0).padStart(3, '0')}`;
-    case 3: return (contact.Phone_Number || '').toLowerCase();
-    case 4: return (contact.Email || '').toLowerCase();
-    case 5: return (contact.Date_Created || '').toLowerCase();
+    case 4: return (contact.Phone_Number || '').toLowerCase();
+    case 5: return (contact.Email || '').toLowerCase();
     default: return '';
   }
 }
@@ -209,6 +220,7 @@ function createContactRow(contact) {
         return `<span class="contact-type-badge type-${typeClass}">${label}</span>`;
       })()}
     </td>
+    <td class="col-home-club">${contact.Home_Club || '-'}</td>
     <td class="col-part" data-sort="${sortValue}">
       <div class="participation-container">
         ${contact.is_qualified ? '<i class="fas fa-star" title="Qualified Guest" style="color: #ffc107; font-size: 1.1em;"></i>' : ''}
@@ -243,7 +255,6 @@ function createContactRow(contact) {
     </td>
     <td class="col-phone">${contact.Phone_Number}</td>
     <td class="col-email"><a href="mailto:${contact.Email}" class="contact-email-link">${contact.Email}</a></td>
-    <td class="col-date">${contact.Date_Created}</td>
     ${hasEditPermission ? `
     <td class="col-actions">
       <div class="action-links">
@@ -614,7 +625,7 @@ function setupContactsTableSorting() {
       } else {
         sortColumnIndex = index;
         // Default to descending for Participation, ascending for others
-        sortDirection = (index === 2) ? 'desc' : 'asc';
+        sortDirection = (index === 3) ? 'desc' : 'asc';
       }
 
       // Update UI

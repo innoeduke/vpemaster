@@ -47,7 +47,8 @@ def search_contacts_by_name():
         "Type": c.Type,
         "Phone_Number": c.Phone_Number,
         "UserRole": c.user.primary_role_name if c.user else None,
-        "is_officer": c.id in officer_ids
+        "is_officer": c.id in officer_ids,
+        "Home_Club": c.home_club
     } for c in contacts]
     return jsonify(contacts_data)
 
@@ -166,43 +167,20 @@ def contact_form(contact_id=None):
         contact = Contact.query.get_or_404(contact_id)
 
     if request.method == 'GET' and contact:
-        # Fetch User Clubs for Home Club Selector
+        # User-level Home Club selector (drives User.home_club). Only
+        # relevant when contact is linked to a user. Reads from
+        # UserClub.is_home, NOT from contact.home_club (those are
+        # independent fields — see docs/CONTACT_USER_CLUB_MODEL.md).
         user_clubs_data = []
         home_club_id = None
-        
-        # Check if contact is linked to a user
-        # Note: We need to check across ALL clubs, so we look for any UserClub with this contact_id or user_id
-        # Actually, contact.user property checks current club context.
-        # But for Home Club, we might want to see ALL clubs the user is in.
-        
-        # Strategy: Find the User associated with this contact.
-        # Since contact <-> user is many-to-many via UserClub, a contact might be associated with a user in THIS club.
-        # If so, get that user's other clubs.
-        
-        user = contact.user # Uses current club context
-        user_clubs_data = []
-        home_club_id = None
-        
-        # 1. Primary source: Home Club via Member ID (global)
-        home_club = contact.get_home_club()
-        if home_club:
-            home_club_id = home_club.id
-            user_clubs_data = [{'id': home_club.id, 'name': home_club.club_name}]
 
-        # 2. Add other clubs the user is a member of
+        user = contact.user  # Uses current club context
         if user:
             ucs = UserClub.query.filter_by(user_id=user.id).options(joinedload(UserClub.club)).all()
-            # Merge with existing data to avoid duplicates
-            existing_ids = {c['id'] for c in user_clubs_data}
-            for uc in ucs:
-                if uc.club.id not in existing_ids:
-                    user_clubs_data.append({'id': uc.club.id, 'name': uc.club.club_name})
-            
-            # Prefer home club from UserClub record if it exists
+            user_clubs_data = [{'id': uc.club.id, 'name': uc.club.club_name} for uc in ucs]
             home_uc = next((uc for uc in ucs if uc.is_home), None)
             if home_uc:
                 home_club_id = home_uc.club_id
-
 
         # Check is_officer
         current_club_id = get_current_club_id()
@@ -235,7 +213,10 @@ def contact_form(contact_id=None):
                 'next_project': contact.Next_Project,
                 'credentials': contact.credentials,
                 'Avatar_URL': contact.Avatar_URL,
-                'mentor_id': contact.Mentor_ID
+                'mentor_id': contact.Mentor_ID,
+                # Contact-level home club (the new field). Independent
+                # from user_clubs/home_club_id above.
+                'home_club': contact.home_club
             },
             'user_clubs': user_clubs_data,
             'home_club_id': home_club_id,
@@ -280,7 +261,13 @@ def contact_form(contact_id=None):
             contact.Bio = bio
             contact.Member_ID = member_id
             contact.Mentor_ID = mentor_id
-            
+
+            # Contact-level home club (independent from User.home_club —
+            # see docs/CONTACT_USER_CLUB_MODEL.md). Plain text input on
+            # the form. Trim, treat empty as null.
+            contact_home_club_val = request.form.get('contact_home_club', '').strip() or None
+            contact.home_club = contact_home_club_val[:200] if contact_home_club_val else None
+
             # Manual overrides for completed paths and DTM if present in form
             if 'completed_paths' in request.form:
                 new_completed = request.form.get('completed_paths')
@@ -392,6 +379,9 @@ def contact_form(contact_id=None):
             target_contact = contact
         else:
             # Create New Contact
+            new_contact_home_club = (request.form.get('contact_home_club', '').strip() or None)
+            if new_contact_home_club:
+                new_contact_home_club = new_contact_home_club[:200]
             new_contact = Contact(
                 first_name=first_name,
                 last_name=last_name,
@@ -404,7 +394,8 @@ def contact_form(contact_id=None):
                 Member_ID=member_id,
                 Mentor_ID=mentor_id,
                 DTM='dtm' in request.form,
-                Current_Path=request.form.get('current_path') if contact_type in ['Member', 'Officer'] else None
+                Current_Path=request.form.get('current_path') if contact_type in ['Member', 'Officer'] else None,
+                home_club=new_contact_home_club
             )
             
             # Auto-populate Name from parts if they exist
@@ -897,6 +888,7 @@ def get_all_contacts_api():
             'Type': c.Type,
             'Phone_Number': c.Phone_Number if c.Phone_Number else '-',
             'Club': primary_club.club_name if primary_club else '-',
+            'Home_Club': c.home_club if c.home_club else '-',
             'Completed_Paths': c.Completed_Paths if c.Completed_Paths else '-',
             'credentials': c.credentials if c.credentials else '-',
             'Next_Project': c.Next_Project if c.Next_Project else '-',

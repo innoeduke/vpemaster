@@ -38,26 +38,32 @@
   .term-filter-form,
   .date-filter-form {
     max-width: none;
-    width: 100%;
+    width: 100% !important;
+    box-sizing: border-box;
   }
 
   .date-filter-group {
-    flex-direction: row;
+    display: flex !important;
+    flex-direction: row !important;
     gap: 12px;
     width: 100%;
-    justify-content: center;
   }
 
   .date-input-wrapper {
-    flex: 0 1 150px;
-    min-width: 0;
+    flex: 1 1 0 !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
-  .date-input-wrapper input[type="date"] {
-    width: 100%;
-    font-size: 0.75rem;
-    padding: 6px 8px;
-    height: 34px;
+  .date-input-wrapper input[type="date"],
+  .date-input-wrapper input[type="date"].form-control {
+    width: 100% !important;
+    max-width: 100% !important;
+    font-size: 0.85rem;
+    padding: 6px 4px 6px 8px !important;
+    height: 36px;
     border-radius: 8px;
     border: 1px solid #cbd5e1;
     background-color: #f8fafc;
@@ -65,7 +71,7 @@
     font-family: "Montserrat", "Inter", sans-serif;
     transition: all 0.2s ease-in-out;
     outline: none;
-    box-sizing: border-box;
+    box-sizing: border-box !important;
   }
 
   .date-input-wrapper input[type="date"]::-webkit-datetime-edit {
@@ -75,7 +81,7 @@
 
   .date-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
     flex-shrink: 0;
-    margin: 0;
+    margin: 0 0 0 4px;
     padding: 0;
   }
 
@@ -144,16 +150,21 @@
 
   /* Contacts Page Responsive Fixes */
   .contact-table-container {
-    display: block;
+    display: block !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    margin: 0;
+    padding: 0;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   #contactsTable {
-    display: block;
     width: 100%;
     margin: 0;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
     font-size: 0.9em;
+    table-layout: auto !important;
   }
 
   /* Column widths and visibility on mobile */
@@ -165,20 +176,23 @@
   }
 
   #contactsTable .col-name {
-    min-width: 140px;
-  }
-
-  #contactsTable .col-part {
-    width: 1% !important;
-    min-width: 80px !important;
+    width: auto;
+    min-width: 0;
     white-space: nowrap;
   }
 
-  /* Mobile: Show Checkbox, Name, Participation, Actions. Hide Type, Phone, Email, Date. */
+  #contactsTable .col-part {
+    width: auto;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  /* Mobile: Show Checkbox, Name, Participation. Hide Type, Home Club, Phone, Email, Actions. */
   #contactsTable .col-type,
+  #contactsTable .col-home-club,
   #contactsTable .col-phone,
   #contactsTable .col-email,
-  #contactsTable .col-date {
+  #contactsTable .col-actions {
     display: none;
   }
 

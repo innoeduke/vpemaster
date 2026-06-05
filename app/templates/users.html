@@ -3,87 +3,70 @@
 {% block title %}{{ _('Members') }}{% endblock %}
 
 {% block head_extra %}
-<style>
-  /* Extra styling to make it feel premium */
-  .member-management-container {
-    background-color: var(--card-bg, #fff);
-    border-radius: 8px;
-    padding: 24px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    margin-bottom: 24px;
-  }
-  .search-container.global-search-bar {
-    margin-bottom: 20px;
-    position: relative;
-    max-width: 400px;
-  }
-  .clear-search-btn {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    font-size: 18px;
-    cursor: pointer;
-    color: #999;
-  }
-  .clear-search-btn:hover {
-    color: #333;
-  }
-</style>
 {% endblock %}
 
 {% block content %}
 <div class="member-management-container">
   <h1><i class="fas fa-users-cog"></i> {{ _('Members') }}</h1>
 
-  <div class="search-container global-search-bar">
-    <input type="text" id="global-settings-search" name="global_settings_search" placeholder="{{ _('Search members...') }}"
-      class="search-box" />
-    <button id="clear-global-settings-search" class="clear-search-btn" style="display: none;">
-      &times;
-    </button>
-  </div>
-
   <div id="user-settings" class="tab-content" style="display: block;">
-    <div class="settings-header">
-      <h2>{{ _('Club Members') }}</h2>
-      <div class="button-group">
-        <button type="button" class="btn btn-success" style="flex-grow: 0;" onclick="openUserModal()">{{ _('Add New') }}</button>
-        <form action="{{ url_for('users_bp.bulk_import_users') }}" method="post" enctype="multipart/form-data"
-          id="bulk-import-form" style="display: none;">
-          <input type="file" name="file" id="bulk-import-file" accept=".csv" />
-        </form>
-        <button type="button" class="btn btn-info" id="bulk-import-btn">
-          {{ _('Bulk Import') }}
-        </button>
+    <div class="member-action-bar">
+      <div class="members-filter-container">
+        <div class="search-and-buttons">
+          <div class="search-container">
+            <label for="global-settings-search" class="filter-label">{{ _('Search Member') }}:</label>
+            <div style="position: relative">
+              <input type="text" id="global-settings-search" placeholder="{{ _('Search members...') }}" class="search-box" />
+              <button id="clear-global-settings-search" class="clear-search-btn" style="display: none">
+                &times;
+              </button>
+            </div>
+          </div>
+
+          <div class="button-group">
+            <button type="button" class="btn btn-success" onclick="openUserModal()">{{ _('Add New') }}</button>
+            <form action="{{ url_for('users_bp.bulk_import_users') }}" method="post" enctype="multipart/form-data"
+              id="bulk-import-form" style="display: none;">
+              <input type="file" name="file" id="bulk-import-file" accept=".csv" />
+            </form>
+            <button type="button" class="btn btn-info" id="bulk-import-btn">
+              {{ _('Bulk Import') }}
+            </button>
+            {% if is_authorized(Permissions.ROSTER_VIEW) %}
+            <button type="button" class="btn btn-maroon" onclick="window.location.href='{{ url_for('contacts_bp.member_cards') }}';" title="{{ _('Grid View') }}">
+              <i class="fas fa-th-large"></i>
+            </button>
+            {% endif %}
+          </div>
+        </div>
       </div>
     </div>
-    
-    <table id="user-settings-table">
-      <thead>
-        <tr>
-          <th class="sortable" data-column-index="0">{{ _('No.') }}</th>
-          <th class="sortable" data-column-index="1">{{ _('Full Name (Username)') }}</th>
-          <th class="sortable" data-column-index="2">{{ _('Roles') }}</th>
-          <th class="sortable" data-column-index="3">{{ _('Email') }}</th>
-          <th class="sortable" data-column-index="4">{{ _('Phone') }}</th>
-          <th class="sortable" data-column-index="5">{{ _('Mentor') }}</th>
-          <th class="sortable" data-column-index="6">{{ _('Current Path') }}</th>
-          <th class="sortable" data-column-index="7">{{ _('Next Project') }}</th>
-          <th data-column-index="8">{{ _('Actions') }}</th>
-        </tr>
-      </thead>
-      <tbody id="users-table-body">
-        <tr>
-          <td colspan="9" class="text-center py-4">
-            <i class="fas fa-spinner fa-spin fa-2x"></i>
-            <p class="mt-2 text-muted">{{ _('Loading users...') }}</p>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+
+    <div class="member-table-container">
+      <table id="user-settings-table">
+        <thead>
+          <tr>
+            <th class="sortable col-no" data-column-index="0">{{ _('No.') }}</th>
+            <th class="sortable col-name" data-column-index="1">{{ _('Full Name (Username)') }}</th>
+            <th class="sortable col-roles" data-column-index="2">{{ _('Roles') }}</th>
+            <th class="sortable col-email" data-column-index="3">{{ _('Email') }}</th>
+            <th class="sortable col-phone" data-column-index="4">{{ _('Phone') }}</th>
+            <th class="sortable col-mentor" data-column-index="5">{{ _('Mentor') }}</th>
+            <th class="sortable col-path" data-column-index="6">{{ _('Current Path') }}</th>
+            <th class="sortable col-project" data-column-index="7">{{ _('Next Project') }}</th>
+            <th class="col-actions" data-column-index="8">{{ _('Actions') }}</th>
+          </tr>
+        </thead>
+        <tbody id="users-table-body">
+          <tr>
+            <td colspan="9" class="text-center py-4">
+              <i class="fas fa-spinner fa-spin fa-2x"></i>
+              <p class="mt-2 text-muted">{{ _('Loading users...') }}</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <div class="pagination-container" id="user-pagination">
       <div class="pagination-info" id="user-pagination-info">{{ _('Showing 0 - 0 of 0 users') }}</div>
@@ -115,6 +98,7 @@
 {% block scripts %}
 <script>
   const CURRENT_CLUB_ID = {{ club_id }};
+  const CAN_EDIT_USERS = {{ 'true' if is_authorized(Permissions.ROSTER_EDIT) else 'false' }};
 </script>
 <script src="{{ url_for('static', filename='js/members.js') }}?v={{ range(1, 10000) | random }}"></script>
 {% endblock %}

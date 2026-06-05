@@ -60,13 +60,7 @@ head_extra %}
           {{ _('Roster') }}
         </button>
         {% endif %}
-        
-        {% if is_authorized(Permissions.ROSTER_VIEW) %}
-        <button class="btn btn-maroon desktop-only-btn" onclick="window.location.href='{{ url_for('contacts_bp.member_cards') }}';" title="{{ _('Grid View') }}">
-          <i class="fas fa-th-large"></i>
-        </button>
-        {% endif %}
- 
+
         <!-- Mobile Action Dropdown -->
         <div class="action-dropdown mobile-only-item">
           <button id="action-btn" class="btn btn-secondary action-icon-btn" title="{{ _('Actions') }}">
@@ -78,16 +72,10 @@ head_extra %}
               <i class="fas fa-plus"></i> {{ _('New') }}
             </div>
             {% endif %}
- 
+
             {% if is_authorized(Permissions.ROSTER_VIEW) %}
             <div class="action-menu-item" onclick="window.location.href='{{ url_for('roster_bp.roster') }}';">
               <i class="fas fa-users"></i> {{ _('Roster') }}
-            </div>
-            {% endif %}
- 
-            {% if is_authorized(Permissions.ROSTER_VIEW) %}
-            <div class="action-menu-item" onclick="window.location.href='{{ url_for('contacts_bp.member_cards') }}';">
-              <i class="fas fa-th-large"></i> {{ _('Grid View') }}
             </div>
             {% endif %}
           </div>
@@ -122,17 +110,17 @@ head_extra %}
         <th class="sortable col-type" data-column-index="1" data-sort-type="string">
           {{ _('Type') }}
         </th>
-        <th class="sortable col-part" data-column-index="2" data-sort-type="string">
+        <th class="sortable col-home-club" data-column-index="2" data-sort-type="string">
+          {{ _('Club') }}
+        </th>
+        <th class="sortable col-part" data-column-index="3" data-sort-type="string">
           {{ _('Metrics') }}
         </th>
-        <th class="sortable col-phone" data-column-index="3" data-sort-type="string">
+        <th class="sortable col-phone" data-column-index="4" data-sort-type="string">
           {{ _('Phone') }}
         </th>
-        <th class="sortable col-email" data-column-index="4" data-sort-type="string">
+        <th class="sortable col-email" data-column-index="5" data-sort-type="string">
           {{ _('Email') }}
-        </th>
-        <th class="sortable col-date" data-column-index="5" data-sort-type="date">
-          {{ _('Date Created') }}
         </th>
         {% if is_authorized(Permissions.ROSTER_EDIT) %}
         <th class="action-header col-actions" data-column-index="6"></th>

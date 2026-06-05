@@ -120,7 +120,7 @@ class TablePaginator {
   }
 }
 
-function openUserModal(userId = null, btn = null) {
+function openUserModal(userId = null, source = null) {
   const modal = document.getElementById('userModal');
   const title = document.getElementById('user-modal-title');
   const form = document.getElementById('user-form');
@@ -142,9 +142,19 @@ function openUserModal(userId = null, btn = null) {
     });
   }
 
-  if (userId && btn) {
+  // Resolve the row from `source`. It can be a <tr> directly (row click)
+  // or a button inside the row (existing edit-button behavior).
+  let tr = null;
+  if (source) {
+    if (source.tagName === 'TR') {
+      tr = source;
+    } else if (typeof source.closest === 'function') {
+      tr = source.closest('tr');
+    }
+  }
+
+  if (userId && tr) {
     const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
-    const tr = btn.closest('tr');
     title.textContent = isChinese ? '编辑用户' : 'Edit User';
     document.getElementById('user_id').value = userId;
     document.getElementById('user_contact_id').value = tr.dataset.contactId || '';
@@ -454,15 +464,15 @@ async function loadUsersAsync() {
         `;
 
         tr.innerHTML = `
-          <td>${index + 1}</td>
-          <td>${contactDisplay}</td>
-          <td>${rolesHtml}</td>
-          <td>${user.email}</td>
-          <td>${user.phone || ''}</td>
-          <td>${user.mentor_name}</td>
-          <td>${pathHtml}</td>
-          <td>${(user.next_project && user.next_project !== 'null') ? user.next_project : '-'}</td>
-          <td>${actionsHtml}</td>
+          <td class="col-no">${index + 1}</td>
+          <td class="col-name"><div class="member-name-cell ${typeof CAN_EDIT_USERS !== 'undefined' && CAN_EDIT_USERS ? 'clickable-cell' : ''}" ${typeof CAN_EDIT_USERS !== 'undefined' && CAN_EDIT_USERS ? `onclick="openUserModal('${user.id}', this.closest('tr'))"` : ''}>${contactDisplay}</div></td>
+          <td class="col-roles">${rolesHtml}</td>
+          <td class="col-email">${user.email}</td>
+          <td class="col-phone">${user.phone || ''}</td>
+          <td class="col-mentor">${user.mentor_name}</td>
+          <td class="col-path">${pathHtml}</td>
+          <td class="col-project">${(user.next_project && user.next_project !== 'null') ? user.next_project : '-'}</td>
+          <td class="col-actions">${actionsHtml}</td>
         `;
 
         tableBody.appendChild(tr);

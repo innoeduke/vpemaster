@@ -159,6 +159,10 @@ function openContactModal(contactId) {
         document.getElementById("email").value = data.contact.Email || "";
         document.getElementById("phone_number").value =
           data.contact.Phone_Number || "";
+        // Contact-level home club (independent from the user-level
+        // home_club_id selector above).
+        document.getElementById("contact_home_club").value =
+          data.contact.home_club || "";
 
          let bioText = data.contact.Bio || "";
          bioText = bioText.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n');

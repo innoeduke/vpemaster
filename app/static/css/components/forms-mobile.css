@@ -87,7 +87,9 @@
 
   /* Fix modal-content form inputs and select widths on mobile to prevent overflow and misalignment */
   :root body .modal-content input:not([type="checkbox"]):not([type="radio"]),
-  :root body .modal-content select {
+  :root body .modal-content select,
+  :root body .planner-modal-content input:not([type="checkbox"]):not([type="radio"]),
+  :root body .planner-modal-content select {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
@@ -97,7 +99,9 @@
     text-align: left;
   }
 
-  :root body .modal-content .form-group {
+  :root body .modal-content .form-group,
+  :root body .planner-modal-content .planner-form-group {
     text-align: left;
+    min-width: 0;
   }
 }

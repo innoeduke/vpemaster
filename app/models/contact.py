@@ -25,6 +25,14 @@ class Contact(db.Model):
     Avatar_URL = db.Column(db.String(255), nullable=True)
     is_connected = db.Column(db.Boolean, default=True)
 
+    # Contact-level home club. Plain text by design — see
+    # docs/CONTACT_USER_CLUB_MODEL.md rule 6. Independent from
+    # User.home_club (which drives auth/login/profile). For user-linked
+    # contacts, this is backfilled from User.home_club on migration and
+    # then drifts independently; for guest contacts, this is the only
+    # home club they have.
+    home_club = db.Column(db.String(200), nullable=True)
+
     mentor = db.relationship('Contact', remote_side=[id], foreign_keys=[Mentor_ID], backref='mentees')
     
     # Add cascades for child records to ensure clean deletion of contacts
@@ -392,19 +400,15 @@ class Contact(db.Model):
     def get_home_club(self):
         """
         Get the home club for this contact.
-        Consistently looks up the home club via the associated User record.
+        Reads from the contact's own `home_club` column directly. This is
+        the contact-level home club (display on the contacts page) — it is
+        a separate concept from `User.home_club` (which drives auth,
+        login, profile, and the current club context). For user-linked
+        contacts, both can be set; they drift independently. For guest
+        contacts, this is the only home club they have.
+        Returns the home club name as a string, or None.
         """
-        if getattr(self, '_home_club_checked', False):
-            return getattr(self, '_home_club', None)
-            
-        self._home_club_checked = True
-        self._home_club = None
-        
-        user = self.user
-        if user:
-            self._home_club = user.home_club
-            
-        return self._home_club
+        return self.home_club
 
     # Removed duplicate user_id and user definitions that were tied strictly to club_context.
     # The properties above handle global identification with club preference.

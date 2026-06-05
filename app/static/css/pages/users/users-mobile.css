@@ -1,0 +1,145 @@
+/* ========================================
+   Members Page — Mobile styles (<= 768px)
+   Show only Name / Role / Next Project.
+   Tap a row's name (if permitted) to open the
+   member edit form.
+   ======================================== */
+
+@media (max-width: 768px) {
+  /* Remove the white background card frame on mobile */
+  .member-management-container {
+    background-color: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Match Action Bar structure of contacts page */
+  .member-action-bar {
+    flex-direction: column;
+    align-items: stretch;
+    margin-bottom: 0 !important;
+    padding: 0 !important;
+  }
+
+  .members-filter-container {
+    background-color: #f8f9fa;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 0 !important;
+    align-items: stretch;
+  }
+
+  #user-settings.tab-content {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  .search-and-buttons {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .search-container {
+    flex: 1;
+    min-width: unset;
+    width: 100% !important;
+  }
+
+  .search-container .search-box {
+    width: 100% !important;
+  }
+
+  .button-group {
+    width: 100%;
+    justify-content: center;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .button-group .btn {
+    flex: 1;
+  }
+
+  /* Hide bulk import on mobile */
+  #bulk-import-btn {
+    display: none !important;
+  }
+
+  /* Responsive Table Container (scrollable, no frame) */
+  .member-table-container {
+    display: block !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    margin: 1.25rem 0 !important;
+    padding: 0;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  #user-settings-table {
+    display: table;
+    width: 100%;
+    margin: 0;
+    font-size: 0.9em;
+    table-layout: auto !important;
+    border: none;
+    border-radius: 0;
+  }
+
+  #user-settings-table .col-name {
+    width: auto;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  #user-settings-table .col-roles {
+    width: auto;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  #user-settings-table .col-project {
+    width: auto;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  /* Hide other columns on mobile */
+  #user-settings-table .col-no,
+  #user-settings-table .col-email,
+  #user-settings-table .col-phone,
+  #user-settings-table .col-mentor,
+  #user-settings-table .col-path,
+  #user-settings-table .col-actions {
+    display: none;
+  }
+
+  /* Reduce pagination font to keep on one line */
+  .pagination-container {
+    font-size: 0.8em;
+    margin-top: 0 !important;
+  }
+  .pagination-info,
+  .page-indicator {
+    white-space: nowrap;
+  }
+
+  /* Make name cell clickable link obvious */
+  #user-settings-table .member-name-cell.clickable-cell {
+    cursor: pointer;
+  }
+  #user-settings-table tbody tr:hover .member-name-cell.clickable-cell {
+    color: #004165;
+    text-decoration: underline;
+  }
+}

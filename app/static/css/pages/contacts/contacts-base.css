@@ -300,8 +300,15 @@
   min-width: 200px;
 }
 
+/* Body text in Club / Email / Phone 1pt smaller than the header */
+#contactsTable tbody .col-home-club,
+#contactsTable tbody .col-email,
+#contactsTable tbody .col-phone {
+  font-size: 0.92em;
+}
+
 #contactsTable .col-type {
-  width: 110px;
+  width: 100px;
   text-align: left;
 }
 
@@ -329,16 +336,23 @@
 .contact-type-badge.type-operator { background-color: #ccfbf1; color: #115e59; }
 .contact-type-badge.type-user { background-color: #e2e8f0; color: #475569; }
 
+#contactsTable .col-home-club {
+  width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 #contactsTable .col-part {
   width: 200px;
 }
 
 #contactsTable .col-phone {
-  width: 140px;
+  width: 120px;
 }
 
 #contactsTable .col-email {
-  width: 220px;
+  width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -356,10 +370,6 @@
 }
 #contactsTable .col-email .contact-email-link:hover {
   text-decoration: underline;
-}
-
-#contactsTable .col-date {
-  width: 110px;
 }
 
 /* Disabled icon button (e.g., delete on non-Guests) */
