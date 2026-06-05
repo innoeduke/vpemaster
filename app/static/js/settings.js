@@ -1454,6 +1454,24 @@ function translateModuleName(name) {
   return translations[name] || name;
 }
 
+// Security group description translations. Kept in sync with the English
+// descriptions seeded by migration 4b5c6d7e8f90_update_security_group_descriptions
+// and the matching entries in app/translations/zh_CN.json. Falling back to the
+// original text keeps English mode and any future / custom descriptions working
+// without code changes.
+function translateRoleDescription(desc) {
+  if (!desc) return desc;
+  const translations = {
+    "System administrator — unrestricted access across all clubs, settings, modules, and data. Hidden from the club-level permissions matrix by design.": "系统管理员 — 在所有俱乐部拥有无限制权限，可访问设置、模块及全部数据。默认在俱乐部层级的权限矩阵中隐藏。",
+    "Club leadership team — full configuration of this club: members, security groups, modules, speech logs, and all data. Typically held by the VPE or President.": "俱乐部领导团队 — 可对本俱乐部进行全面配置：成员、安全组、模块、演讲记录及全部数据。通常由 VPE 或主席担任。",
+    "Meeting operations lead — owns the weekly meeting: agenda, roster, booking, lucky draw, voting results, and speech-log tracking. Typically held by the SAA and meeting chairs.": "会议运营负责人 — 负责每周例会：日程、花名册、订场、幸运抽奖、投票结果及演讲记录跟踪。通常由 SAA 与例会主持担任。",
+    "Club officer — view access across all club data plus the planner and own-profile editing. Held by the seven club officers.": "俱乐部官员 — 可查看俱乐部全部数据，并可使用规划助手与编辑个人资料。由七位俱乐部官员担任。",
+    "Club member — view published club content, book own meeting roles, edit own profile, and track own speech-log progress.": "俱乐部成员 — 可查看已发布的俱乐部内容、预订自己的会议角色、编辑个人资料，并跟踪自己的演讲记录进度。",
+    "Anonymous visitor — view the public club home page, agenda, and Pathway library. No login required.": "匿名访客 — 可查看俱乐部公开主页、日程表与路径库，无需登录。"
+  };
+  return translations[desc] || desc;
+}
+
 function toggleModuleState(checkbox) {
   const moduleName = checkbox.dataset.moduleName;
   const isEnabled = checkbox.checked;
@@ -1495,28 +1513,39 @@ function renderAuthRolesTable(roles) {
   const tableBody = document.getElementById("auth-roles-table-body");
   if (!tableBody) return;
 
+  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+
   if (roles.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4">No security groups found.</td></tr>`;
+    const emptyMsg = isChinese ? '未找到安全组' : 'No security groups found.';
+    tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4">${emptyMsg}</td></tr>`;
     return;
   }
+
+  const noDescPlaceholder = isChinese
+    ? '<em class="text-muted">暂无描述</em>'
+    : '<em class="text-muted">No description</em>';
 
   tableBody.innerHTML = roles.map(role => {
     const isCore = role.is_core;
     const badgeClass = isCore ? `role-${role.name.toLowerCase()}` : 'role-other';
     const badgeHtml = `<span class="roster-role-tag ${badgeClass}">${role.name}</span>`;
-    
+
     // Core system roles cannot be deleted
-    const deleteBtn = isCore 
+    const deleteBtn = isCore
       ? `<button class="delete-btn icon-btn" disabled title="System Core Security Group (Protected)"><i class="fas fa-lock"></i></button>`
       : (typeof HAS_SETTINGS_EDIT !== 'undefined' && HAS_SETTINGS_EDIT)
         ? `<button class="delete-btn icon-btn" onclick="deleteAuthRole(${role.id}, '${role.name.replace(/'/g, "\\'")}')" title="Delete custom security group"><i class="fas fa-trash-alt"></i></button>`
         : `<button class="delete-btn icon-btn" disabled title="No edit permissions"><i class="fas fa-trash-alt"></i></button>`;
 
+    const displayDesc = role.description
+      ? (isChinese ? translateRoleDescription(role.description) : role.description)
+      : noDescPlaceholder;
+
     return `
       <tr data-id="${role.id}">
         <td>${badgeHtml}</td>
         <td>Level ${role.level}</td>
-        <td>${role.description || '<em class="text-muted">No description</em>'}</td>
+        <td>${displayDesc}</td>
         <td>
           <div class="action-links">
             ${deleteBtn}

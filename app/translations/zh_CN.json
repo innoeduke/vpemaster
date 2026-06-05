@@ -668,5 +668,12 @@
   "running": "进行中",
   "scheduled": "计划中",
   "upcoming": "未开始",
-  "used": "已使用"
+  "used": "已使用",
+  "System administrator — unrestricted access across all clubs, settings, modules, and data. Hidden from the club-level permissions matrix by design.": "系统管理员 — 在所有俱乐部拥有无限制权限，可访问设置、模块及全部数据。默认在俱乐部层级的权限矩阵中隐藏。",
+  "Club leadership team — full configuration of this club: members, security groups, modules, speech logs, and all data. Typically held by the VPE or President.": "俱乐部领导团队 — 可对本俱乐部进行全面配置：成员、安全组、模块、演讲记录及全部数据。通常由 VPE 或主席担任。",
+  "Meeting operations lead — owns the weekly meeting: agenda, roster, booking, lucky draw, voting results, and speech-log tracking. Typically held by the SAA and meeting chairs.": "会议运营负责人 — 负责每周例会：日程、花名册、订场、幸运抽奖、投票结果及演讲记录跟踪。通常由 SAA 与例会主持担任。",
+  "Club officer — view access across all club data plus the planner and own-profile editing. Held by the seven club officers.": "俱乐部官员 — 可查看俱乐部全部数据，并可使用规划助手与编辑个人资料。由七位俱乐部官员担任。",
+  "Club member — view published club content, book own meeting roles, edit own profile, and track own speech-log progress.": "俱乐部成员 — 可查看已发布的俱乐部内容、预订自己的会议角色、编辑个人资料，并跟踪自己的演讲记录进度。",
+  "Anonymous visitor — view the public club home page, agenda, and Pathway library. No login required.": "匿名访客 — 可查看俱乐部公开主页、日程表与路径库，无需登录。"
+
 }
