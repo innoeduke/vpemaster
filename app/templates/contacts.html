@@ -97,17 +97,7 @@ head_extra %}
   </div>
 </div>
  
-<!-- Contact Tabs -->
-{% if is_authorized(Permissions.ROSTER_EDIT) %}
-<div class="nav-tabs" id="contactsTabs">
-  {% for contact_type in contact_types %}
-  <div class="nav-item {% if loop.first %}active{% endif %}" data-type="{{ contact_type }}">
-    {{ _(contact_type) }}
-    <span class="tab-badge">{{ type_counts[contact_type] }}</span>
-  </div>
-  {% endfor %}
-</div>
-{% endif %}
+<!-- Contact Tabs removed: Members & Guests are merged into a single view. -->
 
 <div class="contact-table-container">
   <!-- Loading Spinner -->
@@ -129,8 +119,8 @@ head_extra %}
         <th class="sortable col-name" data-column-index="0" data-sort-type="string">
           {{ _('Name') }}
         </th>
-        <th class="sortable col-officer" data-column-index="1" data-sort-type="boolean">
-          {{ _('Officer') }}
+        <th class="sortable col-type" data-column-index="1" data-sort-type="string">
+          {{ _('Type') }}
         </th>
         <th class="sortable col-part" data-column-index="2" data-sort-type="string">
           {{ _('Metrics') }}
@@ -138,26 +128,14 @@ head_extra %}
         <th class="sortable col-phone" data-column-index="3" data-sort-type="string">
           {{ _('Phone') }}
         </th>
-        <th class="sortable col-date" data-column-index="4" data-sort-type="date">
+        <th class="sortable col-email" data-column-index="4" data-sort-type="string">
+          {{ _('Email') }}
+        </th>
+        <th class="sortable col-date" data-column-index="5" data-sort-type="date">
           {{ _('Date Created') }}
         </th>
-        <th class="sortable col-club" data-column-index="5" data-sort-type="string">
-          {{ _('Club') }}
-        </th>
-        <th class="sortable col-paths" data-column-index="6" data-sort-type="string">
-          {{ _('Completed Paths') }}
-        </th>
-        <th class="sortable col-creds" data-column-index="7" data-sort-type="string">
-          {{ _('Credentials') }}
-        </th>
-        <th class="sortable col-next" data-column-index="8" data-sort-type="string">
-          {{ _('Next Project') }}
-        </th>
-        <th class="sortable col-mentor" data-column-index="9" data-sort-type="string">
-          {{ _('Mentor') }}
-        </th>
         {% if is_authorized(Permissions.ROSTER_EDIT) %}
-        <th class="action-header col-actions" data-column-index="10"></th>
+        <th class="action-header col-actions" data-column-index="6"></th>
         {% endif %}
       </tr>
     </thead>

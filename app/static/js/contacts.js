@@ -6,7 +6,7 @@ const contactModalTitle = document.getElementById("contactModalTitle");
 
 // --- Pagination State ---
 let allContactsCache = []; // Cache of all contacts from API
-let filteredContacts = []; // Contacts after applying tab and search filters
+let filteredContacts = []; // Contacts after applying search filter
 let currentPage = 1;
 let pageSize = 10;
 let sortColumnIndex = 2; // Metrics
@@ -65,38 +65,26 @@ async function refreshContactCache() {
 }
 
 /**
- * Applies tab and search filters to cached contacts
+ * Applies search filter to cached contacts (no tab filter — Members & Guests are merged).
  */
 function applyFilters() {
-  const activeTabItem = document.querySelector("#contactsTabs .nav-item.active");
   const searchInput = document.getElementById("searchInput");
   const searchTerm = searchInput ? searchInput.value.toUpperCase().trim() : '';
 
-  if (activeTabItem) {
-    const activeTab = activeTabItem.dataset.type;
-    // Filter by tab
-    filteredContacts = allContactsCache.filter(contact => contact.Type === activeTab);
-  } else {
-    // If no tab is active (e.g. regular member view where tabs are hidden), 
-    // filter to show only Members and Officers
-    filteredContacts = allContactsCache.filter(contact =>
-      contact.Type === 'Member' || contact.Type === 'Officer'
-    );
-  }
+  // Start with the full cache; no tab filtering.
+  filteredContacts = allContactsCache.slice();
 
   // Filter by search term
   if (searchTerm) {
     filteredContacts = filteredContacts.filter(contact => {
+      const typeLabel = contact.user_role || 'Guest';
       const searchableText = [
         contact.Name,
         contact.Phone_Number,
+        contact.Email,
         contact.Date_Created,
-        contact.Club,
-        contact.Completed_Paths,
-        contact.credentials,
-        contact.Next_Project,
-        contact.Mentor,
-        contact.Member_ID
+        contact.Member_ID,
+        typeLabel
       ].join(' ').toUpperCase();
 
       return searchableText.includes(searchTerm);
@@ -118,17 +106,13 @@ function applyFilters() {
 function getContactSortValue(contact, index) {
   switch (index) {
     case 0: return (contact.Name || '').toLowerCase();
-    case 1: return contact.is_officer ? '1' : '0';
+    case 1: return (contact.user_role || 'Guest').toLowerCase();
     case 2:
       // Participation: [Attendance]_[Role Count]_[Qualified]_[TT Count]_[Awards]
       return `${String(contact.attendance_count || 0).padStart(3, '0')}_${String(contact.role_count || 0).padStart(3, '0')}_${contact.is_qualified ? '1' : '0'}_${String(contact.tt_count || 0).padStart(3, '0')}_${String(contact.award_count || 0).padStart(3, '0')}`;
     case 3: return (contact.Phone_Number || '').toLowerCase();
-    case 4: return (contact.Date_Created || '').toLowerCase();
-    case 5: return (contact.Club || '').toLowerCase();
-    case 6: return (contact.Completed_Paths || '').toLowerCase();
-    case 7: return (contact.credentials || '').toLowerCase();
-    case 8: return (contact.Next_Project || '').toLowerCase();
-    case 9: return (contact.Mentor || '').toLowerCase();
+    case 4: return (contact.Email || '').toLowerCase();
+    case 5: return (contact.Date_Created || '').toLowerCase();
     default: return '';
   }
 }
@@ -214,8 +198,8 @@ function createContactRow(contact) {
         </div>
       </div>
     </td>
-    <td class="col-officer" style="text-align: center;">
-      <input type="checkbox" ${contact.is_officer ? 'checked' : ''} disabled title="Managed via ExComm settings">
+    <td class="col-type">
+      <span class="contact-type-badge type-${(contact.user_role || 'Guest').toLowerCase().replace(/[^a-z0-9]/g, '-')}">${contact.user_role || 'Guest'}</span>
     </td>
     <td class="col-part" data-sort="${sortValue}">
       <div class="participation-container">
@@ -250,20 +234,8 @@ function createContactRow(contact) {
       </div>
     </td>
     <td class="col-phone">${contact.Phone_Number}</td>
+    <td class="col-email"><a href="mailto:${contact.Email}" class="contact-email-link">${contact.Email}</a></td>
     <td class="col-date">${contact.Date_Created}</td>
-    <td class="col-club">${contact.Club}</td>
-    <td class="col-paths">
-      ${contact.Completed_Paths && contact.Completed_Paths !== '-'
-      ? contact.Completed_Paths.split('/').map(path => {
-        const p = path.trim();
-        const abbr = p.substring(0, 2).toLowerCase();
-        return `<span class="badge-path path-${abbr}">${p}</span>`;
-      }).join(' ')
-      : '-'}
-    </td>
-    <td class="col-creds">${contact.credentials}</td>
-    <td class="col-next">${contact.Next_Project}</td>
-    <td class="col-mentor">${contact.Mentor}</td>
     ${hasEditPermission ? `
     <td class="col-actions">
       <div class="action-links">
@@ -273,11 +245,9 @@ function createContactRow(contact) {
         <button class="icon-btn edit-contact-btn" onclick="openContactModal(${contact.id})" title="Edit">
           <i class="fas fa-edit"></i>
         </button>
-        ${contact.Type === 'Guest' ? `
-        <button class="delete-btn icon-btn" onclick="openDeleteModal('/contact/delete/${contact.id}', 'contact')" title="Delete">
+        <button class="delete-btn icon-btn" ${contact.Type !== 'Guest' ? 'disabled title="Only Guest contacts can be deleted. Manage Members via their user account."' : `onclick="openDeleteModal('/contact/delete/${contact.id}', 'contact')" title="Delete"`}>
           <i class="fas fa-trash-alt"></i>
         </button>
-        ` : ''}
       </div>
     </td>
     ` : ''}
@@ -460,13 +430,13 @@ function handleContactFormSubmit(event) {
 }
 
 /**
- * Sets up the search, sort, tab, and pagination functionality
+ * Sets up the search, sort, and pagination functionality
+ * (tab logic removed — Members & Guests are merged into a single view)
  */
 document.addEventListener("DOMContentLoaded", function () {
   const table = document.getElementById("contactsTable");
   const searchInput = document.getElementById("searchInput");
   const clearBtn = document.getElementById("clear-searchInput");
-  const tabs = document.querySelectorAll("#contactsTabs .nav-item");
 
   if (!table || !searchInput || !clearBtn) return;
 
@@ -492,60 +462,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Initialize sorting
   setupContactsTableSorting();
-
-  // Restore saved tab
-  const savedTab = localStorage.getItem("contacts_active_tab");
-  if (savedTab) {
-    const tabToActivate = Array.from(tabs).find(t => t.dataset.type === savedTab);
-    if (tabToActivate) {
-      tabs.forEach(t => t.classList.remove("active"));
-      tabToActivate.classList.add("active");
-    }
-  }
-
-  // Apply view class based on active tab
-  const activeTabItem = document.querySelector("#contactsTabs .nav-item.active");
-  if (activeTabItem) {
-    const activeTab = activeTabItem.dataset.type;
-    if (activeTab === "Guest") {
-      table.classList.add("guest-view");
-      table.classList.remove("member-view");
-    } else if (activeTab === "Member") {
-      table.classList.remove("guest-view");
-      table.classList.add("member-view");
-    } else {
-      table.classList.remove("guest-view", "member-view");
-    }
-  } else if (!hasEditPermission) {
-    // Default to member view for regular members when tabs are hidden
-    table.classList.add("member-view");
-  }
-
-  // Tab click logic
-  tabs.forEach((tab) => {
-    tab.addEventListener("click", () => {
-      tabs.forEach((t) => t.classList.remove("active"));
-      tab.classList.add("active");
-
-      // Update view class
-      const tabType = tab.dataset.type;
-      if (tabType === "Guest") {
-        table.classList.add("guest-view");
-        table.classList.remove("member-view");
-      } else if (tabType === "Member") {
-        table.classList.remove("guest-view");
-        table.classList.add("member-view");
-      } else {
-        table.classList.remove("guest-view", "member-view");
-      }
-
-      currentPage = 1; // Reset to first page when changing tabs
-      applyFiltersAndPaginate();
-
-      // Save state
-      localStorage.setItem("contacts_active_tab", tabType);
-    });
-  });
 
   // Search input logic
   searchInput.addEventListener("keyup", () => {
@@ -612,12 +528,12 @@ document.addEventListener("DOMContentLoaded", function () {
     let isChecking = false;
     const resizeObserver = new ResizeObserver(entries => {
       if (isChecking) return;
-      
+
       const isMobile = window.innerWidth <= 768;
-      
+
       for (let entry of entries) {
         const bar = entry.target;
-        
+
         if (isMobile) {
           bar.classList.remove("compact-actions");
           continue;
@@ -625,21 +541,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const stats = bar.querySelector(".stats-container");
         const filters = bar.querySelector(".contacts-filter-container");
-        
+
         if (!stats || !filters) continue;
 
         isChecking = true;
         // Reset to measure natural position
         bar.classList.remove("compact-actions");
-        
+
         // Detection: vertical stacking OR horizontal overflow
         const isStacked = filters.offsetTop > stats.offsetTop + 15;
         const isOverflowing = bar.scrollWidth > bar.clientWidth + 5;
-        
+
         if (isStacked || isOverflowing) {
           bar.classList.add("compact-actions");
         }
-        
+
         // Release lock after measurement
         setTimeout(() => { isChecking = false; }, 50);
       }
@@ -661,15 +577,6 @@ document.addEventListener("DOMContentLoaded", function () {
       const targetContact = allContactsCache.find(c => c.id === parseInt(contactIdToOpen));
 
       if (targetContact) {
-        const contactType = targetContact.Type;
-        const tabToActivate = Array.from(tabs).find(t => t.dataset.type === contactType);
-
-        if (tabToActivate) {
-          tabs.forEach(t => t.classList.remove("active"));
-          tabToActivate.classList.add("active");
-          applyFiltersAndPaginate();
-        }
-
         // Open the modal
         if (typeof openContactModal === 'function') {
           openContactModal(contactIdToOpen);

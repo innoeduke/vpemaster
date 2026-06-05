@@ -97,9 +97,6 @@ def show_contacts():
         .group_by(Contact.Type).all()
     type_counts = {t: c for t, c in type_counts_query}
     
-    # Sort types: Member first, then others
-    sorted_types = sorted(type_counts.keys(), key=lambda x: (x not in ['Member'], x))
-    
     contacts = []
     contacts_json_data = []
 
@@ -119,13 +116,12 @@ def show_contacts():
     can_view_all_logs = is_authorized(Permissions.SPEECH_LOGS_MANAGE)
 
 
-    return render_template('contacts.html', 
+    return render_template('contacts.html',
                            contacts=contacts,
                            contacts_json_data=contacts_json_data,
                            pathways=pathways,
-                           total_contacts=total_contacts, 
+                           total_contacts=total_contacts,
                            type_counts=type_counts,
-                           contact_types=sorted_types,
                            mentor_candidates=mentor_candidates,
                            can_view_all_logs=can_view_all_logs,
                            can_view_members=can_view_members,

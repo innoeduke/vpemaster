@@ -16,8 +16,8 @@
 	}
 
 	/* Ensure columns are visible on desktop */
-	table#contactsTable th.col-officer,
-	table#contactsTable td.col-officer,
+	table#contactsTable th.col-type,
+	table#contactsTable td.col-type,
 	table#contactsTable th.col-actions,
 	table#contactsTable td.col-actions {
 		display: table-cell;

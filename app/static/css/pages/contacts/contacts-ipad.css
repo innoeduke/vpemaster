@@ -43,13 +43,8 @@
 		padding: 10px 8px;
 	}
 
-	/* Hide some columns for iPad to fit better, but keep action column */
-	/* Hide: Officer, Phone, Date Created, Club, Next Project */
-	#contactsTable .col-officer,
-	#contactsTable .col-phone,
-	#contactsTable .col-date,
-	#contactsTable .col-club,
-	#contactsTable .col-next {
+	/* Hide Type on iPad to make room; keep all data columns visible. */
+	#contactsTable .col-type {
 		display: none;
 	}
 

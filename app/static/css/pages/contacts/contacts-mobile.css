@@ -174,16 +174,11 @@
     white-space: nowrap;
   }
 
-  /* Mobile: Show Checkbox, Name, Participation. Hide Actions and others. */
-  #contactsTable .col-officer,
+  /* Mobile: Show Checkbox, Name, Participation, Actions. Hide Type, Phone, Email, Date. */
+  #contactsTable .col-type,
   #contactsTable .col-phone,
-  #contactsTable .col-date,
-  #contactsTable .col-club,
-  #contactsTable .col-paths,
-  #contactsTable .col-creds,
-  #contactsTable .col-next,
-  #contactsTable .col-mentor,
-  #contactsTable .col-actions {
+  #contactsTable .col-email,
+  #contactsTable .col-date {
     display: none;
   }
 
