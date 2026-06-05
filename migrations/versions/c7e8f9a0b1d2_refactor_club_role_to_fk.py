@@ -38,7 +38,7 @@ def upgrade():
     
     # Build a role lookup: {level: id}
     role_by_level = {r[2]: r[0] for r in roles}  # level -> id
-    user_role_id = next((r[0] for r in roles if r[1] == 'User'), None)
+    user_role_id = next((r[0] for r in roles if r[1] == 'Member'), None)
     
     # 3. Migrate existing bitmask data to the highest matching role
     user_clubs = conn.execute(sa.text(

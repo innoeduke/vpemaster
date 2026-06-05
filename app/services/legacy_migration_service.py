@@ -171,7 +171,7 @@ class LegacyMigrationService:
         users = self.cursor.execute("SELECT * FROM `Users`").fetchall()
         
         # Load map of v1 user_id -> list[role_name/level]
-        # v1 auth_roles: 1=Admin(8), 2=Operator(4), 3=Staff(2), 4=User(1)
+        # v1 auth_roles: 1=Admin(8), 2=Operator(4), 3=Staff(2), 4=Member(1)
         role_map = {
             1: 'SysAdmin', # or ClubAdmin based on plan
             2: 'ClubAdmin',

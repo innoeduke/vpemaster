@@ -46,7 +46,7 @@ class UserRefactorTestCase(unittest.TestCase):
         
         # 3. Roles
         self.role_admin = AuthRole(name="SysAdmin", description="Admin Role", level=10)
-        self.role_user = AuthRole(name="User", description="User Role", level=1)
+        self.role_user = AuthRole(name="Member", description="Member Role", level=1)
         db.session.add_all([self.role_admin, self.role_user])
         db.session.flush()
         
@@ -98,7 +98,7 @@ class UserRefactorTestCase(unittest.TestCase):
             'phone': '1234567890',
             'status': 'active',
             'password': 'newpassword',
-            'roles': [self.role_user.id] # Assign 'User' role
+            'roles': [self.role_user.id] # Assign 'Member' role
         }
         
         # Simulate POST (current club context needed? handled by login usually setting session)

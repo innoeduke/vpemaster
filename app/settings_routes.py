@@ -1319,7 +1319,7 @@ def delete_auth_role(id):
     try:
         role_name = role.name
         
-        # Detach users in bulk by reassigning them to the base 'User' role
+        # Detach users in bulk by reassigning them to the base 'Member' role
         user_role = AuthRole.query.filter((AuthRole.name == 'Member') & (AuthRole.club_id.is_(None))).first()
         if not user_role:
             return jsonify(success=False, message="Base 'Member' role not found"), 500

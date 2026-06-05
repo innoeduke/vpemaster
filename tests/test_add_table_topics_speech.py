@@ -39,7 +39,7 @@ class AddTableTopicsSpeechTestCase(unittest.TestCase):
         
         # 2. Create roles
         self.role_staff = AuthRole(name="Staff", level=2)
-        self.role_user = AuthRole(name="User", level=1)
+        self.role_user = AuthRole(name="Member", level=1)
         db.session.add_all([self.role_staff, self.role_user])
         db.session.flush()
         

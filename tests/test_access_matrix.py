@@ -20,7 +20,7 @@ class TestConfig(Config):
 
 class AccessMatrixTestCase(unittest.TestCase):
     # Class-level constants to avoid redundancy
-    ALL_ROLES = ['guest', 'user', 'staff', 'clubadmin', 'sysadmin']
+    ALL_ROLES = ['guest', 'member', 'staff', 'clubadmin', 'sysadmin']
     ALL_STATUSES = ['unpublished', 'not started', 'running', 'finished']
     ADMIN_RESOURCES = ['/settings', '/users']
     PUBLIC_RESOURCES = ['/pathway_library', '/lucky_draw/', '/roster/', '/contacts', '/speech_logs']

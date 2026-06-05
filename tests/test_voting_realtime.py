@@ -35,7 +35,7 @@ class VotingRealtimeTestCase(unittest.TestCase):
     def populate_data(self):
         # Create Roles
         self.roles = {}
-        for name, level in [('SysAdmin', 10), ('ClubAdmin', 5), ('Staff', 2), ('User', 1), ('Guest', 0)]:
+        for name, level in [('SysAdmin', 10), ('ClubAdmin', 5), ('Staff', 2), ('Member', 1), ('Guest', 0)]:
             role = AuthRole(name=name, description=f"{name} Role", level=level if level is not None else 0)
             db.session.add(role)
             self.roles[name] = role
@@ -52,7 +52,7 @@ class VotingRealtimeTestCase(unittest.TestCase):
 
         # Create Users
         self.users = {}
-        for role_name in ['SysAdmin', 'ClubAdmin', 'Staff', 'User']:
+        for role_name in ['SysAdmin', 'ClubAdmin', 'Staff', 'Member']:
             contact = Contact(Name=f"{role_name} User", Type="Member")
             db.session.add(contact)
             db.session.flush()
@@ -80,7 +80,7 @@ class VotingRealtimeTestCase(unittest.TestCase):
             'Staff': [
                 Permissions.VOTING_VIEW_RESULTS
             ],
-            'User': [
+            'Member': [
                 Permissions.MEETING_VIEW_PUBLISHED
             ]
         }
@@ -148,7 +148,7 @@ class VotingRealtimeTestCase(unittest.TestCase):
 
     def test_unauthorized_role_access_denied(self):
         """User without VOTING_TRACK_PROGRESS should get 403."""
-        self.login('user')
+        self.login('member')
         resp = self.client.get(f'/voting/{self.meeting.id}/live_results')
         self.assertEqual(resp.status_code, 403)
 

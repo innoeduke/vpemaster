@@ -46,7 +46,7 @@ def upgrade():
 
     # Assign to all standard roles (not SysAdmin which has global override,
     # and not Guest which should NOT see unpublished by default)
-    for role_name in ('ClubAdmin', 'Operator', 'Staff', 'User'):
+    for role_name in ('ClubAdmin', 'Operator', 'Staff', 'Member'):
         role_row = conn.execute(
             sa.text("SELECT id FROM auth_roles WHERE name = :name"),
             {'name': role_name}

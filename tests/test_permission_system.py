@@ -40,7 +40,7 @@ class PermissionSystemTestCase(unittest.TestCase):
         
         # 2. Create roles
         self.role_admin = AuthRole(name="SysAdmin", description="Admin Role", level=10)
-        self.role_user = AuthRole(name="User", description="User Role", level=1)
+        self.role_user = AuthRole(name="Member", description="Member Role", level=1)
         self.role_guest = AuthRole(name="Guest", description="Guest Role", level=0)
         db.session.add_all([self.role_admin, self.role_user, self.role_guest])
         db.session.flush()
@@ -103,9 +103,9 @@ class PermissionSystemTestCase(unittest.TestCase):
     def test_model_has_role(self):
         """Test User.has_role method."""
         self.assertTrue(self.user_admin.has_role("SysAdmin"))
-        self.assertFalse(self.user_admin.has_role("User"))
+        self.assertFalse(self.user_admin.has_role("Member"))
         
-        self.assertTrue(self.user_user.has_role("User"))
+        self.assertTrue(self.user_user.has_role("Member"))
         self.assertFalse(self.user_user.has_role("SysAdmin"))
 
     def test_multiple_roles_union(self):
