@@ -240,6 +240,13 @@
                 </div>
               </a>
               {% endfor %}
+              <div class="menu-divider"></div>
+              <a href="{{ url_for('clubs_bp.list_clubs') }}" class="club-dropdown-item {% if request.endpoint and request.endpoint.startswith('clubs_bp') %}active{% endif %}">
+                <i class="fas fa-network-wired" style="font-size: 0.9rem; color: #64748b; width: 24px; text-align: center; flex-shrink: 0;"></i>
+                <div class="club-dropdown-info">
+                  <span class="club-dropdown-name" style="font-weight: bold;">{{ _('Club Directory') }}</span>
+                </div>
+              </a>
             </div>
             {% endif %}
           </div>
@@ -368,13 +375,7 @@
                 </a>
               </li>
               {% endif %}
-              {% if current_user.is_authenticated %}
-              <li class="{% if request.endpoint and request.endpoint.startswith('clubs_bp') %}submenu-active{% endif %}">
-                <a href="{{ url_for('clubs_bp.list_clubs') }}">
-                  <i class="fas fa-network-wired"></i> {{ _('Club Directory') }}
-                </a>
-              </li>
-              {% endif %}
+
             </ul>
           </li>
         </ul>

@@ -129,17 +129,22 @@ def login():
                 flash('Please change your default password immediately.', 'error')
                 return redirect(url_for('auth_bp.profile', tab='password'))
             
-            # Set current club ID from form
+            # Set current club ID from form or fallback to home club
             club_id = request.form.get('club_names')
+            home_club = user.home_club
+            
             if club_id:
                 set_current_club_id(int(club_id))
-            else:
-                set_current_club_id(1)
+            elif home_club:
+                set_current_club_id(home_club.id)
 
             # Helper to redirect to 'next' page if present
             next_page = request.args.get('next')
-            if not next_page or not next_page.startswith('/'):
-                next_page = url_for('main_bp.index')
+            if not next_page or not next_page.startswith('/') or next_page == '/':
+                if club_id or home_club:
+                    next_page = url_for('main_bp.index')
+                else:
+                    next_page = url_for('clubs_bp.list_clubs')
             return redirect(next_page)
         else:
             flash('Invalid username or password.', 'error')
@@ -484,19 +489,22 @@ def check_email():
 
 @auth_bp.route('/verify_email/<token>')
 def verify_email(token):
-    if current_user.is_authenticated:
-        return redirect(url_for('main_bp.index'))
-    
     user = User.verify_verification_token(token)
     if user is None:
         flash('The verification link is invalid or has expired.', 'warning')
+        if current_user.is_authenticated:
+            return redirect(url_for('main_bp.index'))
         return redirect(url_for('auth_bp.login'))
         
     if user.status == 'active':
         flash('Account already verified. Please log in.', 'info')
+        if current_user.is_authenticated:
+            logout_user()
         return redirect(url_for('auth_bp.login'))
         
     user.status = 'active'
     db.session.commit()
     flash('Your email address has been verified! You can now log in.', 'success')
+    if current_user.is_authenticated:
+        logout_user()
     return redirect(url_for('auth_bp.login'))

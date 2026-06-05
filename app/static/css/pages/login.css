@@ -1,12 +1,20 @@
 /* Styles for the login page */
+html {
+  scrollbar-gutter: stable;
+}
+
+body {
+  overflow-x: hidden;
+}
+
 .login-container {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   min-height: 100vh; /* Changed from height to min-height to prevent clipping */
   font-family: "Inter", sans-serif;
-  padding: 20px;
+  padding: 50px 20px 20px 20px;
   box-sizing: border-box;
 }
 
@@ -24,7 +32,7 @@
   font-size: 4rem;
   letter-spacing: 0.02em;
   font-weight: 400;
-  margin: 0;
+  margin: 0 0 30px 0;
   text-align: center;
 }
 
@@ -329,7 +337,7 @@ h6 {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   width: 100%;
 }
@@ -343,8 +351,8 @@ h6 {
   .login-content-wrapper {
     flex: 1;
     /* Restore flexible growth */
-    justify-content: center;
-    /* Center content vertically within wrapper */
+    justify-content: flex-start;
+    /* Align content vertically to the top within wrapper */
   }
 
   .login-container .app-footer {
@@ -354,7 +362,7 @@ h6 {
 
   .login-container {
     padding: 10px;
-    padding-top: 20px;
+    padding-top: 30px;
     min-height: 100vh;
     height: auto;
     /* justify-content: center removed because wrapper handles centering */
@@ -367,7 +375,7 @@ h6 {
 
   .login-container h1 {
     font-size: 3rem;
-    margin: 10px 0 20px 0;
+    margin: 10px 0 30px 0;
     text-align: center;
   }
 

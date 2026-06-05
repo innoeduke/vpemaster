@@ -158,3 +158,106 @@ class UserRefactorTestCase(unittest.TestCase):
         self.assertEqual(updated_user.username, 'target_updated')
         self.assertEqual(updated_user.email, 'target_updated@test.com')
         self.assertEqual(updated_user.contact.Name, 'Target Updated')
+
+    def test_delete_user_no_longer_deletes_user_object(self):
+        """Test that delete_user removes UserClub but keeps the User object in DB (no deletion or status change)."""
+        self.login()
+        
+        # 1. Create a club member with one club association
+        target_contact = Contact(Name="Delete Target One", Email="target_one@test.com", Type="Member")
+        db.session.add(target_contact)
+        db.session.flush()
+        
+        target_user = User(username="target_one", email="target_one@test.com")
+        target_user.set_password('password')
+        db.session.add(target_user)
+        db.session.flush()
+        
+        uc = UserClub(
+            user_id=target_user.id,
+            club_id=self.club.id,
+            auth_role_id=self.role_user.id,
+            contact_id=target_contact.id,
+            is_home=True
+        )
+        db.session.add(uc)
+        db.session.add(ContactClub(contact_id=target_contact.id, club_id=self.club.id))
+        db.session.commit()
+        
+        with self.client.session_transaction() as sess:
+            sess['current_club_id'] = self.club.id
+            
+        # 2. Call delete_user route
+        response = self.client.post(f'/user/delete/{target_user.id}', follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        
+        # 3. Verify UserClub is deleted
+        deleted_uc = UserClub.query.filter_by(user_id=target_user.id, club_id=self.club.id).first()
+        self.assertIsNone(deleted_uc, "UserClub record should be deleted")
+        
+        # 4. Verify User is NOT deleted and status remains unchanged (active)
+        user_in_db = db.session.get(User, target_user.id)
+        self.assertIsNotNone(user_in_db, "User object should still exist in DB")
+        self.assertEqual(user_in_db.status, 'active', "User status should remain active")
+        
+        # 5. Verify Contact type is changed to Guest
+        updated_contact = db.session.get(Contact, target_contact.id)
+        self.assertEqual(updated_contact.Type, 'Guest', "Contact type should be updated to Guest")
+
+    def test_delete_user_multi_club_reassigns_home(self):
+        """Test delete_user when user has multiple clubs reassigns home club."""
+        self.login()
+        
+        # 1. Create a second club
+        club2 = Club(club_no='999999', club_name='Club Two', district='Test District')
+        db.session.add(club2)
+        db.session.flush()
+        
+        # 2. Create user affiliated with both clubs (home club is self.club)
+        target_contact = Contact(Name="Delete Target Multi", Email="target_multi@test.com", Type="Member")
+        db.session.add(target_contact)
+        db.session.flush()
+        
+        target_user = User(username="target_multi", email="target_multi@test.com")
+        target_user.set_password('password')
+        db.session.add(target_user)
+        db.session.flush()
+        
+        uc1 = UserClub(
+            user_id=target_user.id,
+            club_id=self.club.id,
+            auth_role_id=self.role_user.id,
+            contact_id=target_contact.id,
+            is_home=True
+        )
+        uc2 = UserClub(
+            user_id=target_user.id,
+            club_id=club2.id,
+            auth_role_id=self.role_user.id,
+            contact_id=target_contact.id,
+            is_home=False
+        )
+        db.session.add_all([uc1, uc2])
+        db.session.add(ContactClub(contact_id=target_contact.id, club_id=self.club.id))
+        db.session.add(ContactClub(contact_id=target_contact.id, club_id=club2.id))
+        db.session.commit()
+        
+        with self.client.session_transaction() as sess:
+            sess['current_club_id'] = self.club.id
+            
+        # 3. Call delete_user route (removes from self.club)
+        response = self.client.post(f'/user/delete/{target_user.id}', follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        
+        # 4. Verify UserClub for self.club is deleted
+        deleted_uc = UserClub.query.filter_by(user_id=target_user.id, club_id=self.club.id).first()
+        self.assertIsNone(deleted_uc, "UserClub for self.club should be deleted")
+        
+        # 5. Verify User is NOT deleted
+        user_in_db = db.session.get(User, target_user.id)
+        self.assertIsNotNone(user_in_db, "User object should still exist in DB")
+        
+        # 6. Verify club2 is reassigned as home club
+        remaining_uc = UserClub.query.filter_by(user_id=target_user.id, club_id=club2.id).first()
+        self.assertIsNotNone(remaining_uc, "UserClub for club2 should still exist")
+        self.assertTrue(remaining_uc.is_home, "club2 UserClub should be marked as is_home")

@@ -36,11 +36,7 @@
           <input type="text" id="username" name="username" autocomplete="username"
             placeholder="Username, email, phone, or member ID" required />
         </div>
-        <div id="club-selector-container" style="display: none;">
-          <label for="club_names">Club:</label>
-          <select id="club_names" name="club_names" required>
-          </select>
-        </div>
+
         <div id="password-section">
           <div>
             <label for="password">Password:</label>
@@ -99,15 +95,12 @@
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       const usernameInput = document.getElementById('username');
-      const clubSelectorContainer = document.getElementById('club-selector-container');
-      const clubSelector = document.getElementById('club_names');
       const guestLink = document.getElementById('guest-login-link');
       const guestModal = document.getElementById('guest-modal');
       const cancelGuestBtn = document.getElementById('cancel-guest');
       const confirmGuestBtn = document.getElementById('confirm-guest');
       const guestClubSelect = document.getElementById('guest-club-select');
       let lookupTimeout = null;
-      let clubCustomSelect = null;
       let guestCustomSelect = null;
 
       // Initialize guest custom select if modal exists
@@ -179,17 +172,8 @@
         }
       });
 
-      const updateGuestLink = () => {
-        const clubId = clubSelector.value;
-        const baseUrl = "{{ url_for('agenda_bp.agenda') }}";
-        guestLink.href = `${baseUrl}?club_id=${clubId}`;
-      };
-
       const lookupUserClubs = async (username) => {
         if (!username || username.length < 2) {
-          clubSelectorContainer.style.display = 'none';
-          clubSelector.innerHTML = '';
-          clubSelector.removeAttribute('required');
           setRegisterMode(false);
           return;
         }
@@ -210,44 +194,8 @@
           } else {
             setRegisterMode(false);
           }
-
-          if (data.clubs && data.clubs.length > 0) {
-            // Populate club selector
-            clubSelector.innerHTML = '';
-            data.clubs.forEach((club, index) => {
-              const option = document.createElement('option');
-              option.value = club.id;
-              option.textContent = club.name;
-              // Select home club by default, or first club if no home club
-              if (club.is_home || index === 0) {
-                option.selected = true;
-              }
-              clubSelector.appendChild(option);
-            });
-
-            // Show club selector
-            clubSelectorContainer.style.display = 'block';
-            clubSelector.setAttribute('required', 'required');
-
-            // Re-initialize or update Custom Select
-            if (clubCustomSelect) {
-              clubCustomSelect.refresh();
-            } else {
-              clubCustomSelect = new CustomSelect('club_names');
-            }
-
-            updateGuestLink();
-          } else {
-            // Hide club selector if no clubs found
-            clubSelectorContainer.style.display = 'none';
-            clubSelector.innerHTML = '';
-            clubSelector.removeAttribute('required');
-          }
         } catch (error) {
           console.error('Error looking up user clubs:', error);
-          clubSelectorContainer.style.display = 'none';
-          clubSelector.innerHTML = '';
-          clubSelector.removeAttribute('required');
           setRegisterMode(false);
         }
       };
@@ -259,9 +207,6 @@
           lookupUserClubs(this.value.trim());
         }, 300); // 300ms debounce
       });
-
-      // Update guest link when club selection changes
-      clubSelector.addEventListener('change', updateGuestLink);
     });
   </script>
 </body>

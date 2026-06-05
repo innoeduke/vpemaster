@@ -502,28 +502,12 @@ def delete_user(user_id):
         # Instead, change its contact type from member to guest.
         contact.Type = 'Guest'
                 
-    # 3. Check if User is orphaned
-    remaining_clubs = UserClub.query.filter_by(user_id=user.id).count()
-    
-    # Exception: SysAdmin account doesn't need to be associated with a club
-    is_sysadmin_account = user.is_sysadmin
-    
-    if remaining_clubs == 0 and not is_sysadmin_account:
-        from sqlalchemy.exc import IntegrityError
-        try:
-            with db.session.begin_nested():
-                db.session.delete(user)
-        except IntegrityError:
-            user.status = 'deleted'
-    elif remaining_clubs > 0:
-        # User is still actively in another club, definitely active
-        user.status = 'active'
-        
-        # If the deleted UserClub was their home club, reassign a new home club automatically
-        if uc and uc.is_home:
-            fallback_uc = UserClub.query.filter_by(user_id=user.id).first()
-            if fallback_uc:
-                fallback_uc.is_home = True
+    # 3. Handle home club reassignment if applicable
+    # If the deleted UserClub was their home club, reassign a new home club automatically
+    if uc and uc.is_home:
+        fallback_uc = UserClub.query.filter_by(user_id=user.id).first()
+        if fallback_uc:
+            fallback_uc.is_home = True
         
     try:
         db.session.commit()

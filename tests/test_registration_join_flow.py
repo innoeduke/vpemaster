@@ -225,3 +225,39 @@ def test_email_uniqueness_on_profile_update(client, app):
     with app.app_context():
         u1_updated = User.query.filter_by(username="user_one").first()
         assert u1_updated.email == 'three@test.com'
+
+
+def test_verify_email_when_already_logged_in(client, app):
+    with app.app_context():
+        from app import db
+        # Create an unverified user
+        unverified_bob = User(username="unverified_bob", email="bob@test.com", status="unverified")
+        unverified_bob.set_password("Password123")
+        # Create an active user to log in as first
+        active_alice = User(username="active_alice", email="alice@test.com", status="active")
+        active_alice.set_password("Password123")
+        db.session.add_all([unverified_bob, active_alice])
+        db.session.commit()
+        
+        token = unverified_bob.get_verification_token()
+
+    with client:
+        # Log in as Alice first
+        login_resp = client.post('/login', data={'username': 'active_alice', 'password': 'Password123'})
+        assert login_resp.status_code == 302
+        
+        # Click verification link for Bob while logged in as Alice
+        resp = client.get(f'/verify_email/{token}', follow_redirects=True)
+        assert resp.status_code == 200
+        assert b'Your email address has been verified' in resp.data
+        
+        # Verify Bob is active in DB
+        with app.app_context():
+            bob = User.query.filter_by(username='unverified_bob').first()
+            assert bob.status == 'active'
+            
+        # Try to access a page that requires login, or check if we are redirected to login
+        # '/logout' should require login and redirect because we were logged out.
+        logout_resp = client.get('/logout')
+        assert logout_resp.status_code == 302
+
