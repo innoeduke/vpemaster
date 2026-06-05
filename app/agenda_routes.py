@@ -423,7 +423,7 @@ def _get_processed_logs_data(meeting_id, show_media=False):
             orm.joinedload(Meeting.best_speaker),
             orm.joinedload(Meeting.best_role_taker),
             orm.joinedload(Meeting.media),
-            orm.joinedload(Meeting.manager)
+            orm.joinedload(Meeting.sharing_master)
         ).filter(Meeting.id == meeting_id)
         if club_id:
             query = query.filter(Meeting.club_id == club_id)
@@ -1578,16 +1578,6 @@ def update_logs():
 
         if new_wod is not None:
             meeting.WOD = new_wod
-
-        # Update Manager
-        new_manager_id = data.get('manager_id')
-        if new_manager_id == "":
-            meeting.manager_id = None
-        elif new_manager_id:
-             try:
-                 meeting.manager_id = int(new_manager_id)
-             except ValueError:
-                 pass # Ignore invalid ID
 
         # Update Awards
         def parse_award_id(val):

@@ -83,12 +83,27 @@ class Meeting(db.Model):
     status = db.Column(db.Enum('unpublished', 'not started', 'running', 'finished', 'cancelled', name='meeting_status'),
                        default='unpublished', nullable=False)
     nps = db.Column(db.Float, nullable=True)
-    manager_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
+    sharing_master_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     excomm_id = db.Column(db.Integer, db.ForeignKey('excomm.id'), nullable=True, index=True)
 
-    manager = db.relationship('Contact', foreign_keys=[manager_id], backref='managed_meetings')
+    sharing_master = db.relationship('Contact', foreign_keys=[sharing_master_id], backref='shared_meetings')
     club = db.relationship('Club', foreign_keys=[club_id], back_populates='meetings')
     excomm = db.relationship('ExComm', backref='meetings')
+
+    def update_sharing_master(self):
+        """
+        Sets sharing_master_id to the contact id of the first owner of the first "Featured Session"
+        """
+        featured_logs = [log for log in self.session_logs if log.session_type and log.session_type.Featured]
+        featured_logs.sort(key=lambda x: x.Meeting_Seq or 0)
+        
+        new_master_id = None
+        if featured_logs:
+            first_featured = featured_logs[0]
+            if first_featured.owners:
+                new_master_id = first_featured.owners[0].id
+                
+        self.sharing_master_id = new_master_id
 
     best_table_topic_speaker = db.relationship(
         'Contact', foreign_keys=[best_table_topic_id])

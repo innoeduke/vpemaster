@@ -188,3 +188,76 @@ def test_settings_page_global_admin(client, app_context):
         
         # "Global Role" should be in the editable table
         assert "Global Role" in html
+
+
+def test_featured_session_type(client, app_context):
+    """
+    Verify Featured field functionality in session types:
+    1. Check presence of Featured column header in /settings page.
+    2. Add session type with Featured=True.
+    3. Update session type to Featured=False.
+    """
+    global_club = get_or_create_club(GLOBAL_CLUB_ID, club_name="Technical Support", club_no="000001")
+    local_club = get_or_create_club(999, club_name="Shanghai Leadership Toastmasters", club_no="00868941")
+
+    # User setup
+    user = User(username='testuser', email='test@test.com', password_hash='hashed_password')
+    db.session.add(user)
+    db.session.commit()
+
+    uc = UserClub(user_id=user.id, club_id=999, club_role_level=100)
+    db.session.add(uc)
+    db.session.commit()
+
+    with client.session_transaction() as sess:
+        sess['user_id'] = user.id
+        sess['_user_id'] = str(user.id)
+        sess['club_id'] = 999
+
+    from unittest.mock import patch
+    with patch('app.settings_routes.is_authorized', return_value=True):
+        with patch('app.settings_routes.authorized_club_required', lambda f: f):
+            with patch('app.settings_routes.login_required', lambda f: f):
+                # 1. GET /settings and check header
+                response = client.get('/settings')
+                assert response.status_code == 200
+                html = response.data.decode('utf-8')
+                assert "Featured" in html
+
+                # 2. Add a new session type with featured = 'on'
+                post_data = {
+                    'title': 'Featured Session',
+                    'duration_min': '5',
+                    'duration_max': '7',
+                    'featured': 'on'
+                }
+                response = client.post('/settings/sessions/add', data=post_data)
+                assert response.status_code == 200
+                res_json = response.get_json()
+                assert res_json['success'] is True
+                new_session = res_json['new_session']
+                assert new_session['Title'] == 'Featured Session'
+                assert new_session['Featured'] is True
+
+                # Verify in DB
+                db_st = db.session.get(SessionType, new_session['id'])
+                assert db_st is not None
+                assert db_st.Featured is True
+
+                # 3. Update the session type, turning featured off
+                update_data = {
+                    'id': new_session['id'],
+                    'title': 'Featured Session Updated',
+                    'duration_min': '5',
+                    'duration_max': '7'
+                    # 'featured' is not in form data, which means False
+                }
+                response = client.post('/settings/sessions/add', data=update_data)
+                assert response.status_code == 200
+                res_json = response.get_json()
+                assert res_json['success'] is True
+                assert res_json['new_session']['Featured'] is False
+
+                # Verify in DB
+                db.session.refresh(db_st)
+                assert db_st.Featured is False

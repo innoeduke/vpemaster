@@ -265,12 +265,12 @@ class User(UserMixin, db.Model):
         if self.is_sysadmin:
             return True
             
-        # 3. Check for Meeting Manager override
+        # 3. Check for Sharing Master override
         meeting = kwargs.get('meeting')
-        if meeting and meeting.manager_id:
-            # If user is the manager of this specific meeting
+        if meeting and meeting.sharing_master_id:
+            # If user is the sharing master of this specific meeting
             user_contact_id = getattr(self, 'contact_id', None)
-            if user_contact_id and user_contact_id == meeting.manager_id:
+            if user_contact_id and user_contact_id == meeting.sharing_master_id:
                 # Grant Operator-level permissions relevant to meeting management
                 if permission_name in {
                     'MEETING_MANAGE', 'MEMBERS_SELF', 'VOTING_VIEW_RESULTS', 

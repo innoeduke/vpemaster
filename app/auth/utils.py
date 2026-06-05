@@ -42,12 +42,12 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
 
     # (ClubAdmin override removed to rely on database-driven permissions)
 
-    # 2. Check for Meeting Manager override
+    # 2. Check for Sharing Master override
     meeting = kwargs.get('meeting')
-    if meeting and meeting.manager_id:
-        # If user is the manager of this specific meeting
+    if meeting and meeting.sharing_master_id:
+        # If user is the sharing master of this specific meeting
         user_contact_id = getattr(current_user, 'contact_id', None)
-        if user_contact_id and user_contact_id == meeting.manager_id:
+        if user_contact_id and user_contact_id == meeting.sharing_master_id:
             # Grant Operator-level permissions relevant to meeting management
             if target_perm in {
                 'MEETING_MANAGE', 'MEMBERS_SELF', 'VOTING_VIEW_RESULTS', 

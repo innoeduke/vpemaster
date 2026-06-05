@@ -768,7 +768,7 @@ class ChatToolExecutor:
             f"* **Theme/Type**: {meeting.type}\n"
             f"* **Word of the Day**: {meeting.WOD or 'N/A'}\n"
             f"* **Status**: `{meeting.status}`\n"
-            f"* **Manager**: {meeting.manager.Name if meeting.manager else 'N/A'}\n"
+            f"* **Sharing Master**: {meeting.sharing_master.Name if meeting.sharing_master else 'N/A'}\n"
             f"* **Link**: [Open Agenda]({agenda_url})"
         )
         return {'success': True, 'message': info}

@@ -45,7 +45,7 @@ def calendar():
     if start_date and end_date:
         date_ranges = [(start_date, end_date)]
     
-    query = Meeting.query.options(joinedload(Meeting.manager)).filter_by(club_id=club_id)
+    query = Meeting.query.options(joinedload(Meeting.sharing_master)).filter_by(club_id=club_id)
     if date_ranges:
         conditions = [Meeting.Meeting_Date.between(start, end) for start, end in date_ranges]
         query = query.filter(or_(*conditions))

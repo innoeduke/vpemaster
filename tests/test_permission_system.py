@@ -138,7 +138,7 @@ class PermissionSystemTestCase(unittest.TestCase):
         from app.auth.utils import is_authorized
         
         # Create a meeting
-        meeting = Meeting(Meeting_Number=500, Meeting_Date=date.today(), status='not started', manager_id=self.contact_user.id, club_id=self.club.id)
+        meeting = Meeting(Meeting_Number=500, Meeting_Date=date.today(), status='not started', sharing_master_id=self.contact_user.id, club_id=self.club.id)
         db.session.add(meeting)
         db.session.commit()
         
@@ -152,7 +152,7 @@ class PermissionSystemTestCase(unittest.TestCase):
             self.assertTrue(is_authorized(Permissions.MEETING_MANAGE, meeting=meeting))
             
             # Non-managed meeting should still be False
-            other_meeting = Meeting(Meeting_Number=501, Meeting_Date=date.today(), status='not started', manager_id=self.contact_admin.id, club_id=self.club.id)
+            other_meeting = Meeting(Meeting_Number=501, Meeting_Date=date.today(), status='not started', sharing_master_id=self.contact_admin.id, club_id=self.club.id)
             self.assertFalse(is_authorized(Permissions.MEETING_MANAGE, meeting=other_meeting))
 
     def test_guest_access_fallback(self):

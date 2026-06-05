@@ -439,7 +439,7 @@ def _get_booking_page_context(meeting_id, user, current_user_contact_id):
     selected_meeting = selected_meeting.first()
     
     contact = user.get_contact(club_id) if (user and selected_meeting) else None
-    is_manager = (contact and contact.id == selected_meeting.manager_id) if selected_meeting else False
+    is_manager = (contact and contact.id == selected_meeting.sharing_master_id) if selected_meeting else False
     
     # 1. Published meetings: require MEETING_VIEW_PUBLISHED permission
     if selected_meeting and selected_meeting.status in ('not started', 'running', 'finished'):

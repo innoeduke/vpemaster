@@ -594,7 +594,7 @@ class DataImportService:
                 type=row[12],
                 Subtitle=row[13],
                 status=row[14] or 'unpublished',
-                manager_id=self._map_contact(row[15]),
+                sharing_master_id=self._map_contact(row[15]),
                 excomm_id=excomm_id
                 # ge_mode=row[16], nps=row[17]
             )

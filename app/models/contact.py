@@ -575,7 +575,7 @@ class Contact(db.Model):
                     {Achievement.user_id: primary_user_id}, synchronize_session='fetch'
                 )
         
-        # Update Meeting awards and manager
+        # Update Meeting awards and sharing master
         Meeting.query.filter(Meeting.best_table_topic_id.in_(secondary_ids)).update(
             {Meeting.best_table_topic_id: primary_id}, synchronize_session='fetch'
         )
@@ -588,8 +588,8 @@ class Contact(db.Model):
         Meeting.query.filter(Meeting.best_role_taker_id.in_(secondary_ids)).update(
             {Meeting.best_role_taker_id: primary_id}, synchronize_session='fetch'
         )
-        Meeting.query.filter(Meeting.manager_id.in_(secondary_ids)).update(
-            {Meeting.manager_id: primary_id}, synchronize_session='fetch'
+        Meeting.query.filter(Meeting.sharing_master_id.in_(secondary_ids)).update(
+            {Meeting.sharing_master_id: primary_id}, synchronize_session='fetch'
         )
         
         # Update Mentor_ID in Contact table itself (Self-referential)

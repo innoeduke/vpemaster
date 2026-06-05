@@ -547,7 +547,7 @@ def delete_contact(contact_id):
     Meeting.query.filter(Meeting.best_evaluator_id == contact_id).update({"best_evaluator_id": None})
     Meeting.query.filter(Meeting.best_speaker_id == contact_id).update({"best_speaker_id": None})
     Meeting.query.filter(Meeting.best_role_taker_id == contact_id).update({"best_role_taker_id": None})
-    Meeting.query.filter(Meeting.manager_id == contact_id).update({"manager_id": None})
+    Meeting.query.filter(Meeting.sharing_master_id == contact_id).update({"sharing_master_id": None})
     
     # 2. UserClub mentors
     UserClub.query.filter(UserClub.mentor_id == contact_id).update({"mentor_id": None})
