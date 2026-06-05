@@ -51,14 +51,84 @@
     align-items: center;
     gap: 10px;
   }
-  .role-name-cell .roster-role-tag {
-    margin: 0;
+  .role-name-text {
+    font-weight: 700;
+    color: #1e293b;
   }
 
   /* Roles tab: keep action buttons on a single line */
   #roles-table .action-links {
     flex-wrap: nowrap;
     white-space: nowrap;
+  }
+
+  /* Roles tab: modern header & table layout */
+  .roles-tables-col .settings-header {
+    margin-bottom: 0;
+    padding: 10px 12px;
+    background-color: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-bottom: none;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
+  .roles-tables-col table {
+    border: 1px solid #cbd5e1 !important;
+    border-top: none !important;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    margin-top: 0;
+    overflow: hidden;
+    border-collapse: separate;
+  }
+  .roles-tables-col table thead th:first-child {
+    border-top-left-radius: 0;
+  }
+  .roles-tables-col table thead th:last-child {
+    border-top-right-radius: 0;
+  }
+
+  /* Add New Button styling (reduced by 30% and maroon) */
+  #add-role-btn {
+    font-size: 0.75rem !important;
+    padding: 4px 10px !important;
+    background-color: #772432 !important;
+    border-color: #772432 !important;
+    color: #fff !important;
+    font-weight: 600 !important;
+    border-radius: 4px !important;
+    transition: all 0.2s ease !important;
+    box-shadow: none !important;
+  }
+  #add-role-btn:hover {
+    background-color: #5e1c27 !important;
+    border-color: #5e1c27 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  /* Ticket badge styling */
+  .ticket-tag {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #004165;
+    background-color: #f0f7ff;
+    border: 1px solid #bae6fd;
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    letter-spacing: 0.3px;
+  }
+
+  /* Role name column background color by type */
+  .role-type-standard {
+    background-color: #f0f9ff !important; /* Soft light blue */
+  }
+  .role-type-officer {
+    background-color: #fffbeb !important; /* Soft amber/yellow */
+  }
+  .role-type-club-specific {
+    background-color: #faf5ff !important; /* Soft purple */
   }
 
   #save-permissions-btn:disabled {
@@ -304,7 +374,7 @@
               <th>{{ _('Team Name') }}</th>
               <!-- Dynamic Officer Columns -->
               {% for role in officer_roles %}
-                <th>{{ _(role.name) }}</th>
+                <th>{{ _('IPP') if role.name == 'Immediate Past President' else _(role.name) }}</th>
               {% endfor %}
               <th>{{ _('Actions') }}</th>
             </tr>
@@ -474,7 +544,7 @@
         {% if club_id != GLOBAL_CLUB_ID %}
         <div class="roles-tables-col">
           <div class="settings-header">
-            <h2>{{ _('Global Meeting Roles (Standard)') }}</h2>
+            <h2>{{ _('Standard Roles') }}</h2>
           </div>
           <table id="global-roles-table" class="readonly-table">
             <thead>
@@ -484,9 +554,9 @@
                 <th class="sortable" data-column-index="2">{{ _('Type') }}</th>
                 <th class="sortable" data-column-index="3">{{ _('Award Category') }}</th>
                 <th class="sortable" data-column-index="4">{{ _('Needs Approval') }}</th>
-                <th class="sortable" data-column-index="5">{{ _('Single Owner Only') }}</th>
+                <th class="sortable" data-column-index="5">{{ _('Sole Owner') }}</th>
                 <th class="sortable" data-column-index="6">{{ _('Member Only') }}</th>
-                <th class="sortable" data-column-index="7">{{ _('Default Ticket') }}</th>
+                <th class="sortable" data-column-index="7">{{ _('Ticket') }}</th>
                 <!-- No actions -->
               </tr>
             </thead>
@@ -494,15 +564,11 @@
               {% for role in global_roles %}
               <tr data-id="{{ role.id }}">
                 <td>{{ role.id }}</td>
-                <td>
+                <td class="role-type-{{ role.type }}">
                   <div class="role-name-cell">
                     {% set icon_class = role.icon if role.icon and (role.icon[3:] in valid_fa_icons or not valid_fa_icons) else 'fa-question-circle' %}
                     <i class="fas {{ icon_class }}"></i>
-                    {% set role_class = 'role-' ~ role.award_category if role.award_category else 'role-other' %}
-                    {% if role.type == 'officer' %}
-                        {% set role_class = 'role-officer' %}
-                    {% endif %}
-                    <span class="roster-role-tag {{ role_class }}">{{ _(role.name) }}</span>
+                    <span class="role-name-text">{{ _(role.name) }}</span>
                   </div>
                 </td>
                 <td>{{ _(role.type) }}</td>
@@ -510,7 +576,11 @@
                 <td><input type="checkbox" {% if role.needs_approval %}checked{% endif %} disabled /></td>
                 <td><input type="checkbox" {% if role.has_single_owner %}checked{% endif %} disabled /></td>
                 <td><input type="checkbox" {% if role.is_member_only %}checked{% endif %} disabled /></td>
-                <td>{{ role.ticket_type or '' }}</td>
+                <td>
+                  {% if role.ticket_type %}
+                  <span class="ticket-tag">{{ _(role.ticket_type) }}</span>
+                  {% endif %}
+                </td>
               </tr>
               {% endfor %}
             </tbody>
@@ -521,10 +591,10 @@
         <div class="roles-tables-col">
           <div class="settings-header">
             <h2>
-              {% if club_id != GLOBAL_CLUB_ID %}{{ _('Club Specific Meeting Roles') }}{% else %}{{ _('Meeting Roles (Global Repository)') }}{% endif %}
+              {% if club_id != GLOBAL_CLUB_ID %}{{ _('Custom Roles') }}{% else %}{{ _('Standard Roles (Repository)') }} {% endif %}
             </h2>
             <div class="button-group">
-              <button id="add-role-btn" class="btn btn-success" style="flex-grow: 0;">{{ _('Add New') }}</button>
+              <button id="add-role-btn" class="btn btn-success btn-sm" style="flex-grow: 0;">{{ _('Add New') }}</button>
             </div>
           </div>
           <table id="roles-table">
@@ -535,9 +605,9 @@
                 <th class="sortable" data-column-index="2">{{ _('Type') }}</th>
                 <th class="sortable" data-column-index="3">{{ _('Award Category') }}</th>
                 <th class="sortable" data-column-index="4">{{ _('Needs Approval') }}</th>
-                <th class="sortable" data-column-index="5">{{ _('Single Owner Only') }}</th>
+                <th class="sortable" data-column-index="5">{{ _('Sole Owner') }}</th>
                 <th class="sortable" data-column-index="6">{{ _('Member Only') }}</th>
-                <th class="sortable" data-column-index="7">{{ _('Default Ticket') }}</th>
+                <th class="sortable" data-column-index="7">{{ _('Ticket') }}</th>
                 <th data-column-index="8">{{ _('Actions') }}</th>
               </tr>
             </thead>
@@ -546,19 +616,15 @@
               {% for role in roles_to_show %}
               <tr data-id="{{ role.id }}">
                 <td>{{ role.id }}</td>
-                <td data-field="name">
+                <td data-field="name" class="role-type-{{ role.type }}">
                   <div class="role-name-cell">
                     {% set icon_class = role.icon if role.icon and (role.icon[3:] in valid_fa_icons or not valid_fa_icons) else 'fa-question-circle' %}
                     <i class="fas {{ icon_class }}"></i>
-                    {% set role_class = 'role-' ~ role.award_category if role.award_category else 'role-other' %}
-                    {% if role.type == 'officer' %}
-                        {% set role_class = 'role-officer' %}
-                    {% endif %}
-                    <span class="roster-role-tag {{ role_class }}">{{ _(role.name) }}</span>
+                    <span class="role-name-text">{{ _(role.name) }}</span>
                   </div>
                 </td>
-                <td data-field="type">{{ _(role.type) }}</td>
-                <td data-field="award_category">{{ _(role.award_category) if role.award_category else '' }}</td>
+                <td data-field="type" data-type="{{ role.type }}">{{ _(role.type) }}</td>
+                <td data-field="award_category" data-category="{{ role.award_category or '' }}">{{ _(role.award_category) if role.award_category else '' }}</td>
                 <td data-field="needs_approval">
                   <input type="checkbox" name="needs_approval" {% if role.needs_approval %}checked{% endif %} disabled />
                 </td>
@@ -568,7 +634,11 @@
                 <td data-field="is_member_only">
                   <input type="checkbox" name="is_member_only" {% if role.is_member_only %}checked{% endif %} disabled />
                 </td>
-                <td data-field="ticket_type">{{ role.ticket_type or '' }}</td>
+                <td data-field="ticket_type" data-ticket-type="{{ role.ticket_type or '' }}">
+                  {% if role.ticket_type %}
+                  <span class="ticket-tag">{{ _(role.ticket_type) }}</span>
+                  {% endif %}
+                </td>
                 <td>
                   <div class="action-links">
                     <button class="edit-btn icon-btn" onclick="openEditRoleModal('{{ role.id }}')" title="{{ _('Edit') }}">
@@ -818,7 +888,7 @@
         <div class="officer-fields-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
           {% for role in officer_roles %}
             <div class="form-group compact-form">
-              <label for="officer-search-{{ role.id }}">{{ _(role.name) }}:</label>
+              <label for="officer-search-{{ role.id }}">{{ _('IPP') if role.name == 'Immediate Past President' else _(role.name) }}:</label>
               <div class="autocomplete-container" style="position: relative;">
                 <input type="text" id="officer-search-{{ role.id }}" class="form-control officer-search-input" placeholder="{{ _('Search member...') }}">
                 <input type="hidden" id="officer-role-{{ role.id }}" name="officer_{{ role.id }}" class="officer-select">

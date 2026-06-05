@@ -1188,3 +1188,92 @@ fieldset.modal-frame .compact-form {
 	background-color: #fff8e1;
 	padding: 0 2px;
 }
+
+/* --- Edit/Add Role Modal Landscape Layout --- */
+@media (min-width: 768px) {
+	.role-modal-content {
+		max-width: 850px !important;
+		width: 90% !important;
+	}
+
+	.role-modal-grid {
+		display: flex;
+		gap: 30px;
+		align-items: stretch;
+		text-align: left;
+	}
+
+	.role-modal-col-left,
+	.role-modal-col-right {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 5px;
+	}
+
+	.role-modal-col-left .form-group,
+	.role-modal-col-right .form-group {
+		margin-bottom: 15px;
+	}
+
+	.role-modal-col-left fieldset.modal-frame,
+	.role-modal-col-right fieldset.modal-frame {
+		margin-bottom: 15px;
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-start;
+	}
+
+	.role-modal-col-left fieldset.modal-frame .radio-group,
+	.role-modal-col-right fieldset.modal-frame .radio-group {
+		align-content: flex-start;
+	}
+}
+
+/* Nice font styling for Role Name input inside role modal */
+.role-modal-content input[type="text"]#name {
+	font-family: 'Montserrat', sans-serif;
+	font-weight: 500;
+	color: #334155;
+	font-size: 16px;
+}
+
+/* Ensure vertical centering and proper margin behavior for .radio-item inside modals */
+.modal-content label.radio-item {
+	display: flex !important;
+	align-items: center !important;
+	margin-bottom: 0 !important;
+	font-weight: 500;
+}
+
+.modal-content label.radio-item input[type="radio"],
+.modal-content label.radio-item input[type="checkbox"] {
+	margin: 0 !important;
+}
+
+/* --- Excomm Table Refinements (Banded rows with a premium header) --- */
+#excomm-table {
+	border: 1px solid #cbd5e1;
+}
+
+#excomm-table thead th {
+	background-color: #004165;
+	color: #ffffff;
+	font-weight: 600;
+	border: 1px solid #003352;
+	padding: 10px 12px;
+}
+
+#excomm-table tbody tr:nth-child(even) {
+	background-color: #f8fafc;
+}
+
+#excomm-table tbody tr:hover {
+	background-color: #f1f5f9;
+}
+
+#excomm-table tbody td {
+	border: 1px solid #e2e8f0;
+	padding: 10px 12px;
+}

@@ -29,7 +29,7 @@ def about_club():
         'term': '', 
         'members': {
             'President': '', 'VPE': '', 'VPM': '', 'VPPR': '', 
-            'Secretary': '', 'Treasurer': '', 'SAA': '', 'IPP': ''
+            'Secretary': '', 'Treasurer': '', 'SAA': '', 'Immediate Past President': ''
         }
     }
     
@@ -50,7 +50,7 @@ def about_club():
                     'Secretary': active_officers['Secretary'].Name if active_officers.get('Secretary') else '',
                     'Treasurer': active_officers['Treasurer'].Name if active_officers.get('Treasurer') else '',
                     'SAA': active_officers['SAA'].Name if active_officers.get('SAA') else '',
-                    'IPP': active_officers['IPP'].Name if active_officers.get('IPP') else ''
+                    'Immediate Past President': active_officers['Immediate Past President'].Name if active_officers.get('Immediate Past President') else ''
                 }
             }
 
@@ -159,7 +159,7 @@ def about_club_update():
                 'excomm_secretary': 'Secretary',
                 'excomm_treasurer': 'Treasurer',
                 'excomm_saa': 'SAA',
-                'excomm_ipp': 'IPP'
+                'excomm_ipp': 'Immediate Past President'
             }
 
             for field, role_name in db_role_map.items():

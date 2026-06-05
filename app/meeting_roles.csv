@@ -12,10 +12,12 @@ Keynote Speaker,fa-star,club-specific,speaker,1,1
 Welcome Officer,fa-smile,club-specific,role-taker,0,1
 Photographer,fa-camera,club-specific,role-taker,0,1
 Presenter,fa-share-alt,standard,speaker,1,0
-Election Chair,fa-vote-yea,club-specific,role-taker,1,1
-Chief Contest Judge,fa-gavel,club-specific,role-taker,1,1
-Moderator,fa-gavel,club-specific,role-taker,1,1
-Panelist,fa-users,club-specific,none,1,0
+Election Chair,fa-vote-yea,standard,role-taker,1,1
+Chief Judge,fa-gavel,standard,role-taker,1,0
+Moderator,fa-gavel,standard,role-taker,1,1
+Panelist,fa-users,standard,none,1,0
+Ballot Counter,fa-calculator,standard,none,0,0
+Contest Chair,fa-microphone,standard,none,1,0
 Debate Host,fa-comments,club-specific,role-taker,1,1
 Debater,fa-balance-scale,club-specific,debater,1,0
 Club Mentor,fa-graduation-cap,club-specific,none,1,0

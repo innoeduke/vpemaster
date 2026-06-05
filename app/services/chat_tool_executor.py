@@ -1125,7 +1125,7 @@ class ChatToolExecutor:
                 term_str += " [Active]"
                 
             msg = f"**ExComm Officers Roster** — {term_str}:\n"
-            standard_roles = ['President', 'VPE', 'VPM', 'VPPR', 'Secretary', 'Treasurer', 'SAA', 'IPP']
+            standard_roles = ['President', 'VPE', 'VPM', 'VPPR', 'Secretary', 'Treasurer', 'SAA', 'Immediate Past President']
             for role in standard_roles:
                 contact = active_officers.get(role)
                 contact_name = contact.Name if contact else "—"
@@ -1215,14 +1215,14 @@ class ChatToolExecutor:
                 'saa': 'SAA',
                 'sergeant at arms': 'SAA',
                 'sergeant': 'SAA',
-                'ipp': 'IPP',
-                'immediate past president': 'IPP',
-                'past president': 'IPP'
+                'ipp': 'Immediate Past President',
+                'immediate past president': 'Immediate Past President',
+                'past president': 'Immediate Past President'
             }
             
             target_role = role_map.get(role_name_norm)
             if not target_role:
-                return {'success': False, 'message': f"Invalid officer role '{role_name_raw}'. Valid roles are: President, VPE, VPM, VPPR, Secretary, Treasurer, SAA, IPP."}
+                return {'success': False, 'message': f"Invalid officer role '{role_name_raw}'. Valid roles are: President, VPE, VPM, VPPR, Secretary, Treasurer, SAA, Immediate Past President."}
                 
             club = db.session.get(Club, club_id)
             if not club:

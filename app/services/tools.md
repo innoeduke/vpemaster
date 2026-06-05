@@ -27,7 +27,7 @@ This document defines core rules, constraints, and intent-to-tool mappings for a
 * Use `manage_excomm_officers` for all ExComm officer queries and updates.
 * **Querying Officers**: Use `action="query"` to get the list of active officers.
 * **Updating Officers**: Use `action="update"`. 
-  - Standard roles: `President`, `VPE`, `VPM`, `VPPR`, `Secretary`, `Treasurer`, `SAA`, `IPP`.
+  - Standard roles: `President`, `VPE`, `VPM`, `VPPR`, `Secretary`, `Treasurer`, `SAA`, `Immediate Past President`.
   - To clear/remove an officer from a position, set `contact_name` to `"none"`, `"clear"`, or leave it blank.
 
 ## 5. Pathway Progress & Library Queries

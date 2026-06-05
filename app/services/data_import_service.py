@@ -149,7 +149,7 @@ class DataImportService:
                      'Secretary': row[10],
                      'Treasurer': row[11],
                      'SAA': row[12],
-                     'IPP': row[13]
+                     'Immediate Past President': row[13]
                  }
                  
                  from app.models.excomm_officer import ExcommOfficer

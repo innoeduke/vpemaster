@@ -260,7 +260,7 @@ CHAT_TOOLS = [
                 },
                 "role_name": {
                     "type": "string",
-                    "description": "Used in update_officer. The officer role name: 'President', 'VPE', 'VPM', 'VPPR', 'Secretary', 'Treasurer', 'SAA', or 'IPP'."
+                    "description": "Used in update_officer. The officer role name: 'President', 'VPE', 'VPM', 'VPPR', 'Secretary', 'Treasurer', 'SAA', or 'Immediate Past President'."
                 },
                 "contact_name": {
                     "type": "string",

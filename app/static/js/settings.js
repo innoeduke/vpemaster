@@ -1176,24 +1176,37 @@ document.addEventListener("DOMContentLoaded", () => {
       row.dataset.id = roleData.id;
     }
 
+    // Resolve translated names using existing DOM translations
+    const typeRadio = document.querySelector(`#addRoleForm input[name="type"][value="${roleData.type}"]`);
+    const translatedType = typeRadio ? typeRadio.nextElementSibling.textContent.trim() : roleData.type;
+
+    const categoryRadio = document.querySelector(`#addRoleForm input[name="award_category"][value="${roleData.award_category || ''}"]`);
+    const translatedCategory = (roleData.award_category && categoryRadio) ? categoryRadio.nextElementSibling.textContent.trim() : "";
+
+    const ticketOption = document.querySelector(`#ticket_type option[value="${roleData.ticket_type || ''}"]`);
+    const translatedTicketType = (roleData.ticket_type && ticketOption) ? ticketOption.textContent.trim() : (roleData.ticket_type || "");
+
     row.innerHTML = `
       <td>${roleData.id}</td>
-      <td data-field="name">
+      <td data-field="name" class="role-type-${roleData.type}">
         <div class="role-name-cell">
           <i class="fas ${typeof resolveRoleIcon === 'function' ? resolveRoleIcon(roleData.icon) : (roleData.icon || 'fa-question-circle')}"></i>
-          <span class="roster-role-tag ${roleData.type === 'officer' ? 'role-officer' : (roleData.award_category ? `role-${roleData.award_category}` : 'role-other')}">${roleData.name}</span>
+          <span class="role-name-text">${roleData.name}</span>
         </div>
       </td>
-      <td data-field="type">${roleData.type}</td>
-      <td data-field="award_category">${roleData.award_category}</td>
+      <td data-field="type" data-type="${roleData.type}">${translatedType}</td>
+      <td data-field="award_category" data-category="${roleData.award_category || ''}">${translatedCategory}</td>
       <td data-field="needs_approval">
-        <input type="checkbox" ${roleData.needs_approval ? "checked" : ""} disabled />
+        <input type="checkbox" name="needs_approval" ${roleData.needs_approval ? "checked" : ""} disabled />
       </td>
       <td data-field="has_single_owner">
-        <input type="checkbox" ${roleData.has_single_owner ? "checked" : ""} disabled />
+        <input type="checkbox" name="has_single_owner" ${roleData.has_single_owner ? "checked" : ""} disabled />
       </td>
       <td data-field="is_member_only">
-        <input type="checkbox" ${roleData.is_member_only ? "checked" : ""} disabled />
+        <input type="checkbox" name="is_member_only" ${roleData.is_member_only ? "checked" : ""} disabled />
+      </td>
+      <td data-field="ticket_type" data-ticket-type="${roleData.ticket_type || ''}">
+        ${roleData.ticket_type ? `<span class="ticket-tag">${translatedTicketType}</span>` : ""}
       </td>
       <td>
         <div class="action-links">
@@ -2066,16 +2079,18 @@ function openEditRoleModal(roleId) {
   form.name.value = row.querySelector('[data-field="name"]').textContent.trim();
 
   // Type Radio Population
-  const typeValue = row.querySelector('[data-field="type"]').textContent.trim();
+  const typeCell = row.querySelector('[data-field="type"]');
+  const typeValue = typeCell ? (typeCell.dataset.type || typeCell.textContent.trim()) : "";
   const typeRadio = form.querySelector(`input[name="type"][value="${typeValue}"]`);
   if (typeRadio) typeRadio.checked = true;
 
   // Award Category Radio Population
-  const categoryValue = row.querySelector('[data-field="award_category"]').textContent.trim();
+  const categoryCell = row.querySelector('[data-field="award_category"]');
+  const categoryValue = categoryCell ? (categoryCell.dataset.category || categoryCell.textContent.trim()) : "";
   const categoryRadio = form.querySelector(`input[name="award_category"][value="${categoryValue}"]`);
   if (categoryRadio) {
     categoryRadio.checked = true;
-  } else if (categoryValue === "" || categoryValue === "None") {
+  } else if (categoryValue === "" || categoryValue === "None" || categoryValue === "无") {
     const noneRadio = form.querySelector(`input[name="award_category"][value=""]`);
     if (noneRadio) noneRadio.checked = true;
   }
@@ -2113,14 +2128,24 @@ function openEditRoleModal(roleId) {
 
   // Handle Ticket Type
   const ticketTypeCell = row.querySelector('[data-field="ticket_type"]');
-  const ticketTypeValue = ticketTypeCell ? ticketTypeCell.textContent.trim() : "";
+  const ticketTypeValue = ticketTypeCell ? (ticketTypeCell.dataset.ticketType || ticketTypeCell.textContent.trim()) : "";
   if (form.ticket_type) {
     form.ticket_type.value = ticketTypeValue;
   }
 
-  // Icon handling
-  const rawIconText = row.querySelector('[data-field="icon"]').textContent.trim();
-  const iconValue = rawIconText.split(/\s+/).pop() || "";
+  // Icon handling — the icon now lives inside the name cell as <i class="fas fa-X">.
+  // We extract the FA class from the <i> element's classList rather than reading
+  // textContent (the old [data-field="icon"] cell was merged into the name cell).
+  let iconValue = "";
+  const iconEl = row.querySelector('[data-field="name"] i.fas');
+  if (iconEl) {
+    for (const cls of iconEl.classList) {
+      if (cls.startsWith("fa-") && cls !== "fas" && cls !== "far" && cls !== "fab" && cls !== "fal" && cls !== "fad") {
+        iconValue = cls;
+        break;
+      }
+    }
+  }
   const container = document.getElementById("icon-matrix-container");
   if (container) {
     container.querySelectorAll(".icon-item").forEach(i => i.classList.remove("active"));

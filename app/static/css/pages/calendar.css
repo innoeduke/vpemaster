@@ -81,7 +81,7 @@
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
-    height: 100%;
+    flex-grow: 1;
     text-decoration: none;
     color: inherit;
     cursor: pointer;
@@ -198,6 +198,62 @@
 .meeting-manager i {
     font-size: 0.7rem;
     color: #94a3b8;
+}
+
+/* Meeting Grid (for meeting manager layout) */
+.meeting-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 8px;
+    align-items: start;
+    margin: 4px 0;
+    width: 100%;
+}
+
+.meeting-grid-left {
+    min-width: 0; /* Ensures child text (like meeting-title) wraps instead of overflowing */
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.meeting-grid-right {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.meeting-avatar-img {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1.5px solid #cbd5e1;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.meeting-avatar-placeholder {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    border: 1.5px solid #e2e8f0;
+}
+
+.meeting-subtitle {
+    font-size: 0.68rem;
+    color: #64748b;
+    margin-top: 2px;
+    font-style: italic;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.2;
 }
 
 .meeting-footer {

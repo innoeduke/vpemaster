@@ -57,11 +57,33 @@
                             {{ meeting.Meeting_Date.strftime('%b %d') }}
                             {% endif %}
                         </div>
-                        <div class="meeting-title">{{ meeting.Meeting_Title or _('Regular Meeting') }}</div>
                         {% if meeting.manager %}
-                        <div class="meeting-manager">
-                            <i class="fas fa-user-tie"></i> {{ meeting.manager.Name }}
+                        <div class="meeting-grid">
+                            <div class="meeting-grid-left">
+                                <div class="meeting-title">{{ meeting.Meeting_Title or _('Regular Meeting') }}</div>
+                                {% if meeting.Subtitle %}
+                                <div class="meeting-subtitle">{{ meeting.Subtitle }}</div>
+                                {% endif %}
+                                <div class="meeting-manager">
+                                    <i class="fas fa-user-tie"></i> {{ meeting.manager.Name }}
+                                </div>
+                            </div>
+                            <div class="meeting-grid-right">
+                                {% if meeting.manager.Avatar_URL %}
+                                    {% set avatar_path = meeting.manager.Avatar_URL %}
+                                    <img src="{{ url_for('static', filename=(config.AVATAR_ROOT_DIR ~ '/' ~ avatar_path if '/' not in avatar_path else avatar_path)) }}" class="meeting-avatar-img" alt="{{ meeting.manager.Name }}" />
+                                {% else %}
+                                    <div class="meeting-avatar-placeholder">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
+                        {% else %}
+                        <div class="meeting-title">{{ meeting.Meeting_Title or _('Regular Meeting') }}</div>
+                        {% if meeting.Subtitle %}
+                        <div class="meeting-subtitle">{{ meeting.Subtitle }}</div>
+                        {% endif %}
                         {% endif %}
                         <div class="meeting-footer">
                             <span class="meeting-num">#{{ meeting.Meeting_Number }}</span>

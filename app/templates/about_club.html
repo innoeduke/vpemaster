@@ -383,7 +383,8 @@
                 {% endcall %}
                 
                 {% for role, name in excomm_team.members.items() %}
-                    {% set role_tag %}<span class="roster-role-tag role-officer" style="margin-bottom: 0;">{{ role }}</span>{% endset %}
+                    {% set display_role = "IPP" if role == "Immediate Past President" else role %}
+                    {% set role_tag %}<span class="roster-role-tag role-officer" style="margin-bottom: 0;">{{ display_role }}</span>{% endset %}
                     {{ field_row(role_tag, value=name, is_raw=true, class='') }}
                 {% endfor %}
             {% endcall %}

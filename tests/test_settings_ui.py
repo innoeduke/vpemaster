@@ -128,11 +128,11 @@ def test_settings_page_separation(client, app_context):
                 
                 # Check for Global Session Types Header
                 assert "Global Session Types (Standard)" in html
-                assert "Global Meeting Roles (Standard)" in html
-                
+                assert "Standard Roles" in html
+
                 # Check for Club Specific Header
                 assert "Club Specific Session Types" in html
-                assert "Club Specific Meeting Roles" in html
+                assert "Custom Roles" in html
                 
                 # Verify Content Separation
                 # "Global Role" should be in the read-only table (id="global-roles-table")
@@ -181,10 +181,10 @@ def test_settings_page_global_admin(client, app_context):
         
         # Should NOT see "Global ... (Standard)" headers
         assert "Global Session Types (Standard)" not in html
-        assert "Global Meeting Roles (Standard)" not in html
-        
-        # Should see "Global Repository" header
-        assert "Meeting Roles (Global Repository)" in html
+        assert "Standard Roles" in html
+
+        # Should see "(Repository)" header (Club 1 admin view)
+        assert "(Repository)" in html
         
         # "Global Role" should be in the editable table
         assert "Global Role" in html

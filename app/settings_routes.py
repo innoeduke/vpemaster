@@ -35,7 +35,9 @@ def settings():
     
     # Fetch Global items separately
     global_session_types = SessionType.query.filter_by(club_id=GLOBAL_CLUB_ID).all()
-    global_roles = MeetingRole.query.filter_by(club_id=GLOBAL_CLUB_ID).all()
+    global_roles = MeetingRole.query.filter_by(club_id=GLOBAL_CLUB_ID).order_by(
+        MeetingRole.type.asc(), MeetingRole.award_category.asc(), MeetingRole.name.asc()
+    ).all()
 
     # Fetch Local items separately (if not global club)
     local_session_types = []
@@ -43,7 +45,9 @@ def settings():
     
     if club_id and club_id != GLOBAL_CLUB_ID:
         local_session_types = SessionType.query.filter_by(club_id=club_id).all()
-        local_roles_query = MeetingRole.query.filter_by(club_id=club_id).all()
+        local_roles_query = MeetingRole.query.filter_by(club_id=club_id).order_by(
+            MeetingRole.type.asc(), MeetingRole.award_category.asc(), MeetingRole.name.asc()
+        ).all()
     elif club_id == GLOBAL_CLUB_ID:
         pass
 
@@ -78,7 +82,7 @@ def settings():
         
         # Fallback: if no officer roles found (unlikely if Global is set up), try standard names match on what we have
         if not officer_roles:
-            standard_officers = ['President', 'VPE', 'VPM', 'VPPR', 'Secretary', 'Treasurer', 'SAA', 'IPP']
+            standard_officers = ['President', 'VPE', 'VPM', 'VPPR', 'Secretary', 'Treasurer', 'SAA', 'Immediate Past President']
             officer_roles = [r for r in all_roles if r.name in standard_officers]
 
     # All Contacts: For autocomplete search
