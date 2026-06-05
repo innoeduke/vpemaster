@@ -33,7 +33,6 @@ const ICON_LIST = [
   {
     group: "Communication & Tools", icons: [
       { value: "fa-handshake", label: "Handshake (Greeter)" },
-      { value: "fa-handshake-angle", label: "Handshake Angle (Mentor)" },
       { value: "fa-hand-holding-heart", label: "Hand Holding Heart (Greeter)" },
       { value: "fa-chalkboard", label: "Chalkboard (Mentor/Trainer)" },
       { value: "fa-desktop", label: "Desktop (Zoom Master)" },
@@ -75,7 +74,6 @@ const ICON_LIST = [
       { value: "fa-smile", label: "Smile Face" },
       { value: "fa-laugh-squint", label: "Laugh Face" },
       { value: "fa-grin-stars", label: "Grin Stars" },
-      { value: "fa-masks-theater", label: "Masks (Joke/Story)" },
       { value: "fa-birthday-cake", label: "Celebration" },
       { value: "fa-mug-hot", label: "Coffee/Break" },
       { value: "fa-music", label: "Music" },
@@ -1181,10 +1179,10 @@ document.addEventListener("DOMContentLoaded", () => {
     row.innerHTML = `
       <td>${roleData.id}</td>
       <td data-field="name">
-        <span class="roster-role-tag ${roleData.type === 'officer' ? 'role-officer' : (roleData.award_category ? `role-${roleData.award_category}` : 'role-other')}">${roleData.name}</span>
-      </td>
-      <td data-field="icon">
-        <i class="fas ${roleData.icon}"></i> ${roleData.icon}
+        <div class="role-name-cell">
+          <i class="fas ${typeof resolveRoleIcon === 'function' ? resolveRoleIcon(roleData.icon) : (roleData.icon || 'fa-question-circle')}"></i>
+          <span class="roster-role-tag ${roleData.type === 'officer' ? 'role-officer' : (roleData.award_category ? `role-${roleData.award_category}` : 'role-other')}">${roleData.name}</span>
+        </div>
       </td>
       <td data-field="type">${roleData.type}</td>
       <td data-field="award_category">${roleData.award_category}</td>
@@ -1658,6 +1656,7 @@ window.toggleCategory = toggleCategory;
 function renderPermissionsMatrix(data) {
   const container = document.getElementById("permissions-matrix");
   const saveBtn = document.getElementById("save-permissions-btn");
+  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
   const { roles, permissions, role_perms } = data;
 
   // Store original state

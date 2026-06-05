@@ -383,6 +383,32 @@ def _recalculate_start_times(meetings_to_update):
             next_dt = dt_current_time + \
                 timedelta(minutes=duration_to_add + break_minutes)
             current_time = next_dt.time()
+def recalculate_section_ids(meeting):
+    """
+    Groups all sessions by sections.
+    The section_id is the session id of a section.
+    The section_id of a section is its own id.
+    For non-section sessions, it is the ID of the section they belong to.
+    """
+    if not meeting:
+        return
+    
+    if isinstance(meeting, int):
+        meeting = db.session.get(Meeting, meeting)
+        if not meeting:
+            return
+
+    # Fetch all session logs for the meeting ordered by Meeting_Seq ascending.
+    logs = SessionLog.query.filter_by(meeting_id=meeting.id).order_by(SessionLog.Meeting_Seq.asc()).all()
+    current_section_id = None
+    for log in logs:
+        is_section = log.session_type.Is_Section if log.session_type else False
+        if is_section:
+            current_section_id = log.id
+            log.section_id = log.id
+        else:
+            log.section_id = current_section_id
+
 
 def _get_processed_logs_data(meeting_id, show_media=False):
     """
@@ -569,6 +595,7 @@ def _get_processed_logs_data(meeting_id, show_media=False):
         log_dict = {
             # SessionLog fields
             'id': log.id,
+            'section_id': log.section_id,
             'Project_ID': log.Project_ID,
             'Meeting_Number': log.Meeting_Number,
             'Meeting_Seq': log.Meeting_Seq,
@@ -1458,6 +1485,8 @@ def _generate_logs_from_template(meeting, template_file):
                 RoleService.assign_meeting_role(new_log, [owner_contact.id], is_admin=True)
             seq += 1
 
+        recalculate_section_ids(meeting)
+
 
 @agenda_bp.route('/agenda/create', methods=['POST'])
 @login_required
@@ -1626,6 +1655,7 @@ def update_logs():
             _create_or_update_session(item, meeting.id, seq, updated_role_groups)
 
         _recalculate_start_times([meeting])
+        recalculate_section_ids(meeting)
 
         db.session.commit()
         
@@ -1695,7 +1725,11 @@ def delete_log(log_id):
             db.session.delete(entry)
         db.session.flush()
 
+        meeting = log.meeting
         db.session.delete(log)
+        db.session.flush()
+        if meeting:
+            recalculate_section_ids(meeting)
         db.session.commit()
         return jsonify(success=True)
     except Exception as e:

@@ -632,6 +632,9 @@ def add_table_topics_speech(meeting_id):
         hidden=True
     )
     db.session.add(new_log)
+    db.session.flush()
+    from app.agenda_routes import recalculate_section_ids
+    recalculate_section_ids(meeting)
     db.session.commit()
 
     # Clear cached meeting roles to ensure the new topics speech appears immediately on reload

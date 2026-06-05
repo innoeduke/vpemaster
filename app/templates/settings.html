@@ -8,7 +8,7 @@
     padding: 20px 0;
   }
   /* Hide ID columns in settings tables */
-  #sessions-table th:nth-child(1), 
+  #sessions-table th:nth-child(1),
   #sessions-table td:nth-child(1),
   #roles-table th:nth-child(1),
   #roles-table td:nth-child(1),
@@ -19,6 +19,46 @@
   #excomm-table th:nth-child(1),
   #excomm-table td:nth-child(1) {
     display: none;
+  }
+
+  /* Roles tab: hide Type and Award Category columns (still in DOM for edit modal) */
+  #roles-table th:nth-child(3),
+  #roles-table td:nth-child(3),
+  #roles-table th:nth-child(4),
+  #roles-table td:nth-child(4),
+  #global-roles-table th:nth-child(3),
+  #global-roles-table td:nth-child(3),
+  #global-roles-table th:nth-child(4),
+  #global-roles-table td:nth-child(4) {
+    display: none;
+  }
+
+  /* Roles tab: side-by-side layout for global + club-specific tables */
+  .roles-tables-row {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .roles-tables-col {
+    flex: 1 1 480px;
+    min-width: 0;
+  }
+
+  /* Roles tab: combined icon + name cell */
+  .role-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .role-name-cell .roster-role-tag {
+    margin: 0;
+  }
+
+  /* Roles tab: keep action buttons on a single line */
+  #roles-table .action-links {
+    flex-wrap: nowrap;
+    white-space: nowrap;
   }
 
   #save-permissions-btn:disabled {
@@ -429,118 +469,123 @@
     </div>
 
     <div id="agenda-settings" class="tab-content">
-      <!-- CLUB SPECIFIC ROLES -->
-      <div class="settings-header">
-        <h2>
-          {% if club_id != GLOBAL_CLUB_ID %}{{ _('Club Specific Meeting Roles') }}{% else %}{{ _('Meeting Roles (Global Repository)') }}{% endif %}
-        </h2>
-        <div class="button-group">
-          <button id="add-role-btn" class="btn btn-success" style="flex-grow: 0;">{{ _('Add New') }}</button>
+      <!-- GLOBAL ROLES (left) + CLUB SPECIFIC ROLES (right) — side by side -->
+      <div class="roles-tables-row">
+        {% if club_id != GLOBAL_CLUB_ID %}
+        <div class="roles-tables-col">
+          <div class="settings-header">
+            <h2>{{ _('Global Meeting Roles (Standard)') }}</h2>
+          </div>
+          <table id="global-roles-table" class="readonly-table">
+            <thead>
+              <tr>
+                <th class="sortable" data-column-index="0">{{ _('ID') }}</th>
+                <th class="sortable" data-column-index="1">{{ _('Name') }}</th>
+                <th class="sortable" data-column-index="2">{{ _('Type') }}</th>
+                <th class="sortable" data-column-index="3">{{ _('Award Category') }}</th>
+                <th class="sortable" data-column-index="4">{{ _('Needs Approval') }}</th>
+                <th class="sortable" data-column-index="5">{{ _('Single Owner Only') }}</th>
+                <th class="sortable" data-column-index="6">{{ _('Member Only') }}</th>
+                <th class="sortable" data-column-index="7">{{ _('Default Ticket') }}</th>
+                <!-- No actions -->
+              </tr>
+            </thead>
+            <tbody>
+              {% for role in global_roles %}
+              <tr data-id="{{ role.id }}">
+                <td>{{ role.id }}</td>
+                <td>
+                  <div class="role-name-cell">
+                    {% set icon_class = role.icon if role.icon and (role.icon[3:] in valid_fa_icons or not valid_fa_icons) else 'fa-question-circle' %}
+                    <i class="fas {{ icon_class }}"></i>
+                    {% set role_class = 'role-' ~ role.award_category if role.award_category else 'role-other' %}
+                    {% if role.type == 'officer' %}
+                        {% set role_class = 'role-officer' %}
+                    {% endif %}
+                    <span class="roster-role-tag {{ role_class }}">{{ _(role.name) }}</span>
+                  </div>
+                </td>
+                <td>{{ _(role.type) }}</td>
+                <td>{{ _(role.award_category) if role.award_category else '' }}</td>
+                <td><input type="checkbox" {% if role.needs_approval %}checked{% endif %} disabled /></td>
+                <td><input type="checkbox" {% if role.has_single_owner %}checked{% endif %} disabled /></td>
+                <td><input type="checkbox" {% if role.is_member_only %}checked{% endif %} disabled /></td>
+                <td>{{ role.ticket_type or '' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
+        {% endif %}
 
+        <div class="roles-tables-col">
+          <div class="settings-header">
+            <h2>
+              {% if club_id != GLOBAL_CLUB_ID %}{{ _('Club Specific Meeting Roles') }}{% else %}{{ _('Meeting Roles (Global Repository)') }}{% endif %}
+            </h2>
+            <div class="button-group">
+              <button id="add-role-btn" class="btn btn-success" style="flex-grow: 0;">{{ _('Add New') }}</button>
+            </div>
+          </div>
+          <table id="roles-table">
+            <thead>
+              <tr>
+                <th class="sortable" data-column-index="0">{{ _('ID') }}</th>
+                <th class="sortable" data-column-index="1">{{ _('Name') }}</th>
+                <th class="sortable" data-column-index="2">{{ _('Type') }}</th>
+                <th class="sortable" data-column-index="3">{{ _('Award Category') }}</th>
+                <th class="sortable" data-column-index="4">{{ _('Needs Approval') }}</th>
+                <th class="sortable" data-column-index="5">{{ _('Single Owner Only') }}</th>
+                <th class="sortable" data-column-index="6">{{ _('Member Only') }}</th>
+                <th class="sortable" data-column-index="7">{{ _('Default Ticket') }}</th>
+                <th data-column-index="8">{{ _('Actions') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% set roles_to_show = global_roles if club_id == GLOBAL_CLUB_ID else local_roles %}
+              {% for role in roles_to_show %}
+              <tr data-id="{{ role.id }}">
+                <td>{{ role.id }}</td>
+                <td data-field="name">
+                  <div class="role-name-cell">
+                    {% set icon_class = role.icon if role.icon and (role.icon[3:] in valid_fa_icons or not valid_fa_icons) else 'fa-question-circle' %}
+                    <i class="fas {{ icon_class }}"></i>
+                    {% set role_class = 'role-' ~ role.award_category if role.award_category else 'role-other' %}
+                    {% if role.type == 'officer' %}
+                        {% set role_class = 'role-officer' %}
+                    {% endif %}
+                    <span class="roster-role-tag {{ role_class }}">{{ _(role.name) }}</span>
+                  </div>
+                </td>
+                <td data-field="type">{{ _(role.type) }}</td>
+                <td data-field="award_category">{{ _(role.award_category) if role.award_category else '' }}</td>
+                <td data-field="needs_approval">
+                  <input type="checkbox" name="needs_approval" {% if role.needs_approval %}checked{% endif %} disabled />
+                </td>
+                <td data-field="has_single_owner">
+                  <input type="checkbox" name="has_single_owner" {% if role.has_single_owner %}checked{% endif %} disabled />
+                </td>
+                <td data-field="is_member_only">
+                  <input type="checkbox" name="is_member_only" {% if role.is_member_only %}checked{% endif %} disabled />
+                </td>
+                <td data-field="ticket_type">{{ role.ticket_type or '' }}</td>
+                <td>
+                  <div class="action-links">
+                    <button class="edit-btn icon-btn" onclick="openEditRoleModal('{{ role.id }}')" title="{{ _('Edit') }}">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="delete-btn icon-btn" onclick="openDeleteModal('{{ url_for('settings_bp.delete_role', id=role.id) }}', 'role')" title="{{ _('Delete') }}">
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
+                  </div>
+                </td>
 
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <table id="roles-table">
-        <thead>
-          <tr>
-            <th class="sortable" data-column-index="0">{{ _('ID') }}</th>
-            <th class="sortable" data-column-index="1">{{ _('Name') }}</th>
-            <th class="sortable" data-column-index="2">{{ _('Icon') }}</th>
-            <th class="sortable" data-column-index="3">{{ _('Type') }}</th>
-            <th class="sortable" data-column-index="4">{{ _('Award Category') }}</th>
-            <th class="sortable" data-column-index="5">{{ _('Needs Approval') }}</th>
-            <th class="sortable" data-column-index="6">{{ _('Single Owner Only') }}</th>
-            <th class="sortable" data-column-index="7">{{ _('Member Only') }}</th>
-            <th class="sortable" data-column-index="8">{{ _('Default Ticket') }}</th>
-            <th data-column-index="9">{{ _('Actions') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% set roles_to_show = global_roles if club_id == GLOBAL_CLUB_ID else local_roles %}
-          {% for role in roles_to_show %}
-          <tr data-id="{{ role.id }}">
-            <td>{{ role.id }}</td>
-            <td data-field="name">
-              {% set role_class = 'role-' ~ role.award_category if role.award_category else 'role-other' %}
-              {% if role.type == 'officer' %}
-                  {% set role_class = 'role-officer' %}
-              {% endif %}
-              <span class="roster-role-tag {{ role_class }}">{{ _(role.name) }}</span>
-            </td>
-            <td data-field="icon">
-              <i class="fas {{ role.icon }}"></i> {{ role.icon }}
-            </td>
-            <td data-field="type">{{ _(role.type) }}</td>
-            <td data-field="award_category">{{ _(role.award_category) if role.award_category else '' }}</td>
-            <td data-field="needs_approval">
-              <input type="checkbox" name="needs_approval" {% if role.needs_approval %}checked{% endif %} disabled />
-            </td>
-            <td data-field="has_single_owner">
-              <input type="checkbox" name="has_single_owner" {% if role.has_single_owner %}checked{% endif %} disabled />
-            </td>
-            <td data-field="is_member_only">
-              <input type="checkbox" name="is_member_only" {% if role.is_member_only %}checked{% endif %} disabled />
-            </td>
-            <td data-field="ticket_type">{{ role.ticket_type or '' }}</td>
-            <td>
-              <div class="action-links">
-                <button class="edit-btn icon-btn" onclick="openEditRoleModal('{{ role.id }}')" title="{{ _('Edit') }}">
-                  <i class="fas fa-edit"></i>
-                </button>
-                <button class="delete-btn icon-btn" onclick="openDeleteModal('{{ url_for('settings_bp.delete_role', id=role.id) }}', 'role')" title="{{ _('Delete') }}">
-                  <i class="fas fa-trash-alt"></i>
-                </button>
-              </div>
-            </td>
-
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-
-      <!-- GLOBAL ROLES -->
-      {% if club_id != GLOBAL_CLUB_ID %}
-      <div class="settings-header" style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
-        <h2>{{ _('Global Meeting Roles (Standard)') }}</h2>
-      </div>
-      <table id="global-roles-table" class="readonly-table">
-        <thead>
-          <tr>
-            <th class="sortable" data-column-index="0">{{ _('ID') }}</th>
-            <th class="sortable" data-column-index="1">{{ _('Name') }}</th>
-            <th class="sortable" data-column-index="2">{{ _('Icon') }}</th>
-            <th class="sortable" data-column-index="3">{{ _('Type') }}</th>
-            <th class="sortable" data-column-index="4">{{ _('Award Category') }}</th>
-            <th class="sortable" data-column-index="5">{{ _('Needs Approval') }}</th>
-            <th class="sortable" data-column-index="6">{{ _('Single Owner Only') }}</th>
-            <th class="sortable" data-column-index="7">{{ _('Member Only') }}</th>
-            <th class="sortable" data-column-index="8">{{ _('Default Ticket') }}</th>
-            <!-- No actions -->
-          </tr>
-        </thead>
-        <tbody>
-          {% for role in global_roles %}
-          <tr data-id="{{ role.id }}">
-            <td>{{ role.id }}</td>
-            <td>
-              {% set role_class = 'role-' ~ role.award_category if role.award_category else 'role-other' %}
-              {% if role.type == 'officer' %}
-                  {% set role_class = 'role-officer' %}
-              {% endif %}
-              <span class="roster-role-tag {{ role_class }}">{{ _(role.name) }}</span>
-            </td>
-            <td><i class="fas {{ role.icon }}"></i> {{ role.icon }}</td>
-            <td>{{ _(role.type) }}</td>
-            <td>{{ _(role.award_category) if role.award_category else '' }}</td>
-            <td><input type="checkbox" {% if role.needs_approval %}checked{% endif %} disabled /></td>
-            <td><input type="checkbox" {% if role.has_single_owner %}checked{% endif %} disabled /></td>
-            <td><input type="checkbox" {% if role.is_member_only %}checked{% endif %} disabled /></td>
-            <td>{{ role.ticket_type or '' }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% endif %}
     </div>
 
 
@@ -796,6 +841,17 @@
     const ALL_CONTACTS = {{ all_contacts| tojson }};
     const CURRENT_CLUB_ID = {{ club_id }};
     const HAS_SETTINGS_EDIT = {{ is_authorized(Permissions.SETTINGS_EDIT) | tojson }};
+    // Set of valid FontAwesome icon class suffixes (no 'fa-' prefix). An icon
+    // is rendered as-is only if its suffix is in this set; otherwise we fall
+    // back to fa-question-circle. Populated from the loaded FA CSS so we
+    // automatically track whichever FA build is in use.
+    const VALID_FA_ICONS = new Set({{ valid_fa_icons| tojson }});
+    const DEFAULT_FA_ICON = 'fa-question-circle';
+    function resolveRoleIcon(icon) {
+        if (!icon) return DEFAULT_FA_ICON;
+        if (VALID_FA_ICONS.size === 0) return icon;
+        return VALID_FA_ICONS.has(icon.slice(3)) ? icon : DEFAULT_FA_ICON;
+    }
 </script>
 {% endblock %} {% block scripts %}
 <script src="{{ url_for('static', filename='js/settings.js') }}?v={{ range(1, 10000) | random }}"></script>

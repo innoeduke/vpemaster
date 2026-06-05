@@ -17,6 +17,56 @@ import re
 # Compile regex pattern once for performance
 LEVEL_CODE_PATTERN = re.compile(r"([A-Z]+)(\d+)")
 
+# ---------------------------------------------------------------------------
+# FontAwesome icon validation
+# ---------------------------------------------------------------------------
+# Some icon classes that exist in newer FA versions (e.g. fa-handshake-angle,
+# fa-masks-theater) are NOT in the FA 5.15.0 build this project ships. Roles
+# whose icon points at a missing class render as a blank space. Validate against
+# the actually-loaded CSS so we can fall back to a default at render time.
+_FA_CSS_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "static", "vendor", "css", "fontawesome.min.css",
+)
+_FA_CLASS_RE = re.compile(r"\.fa-([a-zA-Z0-9-]+):")
+_VALID_FA_ICONS_CACHE = None
+
+
+def get_valid_fa_icons():
+    """
+    Parse the FontAwesome CSS file and return a frozenset of valid icon
+    class names (without the 'fa-' prefix, e.g. 'handshake').
+
+    Cached at module level — the CSS file is read once per process.
+    """
+    global _VALID_FA_ICONS_CACHE
+    if _VALID_FA_ICONS_CACHE is not None:
+        return _VALID_FA_ICONS_CACHE
+    try:
+        with open(_FA_CSS_PATH) as f:
+            css = f.read()
+        _VALID_FA_ICONS_CACHE = frozenset(_FA_CLASS_RE.findall(css))
+    except FileNotFoundError:
+        # If the CSS is ever missing, fail open — treat every non-empty
+        # icon class as valid rather than blanking out the whole UI.
+        _VALID_FA_ICONS_CACHE = frozenset()
+    return _VALID_FA_ICONS_CACHE
+
+
+def resolve_role_icon(icon, default="fa-question-circle"):
+    """
+    Return the FA class (with 'fa-' prefix) to render for a role's icon,
+    falling back to `default` when the icon is missing or not in the
+    actually-loaded FontAwesome build.
+    """
+    if not icon:
+        return default
+    valid = get_valid_fa_icons()
+    if not valid or icon[3:] in valid:
+        return icon
+    return default
+
+
 
 def extract_level_from_path_code(path_level_str):
     """

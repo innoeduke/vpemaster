@@ -805,6 +805,10 @@ class DataImportService:
                          
                      db.session.add(omr)
 
+        # Recalculate section IDs for all imported/modified meetings
+        from app.agenda_routes import recalculate_section_ids
+        for meeting_obj in self.meeting_map.values():
+            recalculate_section_ids(meeting_obj)
         db.session.commit()
         print(f"Imported {count} session logs.")
 

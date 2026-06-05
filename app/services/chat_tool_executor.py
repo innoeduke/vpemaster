@@ -2095,8 +2095,9 @@ class ChatToolExecutor:
                 RoleService.assign_meeting_role(new_log, [owner_contact.id], is_admin=True)
                 db.session.flush()
 
-            from app.agenda_routes import _recalculate_start_times
+            from app.agenda_routes import _recalculate_start_times, recalculate_section_ids
             _recalculate_start_times([meeting])
+            recalculate_section_ids(meeting)
             db.session.commit()
             RoleService._clear_meeting_cache(meeting.id)
 
@@ -2161,8 +2162,9 @@ class ChatToolExecutor:
                     db.session.flush()
                     log.project_code = log.derive_project_code(new_owner)
 
-            from app.agenda_routes import _recalculate_start_times
+            from app.agenda_routes import _recalculate_start_times, recalculate_section_ids
             _recalculate_start_times([meeting])
+            recalculate_section_ids(meeting)
             db.session.commit()
             RoleService._clear_meeting_cache(meeting.id)
 
@@ -2230,8 +2232,9 @@ class ChatToolExecutor:
                 db.session.flush()
                 log.Meeting_Seq = target_seq
 
-            from app.agenda_routes import _recalculate_start_times
+            from app.agenda_routes import _recalculate_start_times, recalculate_section_ids
             _recalculate_start_times([meeting])
+            recalculate_section_ids(meeting)
             db.session.commit()
             RoleService._clear_meeting_cache(meeting.id)
 
@@ -2275,8 +2278,9 @@ class ChatToolExecutor:
                     l.Meeting_Seq = i
             db.session.flush()
 
-            from app.agenda_routes import _recalculate_start_times
+            from app.agenda_routes import _recalculate_start_times, recalculate_section_ids
             _recalculate_start_times([meeting])
+            recalculate_section_ids(meeting)
             db.session.commit()
             RoleService._clear_meeting_cache(meeting.id)
 
@@ -2480,8 +2484,9 @@ class ChatToolExecutor:
 
         try:
             if updated_agenda:
-                from app.agenda_routes import _recalculate_start_times
+                from app.agenda_routes import _recalculate_start_times, recalculate_section_ids
                 _recalculate_start_times([meeting])
+                recalculate_section_ids(meeting)
                 RoleService._clear_meeting_cache(meeting.id)
 
             db.session.commit()

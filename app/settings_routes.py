@@ -7,6 +7,7 @@ from flask_login import current_user
 from .club_context import get_current_club_id, authorized_club_required
 from .models import SessionType, User, MeetingRole, Achievement, Contact, Permission, AuthRole, RolePermission, PermissionAudit, ContactClub, Club, ExComm, UserClub, ExcommOfficer, Pathway
 from .constants import GLOBAL_CLUB_ID
+from .utils import get_valid_fa_icons
 import json
 from . import db
 import os
@@ -113,18 +114,18 @@ def settings():
     merged_tickets = Ticket.get_all_for_club(club_id)
     tickets = [{'id': t.id, 'name': t.name, 'price': t.price, 'type': t.type, 'icon': t.icon, 'color': t.color, 'expired_at': t.expired_at.strftime('%H:%M') if t.expired_at else ''} for t in merged_tickets]
 
-    return render_template('settings.html', 
+    return render_template('settings.html',
                           global_session_types=global_session_types,
                           local_session_types=local_session_types,
                           global_roles=global_roles,
                           local_roles=local_roles_query,
-                          all_users=all_users, 
+                          all_users=all_users,
                           all_contacts=all_contacts_data,
-                          roles=roles, 
-                          achievements=achievements, 
+                          roles=roles,
+                          achievements=achievements,
                           excomm_history=excomm_history,
                           officer_roles=officer_roles,
-                          club_id=club_id, 
+                          club_id=club_id,
                           GLOBAL_CLUB_ID=GLOBAL_CLUB_ID,
                           pathways=pathways,
                           programs=programs,
@@ -132,7 +133,8 @@ def settings():
                           all_auth_roles=all_auth_roles,
                           global_tickets=global_tickets,
                           local_tickets=local_tickets,
-                          tickets=tickets)
+                          tickets=tickets,
+                          valid_fa_icons=sorted(get_valid_fa_icons()))
 
 
 @settings_bp.route('/settings/excomm/add', methods=['POST'])

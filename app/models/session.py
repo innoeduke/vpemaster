@@ -103,6 +103,7 @@ class SessionLog(db.Model):
     __tablename__ = 'Session_Logs'
     id = db.Column(db.Integer, primary_key=True)
     meeting_id = db.Column(db.Integer, db.ForeignKey('Meetings.id'), nullable=True, index=True)
+    section_id = db.Column(db.Integer, db.ForeignKey('Session_Logs.id', ondelete='SET NULL'), nullable=True)
     # Proxy Meeting_Number to the linked meeting record
     @property
     def Meeting_Number(self):
