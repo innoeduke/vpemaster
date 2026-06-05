@@ -854,6 +854,27 @@ def get_all_contacts_api():
         cc.contact_id for cc in ContactClub.query.filter_by(club_id=club_id, is_officer=True).all()
     )
 
+    # Build officer title map: contact_id -> MeetingRole.name from the
+    # current/most-recent ExComm for this club. Used by the contacts list
+    # to surface the officer's actual title (President, VPE, ...) instead
+    # of a generic badge.
+    from datetime import date as _date
+    from .models.excomm import ExComm
+    from .models.excomm_officer import ExcommOfficer
+    current_excomm = (
+        ExComm.query
+        .filter(ExComm.club_id == club_id)
+        .filter((ExComm.start_date.is_(None)) | (ExComm.start_date <= _date.today()))
+        .filter((ExComm.end_date.is_(None)) | (ExComm.end_date >= _date.today()))
+        .order_by(ExComm.start_date.desc())
+        .first()
+    )
+    officer_title_map = {}
+    if current_excomm:
+        for officer_link in current_excomm.officers:
+            if officer_link.meeting_role and officer_link.meeting_role.name:
+                officer_title_map[officer_link.contact_id] = officer_link.meeting_role.name
+
     # Build JSON response
     contacts_data = []
     for c in contacts:
@@ -892,6 +913,7 @@ def get_all_contacts_api():
             'user_id': c.user.id if c.user else None,
             'user_role': c.user.primary_role_name if c.user else None,
             'is_officer': c.id in officer_ids,
+            'officer_title': officer_title_map.get(c.id),
             'is_connected': c.is_connected,
             'Email': c.Email if c.Email else '-',
             'first_name': c.first_name if c.first_name else '-',

@@ -199,7 +199,15 @@ function createContactRow(contact) {
       </div>
     </td>
     <td class="col-type">
-      <span class="contact-type-badge type-${(contact.user_role || 'Guest').toLowerCase().replace(/[^a-z0-9]/g, '-')}">${contact.user_role || 'Guest'}</span>
+      ${(() => {
+        if (contact.is_officer && contact.officer_title) {
+          return `<span class="contact-type-badge type-officer">${contact.officer_title}</span>`;
+        }
+        const isMember = contact.Type === 'Member' || contact.Type === 'Past Member';
+        const label = isMember ? 'Member' : 'Guest';
+        const typeClass = isMember ? 'member' : 'guest';
+        return `<span class="contact-type-badge type-${typeClass}">${label}</span>`;
+      })()}
     </td>
     <td class="col-part" data-sort="${sortValue}">
       <div class="participation-container">

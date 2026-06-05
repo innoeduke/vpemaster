@@ -223,41 +223,35 @@
 	color: white;
 }
 
-/* Administrative Roles - Differentiated */
+/* Administrative Roles - Light palette (matches contact-type-badge) */
 .tab-content .roster-role-tag.role-sysadmin {
-	background-color: #7c3aed;
-	/* Vivid Purple */
-	color: white;
+	background-color: #fee2e2;
+	color: #991b1b;
 }
 
 .tab-content .roster-role-tag.role-clubadmin {
-	background-color: #ea580c;
-	/* Vibrant Orange */
-	color: white;
+	background-color: #fed7aa;
+	color: #9a3412;
 }
 
 .tab-content .roster-role-tag.role-operator {
-	background-color: #0d9488;
-	/* Teal */
-	color: white;
+	background-color: #ccfbf1;
+	color: #115e59;
 }
 
 .tab-content .roster-role-tag.role-staff {
-	background-color: #0ea5e9;
-	/* Light Blue */
-	color: white;
+	background-color: #cffafe;
+	color: #155e75;
 }
 
 .tab-content .roster-role-tag.role-member {
-	background-color: #22c55e;
-	/* Green */
-	color: white;
+	background-color: #dbeafe;
+	color: #1e40af;
 }
 
 .tab-content .roster-role-tag.role-other {
-	background-color: #6b7280;
-	/* Neutral Gray */
-	color: white;
+	background-color: #e2e8f0;
+	color: #475569;
 }
 
 /* Pathway Badge Styles */
@@ -947,6 +941,7 @@ fieldset.modal-frame .compact-form {
 	border-radius: 4px;
 	font-size: 0.9rem;
 	color: #475569;
+	margin-top: 1.5rem;
 }
 
 .planner-modal-medium {

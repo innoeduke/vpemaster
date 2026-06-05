@@ -12,31 +12,12 @@
         <input type="hidden" name="club_id" value="{{ club_id or '' }}" />
         
         <div class="user-grid">
-          <!-- Row 1: Username (Full Width) -->
-          <div class="planner-form-group span-4">
+          <!-- Row 1: Username (2) | Role (2) -->
+          <div class="planner-form-group span-2">
             <label for="username">{{ _('Username') }} <span class="required-field">*</span></label>
             <input type="text" id="username" name="username" class="planner-form-control" required placeholder="{{ _("User's login name") }}" />
           </div>
-
-          <!-- Row 2: First Name | Last Name -->
-          <div class="planner-form-group span-2">
-            <label for="first_name">{{ _('First Name') }} <span class="required-field">*</span></label>
-            <input type="text" id="first_name" name="first_name" class="planner-form-control" required placeholder="{{ _('First Name') }}" />
-          </div>
-          <div class="planner-form-group span-2">
-            <label for="last_name">{{ _('Last Name') }} <span class="required-field">*</span></label>
-            <input type="text" id="last_name" name="last_name" class="planner-form-control" required placeholder="{{ _('Last Name') }}" />
-          </div>
-
-          <!-- Row 3 & 4: (Left 3: Right 1) -->
-          <!-- Left Col (Email & Phone) -->
-          <div class="planner-form-group span-3">
-            <label for="email">{{ _('Email') }} <span class="required-field">*</span></label>
-            <input type="email" id="email" name="email" class="planner-form-control" required placeholder="email@example.com" />
-          </div>
-          
-          <!-- Right Col (Roles Merged) -->
-          <div class="planner-form-group span-1 row-span-2 roles-selection-group">
+          <div class="planner-form-group span-2 roles-selection-group">
             <label for="role_id_select">{{ _('Role') }}</label>
             <select id="role_id_select" name="role_id" class="planner-form-control">
               {% if all_auth_roles %}
@@ -51,8 +32,24 @@
             </select>
           </div>
 
-          <!-- Row 4 Left: Phone (3:1 Split) -->
-          <div class="planner-form-group span-3">
+          <!-- Row 2: First Name | Last Name -->
+          <div class="planner-form-group span-2">
+            <label for="first_name">{{ _('First Name') }} <span class="required-field">*</span></label>
+            <input type="text" id="first_name" name="first_name" class="planner-form-control" required placeholder="{{ _('First Name') }}" />
+          </div>
+          <div class="planner-form-group span-2">
+            <label for="last_name">{{ _('Last Name') }} <span class="required-field">*</span></label>
+            <input type="text" id="last_name" name="last_name" class="planner-form-control" required placeholder="{{ _('Last Name') }}" />
+          </div>
+
+          <!-- Row 3: Email (Full Width) -->
+          <div class="planner-form-group span-4">
+            <label for="email">{{ _('Email') }} <span class="required-field">*</span></label>
+            <input type="email" id="email" name="email" class="planner-form-control" required placeholder="email@example.com" />
+          </div>
+
+          <!-- Row 4: Phone (Full Width) -->
+          <div class="planner-form-group span-4">
             <label for="phone">{{ _('Phone') }}</label>
             <input type="text" id="phone" name="phone" class="planner-form-control" placeholder="{{ _('Phone Number') }}" />
           </div>
@@ -61,20 +58,20 @@
           <div class="planner-form-group span-4">
             <label for="password">{{ _('Password') }}</label>
             <input type="password" id="password" name="password" class="planner-form-control" placeholder="{{ _('Leave blank to keep current') }}" />
-            <small class="text-muted">{{ _("Default is 'toastmasters' for new users.") }}</small>
+            <small class="text-muted" style="color: #9ca3af;">{{ _("Default is 'toastmasters' for new users.") }}</small>
           </div>
         </div>
 
         <!-- Alert for club context -->
         {% if club_name %}
-        <div class="modal-info-bar mt-3">
+        <div class="modal-info-bar">
           <i class="fas fa-info-circle"></i> {{ _('Roles will be applied to:') }} <strong>{{ club_name }}</strong>
         </div>
         {% endif %}
       </div>
       <div class="planner-modal-footer">
-        <button type="button" class="planner-btn btn-danger" onclick="closeUserModal()">{{ _('Cancel') }}</button>
-        <button type="submit" class="planner-btn btn-success" id="user-submit-btn">{{ _('Save') }}</button>
+        <button type="button" class="btn btn-speech-cancel" onclick="closeUserModal()">{{ _('Cancel') }}</button>
+        <button type="submit" class="btn btn-speech-save" id="user-submit-btn">{{ _('Save') }}</button>
       </div>
     </form>
   </div>

@@ -366,7 +366,8 @@
 #speechEditModal .form-actions .btn-speech-cancel,
 #roleEditModal .form-actions .btn-speech-cancel,
 #meetingDetailsModal .form-actions .btn-speech-cancel,
-#contactModal .form-actions .btn-speech-cancel {
+#contactModal .form-actions .btn-speech-cancel,
+#userModal .planner-modal-footer .btn-speech-cancel {
     background-color: transparent;
     color: #555;
     border: none;
@@ -376,7 +377,8 @@
 #speechEditModal .form-actions .btn-speech-cancel:hover,
 #roleEditModal .form-actions .btn-speech-cancel:hover,
 #meetingDetailsModal .form-actions .btn-speech-cancel:hover,
-#contactModal .form-actions .btn-speech-cancel:hover {
+#contactModal .form-actions .btn-speech-cancel:hover,
+#userModal .planner-modal-footer .btn-speech-cancel:hover {
     background-color: rgba(0, 0, 0, 0.05);
     color: #333;
 }
@@ -384,7 +386,8 @@
 #speechEditModal .form-actions .btn-speech-save,
 #roleEditModal .form-actions .btn-speech-save,
 #meetingDetailsModal .form-actions .btn-speech-save,
-#contactModal .form-actions .btn-speech-save {
+#contactModal .form-actions .btn-speech-save,
+#userModal .planner-modal-footer .btn-speech-save {
     background-color: #772432; /* Official Toastmasters Maroon */
     color: #fff;
     border: none;
@@ -394,7 +397,8 @@
 #speechEditModal .form-actions .btn-speech-save:hover,
 #roleEditModal .form-actions .btn-speech-save:hover,
 #meetingDetailsModal .form-actions .btn-speech-save:hover,
-#contactModal .form-actions .btn-speech-save:hover {
+#contactModal .form-actions .btn-speech-save:hover,
+#userModal .planner-modal-footer .btn-speech-save:hover {
     background-color: #5e1c27; /* Darker maroon */
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
     transform: translateY(-1px);
