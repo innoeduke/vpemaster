@@ -1534,7 +1534,7 @@ class ChatToolExecutor:
             if not is_admin:
                 if not is_self:
                     return {'success': False, 'message': "You do not have permission to manage other contacts' waitlist entries."}
-                if not is_authorized(Permissions.BOOKING_OWN):
+                if not is_authorized(Permissions.MEMBERS_SELF):
                     return {'success': False, 'message': "You do not have permission to book roles or manage your own waitlist."}
                     
         # Check if meeting is finished (no modifications allowed)
@@ -2323,7 +2323,7 @@ class ChatToolExecutor:
         if not is_admin:
             if not is_self:
                 return {'success': False, 'message': "You do not have permission to manage other contacts' project details."}
-            if not is_authorized(Permissions.BOOKING_OWN):
+            if not is_authorized(Permissions.MEMBERS_SELF):
                 return {'success': False, 'message': "You do not have permission to manage your own project details."}
 
         project_obj = None

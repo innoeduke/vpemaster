@@ -36,9 +36,9 @@ class ContactsPermissionTestCase(unittest.TestCase):
     def setup_data(self):
         # 1. Create permissions
         self.perm_roster_view = Permission(name=Permissions.ROSTER_VIEW, description="View Roster", category="roster")
-        self.perm_booking_own = Permission(name=Permissions.BOOKING_OWN, description="Own Bookings", category="meeting")
+        self.perm_members_self = Permission(name=Permissions.MEMBERS_SELF, description="Own Bookings & Profile", category="members")
         self.perm_sl_manage = Permission(name=Permissions.SPEECH_LOGS_MANAGE, description="Manage Speech Logs", category="speech_logs")
-        db.session.add_all([self.perm_roster_view, self.perm_booking_own, self.perm_sl_manage])
+        db.session.add_all([self.perm_roster_view, self.perm_members_self, self.perm_sl_manage])
         
         # 2. Create roles
         self.role_staff = AuthRole(name="Staff", level=2)
@@ -47,8 +47,8 @@ class ContactsPermissionTestCase(unittest.TestCase):
         db.session.flush()
         
         # 3. Assign permissions
-        self.role_staff.permissions.extend([self.perm_roster_view, self.perm_booking_own, self.perm_sl_manage])
-        self.role_user.permissions.extend([self.perm_roster_view, self.perm_booking_own])
+        self.role_staff.permissions.extend([self.perm_roster_view, self.perm_members_self, self.perm_sl_manage])
+        self.role_user.permissions.extend([self.perm_roster_view, self.perm_members_self])
         
         # 4. Create club
         self.club = Club(club_no='000000', club_name='Test Club')

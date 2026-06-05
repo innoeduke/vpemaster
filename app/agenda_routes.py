@@ -982,6 +982,10 @@ A single endpoint to fetch all data needed for the agenda modals.
 @login_required
 @authorized_club_required
 def export_agenda(meeting_id):
+    from app.club_context import is_module_enabled
+    from flask import abort
+    if not is_module_enabled('Data/Slides Export'):
+        abort(404)
     """
     Generates a multi-sheet XLSX export of the agenda using the ExportService.
     """
@@ -1126,6 +1130,10 @@ def delete_meeting_template():
 @login_required
 @authorized_club_required
 def download_pptx_agenda(meeting_id):
+    from app.club_context import is_module_enabled
+    from flask import abort
+    if not is_module_enabled('Data/Slides Export'):
+        abort(404)
     """
     Generates a PPTX agenda for the meeting.
     """

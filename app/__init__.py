@@ -115,7 +115,7 @@ def create_app(config_class='config.Config'):
     def inject_global_vars():
         from .models import Meeting, Club
         from .auth.permissions import Permissions
-        from .club_context import get_or_set_default_club, get_current_club_id
+        from .club_context import get_or_set_default_club, get_current_club_id, is_module_enabled
         from .translations.translations import translate as _
         
         # Ensure club context is initialized
@@ -158,6 +158,7 @@ def create_app(config_class='config.Config'):
             Permissions=Permissions,
             club=club,
             get_current_club_id=get_current_club_id,
+            is_module_enabled=is_module_enabled,
             _=_,
         )
 

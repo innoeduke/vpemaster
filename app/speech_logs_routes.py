@@ -24,6 +24,20 @@ from .constants import ProjectID
 speech_logs_bp = Blueprint('speech_logs_bp', __name__)
 
 
+@speech_logs_bp.before_request
+def check_journal_enabled():
+    from flask import request
+    # Allow details fetching and speech updating to bypass the Journal module check,
+    # as these are required for editing speech details from core/agenda pages.
+    if request.endpoint and (request.endpoint.endswith('.get_speech_log_details') or request.endpoint.endswith('.update_speech_log')):
+        return
+
+    from app.club_context import is_module_enabled
+    from flask import abort
+    if not is_module_enabled('Journal'):
+        abort(404)
+
+
 # ============================================================================
 # PRIVATE HELPER FUNCTIONS
 # ============================================================================
@@ -2095,7 +2109,7 @@ def update_speech_log(log_id):
         # Check if user is ONE OF the owners
         current_owners = [o.id for o in log.owners]
         is_owner = (current_user_contact_id in current_owners)
-        if not (is_authorized(Permissions.BOOKING_OWN) and is_owner):
+        if not (is_authorized(Permissions.MEMBERS_SELF) and is_owner):
             return jsonify(success=False, message="Permission denied. You can only edit your own speech logs."), 403
 
     data = request.get_json()

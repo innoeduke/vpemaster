@@ -16,6 +16,14 @@ from . import db
 booking_bp = Blueprint('booking_bp', __name__)
 
 
+@booking_bp.before_request
+def check_booking_enabled():
+    from app.club_context import is_module_enabled
+    from flask import abort
+    if not is_module_enabled('Booking'):
+        abort(404)
+
+
 def _apply_user_filters_and_rules(roles, current_user_contact_id, meeting_id):
     """Applies filtering and business rules based on user permissions."""
     if is_authorized(Permissions.MEETING_MANAGE):
@@ -390,7 +398,7 @@ def _get_booking_page_context(meeting_id, user, current_user_contact_id):
         'contacts': [],
         'selected_meeting': None,
         'is_admin_view': is_authorized(Permissions.MEETING_MANAGE),
-        'can_view_details': is_authorized(Permissions.MEETING_MANAGE) or is_authorized(Permissions.BOOKING_OWN),
+        'can_view_details': is_authorized(Permissions.MEETING_MANAGE) or is_authorized(Permissions.MEMBERS_SELF),
         'current_user_contact_id': current_user_contact_id,
         'user_role': user.primary_role_name if user else 'Guest',
         'current_user_id': user.id if user and user.is_authenticated else None,
@@ -441,7 +449,7 @@ def _get_booking_page_context(meeting_id, user, current_user_contact_id):
 
     context['selected_meeting'] = selected_meeting
     context['is_admin_view'] = is_authorized(Permissions.MEETING_MANAGE, meeting=selected_meeting)
-    context['can_view_details'] = context['is_admin_view'] or is_authorized(Permissions.BOOKING_OWN, meeting=selected_meeting)
+    context['can_view_details'] = context['is_admin_view'] or is_authorized(Permissions.MEMBERS_SELF, meeting=selected_meeting)
 
     # 2. Unpublished check - Show notice for those without MEETING_VIEW_ALL
     if selected_meeting and selected_meeting.status == 'unpublished':

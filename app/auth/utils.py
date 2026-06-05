@@ -35,19 +35,14 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
     # Imports inside function to avoid circular dependency
     from app.auth.permissions import Permissions
 
-    # 1. Global privileges bypass:
-    # PROFILE_OWN is a global account privilege; any authenticated user can view/manage their own profile.
-    if target_perm == Permissions.PROFILE_OWN:
-        return True
-
-    # 2. SysAdmin Override: Full access to all resources/actions of all clubs
+    # 1. SysAdmin Override: Full access to all resources/actions of all clubs
     # Relies on the helper method on User model
     if hasattr(current_user, 'is_sysadmin') and current_user.is_sysadmin:
         return True
 
     # (ClubAdmin override removed to rely on database-driven permissions)
 
-    # 3. Check for Meeting Manager override
+    # 2. Check for Meeting Manager override
     meeting = kwargs.get('meeting')
     if meeting and meeting.manager_id:
         # If user is the manager of this specific meeting
@@ -55,7 +50,7 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
         if user_contact_id and user_contact_id == meeting.manager_id:
             # Grant Operator-level permissions relevant to meeting management
             if target_perm in {
-                'MEETING_MANAGE', 'BOOKING_OWN', 'VOTING_VIEW_RESULTS', 
+                'MEETING_MANAGE', 'MEMBERS_SELF', 'VOTING_VIEW_RESULTS', 
                 'VOTING_TRACK_PROGRESS', 'ROSTER_EDIT', 'MEETING_VIEW_PUBLISHED', 'ROSTER_VIEW'
             }:
                 return True

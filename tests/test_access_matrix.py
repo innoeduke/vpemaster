@@ -93,7 +93,7 @@ class AccessMatrixTestCase(unittest.TestCase):
         all_perms_map = {
             'SysAdmin': [
                 Permissions.MEETING_VIEW_PUBLISHED, Permissions.MEETING_MANAGE,
-                Permissions.BOOKING_OWN,
+                Permissions.MEMBERS_SELF,
                 Permissions.SETTINGS_VIEW, Permissions.ROSTER_VIEW, Permissions.ROSTER_EDIT,
                 Permissions.SPEECH_LOGS_MANAGE, Permissions.VOTING_VIEW_RESULTS,
                 Permissions.VOTING_TRACK_PROGRESS, Permissions.LIBRARY_VIEW, Permissions.LUCKY_DRAW_EDIT,
@@ -101,6 +101,7 @@ class AccessMatrixTestCase(unittest.TestCase):
             ],
             'ClubAdmin': [
                 Permissions.MEETING_VIEW_PUBLISHED, Permissions.MEETING_MANAGE, 
+                Permissions.MEMBERS_SELF,
                 Permissions.SETTINGS_VIEW, Permissions.ROSTER_VIEW, Permissions.ROSTER_EDIT,
                 Permissions.SPEECH_LOGS_MANAGE,
                 Permissions.VOTING_VIEW_RESULTS, Permissions.VOTING_TRACK_PROGRESS,
@@ -109,12 +110,13 @@ class AccessMatrixTestCase(unittest.TestCase):
             ],
             'Staff': [
                 Permissions.MEETING_VIEW_PUBLISHED, Permissions.ROSTER_VIEW, 
+                Permissions.MEMBERS_SELF,
                 Permissions.SPEECH_LOGS_MANAGE,
                 Permissions.VOTING_VIEW_RESULTS, 
                 Permissions.LIBRARY_VIEW
             ],
             'Member': [
-                Permissions.MEETING_VIEW_PUBLISHED, Permissions.BOOKING_OWN, Permissions.LIBRARY_VIEW
+                Permissions.MEETING_VIEW_PUBLISHED, Permissions.MEMBERS_SELF, Permissions.LIBRARY_VIEW
             ],
             'Guest': [
                 Permissions.MEETING_VIEW_PUBLISHED, Permissions.LIBRARY_VIEW

@@ -97,7 +97,7 @@ def all_permissions_required(*permission_names):
     Decorator to require ALL of the specified permissions.
     
     Usage:
-        @all_permissions_required('MEETING_VIEW_PUBLISHED', 'BOOKING_OWN')
+        @all_permissions_required('MEETING_VIEW_PUBLISHED', 'MEMBERS_SELF')
         def view_combined():
             ...
     """
@@ -129,12 +129,12 @@ class Permissions:
     MEETING_VIEW_ALL = 'MEETING_VIEW_ALL'
     MEETING_CREATE = 'MEETING_CREATE'
     MEETING_MANAGE = 'MEETING_MANAGE'
-    BOOKING_OWN = 'BOOKING_OWN'
     VOTING_VIEW_RESULTS = 'VOTING_VIEW_RESULTS'
     VOTING_TRACK_PROGRESS = 'VOTING_TRACK_PROGRESS'
 
     # Members (Category: members)
     MEMBERS_MANAGE = 'MEMBERS_MANAGE'
+    MEMBERS_SELF = 'MEMBERS_SELF'
     SPEECH_LOGS_MANAGE = 'SPEECH_LOGS_MANAGE'
 
     # Roster & Contacts (Category: roster)
@@ -150,9 +150,6 @@ class Permissions:
     CHAT_COMMANDS = 'CHAT_COMMANDS'
     CHAT_AI = 'CHAT_AI'
 
-    # Special global account privilege bypass
-    PROFILE_OWN = 'PROFILE_OWN'
-    
     # Roles
     SYSADMIN = 'SysAdmin'
     CLUBADMIN = 'ClubAdmin'

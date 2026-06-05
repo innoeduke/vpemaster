@@ -80,7 +80,7 @@ This document defines core rules, constraints, and intent-to-tool mappings for a
 * **Resolution logic**:
   - The tool accepts a user-friendly `project_code` (e.g. `EH4.1`) or `project_name` (e.g. `Ice Breaker`) and maps it under the hood.
   - If a `project_code` corresponds to multiple elective projects (e.g., `EH4.2` has multiple options), the tool will fail and return all possible elective project names. In this case, you must request clarification from the user or provide the `project_name` argument alongside the code.
-* **Permission rules**: Requires `MEETING_MANAGE` permission. Normal members can only modify their own speech details and must have `BOOKING_OWN`.
+* **Permission rules**: Requires `MEETING_MANAGE` permission. Normal members can only modify their own speech details and must have `MEMBERS_SELF`.
 * **Meeting limits**: Refuses to update projects for running, finished, or cancelled meetings.
 
 

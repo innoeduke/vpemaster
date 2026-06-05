@@ -20,6 +20,10 @@ def index():
 @main_bp.route('/calendar')
 @login_required
 def calendar():
+    from app.club_context import is_module_enabled
+    from flask import abort
+    if not is_module_enabled('Calendar'):
+        abort(404)
     club_id = get_current_club_id()
     
     # 1. Fetch all terms for the club

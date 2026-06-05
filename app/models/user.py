@@ -273,7 +273,7 @@ class User(UserMixin, db.Model):
             if user_contact_id and user_contact_id == meeting.manager_id:
                 # Grant Operator-level permissions relevant to meeting management
                 if permission_name in {
-                    'MEETING_MANAGE', 'BOOKING_OWN', 'VOTING_VIEW_RESULTS', 
+                    'MEETING_MANAGE', 'MEMBERS_SELF', 'VOTING_VIEW_RESULTS', 
                     'VOTING_TRACK_PROGRESS', 'ROSTER_EDIT', 'MEETING_VIEW_PUBLISHED', 'ROSTER_VIEW'
                 }:
                     return True

@@ -27,6 +27,10 @@ def create_club(club_no, club_name, skip_seed):
         db.session.add(new_club)
         db.session.flush()  # Get new_club.id
         
+        # Initialize modules as disabled
+        from app.models.club_module import ClubModule
+        ClubModule.initialize_club_modules(new_club.id)
+        
         # Import Initial Data
         if not skip_seed:
             import_initial_data(new_club)

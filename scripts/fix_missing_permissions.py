@@ -23,11 +23,11 @@ def fix_permissions():
                 "action": "view_members"
             },
             {
-                "name": Permissions.PROFILE_OWN,
-                "description": "View and edit own profile",
-                "category": "profile",
-                "resource": "profile",
-                "action": "view_own"
+                "name": Permissions.MEMBERS_SELF,
+                "description": "Manage own profile, password, and bookings",
+                "category": "members",
+                "resource": "members",
+                "action": "manage_own"
             },
              {
                 "name": Permissions.PROFILE_VIEW,
@@ -80,7 +80,7 @@ def fix_permissions():
                 
         # Also ensure profile permissions are assigned to Staff and Member
         profile_perms = Permission.query.filter(Permission.name.in_([
-            Permissions.PROFILE_OWN, Permissions.PROFILE_VIEW, Permissions.PROFILE_EDIT
+            Permissions.MEMBERS_SELF, Permissions.PROFILE_VIEW, Permissions.PROFILE_EDIT
         ])).all()
         
         for p in profile_perms:
@@ -88,7 +88,7 @@ def fix_permissions():
                  admin_role.permissions.append(p)
             if staff_role and p not in staff_role.permissions:
                  staff_role.permissions.append(p)
-            if user_role and p.name == Permissions.PROFILE_OWN and p not in user_role.permissions:
+            if user_role and p.name == Permissions.MEMBERS_SELF and p not in user_role.permissions:
                  user_role.permissions.append(p)
 
         db.session.commit()

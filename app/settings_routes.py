@@ -1281,14 +1281,14 @@ def add_auth_role():
             target_type='ROLE',
             target_id=new_role.id,
             target_name=name,
-            changes=f"Created auth role '{name}' (level {new_role.level}) in club {club_id} based on template '{template_role_name}'"
+            changes=f"Created security group '{name}' (level {new_role.level}) in club {club_id} based on template '{template_role_name}'"
         )
         db.session.add(audit)
         db.session.commit()
 
         AuthRole.clear_role_cache()
 
-        return jsonify(success=True, message="Authorization role added successfully")
+        return jsonify(success=True, message="Security group added successfully")
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
@@ -1307,14 +1307,14 @@ def delete_auth_role(id):
 
     role = db.session.get(AuthRole, id)
     if not role:
-        return jsonify(success=False, message="Role not found"), 404
+        return jsonify(success=False, message="Security group not found"), 404
 
     # Core system check
     if role.club_id is None:
-        return jsonify(success=False, message="Cannot delete core system roles."), 400
+        return jsonify(success=False, message="Cannot delete core system security groups."), 400
 
     if role.club_id != club_id:
-        return jsonify(success=False, message="Role not found or permission denied"), 404
+        return jsonify(success=False, message="Security group not found or permission denied"), 404
 
     try:
         role_name = role.name
@@ -1322,7 +1322,7 @@ def delete_auth_role(id):
         # Detach users in bulk by reassigning them to the base 'Member' role
         user_role = AuthRole.query.filter((AuthRole.name == 'Member') & (AuthRole.club_id.is_(None))).first()
         if not user_role:
-            return jsonify(success=False, message="Base 'Member' role not found"), 500
+            return jsonify(success=False, message="Base 'Member' security group not found"), 500
             
         affected_user_clubs = UserClub.query.filter_by(auth_role_id=id).all()
         count = len(affected_user_clubs)
@@ -1340,15 +1340,99 @@ def delete_auth_role(id):
             target_type='ROLE',
             target_id=id,
             target_name=role_name,
-            changes=f"Deleted auth role '{role_name}' in club {club_id}. Reassigned {count} users to 'Member' role."
+            changes=f"Deleted security group '{role_name}' in club {club_id}. Reassigned {count} users to 'Member' group."
         )
         db.session.add(audit)
         db.session.commit()
 
         AuthRole.clear_role_cache()
 
-        return jsonify(success=True, message=f"Deleted role '{role_name}' and reassigned {count} user(s) to 'Member'")
+        return jsonify(success=True, message=f"Deleted security group '{role_name}' and reassigned {count} user(s) to 'Member'")
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
+
+
+@settings_bp.route('/api/settings/modules', methods=['GET'])
+@login_required
+@authorized_club_required
+def get_modules():
+    if not is_authorized(Permissions.SETTINGS_VIEW):
+        return jsonify(success=False, message="Permission denied"), 403
+
+    club_id = get_current_club_id()
+    if not club_id:
+        return jsonify(success=False, message="No club context"), 400
+
+    from app.models.club_module import ClubModule
+    
+    defined_modules = [
+        "Core", "Booking", "Voting", "Roster", "Calendar", 
+        "Chatbot", "Journal", "Club Directory", "Planner", "Lucky Draw", "Upload", "Data/Slides Export"
+    ]
+    
+    # Query database for existing settings
+    module_records = ClubModule.query.filter_by(club_id=club_id).all()
+    enabled_states = {m.module_name: m.is_enabled for m in module_records}
+    
+    modules_list = []
+    for name in defined_modules:
+        is_core = (name == 'Core')
+        # Default to True if not in database
+        enabled = enabled_states.get(name, True) if not is_core else True
+        modules_list.append({
+            "name": name,
+            "enabled": enabled,
+            "is_core": is_core
+        })
+        
+    return jsonify(success=True, modules=modules_list)
+
+
+@settings_bp.route('/api/settings/modules/toggle', methods=['POST'])
+@login_required
+@authorized_club_required
+def toggle_module():
+    if not is_authorized(Permissions.SETTINGS_EDIT):
+        return jsonify(success=False, message="Permission denied"), 403
+
+    club_id = get_current_club_id()
+    if not club_id:
+        return jsonify(success=False, message="No club context"), 400
+
+    data = request.json or {}
+    module_name = data.get('module_name')
+    enabled = data.get('enabled')
+
+    if module_name == 'Core':
+        return jsonify(success=False, message="Core module cannot be toggled"), 400
+
+    defined_switchable = [
+        "Booking", "Voting", "Roster", "Calendar", 
+        "Chatbot", "Journal", "Club Directory", "Planner", "Lucky Draw", "Upload", "Data/Slides Export"
+    ]
+
+    if module_name not in defined_switchable:
+        return jsonify(success=False, message="Invalid module name"), 400
+
+    if not isinstance(enabled, bool):
+        return jsonify(success=False, message="Enabled field must be a boolean"), 400
+
+    from app.models.club_module import ClubModule
+    try:
+        mod = ClubModule.query.filter_by(club_id=club_id, module_name=module_name).first()
+        if mod:
+            mod.is_enabled = enabled
+        else:
+            mod = ClubModule(club_id=club_id, module_name=module_name, is_enabled=enabled)
+            db.session.add(mod)
+            
+        db.session.commit()
+        
+        status_str = "enabled" if enabled else "disabled"
+        return jsonify(success=True, message=f"Module '{module_name}' has been {status_str}.")
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
 

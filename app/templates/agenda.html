@@ -143,10 +143,10 @@
                     {% set can_edit = selected_meeting and is_authorized(Permissions.MEETING_MANAGE, meeting=selected_meeting) %}
                     {% set can_view_unpublished = is_authorized(Permissions.MEETING_VIEW_ALL) %}
 
-                    {% if can_edit %}
+                    {% if is_module_enabled('Data/Slides Export') and can_edit %}
                     <button id="xlsx-btn" class="btn btn-secondary action-icon-btn" title="{{ _('Export to Excel') }}"><i class="fas fa-file-excel"></i></button>
                     {% endif %}
-                    {% if can_edit or can_view_unpublished %}
+                    {% if is_module_enabled('Data/Slides Export') and (can_edit or can_view_unpublished) %}
                     <button id="ppt-btn" class="btn btn-secondary action-icon-btn" title="{{ _('Download PPT') }}"><i class="fas fa-file-powerpoint"></i></button>
                     {% endif %}
                     {% if can_edit %}
@@ -166,10 +166,14 @@
                             {% endif %}
                             {% if can_edit %}
                             <div class="action-menu-item mobile-only-item" id="action-edit-opt"><i class="fas fa-edit"></i> {{ _('Edit') }}</div>
+                            {% if is_module_enabled('Data/Slides Export') %}
                             <div class="action-menu-item" id="action-xlsx-opt"><i class="fas fa-file-excel"></i> {{ _('Excel') }}</div>
                             {% endif %}
+                            {% endif %}
                             {% if can_edit or can_view_unpublished %}
+                            {% if is_module_enabled('Data/Slides Export') %}
                             <div class="action-menu-item" id="action-ppt-opt"><i class="fas fa-file-powerpoint"></i> {{ _('PPT') }}</div>
+                            {% endif %}
                             {% endif %}
                             {% if selected_meeting %}
                             <div class="action-menu-item" id="action-jpg-opt"><i class="fas fa-print"></i> {{ _('Image') }}</div>

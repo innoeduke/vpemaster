@@ -33,6 +33,7 @@ from .permission_audit import PermissionAudit
 
 # Import club and excomm models
 from .club import Club
+from .club_module import ClubModule
 from .contact_club import ContactClub
 from .excomm import ExComm
 from .excomm_officer import ExcommOfficer
@@ -78,6 +79,7 @@ __all__ = [
     'PermissionAudit',
     # Club and ExComm models
     'Club',
+    'ClubModule',
     'ContactClub',
     'ContactPath',
     'ExComm',

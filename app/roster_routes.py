@@ -15,6 +15,14 @@ from .constants import RoleID
 roster_bp = Blueprint('roster_bp', __name__)
 
 
+@roster_bp.before_request
+def check_roster_enabled():
+    from app.club_context import is_module_enabled
+    from flask import abort
+    if not is_module_enabled('Roster'):
+        abort(404)
+
+
 @roster_bp.route('/', methods=['GET'])
 @login_required
 @authorized_club_required

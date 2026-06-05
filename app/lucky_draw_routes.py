@@ -9,6 +9,14 @@ from . import db
 
 lucky_draw_bp = Blueprint('lucky_draw_bp', __name__)
 
+@lucky_draw_bp.before_request
+def check_lucky_draw_enabled():
+    from app.club_context import is_module_enabled
+    from flask import abort
+    if not is_module_enabled('Lucky Draw'):
+        abort(404)
+
+
 
 @lucky_draw_bp.route('/', methods=['GET'])
 @login_required

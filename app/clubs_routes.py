@@ -10,6 +10,18 @@ import shutil
 
 clubs_bp = Blueprint('clubs_bp', __name__)
 
+
+@clubs_bp.before_request
+def check_club_directory_enabled():
+    # Allow enter_club route to bypass check
+    if request.endpoint and (request.endpoint.endswith('.enter_club') or request.endpoint.endswith('.enter')):
+        return
+        
+    from app.club_context import is_module_enabled
+    from flask import abort
+    if not is_module_enabled('Club Directory'):
+        abort(404)
+
 class MemoryPagination:
     def __init__(self, items, page, per_page):
         self.total = len(items)
@@ -219,6 +231,11 @@ def create_club():
 
         try:
             db.session.add(new_club)
+            db.session.commit()
+            
+            # Initialize modules as disabled
+            from app.models.club_module import ClubModule
+            ClubModule.initialize_club_modules(new_club.id)
             db.session.commit()
             
             # Seed club resources

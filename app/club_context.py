@@ -225,3 +225,36 @@ def authorized_club_required(f):
                 
         return f(*args, **kwargs)
     return decorated_function
+
+
+def is_module_enabled(module_name, club_id=None):
+    """
+    Check if a functional module is enabled for the specified club.
+    
+    Args:
+        module_name (str): Name of the module
+        club_id (int): Club ID. If None, uses current club context.
+        
+    Returns:
+        bool: True if enabled, False otherwise.
+    """
+    if module_name == 'Core':
+        return True
+        
+    if club_id is None:
+        club_id = get_current_club_id()
+        
+    if not club_id:
+        return True # Default to True if no club context is set yet
+        
+    # Check cache in request context `g`
+    if not hasattr(g, 'module_states'):
+        g.module_states = {}
+        
+    if (club_id, module_name) not in g.module_states:
+        from app.models.club_module import ClubModule
+        mod = ClubModule.query.filter_by(club_id=club_id, module_name=module_name).first()
+        g.module_states[(club_id, module_name)] = mod.is_enabled if mod else True
+        
+    return g.module_states[(club_id, module_name)]
+

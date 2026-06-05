@@ -15,6 +15,24 @@ from .club_context import get_current_club_id
 
 uploads_bp = Blueprint('uploads_bp', __name__)
 
+@uploads_bp.before_request
+def check_upload_enabled():
+    from app.club_context import is_module_enabled
+    from flask import abort, request
+    
+    code = request.view_args.get('code') if request.view_args else None
+    if code:
+        from app.models import UploadLink
+        link = UploadLink.query.filter_by(code=code).first()
+        if link:
+            if not is_module_enabled('Upload', club_id=link.club_id):
+                abort(404)
+            return
+            
+    if not is_module_enabled('Upload'):
+        abort(404)
+
+
 def generate_random_code(length=8):
     """Generate a random alphanumeric code of specified length."""
     alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'

@@ -1230,6 +1230,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // --- 7. Permission Management & Audit Log ---
 let originalPermissions = {}; // role_id -> [perm_id, ...]
+let isSavingPermissions = false;
+let hasPendingPermissionsSave = false;
 let matrixRoles = [];
 let rolesByLevel = {};
 let mainRoleForLevel = {};
@@ -1247,6 +1249,9 @@ function loadPermissionsMatrix() {
   container.style.display = "none";
   loading.style.display = "block";
 
+  // Load functional modules table side-by-side
+  loadModules();
+
   fetch("/api/permissions/matrix")
     .then((r) => r.json())
     .then((data) => {
@@ -1261,12 +1266,125 @@ function loadPermissionsMatrix() {
     });
 }
 
+function loadModules() {
+  const tableBody = document.getElementById("modules-table-body");
+  if (!tableBody) return;
+
+  fetch("/api/settings/modules")
+    .then((r) => r.json())
+    .then((data) => {
+      if (!data.success) {
+        tableBody.innerHTML = `<tr><td colspan="2" class="text-center text-danger">${data.message || 'Error loading modules.'}</td></tr>`;
+        return;
+      }
+      renderModulesTable(data.modules);
+    })
+    .catch((e) => {
+      console.error("Modules load error:", e);
+      tableBody.innerHTML = `<tr><td colspan="2" class="text-center text-danger">Error loading modules: ${e.message}</td></tr>`;
+    });
+}
+
+function renderModulesTable(modules) {
+  const tableBody = document.getElementById("modules-table-body");
+  if (!tableBody) return;
+
+  if (modules.length === 0) {
+    tableBody.innerHTML = `<tr><td colspan="2" class="text-center py-4">No modules found.</td></tr>`;
+    return;
+  }
+
+  let html = '';
+  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+  modules.forEach((mod) => {
+    const isDisabled = mod.is_core || (typeof HAS_SETTINGS_EDIT !== 'undefined' && !HAS_SETTINGS_EDIT);
+    const checkedAttr = mod.enabled ? 'checked' : '';
+    const disabledAttr = isDisabled ? 'disabled' : '';
+    
+    const toggleHtml = `
+      <div class="switch-container">
+        <label class="switch">
+          <input type="checkbox" data-module-name="${mod.name}" ${checkedAttr} ${disabledAttr} onchange="toggleModuleState(this)">
+          <span class="slider"></span>
+        </label>
+      </div>
+    `;
+
+    html += `
+      <tr>
+        <td>
+          <span style="font-weight: 500;">${isChinese ? translateModuleName(mod.name) : mod.name}</span>
+          ${mod.is_core ? `<span class="badge bg-secondary ms-2" style="font-size: 0.75rem; vertical-align: middle;">${isChinese ? '核心' : 'Core'}</span>` : ''}
+        </td>
+        <td>${toggleHtml}</td>
+      </tr>
+    `;
+  });
+
+  tableBody.innerHTML = html;
+}
+
+function translateModuleName(name) {
+  const translations = {
+    'Core': '核心',
+    'Booking': '订场',
+    'Voting': '投票',
+    'Roster': '花名册',
+    'Calendar': '日历',
+    'Chatbot': '聊天机器人',
+    'Journal': '演讲记录',
+    'Club Directory': '俱乐部目录',
+    'Planner': '规划助手',
+    'Lucky Draw': '幸运抽奖',
+    'Upload': '上传',
+    'Data/Slides Export': '数据/幻灯片导出'
+  };
+  return translations[name] || name;
+}
+
+function toggleModuleState(checkbox) {
+  const moduleName = checkbox.dataset.moduleName;
+  const isEnabled = checkbox.checked;
+
+  checkbox.disabled = true;
+
+  fetch("/api/settings/modules/toggle", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      module_name: moduleName,
+      enabled: isEnabled
+    })
+  })
+  .then((r) => r.json())
+  .then((data) => {
+    checkbox.disabled = false;
+    if (data.success) {
+      window.location.reload();
+    } else {
+      checkbox.checked = !isEnabled;
+      showNotification(data.message || 'Failed to toggle module.', 'error');
+    }
+  })
+  .catch((e) => {
+    checkbox.disabled = false;
+    checkbox.checked = !isEnabled;
+    console.error("Toggle module error:", e);
+    showNotification(e.message || 'Network error occurred.', 'error');
+  });
+}
+
+window.toggleModuleState = toggleModuleState;
+
+
 function renderAuthRolesTable(roles) {
   const tableBody = document.getElementById("auth-roles-table-body");
   if (!tableBody) return;
 
   if (roles.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4">No authorization roles found.</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4">No security groups found.</td></tr>`;
     return;
   }
 
@@ -1277,9 +1395,9 @@ function renderAuthRolesTable(roles) {
     
     // Core system roles cannot be deleted
     const deleteBtn = isCore 
-      ? `<button class="delete-btn icon-btn" disabled title="System Core Role (Protected)"><i class="fas fa-lock"></i></button>`
+      ? `<button class="delete-btn icon-btn" disabled title="System Core Security Group (Protected)"><i class="fas fa-lock"></i></button>`
       : (typeof HAS_SETTINGS_EDIT !== 'undefined' && HAS_SETTINGS_EDIT)
-        ? `<button class="delete-btn icon-btn" onclick="deleteAuthRole(${role.id}, '${role.name.replace(/'/g, "\\'")}')" title="Delete custom role"><i class="fas fa-trash-alt"></i></button>`
+        ? `<button class="delete-btn icon-btn" onclick="deleteAuthRole(${role.id}, '${role.name.replace(/'/g, "\\'")}')" title="Delete custom security group"><i class="fas fa-trash-alt"></i></button>`
         : `<button class="delete-btn icon-btn" disabled title="No edit permissions"><i class="fas fa-trash-alt"></i></button>`;
 
     return `
@@ -1298,7 +1416,7 @@ function renderAuthRolesTable(roles) {
 }
 
 function deleteAuthRole(roleId, roleName) {
-  const confirmMsg = `Are you sure you want to delete the authorization role "${roleName}"?\n\nWARNING: All users currently assigned to this role will be automatically reassigned to the default 'Member' role in bulk. This action cannot be undone.`;
+  const confirmMsg = `Are you sure you want to delete the security group "${roleName}"?\n\nWARNING: All users currently assigned to this group will be automatically reassigned to the default 'Member' group in bulk. This action cannot be undone.`;
   if (confirm(confirmMsg)) {
     fetch(`/api/settings/auth-roles/delete/${roleId}`, {
       method: "POST"
@@ -1516,7 +1634,8 @@ function renderPermissionsMatrix(data) {
         const isMain = r.id === mainRole.id;
         const hideStyle = (!isMain && isCollapsed) ? 'style="display: none;"' : '';
         const checked = role_perms[r.id]?.includes(p.id) ? "checked" : "";
-        html += `<td class="perm-checkbox-cell" data-role-id="${r.id}" ${hideStyle}><input type="checkbox" class="perm-checkbox" data-role-id="${r.id}" data-perm-id="${p.id}" ${checked}></td>`;
+        const disabled = (typeof HAS_SETTINGS_EDIT !== 'undefined' && !HAS_SETTINGS_EDIT) ? "disabled" : "";
+        html += `<td class="perm-checkbox-cell" data-role-id="${r.id}" ${hideStyle}><input type="checkbox" class="perm-checkbox" data-role-id="${r.id}" data-perm-id="${p.id}" ${checked} ${disabled}></td>`;
       });
     });
 
@@ -1531,41 +1650,10 @@ function renderPermissionsMatrix(data) {
 
   container.innerHTML = html;
 
-  // Add change listener for dirty checking
-  container.addEventListener("change", () => {
-    const currentPermissions = {};
-    const roleIds = new Set();
-    container.querySelectorAll(".perm-checkbox").forEach((cb) => {
-      roleIds.add(cb.dataset.roleId);
-    });
-
-    roleIds.forEach((rid) => {
-      const checkedPerms = Array.from(
-        container.querySelectorAll(`.perm-checkbox[data-role-id="${rid}"]:checked`)
-      ).map((cb) => parseInt(cb.dataset.permId));
-      currentPermissions[rid] = checkedPerms.sort();
-    });
-
-    // Compare with original
-    let isDirty = false;
-    const sortedOriginalKeys = Object.keys(originalPermissions).sort();
-    const sortedCurrentKeys = Object.keys(currentPermissions).sort();
-
-    if (JSON.stringify(sortedOriginalKeys) !== JSON.stringify(sortedCurrentKeys)) {
-      isDirty = true;
-    } else {
-      for (const rid of sortedOriginalKeys) {
-        const orig = (originalPermissions[rid] || []).slice().sort();
-        const curr = (currentPermissions[rid] || []).slice().sort();
-        if (JSON.stringify(orig) !== JSON.stringify(curr)) {
-          isDirty = true;
-          break;
-        }
-      }
-    }
-
-    if (saveBtn) {
-      saveBtn.disabled = !isDirty;
+  // Add change listener to save just-in-time
+  container.addEventListener("change", (e) => {
+    if (e.target.classList.contains("perm-checkbox")) {
+      savePermissions();
     }
   });
 }
@@ -1574,12 +1662,23 @@ function renderPermissionsMatrix(data) {
  * Saves current permission checks to the server.
  */
 function savePermissions() {
+  if (isSavingPermissions) {
+    hasPendingPermissionsSave = true;
+    return;
+  }
+
+  isSavingPermissions = true;
   const container = document.getElementById("permissions-matrix");
-  if (!container) return;
+  if (!container) {
+    isSavingPermissions = false;
+    return;
+  }
 
   const roleIds = new Set();
-  container.querySelectorAll(".perm-checkbox").forEach((cb) => {
+  const checkboxes = container.querySelectorAll(".perm-checkbox");
+  checkboxes.forEach((cb) => {
     roleIds.add(cb.dataset.roleId);
+    cb.disabled = true; // Disable during save to prevent race conditions
   });
 
   const payload = Array.from(roleIds).map((rid) => {
@@ -1596,21 +1695,56 @@ function savePermissions() {
   })
     .then((r) => r.json())
     .then((data) => {
+      isSavingPermissions = false;
+
+      // If a new change event was queued while saving, start another save immediately
+      if (hasPendingPermissionsSave) {
+        hasPendingPermissionsSave = false;
+        savePermissions();
+        return;
+      }
+
+      // Re-enable checkboxes if user has permission
+      const shouldEnable = typeof HAS_SETTINGS_EDIT !== 'undefined' && HAS_SETTINGS_EDIT;
+      checkboxes.forEach(cb => {
+        cb.disabled = !shouldEnable;
+      });
+
       if (data.success) {
         // Update original state to current state
         originalPermissions = {};
         payload.forEach(item => {
           originalPermissions[item.role_id] = item.permission_ids.sort();
         });
-
-        const saveBtn = document.getElementById("save-permissions-btn");
-        if (saveBtn) saveBtn.disabled = true;
-
       } else {
         showNotification(data.message, "error");
+        // Rollback checkboxes on error
+        checkboxes.forEach(cb => {
+          const rid = cb.dataset.roleId;
+          const pid = parseInt(cb.dataset.permId);
+          cb.checked = (originalPermissions[rid] || []).includes(pid);
+        });
       }
     })
-    .catch((e) => showNotification(e.message, "error"));
+    .catch((e) => {
+      isSavingPermissions = false;
+
+      if (hasPendingPermissionsSave) {
+        hasPendingPermissionsSave = false;
+        savePermissions();
+        return;
+      }
+
+      showNotification(e.message, "error");
+      // Re-enable and rollback checkboxes on error
+      const shouldEnable = typeof HAS_SETTINGS_EDIT !== 'undefined' && HAS_SETTINGS_EDIT;
+      checkboxes.forEach(cb => {
+        cb.disabled = !shouldEnable;
+        const rid = cb.dataset.roleId;
+        const pid = parseInt(cb.dataset.permId);
+        cb.checked = (originalPermissions[rid] || []).includes(pid);
+      });
+    });
 }
 
 /**

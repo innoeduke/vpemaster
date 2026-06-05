@@ -11,6 +11,14 @@ import json
 
 chat_bp = Blueprint('chat_bp', __name__)
 
+
+@chat_bp.before_request
+def check_chatbot_enabled():
+    from app.club_context import is_module_enabled
+    from flask import abort
+    if not is_module_enabled('Chatbot'):
+        abort(404)
+
 @chat_bp.route('/chat/send', methods=['POST'])
 @login_required
 @authorized_club_required

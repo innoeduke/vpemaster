@@ -23,6 +23,14 @@ from .utils import (
 voting_bp = Blueprint('voting_bp', __name__)
 
 
+@voting_bp.before_request
+def check_voting_enabled():
+    from app.club_context import is_module_enabled
+    from flask import abort
+    if not is_module_enabled('Voting'):
+        abort(404)
+
+
 def _enrich_role_data_for_voting(roles_dict, selected_meeting):
     """
     Enriches role data with voting-specific information (awards, vote counts).

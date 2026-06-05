@@ -14,10 +14,10 @@ def add_profile_permissions():
         # 1. Define Permissions
         profile_perms = [
             {
-                'name': Permissions.PROFILE_OWN,
-                'description': "allow to view and edit one's own profile, including reset one's own password",
-                'category': 'profile',
-                'resource': 'profile'
+                'name': Permissions.MEMBERS_SELF,
+                'description': "allow to manage own profile, password, and role bookings",
+                'category': 'members',
+                'resource': 'members'
             },
             {
                 'name': Permissions.PROFILE_VIEW,
@@ -55,12 +55,12 @@ def add_profile_permissions():
             permission_objs[perm_data['name']] = perm
 
         # 3. Assign to Roles
-        # PROFILE_OWN -> Member (level 1+)
+        # MEMBERS_SELF -> Member (level 1+)
         # PROFILE_VIEW -> Staff (level 2+)
         # PROFILE_EDIT -> ClubAdmin (level 4+)
         
         roles_config = [
-            (Permissions.PROFILE_OWN, 1),
+            (Permissions.MEMBERS_SELF, 1),
             (Permissions.PROFILE_VIEW, 2),
             (Permissions.PROFILE_EDIT, 4)
         ]

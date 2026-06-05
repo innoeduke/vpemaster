@@ -218,7 +218,8 @@ function openContactModal(contactId) {
         if (avatarContainer) {
           avatarContainer.dataset.contactId = data.contact.id;
           avatarContainer.dataset.contactType = type;
-          if (type === 'Member' || type === 'Officer') {
+          const isJournalEnabled = typeof window.isModuleEnabled === 'function' && window.isModuleEnabled('Journal');
+          if (isJournalEnabled && (type === 'Member' || type === 'Officer')) {
             avatarContainer.style.cursor = 'pointer';
             avatarContainer.title = (typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN') ? "查看演讲记录" : "View Speech Logs";
           } else {
@@ -433,6 +434,10 @@ function previewAvatar(input) {
 }
 
 function navigateToSpeechLogs() {
+  const isJournalEnabled = typeof window.isModuleEnabled === 'function' && window.isModuleEnabled('Journal');
+  if (!isJournalEnabled) {
+    return;
+  }
   const avatarContainer = document.querySelector(".profile-avatar-container");
   if (avatarContainer) {
     const contactId = avatarContainer.dataset.contactId;
