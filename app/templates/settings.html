@@ -33,14 +33,24 @@
     display: none;
   }
 
-  /* Roles tab: side-by-side layout for global + club-specific tables */
-  .roles-tables-row {
+  /* Sessions tab: hide Section column (still in DOM for modal) */
+  #sessions-table th:nth-child(5),
+  #sessions-table td:nth-child(5),
+  #global-sessions-table th:nth-child(5),
+  #global-sessions-table td:nth-child(5) {
+    display: none;
+  }
+
+  /* Roles & Sessions tabs: side-by-side layout for global + club-specific tables */
+  .roles-tables-row,
+  .sessions-tables-row {
     display: flex;
     gap: 30px;
     align-items: flex-start;
     flex-wrap: wrap;
   }
-  .roles-tables-col {
+  .roles-tables-col,
+  .sessions-tables-col {
     flex: 1 1 480px;
     min-width: 0;
   }
@@ -51,19 +61,22 @@
     align-items: center;
     gap: 10px;
   }
-  .role-name-text {
+  .role-name-text,
+  .session-title-text {
     font-weight: 700;
     color: #1e293b;
   }
 
-  /* Roles tab: keep action buttons on a single line */
-  #roles-table .action-links {
+  /* Roles & Sessions tabs: keep action buttons on a single line */
+  #roles-table .action-links,
+  #sessions-table .action-links {
     flex-wrap: nowrap;
     white-space: nowrap;
   }
 
-  /* Roles tab: modern header & table layout */
-  .roles-tables-col .settings-header {
+  /* Roles & Sessions tabs: modern header & table layout */
+  .roles-tables-col .settings-header,
+  .sessions-tables-col .settings-header {
     margin-bottom: 0;
     padding: 10px 12px;
     background-color: #f8fafc;
@@ -72,7 +85,8 @@
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
   }
-  .roles-tables-col table {
+  .roles-tables-col table,
+  .sessions-tables-col table {
     border: 1px solid #cbd5e1 !important;
     border-top: none !important;
     border-bottom-left-radius: 8px;
@@ -81,15 +95,18 @@
     overflow: hidden;
     border-collapse: separate;
   }
-  .roles-tables-col table thead th:first-child {
+  .roles-tables-col table thead th:first-child,
+  .sessions-tables-col table thead th:first-child {
     border-top-left-radius: 0;
   }
-  .roles-tables-col table thead th:last-child {
+  .roles-tables-col table thead th:last-child,
+  .sessions-tables-col table thead th:last-child {
     border-top-right-radius: 0;
   }
 
   /* Add New Button styling (reduced by 30% and maroon) */
-  #add-role-btn {
+  #add-role-btn,
+  #add-session-btn {
     font-size: 0.75rem !important;
     padding: 4px 10px !important;
     background-color: #772432 !important;
@@ -100,7 +117,8 @@
     transition: all 0.2s ease !important;
     box-shadow: none !important;
   }
-  #add-role-btn:hover {
+  #add-role-btn:hover,
+  #add-session-btn:hover {
     background-color: #5e1c27 !important;
     border-color: #5e1c27 !important;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
@@ -420,122 +438,153 @@
     </div>
 
     <div id="sessions" class="tab-content">
-      
-      <!-- CLUB SPECIFIC / OR SINGLE TABLE FOR GLOBAL ADMIN -->
-      <div class="settings-header">
-        <h2>
-          {% if club_id != GLOBAL_CLUB_ID %}{{ _('Club Specific Session Types') }}{% else %}{{ _('Session Types (Global Repository)') }}{% endif %}
-        </h2>
-        <div class="button-group">
-          <button id="add-session-btn" class="btn btn-success" style="flex-grow: 0;">{{ _('Add New') }}</button>
+      <!-- Standard Sessions (left) + Custom Sessions (right) — side by side -->
+      <div class="sessions-tables-row">
+        {% if club_id != GLOBAL_CLUB_ID %}
+        <div class="sessions-tables-col">
+          <div class="settings-header">
+            <h2>{{ _('Standard Sessions') }}</h2>
+          </div>
+          <table id="global-sessions-table" class="readonly-table">
+            <thead>
+              <tr>
+                <th class="sortable" data-column-index="0">{{ _('ID') }}</th>
+                <th class="sortable" data-column-index="1">{{ _('Title') }}</th>
+                <th class="sortable" data-column-index="2">{{ _('Meeting Role') }}</th>
+                <th class="sortable" data-column-index="3">{{ _('Duration') }}</th>
+                <th class="sortable" data-column-index="4">{{ _('Section') }}</th>
+                <th class="sortable" data-column-index="5">{{ _('Project') }}</th>
+                <th class="sortable" data-column-index="6">{{ _('Hidden') }}</th>
+                <th class="sortable" data-column-index="7">{{ _('Featured') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for st in global_session_types %}
+              <tr data-id="{{ st.id }}" class="{% if st.Is_Section %}session-section{% endif %} {% if st.Is_Hidden %}session-hidden{% endif %}">
+                <td>{{ st.id }}</td>
+                <td class="session-title-cell">
+                  <span class="session-title-text">{{ _(st.Title) }}</span>
+                </td>
+                <td data-role-id="{{ st.role_id or '' }}">
+                  {% if st.role %}
+                  {% set role_class = 'role-' ~ st.role.award_category if st.role.award_category else 'role-other' %}
+                  {% if st.role.type == 'officer' %}
+                      {% set role_class = 'role-officer' %}
+                  {% endif %}
+                  <span class="roster-role-tag {{ role_class }}">{{ _(st.role.name) }}</span>
+                  {% endif %}
+                </td>
+                <td data-field="Duration" data-min="{{ st.Duration_Min if st.Duration_Min is not none else '' }}" data-max="{{ st.Duration_Max if st.Duration_Max is not none else '' }}">
+                  {% if st.Duration_Min is not none and st.Duration_Max is not none %}
+                    {% if st.Duration_Min == st.Duration_Max %}
+                      {{ st.Duration_Min }}'
+                    {% else %}
+                      {{ st.Duration_Min }} - {{ st.Duration_Max }}'
+                    {% endif %}
+                  {% elif st.Duration_Min is not none %}
+                    {{ st.Duration_Min }}'
+                  {% elif st.Duration_Max is not none %}
+                    {{ st.Duration_Max }}'
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td><input type="checkbox" {% if st.Is_Section %}checked{% endif %} disabled /></td>
+                <td><input type="checkbox" {% if st.Valid_for_Project %}checked{% endif %} disabled /></td>
+                <td><input type="checkbox" {% if st.Is_Hidden %}checked{% endif %} disabled /></td>
+                <td><input type="checkbox" {% if st.Featured %}checked{% endif %} disabled /></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+
+        <div class="sessions-tables-col">
+          <div class="settings-header">
+            <h2>
+              {% if club_id != GLOBAL_CLUB_ID %}{{ _('Custom Sessions') }}{% else %}{{ _('Standard Sessions (Repository)') }}{% endif %}
+            </h2>
+            <div class="button-group">
+              <button id="add-session-btn" class="btn btn-success btn-sm" style="flex-grow: 0;">{{ _('Add New') }}</button>
+            </div>
+          </div>
+          <table id="sessions-table">
+            <thead>
+              <tr>
+                <th class="sortable" data-column-index="0">{{ _('ID') }}</th>
+                <th class="sortable" data-column-index="1">{{ _('Title') }}</th>
+                <th class="sortable" data-column-index="2">{{ _('Meeting Role') }}</th>
+                <th class="sortable" data-column-index="3">{{ _('Duration') }}</th>
+                <th class="sortable" data-column-index="4">{{ _('Section') }}</th>
+                <th class="sortable" data-column-index="5">{{ _('Project') }}</th>
+                <th class="sortable" data-column-index="6">{{ _('Hidden') }}</th>
+                <th class="sortable" data-column-index="7">{{ _('Featured') }}</th>
+                <th data-column-index="8">{{ _('Actions') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% set sessions_to_show = global_session_types if club_id == GLOBAL_CLUB_ID else local_session_types %}
+              {% for st in sessions_to_show %}
+              <tr data-id="{{ st.id }}"
+                class="{% if st.Is_Section %}session-section{% endif %} {% if st.Is_Hidden %}session-hidden{% endif %}">
+                <td>{{ st.id }}</td>
+                <td data-field="Title" class="session-title-cell">
+                  <span class="session-title-text">{{ _(st.Title) }}</span>
+                </td>
+                <td data-field="role_id" data-role-id="{{ st.role_id or '' }}">
+                  {% if st.role %}
+                  {% set role_class = 'role-' ~ st.role.award_category if st.role.award_category else 'role-other' %}
+                  {% if st.role.type == 'officer' %}
+                      {% set role_class = 'role-officer' %}
+                  {% endif %}
+                  <span class="roster-role-tag {{ role_class }}">{{ _(st.role.name) }}</span>
+                  {% endif %}
+                </td>
+
+                <td data-field="Duration" data-min="{{ st.Duration_Min if st.Duration_Min is not none else '' }}" data-max="{{ st.Duration_Max if st.Duration_Max is not none else '' }}">
+                  {% if st.Duration_Min is not none and st.Duration_Max is not none %}
+                    {% if st.Duration_Min == st.Duration_Max %}
+                      {{ st.Duration_Min }}'
+                    {% else %}
+                      {{ st.Duration_Min }} - {{ st.Duration_Max }}'
+                    {% endif %}
+                  {% elif st.Duration_Min is not none %}
+                    {{ st.Duration_Min }}'
+                  {% elif st.Duration_Max is not none %}
+                    {{ st.Duration_Max }}'
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td data-field="Is_Section">
+                  <input type="checkbox" name="is_section" {% if st.Is_Section %}checked{% endif %} disabled />
+                </td>
+                <td data-field="Valid_for_Project">
+                  <input type="checkbox" name="valid_for_project" {% if st.Valid_for_Project %}checked{% endif %} disabled />
+                </td>
+                <td data-field="Is_Hidden">
+                  <input type="checkbox" name="is_hidden" {% if st.Is_Hidden %}checked{% endif %} disabled />
+                </td>
+                <td data-field="Featured">
+                  <input type="checkbox" name="featured" {% if st.Featured %}checked{% endif %} disabled />
+                </td>
+                <td>
+                   <div class="action-links">
+                     <button class="edit-btn icon-btn" onclick="openEditSessionModal('{{ st.id }}')" title="{{ _('Edit') }}">
+                       <i class="fas fa-edit"></i>
+                     </button>
+                     <button class="delete-btn icon-btn" onclick="openDeleteModal('{{ url_for('settings_bp.delete_session_type', id=st.id) }}', 'session type')" title="{{ _('Delete') }}">
+                       <i class="fas fa-trash-alt"></i>
+                     </button>
+                   </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
       </div>
-      <table id="sessions-table">
-        <thead>
-          <tr>
-            <th class="sortable" data-column-index="0">{{ _('ID') }}</th>
-            <th class="sortable" data-column-index="1">{{ _('Title') }}</th>
-            <th class="sortable" data-column-index="2">{{ _('Meeting Roles') }}</th>
-            <th class="sortable" data-column-index="3">{{ _('Min (mins)') }}</th>
-            <th class="sortable" data-column-index="4">{{ _('Max (mins)') }}</th>
-            <th class="sortable" data-column-index="5">{{ _('Section') }}</th>
-            <th class="sortable" data-column-index="6">{{ _('Project') }}</th>
-            <th class="sortable" data-column-index="7">{{ _('Hidden') }}</th>
-            <th data-column-index="8">{{ _('Actions') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% set sessions_to_show = global_session_types if club_id == GLOBAL_CLUB_ID else local_session_types %}
-          {% for st in sessions_to_show %}
-          <tr data-id="{{ st.id }}"
-            class="{% if st.Is_Section %}session-section{% endif %} {% if st.Is_Hidden %}session-hidden{% endif %}">
-            <td>{{ st.id }}</td>
-            <td data-field="Title">{{ _(st.Title) }}</td>
-            <td data-field="role_id" data-role-id="{{ st.role_id or '' }}">
-              {% if st.role %}
-              {% set role_class = 'role-' ~ st.role.award_category if st.role.award_category else 'role-other' %}
-              {% if st.role.type == 'officer' %}
-                  {% set role_class = 'role-officer' %}
-              {% endif %}
-              <span class="roster-role-tag {{ role_class }}">{{ _(st.role.name) }}</span>
-              {% endif %}
-            </td>
-
-            <td data-field="Duration_Min">
-              {{ st.Duration_Min if st.Duration_Min is not none else '' }}
-            </td>
-            <td data-field="Duration_Max">
-              {{ st.Duration_Max if st.Duration_Max is not none else '' }}
-            </td>
-            <td data-field="Is_Section">
-              <input type="checkbox" name="is_section" {% if st.Is_Section %}checked{% endif %} disabled />
-            </td>
-            <td data-field="Valid_for_Project">
-              <input type="checkbox" name="valid_for_project" {% if st.Valid_for_Project %}checked{% endif %} disabled />
-            </td>
-            <td data-field="Is_Hidden">
-              <input type="checkbox" name="is_hidden" {% if st.Is_Hidden %}checked{% endif %} disabled />
-            </td>
-            <td>
-               <div class="action-links">
-                 <button class="edit-btn icon-btn" onclick="openEditSessionModal('{{ st.id }}')" title="{{ _('Edit') }}">
-                   <i class="fas fa-edit"></i>
-                 </button>
-                 <button class="delete-btn icon-btn" onclick="openDeleteModal('{{ url_for('settings_bp.delete_session_type', id=st.id) }}', 'session type')" title="{{ _('Delete') }}">
-                   <i class="fas fa-trash-alt"></i>
-                 </button>
-               </div>
-            </td>
-
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-
-      <!-- GLOBAL SESSION TYPES -->
-      {% if club_id != GLOBAL_CLUB_ID %}
-      <div class="settings-header" style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
-        <h2>{{ _('Global Session Types (Standard)') }}</h2>
-        <!-- No add button for global items here -->
-      </div>
-      <table id="global-sessions-table" class="readonly-table">
-        <thead>
-          <tr>
-            <th class="sortable" data-column-index="0">{{ _('ID') }}</th>
-            <th class="sortable" data-column-index="1">{{ _('Title') }}</th>
-            <th class="sortable" data-column-index="2">{{ _('Meeting Roles') }}</th>
-            <th class="sortable" data-column-index="3">{{ _('Min (mins)') }}</th>
-            <th class="sortable" data-column-index="4">{{ _('Max (mins)') }}</th>
-            <th class="sortable" data-column-index="5">{{ _('Section') }}</th>
-            <th class="sortable" data-column-index="6">{{ _('Project') }}</th>
-            <th class="sortable" data-column-index="7">{{ _('Hidden') }}</th>
-            <!-- No Actions column for Global items -->
-          </tr>
-        </thead>
-        <tbody>
-          {% for st in global_session_types %}
-          <tr data-id="{{ st.id }}" class="{% if st.Is_Section %}session-section{% endif %} {% if st.Is_Hidden %}session-hidden{% endif %}">
-            <td>{{ st.id }}</td>
-            <td>{{ _(st.Title) }}</td>
-            <td>
-              {% if st.role %}
-              {% set role_class = 'role-' ~ st.role.award_category if st.role.award_category else 'role-other' %}
-              {% if st.role.type == 'officer' %}
-                  {% set role_class = 'role-officer' %}
-              {% endif %}
-              <span class="roster-role-tag {{ role_class }}">{{ _(st.role.name) }}</span>
-              {% endif %}
-            </td>
-            <td>{{ st.Duration_Min if st.Duration_Min is not none else '' }}</td>
-            <td>{{ st.Duration_Max if st.Duration_Max is not none else '' }}</td>
-            <td><input type="checkbox" {% if st.Is_Section %}checked{% endif %} disabled /></td>
-            <td><input type="checkbox" {% if st.Valid_for_Project %}checked{% endif %} disabled /></td>
-            <td><input type="checkbox" {% if st.Is_Hidden %}checked{% endif %} disabled /></td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% endif %}
     </div>
 
     <div id="agenda-settings" class="tab-content">

@@ -1113,14 +1113,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const roleBadgeHtml = roleName ? `<span class="roster-role-tag ${roleClass}">${roleName}</span>` : "";
 
+    let durationText = "—";
+    if (sessionData.Duration_Min !== null && sessionData.Duration_Max !== null) {
+      if (sessionData.Duration_Min === sessionData.Duration_Max) {
+        durationText = `${sessionData.Duration_Min}'`;
+      } else {
+        durationText = `${sessionData.Duration_Min} - ${sessionData.Duration_Max}'`;
+      }
+    } else if (sessionData.Duration_Min !== null) {
+      durationText = `${sessionData.Duration_Min}'`;
+    } else if (sessionData.Duration_Max !== null) {
+      durationText = `${sessionData.Duration_Max}'`;
+    }
 
     row.innerHTML = `
       <td>${sessionData.id}</td>
-      <td data-field="Title">${sessionData.Title || ""}</td>
+      <td data-field="Title" class="session-title-cell">
+        <span class="session-title-text">${sessionData.Title || ""}</span>
+      </td>
       <td data-field="role_id" data-role-id="${sessionData.role_id || ''}">${roleBadgeHtml}</td>
-      <td data-field="Duration_Min">${sessionData.Duration_Min !== null ? sessionData.Duration_Min : ""}</td>
-
-      <td data-field="Duration_Max">${sessionData.Duration_Max !== null ? sessionData.Duration_Max : ""}</td>
+      <td data-field="Duration" data-min="${sessionData.Duration_Min !== null ? sessionData.Duration_Min : ''}" data-max="${sessionData.Duration_Max !== null ? sessionData.Duration_Max : ''}">${durationText}</td>
       <td data-field="Is_Section">
         <input type="checkbox" ${sessionData.Is_Section ? "checked" : ""} disabled>
       </td>
@@ -1129,6 +1141,9 @@ document.addEventListener("DOMContentLoaded", () => {
       </td>
       <td data-field="Is_Hidden">
         <input type="checkbox" ${sessionData.Is_Hidden ? "checked" : ""} disabled>
+      </td>
+      <td data-field="Featured">
+        <input type="checkbox" ${sessionData.Featured ? "checked" : ""} disabled>
       </td>
       <td>
         <div class="action-links">
@@ -2180,12 +2195,15 @@ function openEditSessionModal(sessionId) {
   // Populate fields
   form.title.value = row.querySelector('[data-field="Title"]').textContent.trim();
   form.role_id.value = row.querySelector('[data-field="role_id"]').dataset.roleId || "";
-  form.duration_min.value = row.querySelector('[data-field="Duration_Min"]').textContent.trim();
-  form.duration_max.value = row.querySelector('[data-field="Duration_Max"]').textContent.trim();
+  const durationCell = row.querySelector('[data-field="Duration"]');
+  form.duration_min.value = durationCell ? (durationCell.dataset.min || "") : "";
+  form.duration_max.value = durationCell ? (durationCell.dataset.max || "") : "";
 
   form.is_section.checked = row.querySelector('[data-field="Is_Section"] input').checked;
   form.valid_for_project.checked = row.querySelector('[data-field="Valid_for_Project"] input').checked;
   form.is_hidden.checked = row.querySelector('[data-field="Is_Hidden"] input').checked;
+  const featuredInput = row.querySelector('[data-field="Featured"] input');
+  form.featured.checked = featuredInput ? featuredInput.checked : false;
 
   modal.style.display = "flex";
 }

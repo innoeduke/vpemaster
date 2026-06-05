@@ -350,6 +350,7 @@ def add_session_type():
             session_type.Is_Section = 'is_section' in request.form
             session_type.Valid_for_Project = 'valid_for_project' in request.form
             session_type.Is_Hidden = 'is_hidden' in request.form
+            session_type.Featured = 'featured' in request.form
             msg = "Session type updated successfully"
         else:
             # Create new
@@ -361,6 +362,7 @@ def add_session_type():
                 Is_Section='is_section' in request.form,
                 Valid_for_Project='valid_for_project' in request.form,
                 Is_Hidden='is_hidden' in request.form,
+                Featured='featured' in request.form,
                 club_id=club_id
             )
             db.session.add(session_type)
@@ -377,7 +379,8 @@ def add_session_type():
             'Duration_Max': session_type.Duration_Max,
             'Is_Section': session_type.Is_Section,
             'Valid_for_Project': session_type.Valid_for_Project,
-            'Is_Hidden': session_type.Is_Hidden
+            'Is_Hidden': session_type.Is_Hidden,
+            'Featured': session_type.Featured
         }
         return jsonify(success=True, message=msg, new_session=session_data)
 
@@ -410,6 +413,7 @@ def update_session_types():
                 session_type.Valid_for_Project = item.get(
                     'Valid_for_Project', False)
                 session_type.Is_Hidden = item.get('Is_Hidden', False)
+                session_type.Featured = item.get('Featured', False)
 
                 duration_min = item.get('Duration_Min')
                 session_type.Duration_Min = int(

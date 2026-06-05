@@ -127,11 +127,11 @@ def test_settings_page_separation(client, app_context):
                 soup = BeautifulSoup(html, 'html.parser')
                 
                 # Check for Global Session Types Header
-                assert "Global Session Types (Standard)" in html
+                assert "Standard Sessions" in html
                 assert "Standard Roles" in html
-
+ 
                 # Check for Club Specific Header
-                assert "Club Specific Session Types" in html
+                assert "Custom Sessions" in html
                 assert "Custom Roles" in html
                 
                 # Verify Content Separation
@@ -180,7 +180,7 @@ def test_settings_page_global_admin(client, app_context):
         html = response.data.decode('utf-8')
         
         # Should NOT see "Global ... (Standard)" headers
-        assert "Global Session Types (Standard)" not in html
+        assert "<h2>Standard Sessions</h2>" not in html
         assert "Standard Roles" in html
 
         # Should see "(Repository)" header (Club 1 admin view)

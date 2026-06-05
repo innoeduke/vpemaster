@@ -14,6 +14,7 @@ class SessionType(db.Model):
     Is_Section = db.Column(db.Boolean, default=False)
     Is_Hidden = db.Column(db.Boolean, default=False)
     Valid_for_Project = db.Column(db.Boolean, default=False)
+    Featured = db.Column(db.Boolean, default=False)
     Duration_Min = db.Column(db.Integer)
     Duration_Max = db.Column(db.Integer)
     role_id = db.Column(db.Integer, db.ForeignKey('meeting_roles.id'), nullable=True)

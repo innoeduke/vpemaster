@@ -40,20 +40,25 @@
 
       <fieldset class="modal-frame">
         <legend>{{ _('Others:') }}</legend>
-        <div class="radio-group">
+        <div class="radio-group" style="display: flex; flex-wrap: wrap; gap: 15px;">
           <label class="radio-item">
             <input type="checkbox" id="is_section" name="is_section">
-            <span>{{ _('Is Section') }}</span>
+            <span>{{ _('Section?') }}</span>
           </label>
 
           <label class="radio-item">
             <input type="checkbox" id="valid_for_project" name="valid_for_project">
-            <span>{{ _('For Project') }}</span>
+            <span>{{ _('Project Candidate?') }}</span>
           </label>
 
           <label class="radio-item">
             <input type="checkbox" id="is_hidden" name="is_hidden">
-            <span>{{ _('Is Hidden') }}</span>
+            <span>{{ _('Hidden?') }}</span>
+          </label>
+
+          <label class="radio-item">
+            <input type="checkbox" id="featured" name="featured">
+            <span>{{ _('Featured Session?') }}</span>
           </label>
         </div>
       </fieldset>
@@ -61,7 +66,6 @@
       <div class="form-actions" style="margin-top: 40px;">
         <button type="button" class="btn btn-danger" onclick="closeModal('addSessionModal')">{{ _('Cancel') }}</button>
         <button type="submit" id="session-modal-submit" class="btn btn-success">{{ _('Save') }}</button>
-
       </div>
     </form>
   </div>
