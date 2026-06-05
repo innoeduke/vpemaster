@@ -10,7 +10,7 @@ class Role(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False, index=True)
     description = db.Column(db.Text)
-    level = db.Column(db.Integer)  # For hierarchy: SysAdmin=8, ClubAdmin=4, Operator=3, Staff=2, User=1
+    level = db.Column(db.Integer)  # For hierarchy: SysAdmin=8, ClubAdmin=4, Operator=3, Staff=2, Member=1
     club_id = db.Column(db.Integer, db.ForeignKey('clubs.id', ondelete='CASCADE'), nullable=True, index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     

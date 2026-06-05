@@ -144,6 +144,7 @@ class Permissions:
     # Tools (Category: tools)
     LIBRARY_VIEW = 'LIBRARY_VIEW'
     LUCKY_DRAW_EDIT = 'LUCKY_DRAW_EDIT'
+    UPLOAD_MANAGE = 'UPLOAD_MANAGE'
 
     # Chat & AI (Category: chat)
     CHAT_COMMANDS = 'CHAT_COMMANDS'
@@ -157,4 +158,4 @@ class Permissions:
     CLUBADMIN = 'ClubAdmin'
     OPERATOR = 'Operator'
     STAFF = 'Staff'
-    USER = 'User'
+    USER = 'Member'

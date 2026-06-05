@@ -10,7 +10,7 @@ def sync_roles():
         # ID: 2, Name: ClubAdmin, Level: 4
         # ID: 6, Name: Operator, Level: 3 (Custom/Legacy mapping)
         # ID: 3, Name: Staff, Level: 2
-        # ID: 4, Name: User, Level: 1
+        # ID: 4, Name: Member, Level: 1
         # ID: 5, Name: Guest, Level: 0
         
         # We'll use a hierarchy search for bitmasks
@@ -19,7 +19,7 @@ def sync_roles():
             (4, 2), # ClubAdmin
             (3, 6), # Operator
             (2, 3), # Staff
-            (1, 4), # User
+            (1, 4), # Member
         ]
         
         print("Fetching users with missing auth_role_id...")

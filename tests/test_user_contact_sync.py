@@ -21,7 +21,7 @@ def test_app():
     with app.app_context():
         db.create_all()
         # Seed roles
-        db.session.add(AuthRole(name='User', description='User role', level=1))
+        db.session.add(AuthRole(name='Member', description='Member role', level=1))
         db.session.commit()
         yield app
         db.session.remove()

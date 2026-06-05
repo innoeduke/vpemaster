@@ -266,9 +266,9 @@ def test_regular_user_access_authorized_club(app, client):
         db.session.flush()
         
         # Setup - Create regular user
-        user_role = AuthRole.query.filter_by(name='User').first()
+        user_role = AuthRole.query.filter_by(name='Member').first()
         if not user_role:
-            user_role = AuthRole(name='User', level=1)
+            user_role = AuthRole(name='Member', level=1)
             db.session.add(user_role)
             db.session.flush()
         
@@ -318,9 +318,9 @@ def test_regular_user_denied_unauthorized_club(app, client):
         db.session.flush()
         
         # Setup - Create regular user (member of club1 only)
-        user_role = AuthRole.query.filter_by(name='User').first()
+        user_role = AuthRole.query.filter_by(name='Member').first()
         if not user_role:
-            user_role = AuthRole(name='User', level=1)
+            user_role = AuthRole(name='Member', level=1)
             db.session.add(user_role)
             db.session.flush()
         

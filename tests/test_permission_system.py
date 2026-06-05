@@ -251,7 +251,7 @@ class PermissionSystemTestCase(unittest.TestCase):
         from app.models import AuthRole, UserClub
         # Use existing roles from setup
         role_admin = AuthRole.query.filter_by(name='SysAdmin').first()
-        role_user = AuthRole.query.filter_by(name='User').first()
+        role_user = AuthRole.query.filter_by(name='Member').first()
         
         # Clear existing
         UserClub.query.filter_by(user_id=self.user_user.id).delete()

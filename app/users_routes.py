@@ -112,7 +112,7 @@ def _save_user_data(user=None, **kwargs):
     role_id = kwargs.get('role_id')
     if role_id is None and is_new:
         from .models import AuthRole
-        user_role = AuthRole.query.filter_by(name='User').first()
+        user_role = AuthRole.query.filter_by(name='Member').first()
         role_id = user_role.id if user_role else None
         
     if role_id is not None:
@@ -575,7 +575,7 @@ def bulk_import_users():
             mentor_id = mentor.id if mentor else None
 
             from .models import AuthRole
-            user_role = AuthRole.query.filter_by(name='User').first()
+            user_role = AuthRole.query.filter_by(name='Member').first()
             role_id = user_role.id if user_role else None
 
             _save_user_data(
@@ -633,7 +633,7 @@ def request_join():
         target_user.ensure_contact(club_id=club_id)
         # Set default role (User/Member)
         from .models import AuthRole as AR
-        default_role = AR.query.filter_by(name='User').first()
+        default_role = AR.query.filter_by(name='Member').first()
         target_user.set_club_role(club_id, role_id=default_role.id if default_role else None)
         db.session.commit()
         return jsonify({'success': True, 'direct_add': True})
@@ -685,7 +685,7 @@ def respond_join():
             current_user.ensure_contact(club_id=club_id)
             # Set default role (User/Member)
             from .models import AuthRole as AR2
-            default_role2 = AR2.query.filter_by(name='User').first()
+            default_role2 = AR2.query.filter_by(name='Member').first()
             current_user.set_club_role(club_id, role_id=default_role2.id if default_role2 else None)
             
             response_body = f"{current_user.display_name} has accepted your request to join {club.club_name}."

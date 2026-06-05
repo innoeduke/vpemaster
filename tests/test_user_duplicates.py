@@ -22,8 +22,8 @@ def test_app():
     with app.app_context():
         db.create_all()
         # Seed basic roles
-        if not AuthRole.query.filter_by(name='User').first():
-            db.session.add(AuthRole(name='User', description='User role'))
+        if not AuthRole.query.filter_by(name='Member').first():
+            db.session.add(AuthRole(name='Member', description='Member role', level=1))
         if not AuthRole.query.filter_by(name='Staff').first():
             db.session.add(AuthRole(name='Staff', description='Staff role'))
         db.session.commit()

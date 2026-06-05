@@ -134,7 +134,7 @@ function openUserModal(userId = null, btn = null) {
   const roleSelect = document.getElementById('role_id_select');
   if (roleSelect) {
     Array.from(roleSelect.options).forEach(opt => {
-      if (opt.dataset.name === 'User' || opt.text.trim() === 'User') {
+      if (opt.dataset.name === 'Member' || opt.text.trim() === 'Member') {
         opt.selected = true;
       } else {
         opt.selected = false;
@@ -419,7 +419,7 @@ async function loadUsersAsync() {
         if (user.best_role) {
           const roleName = user.best_role.name;
           const roleNameLower = roleName.toLowerCase();
-          const knownRoles = ['sysadmin', 'clubadmin', 'operator', 'staff', 'user'];
+          const knownRoles = ['sysadmin', 'clubadmin', 'operator', 'staff', 'member'];
           const badgeClass = knownRoles.includes(roleNameLower) ? `role-${roleNameLower}` : 'role-other';
           let roleDisplay = roleName;
           if (isChinese) {
@@ -427,7 +427,7 @@ async function loadUsersAsync() {
             else if (roleNameLower === 'clubadmin') roleDisplay = '俱乐部管理员';
             else if (roleNameLower === 'operator') roleDisplay = '操作员';
             else if (roleNameLower === 'staff') roleDisplay = '工作人员';
-            else if (roleNameLower === 'user') roleDisplay = '普通用户';
+            else if (roleNameLower === 'member') roleDisplay = '成员';
           }
           rolesHtml = `<span class="roster-role-tag ${badgeClass}">${roleDisplay}</span>`;
         } else {

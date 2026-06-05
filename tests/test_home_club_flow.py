@@ -32,9 +32,9 @@ def test_home_club_flow(client, app, default_club, seeded_permissions):
             db.session.commit()
 
         # Ensure User Role exists (for level 1)
-        user_role = AuthRole.query.filter_by(name='User').first()
+        user_role = AuthRole.query.filter_by(name='Member').first()
         if not user_role:
-             user_role = AuthRole(name='User', level=1)
+             user_role = AuthRole(name='Member', level=1)
              db.session.add(user_role)
              db.session.commit()
              

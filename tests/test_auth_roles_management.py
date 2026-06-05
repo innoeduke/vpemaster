@@ -10,7 +10,7 @@ def setup_roles_and_permissions(app, seeded_permissions):
     with app.app_context():
         # Setup base roles
         roles = {}
-        for name, level in [('SysAdmin', 8), ('ClubAdmin', 4), ('Operator', 3), ('Staff', 2), ('User', 1), ('Guest', 0)]:
+        for name, level in [('SysAdmin', 8), ('ClubAdmin', 4), ('Operator', 3), ('Staff', 2), ('Member', 1), ('Guest', 0)]:
             role = AuthRole.query.filter_by(name=name, club_id=None).first()
             if not role:
                 role = AuthRole(name=name, description=f"{name} Role", level=level, club_id=None)
@@ -36,7 +36,7 @@ def setup_roles_and_permissions(app, seeded_permissions):
             db.session.add(view_agenda_perm)
             db.session.flush()
             
-        user_role = roles['User']
+        user_role = roles['Member']
         if view_agenda_perm not in user_role.permissions:
             user_role.permissions.append(view_agenda_perm)
             
@@ -77,7 +77,7 @@ def test_users(app, default_club):
         db.session.add(normal_user)
         db.session.flush()
         
-        user_role = AuthRole.query.filter_by(name='User', club_id=None).first()
+        user_role = AuthRole.query.filter_by(name='Member', club_id=None).first()
         uc_normal = UserClub(
             user_id=normal_user.id,
             club_id=default_club.id,
@@ -106,7 +106,7 @@ def test_add_auth_role_permission_denied(app, client, auth, default_club, test_u
         response = client.post('/api/settings/auth-roles/add', data={
             'name': 'UnauthorizedRole',
             'description': 'Description',
-            'template_role': 'User'
+            'template_role': 'Member'
         })
         assert response.status_code == 403
         data = json.loads(response.data)
@@ -126,7 +126,7 @@ def test_add_auth_role_success_and_inheritance(app, client, auth, default_club, 
         response = client.post('/api/settings/auth-roles/add', data={
             'name': role_name,
             'description': role_desc,
-            'template_role': 'User'
+            'template_role': 'Member'
         })
         assert response.status_code == 200
         data = json.loads(response.data)
@@ -139,7 +139,7 @@ def test_add_auth_role_success_and_inheritance(app, client, auth, default_club, 
         assert new_role.description == role_desc
         
         # Verify Level Inheritance
-        template_role = AuthRole.query.filter_by(name='User', club_id=None).first()
+        template_role = AuthRole.query.filter_by(name='Member', club_id=None).first()
         assert new_role.level == template_role.level
         
         # Verify Permission Copying
@@ -156,7 +156,7 @@ def test_add_auth_role_validation_failures(app, client, auth, default_club, test
         response = client.post('/api/settings/auth-roles/add', data={
             'name': '',
             'description': 'desc',
-            'template_role': 'User'
+            'template_role': 'Member'
         })
         assert response.status_code == 400
         assert 'name is required' in json.loads(response.data)['message'].lower()
@@ -174,7 +174,7 @@ def test_add_auth_role_validation_failures(app, client, auth, default_club, test
         response = client.post('/api/settings/auth-roles/add', data={
             'name': 'Staff',
             'description': 'desc',
-            'template_role': 'User'
+            'template_role': 'Member'
         })
         assert response.status_code == 400
         assert 'already exists' in json.loads(response.data)['message'].lower()
@@ -207,7 +207,7 @@ def test_club_specific_name_scoping(app, client, auth, default_club, test_users)
         response = client.post('/api/settings/auth-roles/add', data={
             'name': 'Co-VPE',
             'description': 'Co-VPE for club 1',
-            'template_role': 'User'
+            'template_role': 'Member'
         })
         assert response.status_code == 200
         
@@ -215,7 +215,7 @@ def test_club_specific_name_scoping(app, client, auth, default_club, test_users)
         response = client.post('/api/settings/auth-roles/add', data={
             'name': 'Co-VPE',
             'description': 'duplicate Co-VPE',
-            'template_role': 'User'
+            'template_role': 'Member'
         })
         assert response.status_code == 400
         assert 'already exists' in json.loads(response.data)['message'].lower()
@@ -226,7 +226,7 @@ def test_club_specific_name_scoping(app, client, auth, default_club, test_users)
         response = client.post('/api/settings/auth-roles/add', data={
             'name': 'Co-VPE',
             'description': 'Co-VPE for club 2',
-            'template_role': 'User'
+            'template_role': 'Member'
         })
         assert response.status_code == 200
         
@@ -290,7 +290,7 @@ def test_delete_auth_role_permissions_and_scoping(app, client, auth, default_clu
         assert 'not found' in json.loads(response.data)['message'].lower()
 
 def test_delete_auth_role_and_bulk_detaching(app, client, auth, default_club, test_users):
-    """Test that deleting a custom role successfully deletes the role and reassigns users to 'User'."""
+    """Test that deleting a custom role successfully deletes the role and reassigns users to 'Member'."""
     with app.app_context():
         # Create a custom role in default_club
         custom_role = AuthRole(name='SpecialMember', description='Special custom role', level=1, club_id=default_club.id)
@@ -318,9 +318,9 @@ def test_delete_auth_role_and_bulk_detaching(app, client, auth, default_club, te
         deleted_role = db.session.get(AuthRole, role_id)
         assert deleted_role is None
         
-        # Verify user is bulk detached and reassigned to core 'User' role
+        # Verify user is bulk detached and reassigned to core 'Member' role
         db.session.expire(uc_normal)
-        user_role = AuthRole.query.filter_by(name='User', club_id=None).first()
+        user_role = AuthRole.query.filter_by(name='Member', club_id=None).first()
         assert uc_normal.auth_role_id == user_role.id
 
 

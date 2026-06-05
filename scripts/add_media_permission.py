@@ -23,7 +23,7 @@ def add_media_permission():
             print(f"Permission {perm_name} already exists.")
             
         # 2. Assign to all authenticated roles (Level >= 1)
-        # Assuming Guest is 0. User=1, Staff=2, ClubAdmin=4, SysAdmin=8
+        # Assuming Guest is 0. Member=1, Staff=2, ClubAdmin=4, SysAdmin=8
         roles = Role.query.filter(Role.level >= 1).all()
         
         count = 0

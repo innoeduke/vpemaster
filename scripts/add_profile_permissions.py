@@ -55,7 +55,7 @@ def add_profile_permissions():
             permission_objs[perm_data['name']] = perm
 
         # 3. Assign to Roles
-        # PROFILE_OWN -> User (level 1+)
+        # PROFILE_OWN -> Member (level 1+)
         # PROFILE_VIEW -> Staff (level 2+)
         # PROFILE_EDIT -> ClubAdmin (level 4+)
         

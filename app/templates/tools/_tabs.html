@@ -1,7 +1,7 @@
 <div class="tools-tabs">
     {% if has_pathways_access %}
     <a href="{{ url_for('pathways_bp.pathway_library') }}" class="tools-tab-item {% if active_tab == 'pathway_library' %}active{% endif %}">
-        <i class="fas fa-landmark"></i> {{ _('Pathway Library') }}
+        <i class="fas fa-landmark"></i> {{ _('Pathways Library') }}
     </a>
     {% endif %}
     {% if has_lucky_draw_access %}
@@ -9,8 +9,6 @@
         <i class="fas fa-gift"></i> {{ _('Lucky Draw') }}
     </a>
     {% endif %}
-    <a href="{{ url_for('tools_bp.validator') }}" class="tools-tab-item {% if active_tab == 'level_validator' %}active{% endif %}">
-        <i class="fas fa-link"></i> {{ _('Level Validator') }}
-    </a>
+
 </div>
 

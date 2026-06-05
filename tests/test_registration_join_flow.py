@@ -14,9 +14,9 @@ def test_registration_and_join_flow(client, app, default_club, seeded_permission
              club_admin_role = AuthRole(name='ClubAdmin', level=8)
              db.session.add(club_admin_role)
              
-        user_role = AuthRole.query.filter_by(name='User').first()
+        user_role = AuthRole.query.filter_by(name='Member').first()
         if not user_role:
-             user_role = AuthRole(name='User', level=1)
+             user_role = AuthRole(name='Member', level=1)
              db.session.add(user_role)
         # Link SETTINGS_EDIT to ClubAdmin
         perm = Permission.query.filter_by(name=P.SETTINGS_EDIT).first()
@@ -172,7 +172,7 @@ def test_registration_and_join_flow(client, app, default_club, seeded_permission
     with app.app_context():
         uc = UserClub.query.filter_by(user_id=new_user_id, club_id=club_id).first()
         assert uc is not None
-        assert uc.auth_role.name == 'User'
+        assert uc.auth_role.name == 'Member'
         assert uc.contact_id is not None
         
         # Verify notification message to the requester

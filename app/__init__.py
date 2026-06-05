@@ -216,7 +216,7 @@ def create_app(config_class='config.Config'):
     from app.commands.cleanup_data import cleanup_data
     from app.commands.create_club import create_club
     from app.commands.pack_unpack import pack, unpack
-    from app.commands.blockchain import deploy_contract, upload_achievements
+
     from app.commands.backup import resources
     from app.commands.sync import sync
     from app.commands.translate import translate_scan
@@ -234,16 +234,7 @@ def create_app(config_class='config.Config'):
     app.cli.add_command(translate_scan)
 
     
-    # Add blockchain command group
-    import click
-    @click.group('blockchain')
-    def blockchain_cli():
-        """Blockchain related commands."""
-        pass
-        
-    blockchain_cli.add_command(deploy_contract)
-    blockchain_cli.add_command(upload_achievements)
-    app.cli.add_command(blockchain_cli)
+
 
 
     # 7. Return the configured app instance

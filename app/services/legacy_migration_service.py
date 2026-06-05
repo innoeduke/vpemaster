@@ -176,7 +176,7 @@ class LegacyMigrationService:
             1: 'SysAdmin', # or ClubAdmin based on plan
             2: 'ClubAdmin',
             3: 'Staff',
-            4: 'User'
+            4: 'Member'
         }
         
         user_roles_v1 = {}
@@ -187,7 +187,7 @@ class LegacyMigrationService:
                 rid = ur['role_id']
                 if uid not in user_roles_v1:
                     user_roles_v1[uid] = []
-                user_roles_v1[uid].append(role_map.get(rid, 'User'))
+                user_roles_v1[uid].append(role_map.get(rid, 'Member'))
         except Exception:
             print("Warning: Could not read user_roles table. Skipping role mapping.")
 
@@ -224,13 +224,13 @@ class LegacyMigrationService:
             
             # Link to Club and Assign Role
             # Determine highest role level from v1 for this club
-            roles = user_roles_v1.get(v1_uid, ['User'])
+            roles = user_roles_v1.get(v1_uid, ['Member'])
             
             # Calculate v2 bitmask
             # Admin(8) -> ClubAdmin in v2 context
             # Operator(4) -> ClubAdmin
             # Staff(2) -> Staff
-            # User(1) -> Member
+            # Member(1) -> Member
             
             target_role_id = None
             
@@ -246,18 +246,18 @@ class LegacyMigrationService:
                     r_obj = role_objects.get('ClubAdmin')
                 elif rname == 'Staff':
                     r_obj = role_objects.get('Staff')
-                elif rname == 'User':
-                    r_obj = role_objects.get('User')
+                elif rname == 'Member':
+                    r_obj = role_objects.get('Member')
                 else:
-                    r_obj = role_objects.get('User')
+                    r_obj = role_objects.get('Member')
                 
                 if r_obj and r_obj.level and r_obj.level > best_level:
                     best_level = r_obj.level
                     target_role_id = r_obj.id
             
-            # Ensure at least 'User' role
+            # Ensure at least 'Member' role
             if not target_role_id:
-                 r_obj = role_objects.get('User')
+                 r_obj = role_objects.get('Member')
                  if r_obj: target_role_id = r_obj.id
 
             user.set_club_role(self.target_club_id, role_id=target_role_id)

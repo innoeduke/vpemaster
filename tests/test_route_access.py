@@ -118,9 +118,9 @@ class RouteAccessTestCase(unittest.TestCase):
         self.user_user.set_password("password")
         db.session.add(self.user_user)
 
-        user_role = AuthRole.query.filter_by(name='User').first()
+        user_role = AuthRole.query.filter_by(name='Member').first()
         if not user_role:
-            user_role = AuthRole(name='User', description='User role', level=1)
+            user_role = AuthRole(name='Member', description='Member role', level=1)
             db.session.add(user_role)
             db.session.flush()
         

@@ -680,7 +680,7 @@ def respond_join_request():
         if not uc:
             requestor.ensure_contact(club_id=target_club_id)
             from app.models import AuthRole
-            user_role = AuthRole.query.filter_by(name='User').first()
+            user_role = AuthRole.query.filter_by(name='Member').first()
             requestor.set_club_role(target_club_id, role_id=user_role.id if user_role else None)
             
         # Send message to user

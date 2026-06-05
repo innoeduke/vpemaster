@@ -41,7 +41,7 @@
             <select id="role_id_select" name="role_id" class="planner-form-control">
               {% if all_auth_roles %}
                 {% for role in all_auth_roles %}
-                  <option value="{{ role.id }}" data-name="{{ role.name }}" {% if role.name == 'User' %}selected{% endif %}>
+                  <option value="{{ role.id }}" data-name="{{ role.name }}" {% if role.name == 'Member' %}selected{% endif %}>
                     {{ _(role.name) }}
                   </option>
                 {% endfor %}

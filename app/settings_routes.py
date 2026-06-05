@@ -1237,7 +1237,7 @@ def add_auth_role():
 
     name = request.form.get('name', '').strip()
     description = request.form.get('description', '').strip()
-    template_role_name = request.form.get('template_role', 'User').strip()
+    template_role_name = request.form.get('template_role', 'Member').strip()
 
     if not name:
         return jsonify(success=False, message="Role name is required"), 400
@@ -1320,9 +1320,9 @@ def delete_auth_role(id):
         role_name = role.name
         
         # Detach users in bulk by reassigning them to the base 'User' role
-        user_role = AuthRole.query.filter((AuthRole.name == 'User') & (AuthRole.club_id.is_(None))).first()
+        user_role = AuthRole.query.filter((AuthRole.name == 'Member') & (AuthRole.club_id.is_(None))).first()
         if not user_role:
-            return jsonify(success=False, message="Base 'User' role not found"), 500
+            return jsonify(success=False, message="Base 'Member' role not found"), 500
             
         affected_user_clubs = UserClub.query.filter_by(auth_role_id=id).all()
         count = len(affected_user_clubs)
@@ -1340,14 +1340,14 @@ def delete_auth_role(id):
             target_type='ROLE',
             target_id=id,
             target_name=role_name,
-            changes=f"Deleted auth role '{role_name}' in club {club_id}. Reassigned {count} users to 'User' role."
+            changes=f"Deleted auth role '{role_name}' in club {club_id}. Reassigned {count} users to 'Member' role."
         )
         db.session.add(audit)
         db.session.commit()
 
         AuthRole.clear_role_cache()
 
-        return jsonify(success=True, message=f"Deleted role '{role_name}' and reassigned {count} user(s) to 'User'")
+        return jsonify(success=True, message=f"Deleted role '{role_name}' and reassigned {count} user(s) to 'Member'")
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500

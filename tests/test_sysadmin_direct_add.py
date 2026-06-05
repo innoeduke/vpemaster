@@ -7,7 +7,7 @@ def setup_roles(db):
     roles = [
         ('SysAdmin', 1000),
         ('ClubAdmin', 2),
-        ('User', 1)
+        ('Member', 1)
     ]
     for name, level in roles:
         role = AuthRole.query.filter_by(name=name).first()

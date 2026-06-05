@@ -54,7 +54,7 @@
                 
                 <select id="role_id" name="role_id" class="form-control" {% if is_edit_self and ns.has_clubadmin %}disabled{% endif %}>
                     {% for r in all_auth_roles %}
-                        <option value="{{ r.id }}" {% if r.id in user_role_ids or (not user_role_ids and r.name == 'User') %}selected{% endif %}>
+                        <option value="{{ r.id }}" {% if r.id in user_role_ids or (not user_role_ids and r.name == 'Member') %}selected{% endif %}>
                             {{ r.name }}
                         </option>
                     {% endfor %}

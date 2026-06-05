@@ -1298,7 +1298,7 @@ function renderAuthRolesTable(roles) {
 }
 
 function deleteAuthRole(roleId, roleName) {
-  const confirmMsg = `Are you sure you want to delete the authorization role "${roleName}"?\n\nWARNING: All users currently assigned to this role will be automatically reassigned to the default 'User' role in bulk. This action cannot be undone.`;
+  const confirmMsg = `Are you sure you want to delete the authorization role "${roleName}"?\n\nWARNING: All users currently assigned to this role will be automatically reassigned to the default 'Member' role in bulk. This action cannot be undone.`;
   if (confirm(confirmMsg)) {
     fetch(`/api/settings/auth-roles/delete/${roleId}`, {
       method: "POST"
@@ -1415,7 +1415,7 @@ function renderPermissionsMatrix(data) {
 
   const sortedLevels = Object.keys(rolesByLevel).map(Number).sort((a, b) => b - a);
 
-  const coreRoleNames = ['ClubAdmin', 'Operator', 'Staff', 'User', 'Guest'];
+  const coreRoleNames = ['ClubAdmin', 'Operator', 'Staff', 'Member', 'Guest'];
   mainRoleForLevel = {};
   sortedLevels.forEach(level => {
     const levelRoles = rolesByLevel[level];
@@ -1440,7 +1440,7 @@ function renderPermissionsMatrix(data) {
     if (level === 4) groupLabel = "Level 4 (Admin)";
     else if (level === 3) groupLabel = "Level 3 (Operator)";
     else if (level === 2) groupLabel = "Level 2 (Staff)";
-    else if (level === 1) groupLabel = "Level 1 (User)";
+    else if (level === 1) groupLabel = "Level 1 (Member)";
     else if (level === 0) groupLabel = "Level 0 (Guest)";
 
     const hasMultiple = levelRoles.length > 1;
@@ -2157,7 +2157,7 @@ function openUserModal(userId = null, btn = null) {
   const roleSelect = document.getElementById('role_id_select');
   if (roleSelect) {
     Array.from(roleSelect.options).forEach(opt => {
-      if (opt.dataset.name === 'User' || opt.text.trim() === 'User') {
+      if (opt.dataset.name === 'Member' || opt.text.trim() === 'Member') {
         opt.selected = true;
       } else {
         opt.selected = false;

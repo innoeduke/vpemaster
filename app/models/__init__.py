@@ -20,7 +20,7 @@ from .achievement import Achievement
 from .message import Message
 from .ticket import Ticket
 from .planner import Planner
-from .verification_task import VerificationTask
+
 from .upload_link import UploadLink
 from .chat_message import ChatMessage
 
@@ -85,7 +85,7 @@ __all__ = [
     'UserClub',
     'OwnerMeetingRoles',
     'Planner',
-    'VerificationTask',
+
     'UploadLink',
     'ChatMessage',
 ]

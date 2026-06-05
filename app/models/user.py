@@ -319,7 +319,7 @@ class User(UserMixin, db.Model):
              uc = UserClub.query.filter_by(user_id=self.id, club_id=club_id).first()
              if uc and uc.club_role:
                  return uc.club_role
-             return None # Becomes "User" in primary_role_name
+             return None # Becomes "Member" in primary_role_name
 
         # 3. Fallback (no context)
         if not self.roles:
@@ -332,7 +332,7 @@ class User(UserMixin, db.Model):
         if self.is_sysadmin:
             return "SysAdmin"
         role = self.primary_role
-        return role.name if role else "User"
+        return role.name if role else "Member"
 
     def add_role(self, role):
         """Add a role to this user."""

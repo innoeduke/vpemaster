@@ -58,7 +58,7 @@ def fix_permissions():
         
         # 2. Assign to roles
         staff_role = AuthRole.query.filter_by(name='Staff').first()
-        user_role = AuthRole.query.filter_by(name='User').first()
+        user_role = AuthRole.query.filter_by(name='Member').first()
         admin_role = AuthRole.query.filter_by(name='ClubAdmin').first()
         
         cm_view_perm = Permission.query.filter_by(name=Permissions.CONTACTS_MEMBERS_VIEW).first()
@@ -70,7 +70,7 @@ def fix_permissions():
         
         if user_role and cm_view_perm:
             if cm_view_perm not in user_role.permissions:
-                print(f"Assigning {cm_view_perm.name} to User role")
+                print(f"Assigning {cm_view_perm.name} to Member role")
                 user_role.permissions.append(cm_view_perm)
 
         if admin_role and cm_view_perm:
@@ -78,7 +78,7 @@ def fix_permissions():
                 print(f"Assigning {cm_view_perm.name} to ClubAdmin role")
                 admin_role.permissions.append(cm_view_perm)
                 
-        # Also ensure profile permissions are assigned to Staff and User
+        # Also ensure profile permissions are assigned to Staff and Member
         profile_perms = Permission.query.filter(Permission.name.in_([
             Permissions.PROFILE_OWN, Permissions.PROFILE_VIEW, Permissions.PROFILE_EDIT
         ])).all()

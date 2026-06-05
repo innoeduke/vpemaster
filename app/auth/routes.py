@@ -200,7 +200,7 @@ def profile(contact_id=None):
                     self.Role = contact.Type
                     self.home_club = None
                     self.member_no = contact.Member_ID
-                    self.primary_role_name = contact.Type or "User"
+                    self.primary_role_name = contact.Type or "Member"
                 @property
                 def primary_role(self):
                     return None

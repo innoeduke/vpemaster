@@ -763,7 +763,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const aCode = document.createElement('a');
             aCode.href = `/pathway_library?path=${log.pathway_code}&level=${log.level}&project_id=${log.Project_ID}`;
             aCode.className = 'project-code-link';
-            aCode.title = 'View in Pathway Library';
+            aCode.title = 'View in Pathways Library';
             aCode.textContent = `(${log.project_code_display})`;
             tooltipWrapper.appendChild(aCode);
           } else {

@@ -22,8 +22,8 @@ def test_app():
     with app.app_context():
         db.create_all()
         # Seed roles
-        if not AuthRole.query.filter_by(name='User').first():
-            db.session.add(AuthRole(name='User', description='User role', level=1))
+        if not AuthRole.query.filter_by(name='Member').first():
+            db.session.add(AuthRole(name='Member', description='Member role', level=1))
         if not AuthRole.query.filter_by(name='SysAdmin').first():
             db.session.add(AuthRole(name='SysAdmin', description='System Administrator', level=100))
         
@@ -96,7 +96,7 @@ def test_link_existing_contact(test_app, test_client, admin_user):
             sess['current_club_id'] = club_id
 
         # POST to create user linked to this contact
-        role = AuthRole.query.filter_by(name='User').first()
+        role = AuthRole.query.filter_by(name='Member').first()
         
         response = test_client.post(f'/user/form?club_id={club_id}', data={
             'username': 'linkeduser',
@@ -137,7 +137,7 @@ def test_create_new_contact_explicitly(test_app, test_client, admin_user):
         with test_client.session_transaction() as sess:
             sess['current_club_id'] = club_id
             
-        role = AuthRole.query.filter_by(name='User').first()
+        role = AuthRole.query.filter_by(name='Member').first()
 
         response = test_client.post(f'/user/form?club_id={club_id}', data={
             'username': 'newuser',

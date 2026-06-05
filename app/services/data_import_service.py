@@ -532,7 +532,7 @@ class DataImportService:
                 if not uc:
                     # Get default User role ID
                     from app.models.role import Role as AuthRole
-                    user_role = AuthRole.get_by_name('User')
+                    user_role = AuthRole.get_by_name('Member')
                     uc = UserClub(
                         user_id=target_user.id,
                         club_id=self.club_id,

@@ -240,9 +240,6 @@ first_name,last_name,email,member_id,phone
 ### Tools
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/validator` | Validator tool |
-| POST | `/validator` | Submit for validation |
-| GET | `/validator/status/<task_id>` | Check validation status |
 | GET | `/api/report-bug` | Report bug |
 
 ---

@@ -36,7 +36,7 @@ class AccessMatrixTestCase(unittest.TestCase):
         
         # Cache role permissions for test logic
         self.role_permissions_map = {}
-        for role_name in ['SysAdmin', 'ClubAdmin', 'Staff', 'User']:
+        for role_name in ['SysAdmin', 'ClubAdmin', 'Staff', 'Member']:
             u = User.query.filter_by(username=role_name.lower()).first()
             self.role_permissions_map[role_name.lower()] = u.get_permissions()
             
@@ -54,7 +54,7 @@ class AccessMatrixTestCase(unittest.TestCase):
         # Create Roles
         self.roles = {}
         # Added Guest Role (Level 0)
-        for name, level in [('SysAdmin', 10), ('ClubAdmin', 5), ('Staff', 2), ('User', 1), ('Guest', 0)]:
+        for name, level in [('SysAdmin', 10), ('ClubAdmin', 5), ('Staff', 2), ('Member', 1), ('Guest', 0)]:
             role = AuthRole(name=name, description=f"{name} Role", level=level if level is not None else 0)
             db.session.add(role)
             self.roles[name] = role
@@ -71,7 +71,7 @@ class AccessMatrixTestCase(unittest.TestCase):
         db.session.add(self.club)
         db.session.flush()
 
-        for role_name in ['SysAdmin', 'ClubAdmin', 'Staff', 'User']:
+        for role_name in ['SysAdmin', 'ClubAdmin', 'Staff', 'Member']:
             contact = Contact(Name=f"{role_name} User", Type="Member")
             db.session.add(contact)
             db.session.flush()
@@ -97,7 +97,7 @@ class AccessMatrixTestCase(unittest.TestCase):
                 Permissions.SETTINGS_VIEW, Permissions.ROSTER_VIEW, Permissions.ROSTER_EDIT,
                 Permissions.SPEECH_LOGS_MANAGE, Permissions.VOTING_VIEW_RESULTS,
                 Permissions.VOTING_TRACK_PROGRESS, Permissions.LIBRARY_VIEW, Permissions.LUCKY_DRAW_EDIT,
-                Permissions.MEDIA_MANAGE, Permissions.MEMBERS_MANAGE
+                Permissions.MEDIA_MANAGE, Permissions.MEMBERS_MANAGE, Permissions.UPLOAD_MANAGE
             ],
             'ClubAdmin': [
                 Permissions.MEETING_VIEW_PUBLISHED, Permissions.MEETING_MANAGE, 
@@ -105,7 +105,7 @@ class AccessMatrixTestCase(unittest.TestCase):
                 Permissions.SPEECH_LOGS_MANAGE,
                 Permissions.VOTING_VIEW_RESULTS, Permissions.VOTING_TRACK_PROGRESS,
                 Permissions.LIBRARY_VIEW, Permissions.LUCKY_DRAW_EDIT,
-                Permissions.MEDIA_MANAGE, Permissions.MEMBERS_MANAGE
+                Permissions.MEDIA_MANAGE, Permissions.MEMBERS_MANAGE, Permissions.UPLOAD_MANAGE
             ],
             'Staff': [
                 Permissions.MEETING_VIEW_PUBLISHED, Permissions.ROSTER_VIEW, 
@@ -113,7 +113,7 @@ class AccessMatrixTestCase(unittest.TestCase):
                 Permissions.VOTING_VIEW_RESULTS, 
                 Permissions.LIBRARY_VIEW
             ],
-            'User': [
+            'Member': [
                 Permissions.MEETING_VIEW_PUBLISHED, Permissions.BOOKING_OWN, Permissions.LIBRARY_VIEW
             ],
             'Guest': [

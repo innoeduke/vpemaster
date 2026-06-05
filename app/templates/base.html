@@ -143,9 +143,9 @@
 
         {% if is_authorized(Permissions.LIBRARY_VIEW) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('pathways_bp') %}active{% endif %}">
-          <a href="{{ url_for('pathways_bp.pathway_library') }}" title="{{ _('Pathway Library') }}">
+          <a href="{{ url_for('pathways_bp.pathway_library') }}" title="{{ _('Pathways Library') }}">
             <i class="fas fa-landmark nav-icon"></i>
-            <span>{{ _('Pathway Library') }}</span>
+            <span>{{ _('Pathways Library') }}</span>
           </a>
         </li>
         {% endif %}
@@ -159,16 +159,9 @@
         </li>
         {% endif %}
 
-        {% if is_authorized(Permissions.LIBRARY_VIEW) %}
-        <li class="{% if request.endpoint and request.endpoint.startswith('tools_bp.validator') %}active{% endif %}">
-          <a href="{{ url_for('tools_bp.validator') }}" title="{{ _('Level Validator') }}">
-            <i class="fas fa-link nav-icon"></i>
-            <span>{{ _('Level Validator') }}</span>
-          </a>
-        </li>
-        {% endif %}
 
-        {% if is_authorized(Permissions.MEDIA_MANAGE) %}
+
+        {% if is_authorized(Permissions.UPLOAD_MANAGE) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('uploads_bp') %}active{% endif %}">
           <a href="{{ url_for('uploads_bp.manage_uploads') }}" title="{{ _('Manage upload links and retrieve files') }}">
             <i class="fas fa-cloud-upload-alt nav-icon"></i>
@@ -354,10 +347,15 @@
               {% if is_authorized(Permissions.LIBRARY_VIEW) %}
               <li class="{% if request.endpoint and request.endpoint.startswith('pathways_bp') %}submenu-active{% endif %}">
                 <a href="{{ url_for('pathways_bp.pathway_library') }}">
-                  <i class="fas fa-landmark"></i> {{ _('Pathway Library') }}
+                  <i class="fas fa-landmark"></i> {{ _('Pathways Library') }}
                 </a>
               </li>
               {% endif %}
+
+              {% if is_authorized(Permissions.MEETING_MANAGE) or is_authorized(Permissions.UPLOAD_MANAGE) %}
+              <li class="menu-divider"></li>
+              {% endif %}
+
               {% if is_authorized(Permissions.MEETING_MANAGE) %}
               <li class="{% if request.endpoint and request.endpoint.startswith('lucky_draw_bp') %}submenu-active{% endif %}">
                 <a href="{{ url_for('lucky_draw_bp.lucky_draw') }}">
@@ -365,14 +363,8 @@
                 </a>
               </li>
               {% endif %}
-              {% if is_authorized(Permissions.LIBRARY_VIEW) %}
-              <li class="{% if request.endpoint and request.endpoint.startswith('tools_bp.validator') %}submenu-active{% endif %}">
-                <a href="{{ url_for('tools_bp.validator') }}">
-                  <i class="fas fa-link"></i> {{ _('Level Validator') }}
-                </a>
-              </li>
-              {% endif %}
-              {% if is_authorized(Permissions.MEDIA_MANAGE) %}
+
+              {% if is_authorized(Permissions.UPLOAD_MANAGE) %}
               <li class="{% if request.endpoint and request.endpoint.startswith('uploads_bp') %}submenu-active{% endif %}">
                 <a href="{{ url_for('uploads_bp.manage_uploads') }}">
                   <i class="fas fa-cloud-upload-alt"></i> {{ _('Upload') }}
@@ -383,7 +375,7 @@
           </li>
           {% endif %}
 
-          <!-- 3. Management Dropdown -->
+          <!-- 3. Club Dropdown -->
           {% set management_active = request.endpoint and (
             request.endpoint.startswith('users_bp') or 
             request.endpoint.startswith('contacts_bp') or 
@@ -393,7 +385,7 @@
           {% if is_authorized(Permissions.MEMBERS_MANAGE) or is_authorized(Permissions.ROSTER_VIEW) or (is_authorized(Permissions.SETTINGS_VIEW) and current_user.primary_role_name != 'Guest') %}
           <li class="nav-dropdown-wrapper {% if management_active %}active{% endif %}">
             <a href="#" class="nav-dropdown-trigger">
-              <span>{{ _('Management') }}</span>
+              <span>{{ _('Club') }}</span>
               <i class="fas fa-caret-down dropdown-arrow"></i>
             </a>
             <ul class="nav-submenu">
