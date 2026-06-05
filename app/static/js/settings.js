@@ -1687,7 +1687,7 @@ function renderPermissionsMatrix(data) {
   });
 
   // Header row 1: Level Groups
-  let levelHeadersHtml = `<th class="level-group-header">Module</th>`;
+  let levelHeadersHtml = `<th class="level-group-header">${isChinese ? '安全组' : 'Security Group'}</th>`;
   // Header row 2: Role Names
   let roleHeadersHtml = `<th>Permission</th>`;
 
