@@ -423,6 +423,16 @@
         font-style: italic;
     }
 
+    .meeting-subtitle {
+        color: #718096;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-style: italic;
+        margin-top: 2px;
+    }
+
     .meeting-type-badge {
         display: inline-block;
         background: #e2e8f0;
@@ -488,9 +498,8 @@
     }
 
     .membership-actions-wrapper {
-        flex: 1;
         display: flex;
-        justify-content: flex-end;
+        align-items: center;
     }
 
     .badge-pending-join {
@@ -525,7 +534,8 @@
         padding: 8px 16px;
         border-radius: 8px;
         font-size: 0.85rem;
-        min-width: 110px;
+        width: 130px !important;
+        flex-shrink: 0;
         justify-content: center;
         display: inline-flex;
         align-items: center;
@@ -548,7 +558,8 @@
         padding: 8px 16px;
         border-radius: 8px;
         font-size: 0.85rem;
-        min-width: 110px;
+        width: 130px !important;
+        flex-shrink: 0;
         justify-content: center;
         display: inline-flex;
         align-items: center;
@@ -578,7 +589,8 @@
         padding: 8px 16px;
         border-radius: 8px;
         font-size: 0.85rem;
-        min-width: 110px;
+        width: 130px !important;
+        flex-shrink: 0;
         justify-content: center;
         display: inline-flex;
         align-items: center;
@@ -619,12 +631,13 @@
         background: white;
         border-radius: 12px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-        border: 1px solid #eef2f7;
+        border: none;
         overflow: hidden;
     }
 
     .table {
         margin-bottom: 0;
+        border: none;
     }
 
     .table thead th {
@@ -865,6 +878,14 @@
                 
                 <div class="club-card-body">
                     <div class="club-card-badges-row" style="display: flex; gap: 8px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;">
+                        <button class="btn-follow-badge {% if is_favorite %}followed{% endif %}" onclick="toggleFavorite(this, {{ club.id }})" style="margin-bottom: 0;">
+                            {% if is_favorite %}
+                                <i class="fas fa-minus"></i> {{ _('Unfollow') }}
+                            {% else %}
+                                <i class="fas fa-plus"></i> {{ _('Follow') }}
+                            {% endif %}
+                        </button>
+                        
                         {% if is_home %}
                         <div class="status-badge home-badge" style="margin-bottom: 0;">
                             <i class="fas fa-home"></i> {{ _('Home Club') }}
@@ -874,14 +895,6 @@
                             <i class="fas fa-check-circle"></i> {{ _('Member') }}
                         </div>
                         {% endif %}
-                        
-                        <button class="btn-follow-badge {% if is_favorite %}followed{% endif %}" onclick="toggleFavorite(this, {{ club.id }})" style="margin-bottom: 0;">
-                            {% if is_favorite %}
-                                <i class="fas fa-minus"></i> {{ _('Unfollow') }}
-                            {% else %}
-                                <i class="fas fa-plus"></i> {{ _('Follow') }}
-                            {% endif %}
-                        </button>
                     </div>
                     
                     <!-- Next Meeting Box -->
@@ -898,6 +911,9 @@
                                 {% endif %}
                             </div>
                             <div class="meeting-title" title="{{ next_meeting.Meeting_Title }}">{{ next_meeting.Meeting_Title or _('Untitled Meeting') }}</div>
+                            {% if next_meeting.Subtitle %}
+                            <div class="meeting-subtitle" title="{{ next_meeting.Subtitle }}">{{ next_meeting.Subtitle }}</div>
+                            {% endif %}
                         </div>
                         {% else %}
                         <div class="next-meeting-empty">
@@ -1034,11 +1050,11 @@
                                 <div class="membership-actions-wrapper">
                                     {% if not is_member %}
                                         {% if club.id in pending_club_ids %}
-                                            <button class="btn btn-cancel-request" onclick="cancelJoinRequest(this, {{ club.id }})" style="margin: 0; padding: 6px 12px; font-size: 0.85rem; border-radius: 6px; height: 34px;">
+                                            <button class="btn btn-cancel-request" onclick="cancelJoinRequest(this, {{ club.id }})" style="margin: 0; padding: 6px 12px; font-size: 0.85rem; border-radius: 6px; height: 34px; width: 130px !important; flex-shrink: 0;">
                                                 <i class="fas fa-times-circle"></i> {{ _('Cancel Request') }}
                                             </button>
                                         {% else %}
-                                            <button class="btn btn-join" onclick="requestJoinClub(this, {{ club.id }})" style="margin: 0; padding: 6px 12px; font-size: 0.85rem; border-radius: 6px; height: 34px;">
+                                            <button class="btn btn-join" onclick="requestJoinClub(this, {{ club.id }})" style="margin: 0; padding: 6px 12px; font-size: 0.85rem; border-radius: 6px; height: 34px; width: 130px !important; flex-shrink: 0;">
                                                 <i class="fas fa-user-plus"></i> {{ _('Join') }}
                                             </button>
                                         {% endif %}
@@ -1046,11 +1062,11 @@
                                 </div>
                                 
                                 {% if club.id == get_current_club_id() %}
-                                <button class="btn btn-enter" disabled style="padding: 6px 12px; border-radius: 6px; height: 34px;">
+                                <button class="btn btn-enter" disabled style="margin: 0; padding: 6px 12px; font-size: 0.85rem; border-radius: 6px; height: 34px; width: 130px !important; flex-shrink: 0;">
                                     <i class="fas fa-check-circle"></i> {{ _('Entered') }}
                                 </button>
                                 {% else %}
-                                <button class="btn btn-enter" onclick="enterClub(this, {{ club.id }})" style="padding: 6px 12px; border-radius: 6px; height: 34px;">
+                                <button class="btn btn-enter" onclick="enterClub(this, {{ club.id }})" style="margin: 0; padding: 6px 12px; font-size: 0.85rem; border-radius: 6px; height: 34px; width: 130px !important; flex-shrink: 0;">
                                     <i class="fas fa-sign-in-alt"></i> {{ _('Enter') }}
                                 </button>
                                 {% endif %}
@@ -1308,7 +1324,7 @@
                 document.querySelectorAll(`[data-club-id="${clubId}"] .membership-actions-wrapper`).forEach(wrapper => {
                     if (wrapper.closest('tr')) {
                         // Table row style
-                        wrapper.innerHTML = '<button class="btn btn-cancel-request" onclick="cancelJoinRequest(this, ' + clubId + ')" style="margin: 0; padding: 6px 12px; font-size: 0.85rem; border-radius: 6px; height: 34px;"><i class="fas fa-times-circle"></i> {{ _("Cancel Request") }}</button>';
+                        wrapper.innerHTML = '<button class="btn btn-cancel-request" onclick="cancelJoinRequest(this, ' + clubId + ')" style="margin: 0; padding: 6px 12px; font-size: 0.85rem; border-radius: 6px; height: 34px; width: 130px !important; flex-shrink: 0;"><i class="fas fa-times-circle"></i> {{ _("Cancel Request") }}</button>';
                     } else {
                         // Card style
                         wrapper.innerHTML = '<button class="btn btn-cancel-request" onclick="cancelJoinRequest(this, ' + clubId + ')"><i class="fas fa-times-circle"></i> {{ _("Cancel Request") }}</button>';
@@ -1352,7 +1368,7 @@
                 // Replace cancel button with Join button
                 document.querySelectorAll(`[data-club-id="${clubId}"] .membership-actions-wrapper`).forEach(wrapper => {
                     if (wrapper.closest('tr')) {
-                        wrapper.innerHTML = '<button class="btn btn-join" onclick="requestJoinClub(this, ' + clubId + ')" style="margin: 0; padding: 6px 12px; font-size: 0.85rem; border-radius: 6px; height: 34px;"><i class="fas fa-user-plus"></i> {{ _("Join") }}</button>';
+                        wrapper.innerHTML = '<button class="btn btn-join" onclick="requestJoinClub(this, ' + clubId + ')" style="margin: 0; padding: 6px 12px; font-size: 0.85rem; border-radius: 6px; height: 34px; width: 130px !important; flex-shrink: 0;"><i class="fas fa-user-plus"></i> {{ _("Join") }}</button>';
                     } else {
                         wrapper.innerHTML = '<button class="btn btn-join" onclick="requestJoinClub(this, ' + clubId + ')"><i class="fas fa-user-plus"></i> {{ _("Join") }}</button>';
                     }

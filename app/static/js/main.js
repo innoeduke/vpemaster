@@ -766,4 +766,42 @@ function showNotification(message, type = 'info') {
   }, 3000);
 }
 
+/**
+ * Select and enter a club by its ID.
+ * @param {Event} event The event trigger.
+ * @param {number} clubId The ID of the club to enter.
+ */
+function selectClub(event, clubId) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  
+  fetch(`/clubs/${clubId}/enter`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    return response.json();
+  })
+  .then(data => {
+    if (data.success && data.redirect_url) {
+      window.location.href = data.redirect_url;
+    } else {
+      showNotification(data.error || 'Failed to enter club.', 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error entering club:', error);
+    showNotification('An error occurred while entering the club.', 'error');
+  });
+}
+window.selectClub = selectClub;
+
 

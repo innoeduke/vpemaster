@@ -213,12 +213,36 @@
         {% if club %}
         <div class="header-divider"></div>
         <div class="header-club-container">
-          <a href="{{ url_for('about_club_bp.about_club') if is_authorized(Permissions.LIBRARY_VIEW) else '#' }}" 
-             class="header-club-badge" 
+          <div class="header-club-badge {% if current_user.is_authenticated and current_user.club_memberships %}dropdown-club-wrapper{% endif %}" 
+             style="position: relative !important; overflow: visible !important;"
              title="{{ club.club_name }} (No. {{ club.club_no }})">
             <img src="{{ url_for('static', filename=club.effective_logo_url) }}" class="header-club-logo" alt="Club Logo" />
             <span class="club-name-text">{{ club.club_name }}</span>
-          </a>
+            {% if current_user.is_authenticated and current_user.club_memberships|length > 1 %}
+            <i class="fas fa-caret-down club-dropdown-arrow"></i>
+            {% endif %}
+            
+            {% if current_user.is_authenticated and current_user.club_memberships %}
+            <div class="club-dropdown-menu" style="position: absolute !important; top: calc(100% + 6px) !important; left: 0 !important;">
+              <div class="club-dropdown-header">{{ _('My Clubs') }}</div>
+              {% for uc in current_user.club_memberships %}
+              {% set member_club = uc.club %}
+              <a href="#" class="club-dropdown-item {% if member_club.id == club.id %}active{% endif %}" onclick="selectClub(event, {{ member_club.id }})">
+                <img src="{{ url_for('static', filename=member_club.effective_logo_url) }}" class="club-dropdown-logo" alt="Club Logo" />
+                <div class="club-dropdown-info">
+                  <span class="club-dropdown-name">{{ member_club.club_name }}</span>
+                  <span class="club-dropdown-meta">
+                    No. {{ member_club.club_no }}
+                    {% if uc.is_home %}
+                    <span class="badge-home-club">{{ _('Home') }}</span>
+                    {% endif %}
+                  </span>
+                </div>
+              </a>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
           <span class="club-meta-text">Club No.{{ club.club_no }} &nbsp;|&nbsp; Area {{ club.area or '?' }}, Division {{ club.division or '?' }}, D{{ club.district or '?' }}</span>
         </div>
         {% endif %}
