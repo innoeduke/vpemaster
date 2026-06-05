@@ -75,7 +75,7 @@ def upgrade():
     ).scalar()
 
     if shltmc_id is not None:
-        op.execute(
+        bind.execute(
             sa.text("UPDATE role_permissions SET club_id = :cid"),
             {"cid": shltmc_id},
         )
@@ -86,7 +86,7 @@ def upgrade():
         ), {"shltmc": shltmc_id}).fetchall()]
 
         for other_id in other_active_ids:
-            op.execute(
+            bind.execute(
                 sa.text(
                     "INSERT INTO role_permissions (role_id, permission_id, club_id) "
                     "SELECT role_id, permission_id, :cid "
