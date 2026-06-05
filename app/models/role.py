@@ -51,9 +51,28 @@ class Role(db.Model):
         
         return [db.session.merge(r, load=False) for r in Role._all_roles_cache]
     
-    def has_permission(self, permission_name):
-        """Check if this role has a specific permission."""
-        return any(p.name == permission_name for p in self.permissions)
+    def has_permission(self, permission_name, club_id=None):
+        """Check if this role has a specific permission.
+
+        When ``club_id`` is given, consults the per-club role_permissions
+        mapping (a single explicit query). When ``club_id`` is None, falls
+        back to the (cached, joined) ``self.permissions`` relationship which
+        is the union across all clubs — the legacy global behavior, kept
+        for backward compatibility with code paths that don't have a club
+        context (e.g. some test fixtures, identity-loader cache priming).
+        """
+        if club_id is None:
+            return any(p.name == permission_name for p in self.permissions)
+
+        from .permission import Permission
+        from .role_permission import RolePermission
+
+        perm_id = db.session.query(Permission.id).filter_by(name=permission_name).scalar()
+        if perm_id is None:
+            return False
+        return db.session.query(RolePermission.id).filter_by(
+            role_id=self.id, permission_id=perm_id, club_id=club_id
+        ).first() is not None
     
     def add_permission(self, permission):
         """Add a permission to this role."""

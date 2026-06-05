@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "updated_at": "2026-06-05T19:22:00+08:00",
+  "source": "Seeded from the pre-per-club global role_permissions (SHLTMC = id 2 matrix at migration time). 81 total rows; 15 orphan FKs to deleted permissions excluded. The 66 valid role->[permission] mappings are captured here as the ultimate fallback when a club has no club_resources JSON of its own.",
+  "role_permissions": {
+    "SysAdmin": [
+      "CHAT_AI",
+      "CHAT_COMMANDS",
+      "LIBRARY_VIEW",
+      "MEDIA_MANAGE",
+      "MEETING_CREATE",
+      "MEETING_MANAGE",
+      "MEMBERS_MANAGE",
+      "ROSTER_EDIT",
+      "ROSTER_VIEW",
+      "SETTINGS_EDIT",
+      "SETTINGS_VIEW",
+      "SPEECH_LOGS_MANAGE",
+      "UPLOAD_MANAGE"
+    ],
+    "ClubAdmin": [
+      "CHAT_AI",
+      "CHAT_COMMANDS",
+      "LIBRARY_VIEW",
+      "LUCKY_DRAW_EDIT",
+      "MEDIA_MANAGE",
+      "MEETING_CREATE",
+      "MEETING_MANAGE",
+      "MEETING_VIEW_ALL",
+      "MEETING_VIEW_PUBLISHED",
+      "MEMBERS_MANAGE",
+      "MEMBERS_SELF",
+      "ROSTER_EDIT",
+      "ROSTER_VIEW",
+      "SETTINGS_EDIT",
+      "SETTINGS_VIEW",
+      "SPEECH_LOGS_MANAGE",
+      "UPLOAD_MANAGE",
+      "VOTING_TRACK_PROGRESS",
+      "VOTING_VIEW_RESULTS"
+    ],
+    "Operator": [
+      "CHAT_AI",
+      "CHAT_COMMANDS",
+      "LIBRARY_VIEW",
+      "LUCKY_DRAW_EDIT",
+      "MEDIA_MANAGE",
+      "MEETING_CREATE",
+      "MEETING_MANAGE",
+      "MEETING_VIEW_ALL",
+      "MEETING_VIEW_PUBLISHED",
+      "MEMBERS_SELF",
+      "ROSTER_EDIT",
+      "ROSTER_VIEW",
+      "SPEECH_LOGS_MANAGE",
+      "UPLOAD_MANAGE",
+      "VOTING_TRACK_PROGRESS",
+      "VOTING_VIEW_RESULTS"
+    ],
+    "Staff": [
+      "CHAT_COMMANDS",
+      "LIBRARY_VIEW",
+      "MEDIA_MANAGE",
+      "MEETING_MANAGE",
+      "MEETING_VIEW_ALL",
+      "MEETING_VIEW_PUBLISHED",
+      "MEMBERS_SELF",
+      "ROSTER_VIEW",
+      "SPEECH_LOGS_MANAGE",
+      "UPLOAD_MANAGE",
+      "VOTING_VIEW_RESULTS"
+    ],
+    "Member": [
+      "CHAT_COMMANDS",
+      "LIBRARY_VIEW",
+      "MEDIA_MANAGE",
+      "MEETING_VIEW_PUBLISHED",
+      "MEMBERS_SELF"
+    ],
+    "Guest": [
+      "LIBRARY_VIEW",
+      "MEETING_VIEW_PUBLISHED"
+    ]
+  }
+}

@@ -3,7 +3,7 @@ from datetime import datetime
 from flask_login import current_user
 from .translations.translations import translate as _
 from .auth.utils import login_required, is_authorized
-from .auth.permissions import Permissions, permission_required
+from .auth.permissions import Permissions
 from .models import Roster, Meeting, Contact, ContactClub, Pathway, Ticket
 from .club_context import get_current_club_id, authorized_club_required
 from . import db

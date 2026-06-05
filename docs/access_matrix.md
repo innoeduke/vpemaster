@@ -87,6 +87,19 @@ Meetings progress through the following statuses:
 
 ## Permission Mappings
 
+### Storage & per-club scope
+
+The permission matrix is **per club**. Each `role_permissions` row is
+scoped to a specific `club_id`, so different clubs can hold different
+permission sets for the same role. The matrix UI in Settings edits the
+**current** club's matrix; a "Save as Default" button exports it to
+`app/static/club_resources/<club_id>/permissions.json`, and a "Reset to
+Default" button restores from that club JSON, falling back to the global
+seed at `app/static/permissions_default.json` if the club has no JSON yet.
+
+The table below documents the **global default** (shipped in
+`permissions_default.json`); individual clubs may diverge.
+
 ### Core Permissions
 
 | Permission | Guest | User | Staff | Operator | Admin |

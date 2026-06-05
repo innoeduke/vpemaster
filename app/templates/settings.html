@@ -665,6 +665,15 @@
 
     <div class="settings-header">
       <h2>{{ _('Permissions Matrix') }}</h2>
+      <div class="button-group">
+        <span id="permissions-default-hint" class="text-muted small" style="margin-right: 12px; align-self: center;"></span>
+        <button id="save-permissions-btn" class="btn btn-primary" title="{{ _('Export current matrix to club resources folder (app/static/club_resources/<club_id>/permissions.json)') }}">
+          {{ _('Save as Default') }}
+        </button>
+        <button id="reset-permissions-btn" class="btn btn-danger" title="{{ _('Reset matrix to the default (club JSON if present, otherwise global JSON)') }}" disabled>
+          {{ _('Reset to Default') }}
+        </button>
+      </div>
     </div>
     <div class="permissions-matrix-container">
       <p class="matrix-instruction">{{ _('Manage permissions for each security group. Changes will take effect on next login.') }}</p>

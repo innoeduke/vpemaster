@@ -169,12 +169,13 @@ class PermissionSystemTestCase(unittest.TestCase):
             self.assertFalse(is_authorized(Permissions.MEETING_MANAGE))
 
     def test_decorators(self):
-        """Test permission_required and role_required decorators."""
-        from app.auth.permissions import permission_required, role_required
+        """Test club_permission_required and role_required decorators."""
+        from app.auth.permissions import role_required
+        from app.auth.utils import club_permission_required
         from flask import jsonify
 
         @self.app.route('/test-permission')
-        @permission_required(Permissions.MEETING_MANAGE)
+        @club_permission_required(Permissions.MEETING_MANAGE)
         def test_perm():
             return jsonify(status="ok")
 

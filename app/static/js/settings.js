@@ -1259,11 +1259,123 @@ function loadPermissionsMatrix() {
       renderAuthRolesTable(data.roles);
       loading.style.display = "none";
       container.style.display = "block";
+      loadDefaultInfo();
     })
     .catch((e) => {
       console.error("Matrix load error:", e);
       loading.innerHTML = `<span class="text-danger">Error loading permissions: ${e.message}</span>`;
     });
+}
+
+/**
+ * POSTs the current per-club matrix to the export endpoint, which writes it
+ * to app/static/club_resources/<club_id>/permissions.json. This is the new
+ * role of the "Save as Default" button.
+ */
+async function exportPermissionsDefault() {
+  const btn = document.getElementById("save-permissions-btn");
+  if (btn) btn.disabled = true;
+  try {
+    const resp = await fetch("/api/permissions/export-default", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    });
+    const data = await resp.json();
+    if (data.success) {
+      showNotification("Saved as default.", "success");
+      loadDefaultInfo();
+    } else {
+      showNotification(data.message || "Export failed", "error");
+    }
+  } catch (e) {
+    showNotification(e.message, "error");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+/**
+ * POSTs to the reset endpoint. The server reads the club JSON (or falls back
+ * to the global JSON), wipes the per-club role_permissions, and re-inserts
+ * from the JSON. On success, the matrix is re-rendered.
+ */
+async function resetPermissionsToDefault() {
+  const ok = confirm(
+    "Reset the permission matrix to the default?\n\n" +
+    "This will REPLACE all current role permissions for this club with the saved default " +
+    "(club JSON if present, otherwise the global default).\n\n" +
+    "Custom security groups (not in the default file) will be cleared.\n\n" +
+    "This action is logged in the Permission Audit Log."
+  );
+  if (!ok) return;
+
+  const btn = document.getElementById("reset-permissions-btn");
+  if (btn) btn.disabled = true;
+  try {
+    const resp = await fetch("/api/permissions/reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    });
+    const data = await resp.json();
+    if (data.success) {
+      showNotification(`Reset from ${data.source} default.`, "success");
+      // Re-fetch the matrix so checkboxes reflect the new state
+      loadPermissionsMatrix();
+    } else {
+      showNotification(data.message || "Reset failed", "error");
+      loadDefaultInfo(); // refresh hint/button state
+    }
+  } catch (e) {
+    showNotification(e.message, "error");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+/**
+ * Fetches /api/permissions/default-info and updates the "last saved" hint
+ * plus the Reset button's enabled state. Silent on error.
+ */
+async function loadDefaultInfo() {
+  const hint = document.getElementById("permissions-default-hint");
+  const resetBtn = document.getElementById("reset-permissions-btn");
+  try {
+    const resp = await fetch("/api/permissions/default-info");
+    const data = await resp.json();
+    if (!data || !data.success) return;
+
+    const club = data.club || {};
+    const globalDefault = data.global_default || {};
+
+    if (hint) {
+      if (club.exists) {
+        hint.textContent = `Last saved (club): ${formatTimestamp(club.updated_at)}`;
+      } else if (globalDefault.exists) {
+        hint.textContent = "No club default saved. Global default available.";
+      } else {
+        hint.textContent = "No default available. Save one to enable Reset.";
+      }
+    }
+    if (resetBtn) {
+      resetBtn.disabled = !(club.exists || globalDefault.exists);
+    }
+  } catch (e) {
+    // best-effort; don't surface
+  }
+}
+
+/** Compact local-time formatter for the default-info hint. */
+function formatTimestamp(iso) {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleString();
+  } catch (_) {
+    return iso;
+  }
 }
 
 function loadModules() {
@@ -1521,7 +1633,8 @@ function renderPermissionsMatrix(data) {
 
   // Store original state
   originalPermissions = JSON.parse(JSON.stringify(role_perms));
-  if (saveBtn) saveBtn.disabled = true;
+  // Note: save-permissions-btn is now the "Save as Default" (export) button —
+  // it stays enabled. Disable only while an export request is in flight.
 
   // Group roles by level in descending order
   matrixRoles = roles;
@@ -1789,11 +1902,20 @@ function loadAuditLog() {
 
 // Attach event listeners for the new tabs
 document.addEventListener("DOMContentLoaded", () => {
-  // Save button
+  // Save as Default button -> exports current matrix to club JSON
   const saveBtn = document.getElementById("save-permissions-btn");
   if (saveBtn) {
-    saveBtn.addEventListener("click", savePermissions);
+    saveBtn.addEventListener("click", exportPermissionsDefault);
   }
+
+  // Reset to Default button -> reads club JSON (or global), applies to DB
+  const resetBtn = document.getElementById("reset-permissions-btn");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", resetPermissionsToDefault);
+  }
+
+  // Populate the "last saved" hint + reset button state for the current club
+  loadDefaultInfo();
 
   // Add auth role button disable check
   const addAuthRoleBtn = document.getElementById("add-auth-role-btn");

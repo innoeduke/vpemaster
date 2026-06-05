@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for
 from flask_login import current_user, login_required
 from .models import db, Planner, MeetingRole, Project, Club, Meeting, SessionType, SessionLog
-from .auth.permissions import Permissions, permission_required
+from .auth.permissions import Permissions
 from .club_context import get_current_club_id
 from datetime import datetime
 from .constants import ProjectID

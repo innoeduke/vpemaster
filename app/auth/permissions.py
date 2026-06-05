@@ -21,29 +21,6 @@ def create_role_permission(role_name):
     return PrincipalPermission(RoleNeed(role_name))
 
 
-def permission_required(permission_name):
-    """
-    Decorator to require a specific permission for a route.
-    
-    Usage:
-        @permission_required('MEETING_MANAGE')
-        def edit_agenda():
-            ...
-    """
-    def decorator(f):
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            permission = create_permission(permission_name)
-            if not permission.can():
-                if not current_user.is_authenticated:
-                    from flask import redirect, url_for
-                    return redirect(url_for('auth_bp.login'))
-                abort(403)
-            return f(*args, **kwargs)
-        return decorated_function
-    return decorator
-
-
 def role_required(role_name):
     """
     Decorator to require a specific role for a route.

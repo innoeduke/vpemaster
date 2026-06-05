@@ -1069,7 +1069,7 @@ def get_settings_users():
 def get_permissions_matrix():
     if not is_authorized(Permissions.SETTINGS_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
-    
+
     club_id = get_current_club_id()
 
     # Exclude SysAdmin from the permissions matrix; Guest is included
@@ -1079,9 +1079,9 @@ def get_permissions_matrix():
         (AuthRole.club_id == club_id) | (AuthRole.club_id.is_(None))
     ).order_by(AuthRole.level.desc()).all()
     permissions = Permission.query.order_by(Permission.category, Permission.name).all()
-    
-    # Get current mappings
-    mappings = RolePermission.query.all()
+
+    # Get current mappings for THIS club only (per-club matrix)
+    mappings = RolePermission.query.filter_by(club_id=club_id).all() if club_id else []
     role_perms = {} # role_id -> [perm_id, ...]
     for m in mappings:
         if m.role_id not in role_perms:
@@ -1103,9 +1103,11 @@ def get_permissions_matrix():
 @settings_bp.route('/api/permissions/update', methods=['POST'])
 @login_required
 def update_permission_matrix():
-    if not is_authorized(Permissions.SETTINGS_VIEW):
+    if not is_authorized(Permissions.SETTINGS_EDIT):
         return jsonify(success=False, message="Permission denied"), 403
-    # club_id = get_current_club_id()
+    club_id = get_current_club_id()
+    if not club_id:
+        return jsonify(success=False, message="Club context is required"), 400
 
     data = request.get_json()
     if not data:
@@ -1116,24 +1118,24 @@ def update_permission_matrix():
         for item in data:
             role_id = item.get('role_id')
             new_perm_ids = set(item.get('permission_ids', []))
-            
+
             role = db.session.get(AuthRole, role_id)
             if not role:
                 continue
 
-            # Get current perms
-            current_perms = RolePermission.query.filter_by(role_id=role_id).all()
+            # Get current perms for THIS role in THIS club
+            current_perms = RolePermission.query.filter_by(role_id=role_id, club_id=club_id).all()
             current_perm_ids = {p.permission_id for p in current_perms}
 
             # To add
             for pid in new_perm_ids - current_perm_ids:
-                db.session.add(RolePermission(role_id=role_id, permission_id=pid))
+                db.session.add(RolePermission(role_id=role_id, permission_id=pid, club_id=club_id))
 
             # To remove
             for p in current_perms:
                 if p.permission_id not in new_perm_ids:
                     db.session.delete(p)
-            
+
             # Audit log
             audit = PermissionAudit(
                 admin_id=current_user.id,
@@ -1141,7 +1143,7 @@ def update_permission_matrix():
                 target_type='ROLE',
                 target_id=role_id,
                 target_name=role.name,
-                changes=f"Updated permissions: {list(new_perm_ids)}"
+                changes=f"Updated permissions (club_id={club_id}): {sorted(new_perm_ids)}"
             )
             db.session.add(audit)
 
@@ -1150,6 +1152,196 @@ def update_permission_matrix():
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
+
+
+# ---- Permission matrix export / reset (per-club JSON flow) ----
+
+def _club_json_path(club_id):
+    """Absolute path to this club's permissions.json in the club resources folder."""
+    return os.path.join(
+        current_app.root_path, 'static', 'club_resources', str(club_id), 'permissions.json'
+    )
+
+
+def _global_json_path():
+    """Absolute path to the global permissions_default.json fallback."""
+    return os.path.join(current_app.root_path, 'static', 'permissions_default.json')
+
+
+def _build_role_perms_map_from_db(club_id):
+    """
+    Read the current per-club matrix from the DB and return
+    {role_name: [perm_name, ...]} suitable for JSON export.
+    Orphan rows (permission_id with no matching permission) are silently
+    skipped — they have no name to export.
+    """
+    rows = (db.session.query(AuthRole.name, Permission.name)
+            .join(RolePermission, RolePermission.role_id == AuthRole.id)
+            .join(Permission, Permission.id == RolePermission.permission_id)
+            .filter(RolePermission.club_id == club_id)
+            .all())
+    result = {}
+    for role_name, perm_name in rows:
+        result.setdefault(role_name, []).append(perm_name)
+    # stable, alphabetical per role for deterministic diffs
+    return {r: sorted(ps) for r, ps in result.items()}
+
+
+@settings_bp.route('/api/permissions/export-default', methods=['POST'])
+@login_required
+def export_permissions_default():
+    """Snapshot the current club's matrix to its club_resources JSON file."""
+    if not is_authorized(Permissions.SETTINGS_EDIT):
+        return jsonify(success=False, message="Permission denied"), 403
+    club_id = get_current_club_id()
+    if not club_id:
+        return jsonify(success=False, message="Club context is required"), 400
+
+    try:
+        role_perms = _build_role_perms_map_from_db(club_id)
+        payload = {
+            "version": 1,
+            "club_id": club_id,
+            "updated_at": datetime.utcnow().isoformat() + "Z",
+            "source": "Exported from settings page (live DB matrix)",
+            "role_permissions": role_perms,
+        }
+        path = _club_json_path(club_id)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(payload, f, indent=2, ensure_ascii=False)
+
+        # Audit
+        db.session.add(PermissionAudit(
+            admin_id=current_user.id,
+            action='EXPORT_PERMS_DEFAULT',
+            target_type='CLUB',
+            target_id=club_id,
+            target_name=str(club_id),
+            changes=f"Exported matrix to {os.path.relpath(path, current_app.root_path)} "
+                    f"({sum(len(v) for v in role_perms.values())} perms across {len(role_perms)} roles)"
+        ))
+        db.session.commit()
+        return jsonify(success=True, message="Saved as default.", path=path,
+                       updated_at=payload['updated_at'])
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+
+def _apply_role_perms_map_to_db(club_id, role_perms):
+    """
+    Replace the per-club role_permissions with the given
+    {role_name: [perm_name, ...]} mapping. Returns counts
+    {roles_applied, perms_applied, roles_missing, perms_missing}.
+    Unknown role or permission names are skipped (counted as missing)
+    to match the tolerance of the live update endpoint.
+    """
+    # Build lookup tables
+    roles_by_name = {r.name: r for r in AuthRole.query.all()}
+    perms_by_name = {p.name: p for p in Permission.query.all()}
+
+    roles_applied = perms_applied = 0
+    roles_missing = perms_missing = 0
+
+    # Wipe existing rows for this club (then re-insert). Using delete+insert
+    # keeps the logic simple and matches the "reset" semantic (full replace).
+    RolePermission.query.filter_by(club_id=club_id).delete()
+    db.session.flush()
+
+    for role_name, perm_names in role_perms.items():
+        role = roles_by_name.get(role_name)
+        if not role:
+            roles_missing += 1
+            continue
+        roles_applied += 1
+        for perm_name in perm_names:
+            perm = perms_by_name.get(perm_name)
+            if not perm:
+                perms_missing += 1
+                continue
+            db.session.add(RolePermission(
+                role_id=role.id, permission_id=perm.id, club_id=club_id
+            ))
+            perms_applied += 1
+
+    return {
+        "roles_applied": roles_applied,
+        "perms_applied": perms_applied,
+        "roles_missing": roles_missing,
+        "perms_missing": perms_missing,
+    }
+
+
+@settings_bp.route('/api/permissions/reset', methods=['POST'])
+@login_required
+def reset_permissions_to_default():
+    """Reset the current club's matrix from its club JSON, falling back to global JSON."""
+    if not is_authorized(Permissions.SETTINGS_EDIT):
+        return jsonify(success=False, message="Permission denied"), 403
+    club_id = get_current_club_id()
+    if not club_id:
+        return jsonify(success=False, message="Club context is required"), 400
+
+    club_path = _club_json_path(club_id)
+    global_path = _global_json_path()
+
+    source = None
+    if os.path.exists(club_path):
+        source = ("club", club_path)
+    elif os.path.exists(global_path):
+        source = ("global", global_path)
+    else:
+        return jsonify(success=False, message="No default available. "
+                        "Save a default for this club first, or add the global default JSON."), 404
+
+    try:
+        with open(source[1], 'r', encoding='utf-8') as f:
+            payload = json.load(f)
+        role_perms = payload.get("role_permissions") or {}
+        if not isinstance(role_perms, dict):
+            return jsonify(success=False, message="Malformed default file: role_permissions must be an object"), 400
+
+        counts = _apply_role_perms_map_to_db(club_id, role_perms)
+
+        db.session.add(PermissionAudit(
+            admin_id=current_user.id,
+            action='RESET_PERMS_TO_DEFAULT',
+            target_type='CLUB',
+            target_id=club_id,
+            target_name=str(club_id),
+            changes=f"Reset from {source[0]} default ({os.path.relpath(source[1], current_app.root_path)}). "
+                    f"Applied {counts['roles_applied']} roles / {counts['perms_applied']} perms; "
+                    f"missing roles={counts['roles_missing']}, missing perms={counts['perms_missing']}"
+        ))
+        db.session.commit()
+
+        # Return the new matrix so the UI can re-render without a second fetch
+        new_role_perms = _build_role_perms_map_from_db(club_id)
+        return jsonify(success=True, message=f"Reset from {source[0]} default.",
+                       source=source[0], counts=counts, role_permissions=new_role_perms)
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+
+@settings_bp.route('/api/permissions/default-info', methods=['GET'])
+@login_required
+def get_permissions_default_info():
+    """Report which default JSON files exist (for UI button state)."""
+    if not is_authorized(Permissions.SETTINGS_VIEW):
+        return jsonify(success=False, message="Permission denied"), 403
+    club_id = get_current_club_id()
+
+    def _stat(path):
+        if not os.path.exists(path):
+            return {"exists": False}
+        st = os.stat(path)
+        return {"exists": True, "updated_at": datetime.utcfromtimestamp(st.st_mtime).isoformat() + "Z"}
+
+    club_info = _stat(_club_json_path(club_id)) if club_id else {"exists": False}
+    global_info = _stat(_global_json_path())
+    return jsonify(success=True, club=club_info, global_default=global_info)
 
 @settings_bp.route('/api/audit-log', methods=['GET'])
 @login_required

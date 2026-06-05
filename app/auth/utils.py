@@ -1,6 +1,6 @@
 from flask_login import login_required, current_user
 from functools import wraps
-from flask import redirect, url_for, session
+from flask import abort, redirect, url_for, session
 
 # Guest permissions for unauthenticated users
 # Guest permissions are now handled via Database Role 'Guest' and AnonymousUser
@@ -72,6 +72,34 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
     # Fallback to global checks
     if hasattr(current_user, 'has_permission'):
         return current_user.has_permission(target_perm)
-    
+
     return False
+
+
+def club_permission_required(permission_name):
+    """
+    Decorator that requires a permission in the current club's context.
+
+    Replacement for the (now-removed) ``@permission_required`` from
+    ``app.auth.permissions``. That decorator consulted the cached
+    Flask-Principal identity, which held the *global* permission set and
+    therefore could not honor the per-club matrix. This decorator consults
+    ``is_authorized`` (which routes through ``User.has_club_permission`` ->
+    ``Role.has_permission(club_id)`` -> the per-club ``role_permissions``
+    table).
+
+    Failure semantics match the old ``@permission_required`` exactly:
+        - Unauthenticated -> redirect to ``auth_bp.login``.
+        - Authenticated but unauthorized -> ``abort(403)``.
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not is_authorized(permission_name):
+                if not current_user.is_authenticated:
+                    return redirect(url_for('auth_bp.login'))
+                abort(403)
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
 

@@ -4,8 +4,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 import urllib.parse
 from . import db
 from .models import Contact, SessionLog, Pathway, ContactClub, Meeting, Vote, ExComm, UserClub, Roster, SessionType, MeetingRole, OwnerMeetingRoles, Club
-from .auth.utils import login_required, is_authorized
-from .auth.permissions import Permissions, permission_required
+from .auth.utils import login_required, is_authorized, club_permission_required
+from .auth.permissions import Permissions
 from .club_context import get_current_club_id, authorized_club_required
 from flask_login import current_user
 from sqlalchemy.orm import joinedload
@@ -530,7 +530,7 @@ def contact_form(contact_id=None):
 @contacts_bp.route('/contact/delete/<int:contact_id>', methods=['POST'])
 @login_required
 @authorized_club_required
-@permission_required(Permissions.ROSTER_EDIT)
+@club_permission_required(Permissions.ROSTER_EDIT)
 def delete_contact(contact_id):
     contact = Contact.query.get_or_404(contact_id)
     if contact.Type != 'Guest':
