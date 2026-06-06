@@ -91,7 +91,12 @@ document.addEventListener('DOMContentLoaded', function () {
             email: '',
             phone: ''
         };
-        
+
+        // Fingerprint of the last duplicate set we actually showed in the modal.
+        // Suppresses re-showing the same warning when a different field's blur
+        // triggers a re-check that returns the same duplicates.
+        let lastShownFingerprint = '';
+
         let currentSuggestion = null;
 
         const checkDuplicates = async () => {
@@ -139,6 +144,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 const data = await response.json();
 
                 if (data.duplicates && data.duplicates.length > 0) {
+                    // Suppress if the new duplicate set matches what we last showed.
+                    // The user has already seen this warning; re-firing on a
+                    // different field's blur is just noise.
+                    const fingerprint = data.duplicates
+                        .map(d => `${d.type}:${d.id}`)
+                        .sort()
+                        .join(',');
+                    if (fingerprint === lastShownFingerprint) {
+                        lastCheckedValues = { username, first_name: firstName, last_name: lastName, email, phone };
+                        return;
+                    }
+                    lastShownFingerprint = fingerprint;
+
                     currentSuggestion = data.suggested_username;
                     // Update last checked values to prevent immediate re-popup for same data
                     lastCheckedValues = { username, first_name: firstName, last_name: lastName, email, phone };
@@ -307,6 +325,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             }
         });
+
+        // Username syntax: letters, digits, underscores only. Mirror the
+        // server-side check so the user gets immediate feedback.
+        const usernameEl = document.getElementById('username');
+        if (usernameEl) {
+            const validUsername = /^[A-Za-z0-9_]*$/;
+            const toggleInvalid = () => {
+                const v = usernameEl.value;
+                usernameEl.setCustomValidity(v && !validUsername.test(v)
+                    ? 'Letters, digits, and underscores only.'
+                    : '');
+            };
+            usernameEl.addEventListener('input', toggleInvalid);
+            toggleInvalid();
+        }
 
         // Simple submit without interception (or minor check)
         userForm.addEventListener('submit', function (e) {
