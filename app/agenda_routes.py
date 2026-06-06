@@ -1557,6 +1557,7 @@ def update_logs():
     new_subtitle = data.get('subtitle')
     new_wod = data.get('wod')
     new_media_url = data.get('media_url')
+    new_meeting_number = data.get('meeting_number')
 
     if not meeting_id:
         return jsonify(success=False, message="Meeting ID is missing"), 400
@@ -1566,6 +1567,31 @@ def update_logs():
         meeting = Meeting.query.get(meeting_id)
         if not meeting or (club_id and meeting.club_id != club_id):
             return jsonify(success=False, message="Meeting not found or access denied"), 404
+
+        # Update Meeting Number — only if the field was provided and parses to
+        # a positive integer. The DB-level composite unique on
+        # (club_id, Meeting_Number) enforces the in-club invariant, but we
+        # check explicitly so the user gets a clear error message instead of
+        # a generic IntegrityError.
+        if new_meeting_number is not None and new_meeting_number != '':
+            try:
+                n = int(new_meeting_number)
+            except (ValueError, TypeError):
+                return jsonify(success=False, message="Meeting Number must be a positive integer."), 400
+            if n < 1:
+                return jsonify(success=False, message="Meeting Number must be a positive integer."), 400
+            if n != meeting.Meeting_Number:
+                clash = Meeting.query.filter(
+                    Meeting.club_id == meeting.club_id,
+                    Meeting.Meeting_Number == n,
+                    Meeting.id != meeting.id,
+                ).first()
+                if clash:
+                    return jsonify(
+                        success=False,
+                        message=f"Meeting #{n} already exists in this club.",
+                    ), 400
+                meeting.Meeting_Number = n
 
         if new_meeting_title is not None:
             meeting.Meeting_Title = new_meeting_title

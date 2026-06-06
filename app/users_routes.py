@@ -97,6 +97,13 @@ def _save_user_data(user=None, **kwargs):
                 else:
                     db.session.add(UserClub(user_id=user.id, club_id=club_id, contact_id=contact_id))
 
+                # Mirror the contact's avatar onto the User record. The User
+                # owns its own profile photo; if the user later customises it
+                # via "Change Photo", that wins and we don't overwrite on
+                # subsequent contact re-links.
+                if not user.avatar_url and contact.Avatar_URL:
+                    user.avatar_url = contact.Avatar_URL
+
     # 2. Handle Contact (Delegated to Model or ensure existing)
     user.ensure_contact(
         full_name=kwargs.get('full_name'),
@@ -465,56 +472,42 @@ def delete_user(user_id):
     if not is_authorized(Permissions.MEMBERS_MANAGE):
         abort(403)
 
+    from .constants import GLOBAL_CLUB_ID
+
     user = db.get_or_404(User, user_id)
     current_club_id = get_current_club_id()
-    
-    from .models import UserClub, ContactClub
-    
-    # 1. Find and delete UserClub entry for this club
-    uc = UserClub.query.filter_by(user_id=user.id, club_id=current_club_id).first()
-    contact = None
-    
-    if uc:
-        contact = uc.contact
-        db.session.delete(uc)
-    
-    if not contact:
-        # Fallback: Find contact via ContactClub (works even if UserClub has no contact_id)
-        contact = Contact.query.join(ContactClub).filter(
-            ContactClub.club_id == current_club_id,
-            Contact.Type.in_(['Member', 'Officer']),
-            Contact.Name == user.display_name
-        ).first()
-        
-        # Secondary fallback: match by email
-        if not contact and user.email:
-            contact = Contact.query.join(ContactClub).filter(
-                ContactClub.club_id == current_club_id,
-                Contact.Email == user.email
-            ).first()
-        
-    # Flush to ensure UserClub deletion is registered for subsequent counts
-    db.session.flush()
-    
-    # 2. Handle Contact and ContactClub
-    if contact:
-        # DO NOT delete ContactClub entry for this club.
-        # Instead, change its contact type from member to guest.
-        contact.Type = 'Guest'
-                
-    # 3. Handle home club reassignment if applicable
-    # If the deleted UserClub was their home club, reassign a new home club automatically
-    if uc and uc.is_home:
-        fallback_uc = UserClub.query.filter_by(user_id=user.id).first()
-        if fallback_uc:
-            fallback_uc.is_home = True
-        
+
+    # Super club is a management interface, not a real club. "Remove from
+    # the super club" therefore means "remove the user from the system":
+    # delete the User row, which cascades to all UserClub rows via
+    # User.club_memberships (cascade='all, delete-orphan'). The linked
+    # Contact is a separate entity and is left intact — it may still be
+    # referenced from other clubs.
+    if current_club_id == GLOBAL_CLUB_ID:
+        username = user.username
+        try:
+            counts = user.delete_with_dependents()
+            db.session.commit()
+            current_app.logger.info(
+                f'Deleted user {user_id} ({username}) with dependents: {counts}'
+            )
+            flash(f'User {username} deleted from the system.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f'Error deleting user {user_id}: {e}', exc_info=True)
+            flash(f'Error deleting user: {e}', 'error')
+        return redirect(url_for('users_bp.show_users'))
+
+    # Regular club: delegate to the model. The User account is kept; only
+    # the UserClub row goes away, and the linked Contact is demoted to Guest.
     try:
+        user.remove_from_club(current_club_id)
         db.session.commit()
     except Exception as e:
         db.session.rollback()
-        flash('An error occurred during deletion.', 'error')
-        
+        current_app.logger.error(f'Error removing user {user_id} from club: {e}', exc_info=True)
+        flash('An error occurred during removal.', 'error')
+
     return redirect(url_for('users_bp.show_users'))
 
 

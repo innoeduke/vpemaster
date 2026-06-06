@@ -445,7 +445,7 @@
             <span class="lang-toggle-separator">/</span>
             <a href="{{ url_for('main_bp.set_language', language='zh_CN') }}" class="lang-toggle-item {% if get_locale() == 'zh_CN' %}active{% endif %}">中文</a>
           </div>
-          {% if is_authorized(Permissions.MEMBERS_SELF) %}
+          {% if current_user.is_authenticated %}
           <div class="profile-container">
             <div class="profile-trigger" id="profile-trigger">
               {% if current_user.contact and current_user.contact.Avatar_URL %}
@@ -454,7 +454,7 @@
               {% else %}
                 <i class="fas fa-user-circle"></i>
               {% endif %}
-              <span>{{ current_user.contact.Name if current_user.contact else current_user.username }}</span>
+              <span>{{ current_user.display_name }}</span>
               <span class="badge badge-unread" id="unread-messages-count-trigger">0</span>
               <i class="fas fa-caret-down"></i>
             </div>

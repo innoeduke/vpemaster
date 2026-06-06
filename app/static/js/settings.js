@@ -2609,8 +2609,11 @@ async function checkUserDuplicates() {
   const clubIdElement = document.querySelector('input[name="club_id"]');
   const clubId = clubIdElement ? clubIdElement.value : '';
 
-  // Only check for NEW users or users not linked to contact
-  if (userId && contactId) return;
+  // Only check for NEW users or users not linked to contact.
+  // Also skip once a contact has been picked from the duplicate dialog
+  // (Convert to User) — the dialog has done its job, re-firing is noise.
+  if (contactId) return;
+  if (userId) return;
 
   const username = document.getElementById('username').value.trim();
   const firstName = document.getElementById('first_name').value.trim();

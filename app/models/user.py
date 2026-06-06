@@ -402,20 +402,130 @@ class User(UserMixin, db.Model):
         """
         Set a specific club as the user's home club.
         Ensures that only one club is marked as home at a time.
-        
+
         Args:
             club_id (int): The ID of the club to set as home. If None, clears home club.
         """
         from .user_club import UserClub
-        
+
         # Reset all clubs for this user to is_home=False
         UserClub.query.filter_by(user_id=self.id).update({'is_home': False})
-        
+
         if club_id:
             # Set the specified club as home
             UserClub.query.filter_by(user_id=self.id, club_id=club_id).update({'is_home': True})
-            
+
         db.session.commit()
+
+    def remove_from_club(self, club_id):
+        """
+        Remove this user from a single club.
+
+        Behaviour:
+        - Delete the UserClub row linking this user to the club.
+        - If the user has no contact linked via UserClub, fall back to looking
+          one up by display name or email in the same club, and demote it
+          from Member/Officer to Guest (the Contact itself is kept; it may
+          still be referenced from other clubs).
+        - If the removed UserClub was the user's home club, promote the
+          user's first remaining UserClub to home (if any).
+
+        The caller is responsible for db.session.commit().
+
+        Returns the contact that was demoted, or None.
+        """
+        from .user_club import UserClub
+        from .contact_club import ContactClub
+        from .contact import Contact
+
+        # 1. Find and delete the UserClub row for this club.
+        uc = UserClub.query.filter_by(user_id=self.id, club_id=club_id).first()
+        contact = uc.contact if uc else None
+
+        if uc:
+            db.session.delete(uc)
+
+        if not contact:
+            # Fallback: find a contact in this club by display name (handles
+            # legacy data where UserClub has no contact_id).
+            contact = Contact.query.join(ContactClub).filter(
+                ContactClub.club_id == club_id,
+                Contact.Type.in_(['Member', 'Officer']),
+                Contact.Name == self.display_name,
+            ).first()
+
+            # Secondary fallback: match by email.
+            if not contact and self.email:
+                contact = Contact.query.join(ContactClub).filter(
+                    ContactClub.club_id == club_id,
+                    Contact.Email == self.email,
+                ).first()
+
+        # Flush so the deletion is visible to subsequent counts.
+        db.session.flush()
+
+        # 2. Demote the linked contact to Guest (if any). Contact and
+        #    ContactClub rows are kept — they may still be referenced.
+        if contact:
+            contact.Type = 'Guest'
+
+        # 3. If the removed row was the home club, promote a remaining one.
+        if uc and uc.is_home:
+            fallback_uc = UserClub.query.filter_by(user_id=self.id).first()
+            if fallback_uc:
+                fallback_uc.is_home = True
+
+        return contact
+
+    def delete_with_dependents(self):
+        """
+        System-level delete: remove the User and all user-scoped rows.
+
+        Used by the super-club "Remove from Club" path, which means
+        "delete the user from the system". The User is the system identity
+        for their own content (messages, chat, planner, achievements);
+        none of that survives without a user. UserClub is already covered
+        by `club_memberships` cascade.
+
+        What's deleted:
+        - UserClub rows  (via cascade on club_memberships)
+        - Message rows   where this user is sender or recipient
+        - ChatMessage    rows for this user
+        - Planner        rows for this user
+        - Achievement    rows where this user is recipient or requestor
+
+        What's kept:
+        - The linked Contact and ContactClub rows — they may still be
+          referenced from other clubs (rule 7 in CONTACT_USER_CLUB_MODEL.md).
+        - PermissionAudit rows — the audit log records *who* acted; we
+          don't want to make it anonymous. Stubs to NULL via
+          `ondelete=SET NULL` if a migration ever adds it. For now, audit
+          rows referencing this user would block the delete and surface
+          to the operator as an IntegrityError.
+
+        The caller is responsible for db.session.commit().
+
+        Returns a dict {table: rows_deleted} for logging.
+        """
+        from sqlalchemy import or_
+        from .message import Message
+        from .chat_message import ChatMessage
+        from .planner import Planner
+        from .achievement import Achievement
+
+        counts = {
+            'messages': Message.query.filter(
+                or_(Message.sender_id == self.id, Message.recipient_id == self.id)
+            ).delete(synchronize_session=False),
+            'chat_messages': ChatMessage.query.filter_by(user_id=self.id).delete(synchronize_session=False),
+            'planner': Planner.query.filter_by(user_id=self.id).delete(synchronize_session=False),
+            'achievement': Achievement.query.filter(
+                or_(Achievement.user_id == self.id, Achievement.requestor_id == self.id)
+            ).delete(synchronize_session=False),
+        }
+        # UserClub rows go via cascade when the User is deleted.
+        db.session.delete(self)
+        return counts
 
     @property
     def contact(self):
@@ -435,10 +545,17 @@ class User(UserMixin, db.Model):
 
     @property
     def display_name(self):
-        """Returns the contact Name if available, otherwise fallback to username."""
+        """Returns the best human-readable name for this user.
+
+        Priority: linked contact's Name → first+last on the User record → username.
+        Used in messages, invitations, profile UI, and anywhere we need to
+        show "who" without exposing the login handle.
+        """
         contact = self.contact
         if contact and contact.Name:
             return contact.Name
+        if self.first_name or self.last_name:
+            return f"{self.first_name or ''} {self.last_name or ''}".strip()
         return self.username
 
     @property

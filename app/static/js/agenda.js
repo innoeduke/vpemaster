@@ -619,6 +619,12 @@ document.addEventListener("DOMContentLoaded", () => {
         meeting_type: document.getElementById("edit-meeting-type").value,
         wod: document.getElementById("edit-wod").value,
         media_url: document.getElementById("edit-media-url").value,
+        meeting_number: (() => {
+          const el = document.getElementById("edit-meeting-number");
+          if (!el || el.value === "") return null;
+          const n = parseInt(el.value, 10);
+          return Number.isFinite(n) ? n : null;
+        })(),
         best_speaker_id: document.getElementById("edit-best-speaker") ? document.getElementById("edit-best-speaker").value : null,
         best_evaluator_id: document.getElementById("edit-best-evaluator") ? document.getElementById("edit-best-evaluator").value : null,
         best_table_topic_id: document.getElementById("edit-best-table-topic") ? document.getElementById("edit-best-table-topic").value : null,

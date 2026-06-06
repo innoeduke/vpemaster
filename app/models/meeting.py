@@ -66,7 +66,10 @@ class Meeting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), nullable=False, index=True)
     type = db.Column(db.String(255), default='Keynote Speech')
-    Meeting_Number = db.Column(mysql.SMALLINT(unsigned=True), unique=True, nullable=False)
+    # Meeting_Number is a per-club counter. Two meetings in different clubs
+    # can share the same number; two meetings in the SAME club cannot.
+    # The DB-level invariant is enforced by uq_meetings_club_number below.
+    Meeting_Number = db.Column(mysql.SMALLINT(unsigned=True), nullable=False)
     Meeting_Date = db.Column(db.Date)
     Meeting_Title = db.Column(db.String(255))
     Subtitle = db.Column(db.String(255), nullable=True)
@@ -85,6 +88,10 @@ class Meeting(db.Model):
     nps = db.Column(db.Float, nullable=True)
     sharing_master_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     excomm_id = db.Column(db.Integer, db.ForeignKey('excomm.id'), nullable=True, index=True)
+
+    __table_args__ = (
+        db.UniqueConstraint('club_id', 'Meeting_Number', name='uq_meetings_club_number'),
+    )
 
     sharing_master = db.relationship('Contact', foreign_keys=[sharing_master_id], backref='shared_meetings')
     club = db.relationship('Club', foreign_keys=[club_id], back_populates='meetings')

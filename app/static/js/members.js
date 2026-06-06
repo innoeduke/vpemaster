@@ -253,7 +253,11 @@ async function checkUserDuplicates() {
   const clubIdElement = document.querySelector('input[name="club_id"]');
   const clubId = clubIdElement ? clubIdElement.value : '';
 
-  if (userId && contactId) return;
+  // Once a contact has been picked from the duplicate dialog (Convert to
+  // User), stop re-checking. The dialog has done its job; further checks
+  // are noise and re-fire the modal as the user tabs through fields.
+  if (contactId) return;
+  if (userId) return;
 
   const username = document.getElementById('username').value.trim();
   const firstName = document.getElementById('first_name').value.trim();

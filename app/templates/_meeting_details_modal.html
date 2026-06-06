@@ -39,11 +39,24 @@
 
     <div class="meeting-details-grid">
         <div class="meta-item">
+            <span><strong>Meeting Number:</strong></span>
+            <input type="number"
+                   id="edit-meeting-number"
+                   class="edit-mode-field"
+                   value="{{ selected_meeting.Meeting_Number or '' }}"
+                   min="1"
+                   step="1"
+                   placeholder="Enter a unique number for this meeting">
+            <small class="text-muted" style="color: #9ca3af; font-size: 0.75em; margin-top: 4px;">
+                Must be a positive integer not already used by another meeting in this club.
+            </small>
+        </div>
+        <div class="meta-item">
             <span><strong>Meeting Title:</strong></span>
-            <input type="text" 
-                   id="edit-meeting-title" 
-                   class="edit-mode-field" 
-                   value="{{ selected_meeting.Meeting_Title or '' }}" 
+            <input type="text"
+                   id="edit-meeting-title"
+                   class="edit-mode-field"
+                   value="{{ selected_meeting.Meeting_Title or '' }}"
                    placeholder="Enter Meeting Title (Theme)">
         </div>
         <div class="meta-item">

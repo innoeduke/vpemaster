@@ -120,6 +120,38 @@ If we later need joins (e.g., "all contacts whose home club is district
 X"), we can add a `home_club_id` FK and a sync rule. Until then, plain
 text is the right primitive.
 
+### 7. Avatar ownership — User vs Contact are two independent fields
+
+**Invariant:** `User.avatar_url` and `Contact.Avatar_URL` are two separate
+fields. They are *not* mirrors of each other and may legitimately diverge.
+
+| Owner       | Field             | Drives display in...                                      |
+|-------------|-------------------|-----------------------------------------------------------|
+| `users`     | `avatar_url`      | User profile chrome (header avatar, profile page, "Change Photo" button) |
+| `Contacts`  | `Avatar_URL`      | Club-context UI: roster rows, agenda owner chips, meeting card avatars, anything tied to a specific club |
+
+**Why two fields, not one:** A user may legitimately present different
+photos in different clubs (formal headshot at the home club, casual photo
+in a social club, no photo as a guest). Club context drives the visual
+identity within that club; the User record drives identity on the
+user's own profile surfaces.
+
+**Conversion rule (one-way, at creation time only):** When a contact is
+converted to a user, the contact's `Avatar_URL` is mirrored to the new
+user's `avatar_url` so the profile isn't empty. After that, the two
+fields drift independently — editing one does NOT update the other.
+
+| Code anchor                                            | What it does                                       |
+|--------------------------------------------------------|----------------------------------------------------|
+| `app/models/user.py:35` (`avatar_url` column)          | The User's own profile photo                       |
+| `app/models/contact.py` (`Avatar_URL` column)          | The Contact's club-context photo                   |
+| `app/users_routes.py` (`_save_user_data`, contact link)| One-way mirror on contact-to-user conversion       |
+
+**Anti-pattern to avoid:** do NOT collapse these into a single column, and
+do NOT add a SQLAlchemy event listener that auto-syncs them. They are
+deliberately independent, and "fixing" the duplication would remove the
+ability to show different photos per club.
+
 ## Code anchors
 
 | Concept                                  | File : Line                          |
