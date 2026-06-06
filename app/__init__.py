@@ -221,6 +221,7 @@ def create_app(config_class='config.Config'):
     from app.commands.backup import resources
     from app.commands.sync import sync
     from app.commands.translate import translate_scan
+    from app.commands.backfill_sharing_master import backfill_sharing_master
 
     app.cli.add_command(create_admin)
     app.cli.add_command(import_data)
@@ -233,6 +234,7 @@ def create_app(config_class='config.Config'):
     app.cli.add_command(resources)
     app.cli.add_command(sync)
     app.cli.add_command(translate_scan)
+    app.cli.add_command(backfill_sharing_master)
 
     
 

@@ -22,7 +22,12 @@ def _save_user_data(user=None, **kwargs):
     """
     from .models import AuthRole, PermissionAudit, Club, Contact
     from .club_context import get_current_club_id
-    
+    import re
+
+    # Username syntax: letters, digits, underscores only.
+    if kwargs.get('username') and not re.fullmatch(r'[A-Za-z0-9_]+', kwargs['username']):
+        raise ValueError("Username may contain only letters, digits, and underscores.")
+
     # 1. Create or Update User instance
     is_new = user is None
     is_sysadmin = is_authorized(Permissions.SYSADMIN)

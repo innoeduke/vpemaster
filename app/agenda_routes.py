@@ -1526,7 +1526,7 @@ def create_from_template():
 
         # 4. Generate Session Logs from Template
         _generate_logs_from_template(meeting, data['template_file'])
-        
+
         # Final Commit
         db.session.commit()
         
@@ -1646,6 +1646,11 @@ def update_logs():
 
         _recalculate_start_times([meeting])
         recalculate_section_ids(meeting)
+
+        # Recompute sharing master from the now-updated session logs and
+        # owners. Same logic as the backfill CLI / migration, run on every
+        # edit-mode exit so the calendar stays in sync without a manual run.
+        meeting.update_sharing_master()
 
         db.session.commit()
         

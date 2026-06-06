@@ -262,6 +262,7 @@
     word-wrap: break-word;
     overflow-wrap: break-word;
     line-height: 1.2;
+    text-wrap: balance;
 }
 
 .meeting-footer {
