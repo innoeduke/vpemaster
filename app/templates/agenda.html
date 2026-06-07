@@ -282,6 +282,10 @@
                             <sup class="dtm-superscript">DTM</sup>
                             {% endif %}
                             {# Append Project Code if it's a project #}
+                            {# Always render a clickable <a> when a code exists,
+                               matching the post-update JS render. Falling back
+                               to a <span> here would make the code look
+                               clickable but do nothing on click. #}
                             {% if log_dict.project_code_display %}
                             {% if log_dict.Project_ID and log_dict.pathway_code %}
                             <a href="{{ url_for('pathways_bp.pathway_library') }}?path={{ log_dict.pathway_code }}&level={{ log_dict.level }}&project_id={{ log_dict.Project_ID }}"
@@ -289,9 +293,10 @@
                                 ({{ log_dict.project_code_display }})
                             </a>
                             {% else %}
-                            <span class="project-code-link" title="{{ _('Project Code') }}">
+                            <a href="{{ url_for('pathways_bp.pathway_library') }}"
+                                class="project-code-link" title="{{ _('Open Pathways Library') }}">
                                 ({{ log_dict.project_code_display }})
-                            </span>
+                            </a>
                             {% endif %}
                             {% endif %}
 

@@ -6,11 +6,18 @@
 {% endblock %}
 
 {% block content %}
+{% set can_edit_users = is_authorized(Permissions.ROSTER_EDIT) %}
 <div class="member-management-container">
   <h1><i class="fas fa-users-cog"></i> {{ _('Members') }}</h1>
 
   <div id="user-settings" class="tab-content" style="display: block;">
     <div class="member-action-bar">
+      <div class="stats-container">
+        <div class="stat-item">
+          <div class="stat-value" style="color: #28a745">{{ type_counts.get('Member', 0) }}</div>
+          <div class="stat-label">{{ _('Total Members') }}</div>
+        </div>
+      </div>
       <div class="members-filter-container">
         <div class="search-and-buttons">
           <div class="search-container">
@@ -58,12 +65,89 @@
           </tr>
         </thead>
         <tbody id="users-table-body">
-          <tr>
-            <td colspan="9" class="text-center py-4">
-              <i class="fas fa-spinner fa-spin fa-2x"></i>
-              <p class="mt-2 text-muted">{{ _('Loading users...') }}</p>
-            </td>
-          </tr>
+          {%- macro user_row(user, index) -%}
+            <tr class="{% if user.status == 'inactive' %}inactive-user{% endif %}"
+                data-id="{{ user.id }}"
+                data-username="{{ user.username }}"
+                data-first-name="{{ user.first_name }}"
+                data-last-name="{{ user.last_name }}"
+                data-email="{{ user.email }}"
+                data-phone="{{ user.phone or '' }}"
+                data-contact-id="{{ user.contact_id or '' }}"
+                data-roles="{{ user.roles_json }}">
+              <td class="col-no">{{ index + 1 }}</td>
+              <td class="col-name">
+                <div class="member-name-cell {% if user.contact_id %}clickable-cell{% endif %}"
+                     {% if user.contact_id %}onclick="window.location.href='/speech_logs?speaker_id={{ user.contact_id }}&view_mode=member'" title="{{ _('View member page') }}"{% endif %}>
+                  {%- if user.avatar_url -%}
+                    {%- set avatar_path = user.avatar_url -%}
+                    {%- if '/' not in avatar_path -%}
+                      {%- set avatar_path = config.AVATAR_ROOT_DIR ~ '/' ~ avatar_path -%}
+                    {%- endif -%}
+                    <img src="/static/{{ avatar_path }}" alt="Avatar" class="contact-avatar-small">
+                  {%- else -%}
+                    <div class="contact-avatar-placeholder-small">
+                      <i class="fas fa-user"></i>
+                    </div>
+                  {%- endif -%}
+                  <div class="contact-name-text">
+                    <span class="contact-name-info">
+                      {%- if user.contact_name -%}
+                      {{ user.contact_name }}
+                      {%- else -%}
+                      <em class="user-not-linked">{{ _('Not Linked') }}</em>
+                      {%- endif -%}
+                    </span>
+                    {%- if user.contact_name -%}
+                    <span class="member-username">({{ user.username }})</span>
+                    {%- endif -%}
+                  </div>
+                </div>
+              </td>
+              <td class="col-roles">
+                {%- if user.best_role -%}
+                  {%- set role_name = user.best_role.name -%}
+                  {%- set role_name_lower = role_name|lower -%}
+                  {%- set known_roles = ['sysadmin', 'clubadmin', 'operator', 'staff', 'member'] -%}
+                  {%- set badge_class = 'role-' ~ (role_name_lower if role_name_lower in known_roles else 'other') -%}
+                  <span class="roster-role-tag {{ badge_class }}">{{ role_name }}</span>
+                {%- else -%}
+                  <em class="text-muted">{{ _('No Role') }}</em>
+                {%- endif -%}
+              </td>
+              <td class="col-email">{{ user.email or '' }}</td>
+              <td class="col-phone">{{ user.phone or '' }}</td>
+              <td class="col-mentor">{{ user.mentor_name or '' }}</td>
+              <td class="col-path">
+                {%- if user.current_path -%}
+                <span class="badge-path path-{{ user.path_abbr }}">{{ user.current_path }}</span>
+                {%- endif -%}
+              </td>
+              <td class="col-project">{{ user.next_project if user.next_project and user.next_project != 'null' else '-' }}</td>
+              <td class="col-actions">
+                <div class="action-links">
+                  <button type="button" class="icon-btn edit-user-btn" onclick="openUserModal('{{ user.id }}', this)" title="{{ _('Edit') }}">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="delete-btn icon-btn" onclick="openRemoveUserModal('/user/delete/{{ user.id }}', '{{ (user.contact_name or user.username)|replace("'", "\\'")|replace('"', '&quot;') }}')" title="{{ _('Remove from Club') }}">
+                    <i class="fas fa-user-minus"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          {%- endmacro -%}
+          {%- if initial_users -%}
+            {%- for user in initial_users -%}
+              {{ user_row(user, loop.index0) }}
+            {%- endfor -%}
+          {%- else -%}
+            <tr>
+              <td colspan="9" class="text-center py-4">
+                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                <p class="mt-2 text-muted">{{ _('Loading users...') }}</p>
+              </td>
+            </tr>
+          {%- endif -%}
         </tbody>
       </table>
     </div>
@@ -99,6 +183,9 @@
 <script>
   const CURRENT_CLUB_ID = {{ club_id }};
   const CAN_EDIT_USERS = {{ 'true' if is_authorized(Permissions.ROSTER_EDIT) else 'false' }};
+  const IS_SUPER_CLUB_SYSADMIN = {{ 'true' if is_super_club_sysadmin else 'false' }};
+  const INITIAL_USERS = {{ initial_users|tojson }};
+  const USERS_TOTAL = {{ users_total }};
 </script>
 <script src="{{ url_for('static', filename='js/members.js') }}?v={{ range(1, 10000) | random }}"></script>
 {% endblock %}

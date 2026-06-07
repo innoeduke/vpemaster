@@ -3,12 +3,12 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
 import urllib.parse
 from . import db
-from .models import Contact, SessionLog, Pathway, ContactClub, Meeting, Vote, ExComm, UserClub, Roster, SessionType, MeetingRole, OwnerMeetingRoles, Club
+from .models import Contact, SessionLog, Pathway, ContactClub, Meeting, Vote, ExComm, UserClub, Roster, SessionType, MeetingRole, OwnerMeetingRoles, Club, ContactPath
 from .auth.utils import login_required, is_authorized, club_permission_required
 from .auth.permissions import Permissions
 from .club_context import get_current_club_id, authorized_club_required
 from flask_login import current_user
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, defer
 from sqlalchemy import func
 
 from datetime import date, timedelta
@@ -101,6 +101,15 @@ def show_contacts():
     contacts = []
     contacts_json_data = []
 
+    # Server-render the first page so the user sees rows immediately.
+    # The JS background-loads the rest of the rows for client pagination.
+    initial_contacts, contacts_total, _ = _build_contacts_data(
+        per_page=DEFAULT_CONTACTS_PER_PAGE, offset=0
+    )
+    if initial_contacts is None:
+        initial_contacts = []
+        contacts_total = 0
+
     all_pathways = Pathway.query.filter_by(type='pathway', status='active').order_by(Pathway.name).all()
     pathways = {}
     for p in all_pathways:
@@ -120,6 +129,8 @@ def show_contacts():
     return render_template('contacts.html',
                            contacts=contacts,
                            contacts_json_data=contacts_json_data,
+                           initial_contacts=initial_contacts,
+                           contacts_total=contacts_total,
                            pathways=pathways,
                            total_contacts=total_contacts,
                            type_counts=type_counts,
@@ -682,31 +693,75 @@ def create_contact_api():
         return jsonify({'error': str(e)}), 500
 
 
+# Default page size for the initial server-rendered first page. The user's
+# saved page size (in localStorage) takes precedence on the client; the JS
+# will fetch a different-sized first page if it differs.
+DEFAULT_CONTACTS_PER_PAGE = 10
+
+
 @contacts_bp.route('/api/contacts/all')
 @login_required
 def get_all_contacts_api():
-    """API endpoint to fetch all contacts for client-side caching."""
+    """API endpoint to fetch contacts for client-side caching.
+
+    With no `page`/`per_page` params, returns the full list (backward
+    compat with the background loader). With `page` + `per_page`, returns
+    a single page envelope: ``{rows: [...], total: N}``.
+    """
     can_view_all = is_authorized(Permissions.ROSTER_VIEW)
     can_view_members = is_authorized(Permissions.ROSTER_VIEW)
 
     if not can_view_all:
         return jsonify({'error': 'Permission denied'}), 403
 
+    page = request.args.get('page', type=int)
+    per_page = request.args.get('per_page', type=int)
+    if page is not None and per_page is not None:
+        if page < 1 or per_page < 1:
+            return jsonify({'error': 'page and per_page must be >= 1'}), 400
+        offset = (page - 1) * per_page
+    else:
+        page = None
+        per_page = None
+        offset = 0
+
+    rows, total, error = _build_contacts_data(per_page=per_page, offset=offset)
+    if error is not None:
+        return jsonify({'error': error}), 403
+
+    if page is not None and per_page is not None:
+        return jsonify({'rows': rows, 'total': total, 'page': page, 'per_page': per_page})
+    return jsonify(rows)
+
+
+def _build_contacts_data(per_page=None, offset=0):
+    """Build contacts data for the current club.
+
+    Returns ``(rows, total, error)``. ``rows`` is a list of dicts in the
+    same shape the contacts page expects. ``total`` is the unfiltered
+    count of contacts the query would return. ``error`` is non-None on
+    permission failure.
+    """
+    can_view_all = is_authorized(Permissions.ROSTER_VIEW)
+
+    if not can_view_all:
+        return None, None, 'Permission denied'
+
     club_id = get_current_club_id()
-    
+
     # --- DATE FILTER LOGIC ---
     from .utils import get_terms, get_active_term
-    
+
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
-    
+
     date_ranges = []
     should_filter = False
-    
+
     if start_date and end_date:
         should_filter = True
         date_ranges = [(start_date, end_date)]
-        
+
     terms_list = request.args.getlist('term')
     if terms_list:
         should_filter = True
@@ -715,7 +770,7 @@ def get_all_contacts_api():
         for term_id in terms_list:
             if term_id in term_map:
                 date_ranges.append((term_map[term_id]['start'], term_map[term_id]['end']))
-    
+
     from sqlalchemy import or_,  and_, false
     def apply_date_filter(query, date_column):
         if not date_ranges:
@@ -725,19 +780,29 @@ def get_all_contacts_api():
             else:
                  # No filter applied
                  return query
-                 
+
         conditions = [date_column.between(start, end) for start, end in date_ranges]
         return query.filter(or_(*conditions))
 
-    query = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)
-    
+    base_query = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)
+
     if not can_view_all:
-        query = query.filter(Contact.Type == 'Member')
-        
-    contacts = query.options(joinedload(Contact.mentor),)\
-        .order_by(Contact.Name.asc()).all()
+        base_query = base_query.filter(Contact.Type == 'Member')
+
+    # Total is computed against the unfiltered (per_page'd) query so it
+    # reflects the full result set, not just the current page.
+    total = base_query.count()
+
+    query = base_query.options(
+        joinedload(Contact.mentor),
+        joinedload(Contact.registered_paths).joinedload(ContactPath.pathway),
+        defer(Contact.Bio)
+    ).order_by(Contact.Name.asc())
+    if per_page is not None:
+        query = query.limit(per_page).offset(offset)
+    contacts = query.all()
     Contact.populate_users(contacts, club_id)
-    
+
     # --- LIFETIME METRICS ---
     # 1. Lifetime Attendance (for Qualification)
     lifetime_attendance_counts = db.session.query(
@@ -771,17 +836,15 @@ def get_all_contacts_api():
 
     # 3. Lifetime Awards (for Qualification)
     lifetime_best_tt_map = {}
-    for field in ['best_speaker_id', 'best_evaluator_id', 'best_table_topic_id', 'best_role_taker_id']:
-        q = db.session.query(
-            getattr(Meeting, field), func.count(Meeting.id)
-        ).filter(
-            getattr(Meeting, field).isnot(None),
-            Meeting.club_id == club_id
-        )
-        counts = q.group_by(getattr(Meeting, field)).all()
-        if field == 'best_table_topic_id':
-             for c_id, count in counts:
-                lifetime_best_tt_map[c_id] = count
+    q = db.session.query(
+        Meeting.best_table_topic_id, func.count(Meeting.id)
+    ).filter(
+        Meeting.best_table_topic_id.isnot(None),
+        Meeting.club_id == club_id
+    )
+    counts = q.group_by(Meeting.best_table_topic_id).all()
+    for c_id, count in counts:
+        lifetime_best_tt_map[c_id] = count
 
     # --- FILTERED METRICS ---
     # 1. Attendance
@@ -874,14 +937,14 @@ def get_all_contacts_api():
         att = attendance_map.get(c.id, 0)
         award = award_map.get(c.id, 0)
         roles = role_map.get(c.id, 0)
-        
+
         # Lifetime metrics for qualification
         l_tt = lifetime_tt_count.get(c.id, 0)
         l_best_tt = lifetime_best_tt_map.get(c.id, 0)
         l_other = lifetime_other_role_count.get(c.id, 0)
-        
+
         primary_club = c.get_primary_club()
-        
+
         contacts_data.append({
             'id': c.id,
             'Name': c.Name,
@@ -914,7 +977,7 @@ def get_all_contacts_api():
             'Date_Created': c.Date_Created.strftime('%Y-%m-%d') if c.Date_Created else '-'
         })
 
-    return jsonify(contacts_data)
+    return contacts_data, total, None
 
 
 @contacts_bp.route('/contact/toggle_connection/<int:contact_id>', methods=['POST'])

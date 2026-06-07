@@ -5,7 +5,7 @@ from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from flask_login import current_user
 from .club_context import get_current_club_id, authorized_club_required
-from .models import SessionType, User, MeetingRole, Achievement, Contact, Permission, AuthRole, RolePermission, PermissionAudit, ContactClub, Club, ExComm, UserClub, ExcommOfficer, Pathway
+from .models import SessionType, User, MeetingRole, Achievement, Contact, Permission, AuthRole, RolePermission, PermissionAudit, ContactClub, Club, ExComm, UserClub, ExcommOfficer, Pathway, ContactPath
 from .constants import GLOBAL_CLUB_ID
 from .utils import get_valid_fa_icons
 import json
@@ -957,6 +957,12 @@ def delete_ticket(id):
         return jsonify(success=False, message=str(e)), 500
 
 
+# Default page size for the initial server-rendered first page. The user's
+# saved page size (in localStorage) takes precedence on the client; the JS
+# will fetch a different-sized first page if it differs.
+DEFAULT_USERS_PER_PAGE = 10
+
+
 @settings_bp.route('/api/settings/users', methods=['GET'])
 @login_required
 @authorized_club_required
@@ -964,26 +970,61 @@ def get_settings_users():
     if not is_authorized(Permissions.MEMBERS_MANAGE):
         return jsonify(success=False, message="Permission denied"), 403
 
+    page = request.args.get('page', type=int)
+    per_page = request.args.get('per_page', type=int)
+    if page is not None and per_page is not None:
+        if page < 1 or per_page < 1:
+            return jsonify(success=False, message="page and per_page must be >= 1"), 400
+        offset = (page - 1) * per_page
+    else:
+        page = None
+        per_page = None
+        offset = 0
+
+    rows, total, error = _build_users_data(per_page=per_page, offset=offset)
+    if error is not None:
+        return jsonify(success=False, message=error), 403
+
+    if page is not None and per_page is not None:
+        return jsonify(success=True, users=rows, total=total, page=page, per_page=per_page)
+    return jsonify(success=True, users=rows, total=total)
+
+
+def _build_users_data(per_page=None, offset=0):
+    """Build users data for the current club.
+
+    Returns ``(rows, total, error)``. ``rows`` is a list of dicts in the
+    same shape the members page expects. ``total`` is the total count
+    before pagination. ``error`` is non-None on permission failure.
+    """
+    if not is_authorized(Permissions.MEMBERS_MANAGE):
+        return None, None, 'Permission denied'
+
     club_id = get_current_club_id()
-    
+
     # Users: Filter by club membership (Exception: sysadmin in Technical Support sees all)
     if club_id and not (current_user.is_sysadmin and club_id == GLOBAL_CLUB_ID):
-        all_users = User.query.join(UserClub).filter(
+        base_query = User.query.join(UserClub).filter(
             UserClub.club_id == club_id,
             User.status != 'deleted'
-        ).options(
-            db.joinedload(User.club_memberships)
-        ).order_by(User.username.asc()).all()
+        )
     else:
-        all_users = User.query.filter(
-            User.status != 'deleted'
-        ).options(
-            db.joinedload(User.club_memberships)
-        ).order_by(User.username.asc()).all()
-    
+        base_query = User.query.filter(User.status != 'deleted')
+
+    total = base_query.count()
+
+    query = base_query.options(
+        db.joinedload(User.club_memberships),
+        db.defer(User.bio),
+        db.defer(User.password_hash)
+    ).order_by(User.username.asc())
+    if per_page is not None:
+        query = query.limit(per_page).offset(offset)
+    all_users = query.all()
+
     # Batch populate contacts for the current club to avoid N+1 queries
     User.populate_contacts(all_users, club_id)
-    
+
     # For sysadmin in Tech Support club: batch-load first available contacts as fallback for users not in this club
     if current_user.is_sysadmin and club_id == GLOBAL_CLUB_ID:
         missing_contact_users = [u for u in all_users if not u.contact]
@@ -991,7 +1032,9 @@ def get_settings_users():
             ucs = UserClub.query.filter(
                 UserClub.user_id.in_([u.id for u in missing_contact_users])
             ).options(
-                db.joinedload(UserClub.contact).joinedload(Contact.mentor)
+                db.joinedload(UserClub.contact).joinedload(Contact.mentor),
+                db.joinedload(UserClub.contact).joinedload(Contact.registered_paths).joinedload(ContactPath.pathway),
+                db.joinedload(UserClub.contact).defer(Contact.Bio)
             ).all()
             missing_contact_map = {}
             for uc in ucs:
@@ -999,22 +1042,22 @@ def get_settings_users():
                     missing_contact_map[uc.user_id] = uc.contact
             for u in missing_contact_users:
                 u._current_contact = missing_contact_map.get(u.id)
-    
+
     users_data = []
     for user in all_users:
         contact = user.contact
-        
+
         # Determine best role and path like in template
         user_roles = user.get_roles_for_club(club_id)
         role_ids = [r['id'] for r in user_roles]
-        
+
         display_roles = user_roles
         if not display_roles:
             # Fallback to roles in their home club or first membership to display their role badge
             fallback_uc = next((uc for uc in user.club_memberships if uc.club_id != club_id), None)
             if fallback_uc:
                 display_roles = user.get_roles_for_club(fallback_uc.club_id)
-        
+
         role_priority = {
             'sysadmin': 100,
             'clubadmin': 90,
@@ -1022,15 +1065,15 @@ def get_settings_users():
             'other': 50,
             'user': 10
         }
-        
+
         best_role = None
         max_prio = -1
-        
+
         # Check sysadmin flag
         if user.is_sysadmin:
             best_role = {'name': 'SysAdmin', 'award_category': 'sysadmin'}
             max_prio = 100
-            
+
         for role in display_roles:
             if role['name'] not in ('Guest', 'SysAdmin'):
                 category = role.get('award_category') or 'other'
@@ -1038,13 +1081,13 @@ def get_settings_users():
                 if prio > max_prio:
                     max_prio = prio
                     best_role = role
-                    
+
         # current path
         current_path = contact.Current_Path if contact else ''
         path_abbr = 'dt'
         if current_path:
             path_map = {
-                'Dynamic Leadership': 'dl', 'Engaging Humor': 'eh', 
+                'Dynamic Leadership': 'dl', 'Engaging Humor': 'eh',
                 'Motivational Strategies': 'ms', 'Persuasive Influence': 'pi',
                 'Presentation Mastery': 'pm', 'Visionary Communication': 'vc',
                 'Effective Coaching': 'ec', 'Innovative Planning': 'ip',
@@ -1052,7 +1095,7 @@ def get_settings_users():
                 'Team Collaboration': 'tc'
             }
             path_abbr = path_map.get(current_path, 'dt')
-            
+
         users_data.append({
             'id': user.id,
             'first_name': user.first_name or (contact.first_name if contact else '') or '',
@@ -1060,6 +1103,7 @@ def get_settings_users():
             'username': user.username or '',
             'contact_name': contact.Name if contact else '',
             'contact_id': contact.id if contact else '',
+            'avatar_url': contact.Avatar_URL if contact and contact.Avatar_URL else '',
             'email': user.email or '',
             'phone': contact.Phone_Number if contact and contact.Phone_Number else '',
             'mentor_name': contact.mentor.Name if contact and contact.mentor else '',
@@ -1070,8 +1114,8 @@ def get_settings_users():
             'status': user.status,
             'roles_json': json.dumps(role_ids)
         })
-        
-    return jsonify(success=True, users=users_data)
+
+    return users_data, total, None
 
 
 @settings_bp.route('/api/permissions/matrix', methods=['GET'])

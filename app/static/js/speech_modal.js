@@ -1245,13 +1245,41 @@ function updateAgendaRow(logId, updateResult, payload) {
     viewTitleCell.innerHTML = "";
     const wrapper = document.createElement("div");
     wrapper.className = "speech-tooltip-wrapper";
-    wrapper.textContent = `${title} ${code}`.trim();
+
+    // Title text node (no link wrapping needed; the project code gets its own
+    // clickable <a> below).
+    wrapper.appendChild(document.createTextNode(title));
 
     if ((sessionType === "Evaluation" || sessionType === "Individual Evaluator") && updateResult.speaker_is_dtm) {
       const sup = document.createElement("sup");
       sup.className = "dtm-superscript";
       sup.textContent = "DTM";
       wrapper.appendChild(sup);
+    }
+
+    // Project code as a clickable <a> with the project-code-link class.
+    // This matches the server-rendered template and the post-update render
+    // path in agenda.js — so the badge is consistent everywhere a row
+    // gets re-rendered. Plain text here would look like a badge but
+    // do nothing on click.
+    if (code) {
+      wrapper.appendChild(document.createTextNode(' '));
+      const aCode = document.createElement('a');
+      aCode.className = 'project-code-link';
+      aCode.textContent = code;
+      // Build the best href we can. If pathway/level are derivable from
+      // the response, link to the specific project; otherwise fall back
+      // to the library index.
+      const pathwayCode = updateResult.pathway_code;
+      const level = updateResult.level;
+      if (updateResult.project_id && pathwayCode && level != null) {
+        aCode.href = `/pathway_library?path=${pathwayCode}&level=${level}&project_id=${updateResult.project_id}`;
+        aCode.title = 'View in Pathways Library';
+      } else {
+        aCode.href = '/pathway_library';
+        aCode.title = 'Open Pathways Library';
+      }
+      wrapper.appendChild(aCode);
     }
 
     if (updateResult.project_id && updateResult.project_id != ProjectID.GENERIC) {

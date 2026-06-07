@@ -15,7 +15,7 @@
           <!-- Row 1: Username (2) | Role (2) -->
           <div class="planner-form-group span-2">
             <label for="username">{{ _('Username') }} <span class="required-field">*</span></label>
-            <input type="text" id="username" name="username" class="planner-form-control" required pattern="[A-Za-z0-9_]+" title="Letters, digits, and underscores only." placeholder="{{ _("User's login name") }}" />
+            <input type="text" id="username" name="username" class="planner-form-control" required pattern="[A-Za-z0-9_]+" title="Letters, digits, and underscores only." placeholder="{{ _("User's login name") }}" data-readonly-when-editing="{% if not is_super_club_sysadmin %}true{% else %}false{% endif %}" />
           </div>
           <div class="planner-form-group span-2 roles-selection-group">
             <label for="role_id_select">{{ _('Role') }}</label>

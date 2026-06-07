@@ -490,11 +490,13 @@ class SessionLog(db.Model):
                 self.Duration_Max = new_st.Duration_Max
 
     def get_summary_data(self):
-        """Get project name, code, and pathway for response serialization."""
-        from .project import Project
-        
+        """Get project name, code, pathway, abbr, and level for response serialization."""
+        from .project import Project, Pathway
+
         project_name = "N/A"
         project_code = ""
+        pathway_code = None
+        level = None
         current_pathway = self.pathway
         if not current_pathway:
              context_target = getattr(self, 'context_target', None)
@@ -507,15 +509,27 @@ class SessionLog(db.Model):
             project = db.session.get(Project, self.Project_ID)
             if project:
                 project_name = project.Project_Name
-                
+
                 # Use the more robust logic to get level, type, and code
-                _, _, derived_code = self.get_display_level_and_type()
+                derived_level, _, derived_code = self.get_display_level_and_type()
                 project_code = derived_code
+                level = derived_level
+
+        # Derive the pathway abbr (e.g. "PM", "DL") from the pathway name so
+        # the client can build a deep link to /pathway_library without an
+        # extra round-trip. None if the pathway name doesn't match an
+        # active Pathway row.
+        if current_pathway and current_pathway != "N/A":
+            pw = Pathway.query.filter_by(name=current_pathway).first()
+            if pw:
+                pathway_code = pw.abbr
 
         return {
             "project_name": project_name,
             "project_code": project_code,
-            "pathway": current_pathway
+            "pathway": current_pathway,
+            "pathway_code": pathway_code,
+            "level": level,
         }
 
     def matches_filters(self, pathway=None, level=None, status=None, log_type=None):

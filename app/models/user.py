@@ -316,7 +316,7 @@ class User(UserMixin, db.Model):
         # 2. Context-aware check
         club_id = get_current_club_id()
         if club_id:
-             uc = UserClub.query.filter_by(user_id=self.id, club_id=club_id).first()
+             uc = self.get_user_club(club_id)
              if uc and uc.club_role:
                  return uc.club_role
              return None # Becomes "Member" in primary_role_name
@@ -578,6 +578,7 @@ class User(UserMixin, db.Model):
             
         from .user_club import UserClub
         from .contact import Contact
+        from .contact_path import ContactPath
         from ..club_context import get_current_club_id
         
         if not club_id:
@@ -588,7 +589,9 @@ class User(UserMixin, db.Model):
             UserClub.user_id.in_(user_ids),
             UserClub.club_id == club_id
         ).options(
-            db.joinedload(UserClub.contact).joinedload(Contact.mentor)
+            db.joinedload(UserClub.contact).joinedload(Contact.mentor),
+            db.joinedload(UserClub.contact).joinedload(Contact.registered_paths).joinedload(ContactPath.pathway),
+            db.joinedload(UserClub.contact).defer(Contact.Bio)
         ).all()
         
         # Map user_id to UserClub

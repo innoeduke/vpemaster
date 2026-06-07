@@ -17,7 +17,7 @@
     <table class="form-table">
         <tr class="tr-full-width">
             <td><label for="username" class="required">Username:</label></td>
-            <td><input type="text" id="username" name="username" value="{{ user.username if user else '' }}" required {% if user and not current_user_is_sysadmin %}disabled{% endif %}>
+            <td><input type="text" id="username" name="username" value="{{ user.username if user else '' }}" required {% if user and not is_super_club_sysadmin %}readonly{% endif %}>
             </td>
         </tr>
         <tr>

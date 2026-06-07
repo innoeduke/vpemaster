@@ -26,9 +26,7 @@
 
 #user-settings-table .col-name {
   width: 220px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  vertical-align: middle;
 }
 
 #user-settings-table .col-roles {
@@ -97,7 +95,8 @@
   gap: 1rem;
   align-items: flex-end;
   flex-wrap: nowrap;
-  width: 100%;
+  flex: 1;
+  justify-content: flex-end;
 }
 
 .filter-label {
@@ -158,4 +157,74 @@
 .member-table-container {
   display: block;
   width: 100%;
+}
+
+/* --- Name cell: avatar to the left, name+username stacked to the right --- */
+#user-settings-table .member-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+#user-settings-table .member-name-cell.clickable-cell {
+  cursor: pointer;
+}
+
+/* Locked username field in the edit-user modal */
+#userModal input.readonly-field {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+/* --- Members KPI stats (Total Members card inside the action bar) --- */
+.member-management-container .stats-container {
+  display: flex;
+  gap: 1rem;
+}
+
+.member-management-container .stat-item {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 0.5rem;
+  text-align: center;
+  min-width: 100px;
+  background-color: #fff;
+}
+
+.member-management-container .stat-value {
+  font-size: 1.5em;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.member-management-container .stat-label {
+  font-size: 0.85em;
+  color: #6c757d;
+  margin-top: 4px;
+}
+
+#user-settings-table .member-name-cell .contact-name-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  min-width: 0;
+  flex: 1;
+}
+
+#user-settings-table .member-name-cell .contact-name-info {
+  white-space: normal;
+  line-height: 1.2;
+}
+
+#user-settings-table .member-name-cell .member-username {
+  margin: 2px 0 0 0;
+  color: #64748b;
+  font-size: 0.85em;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: normal;
 }

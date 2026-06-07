@@ -492,13 +492,19 @@ td.actions-column {
 	border-radius: 6px;
 	padding: 10px;
 	position: absolute;
-	z-index: 1;
+	/* High z-index so the tooltip can escape its wrapper's stacking
+	   context and overlap the row above. Each agenda row creates its
+	   own stacking context via position: relative on the wrapper, so a
+	   low z-index like 1 is contained to that row and gets visually
+	   clipped by the previous row's contents. */
+	z-index: 1000;
 	bottom: 125%;
 	left: 50%;
 	margin-left: -160px;
 	opacity: 0;
 	transition: opacity 0.3s;
 	font-size: 14px;
+	pointer-events: none;
 }
 
 .speech-tooltip-wrapper:hover .speech-tooltip,

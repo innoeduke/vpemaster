@@ -93,7 +93,7 @@ class Roster(db.Model):
     
     ticket = db.relationship('Ticket')
     contact_id = db.Column(db.Integer, db.ForeignKey(
-        'Contacts.id'), nullable=True)
+        'Contacts.id'), nullable=True, index=True)
     contact_type = db.Column(db.String(50), nullable=True)
 
     contact = db.relationship('Contact', back_populates='roster_entries')

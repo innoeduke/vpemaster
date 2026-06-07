@@ -434,7 +434,14 @@ class Contact(db.Model):
             UserClub.club_id == club_id
         ).options(db.joinedload(UserClub.user)).all()
         
-        user_map = {uc.contact_id: uc.user for uc in ucs}
+        contact_map = {c.id: c for c in contacts}
+        user_map = {}
+        for uc in ucs:
+            if uc.user:
+                uc.user._current_user_club = uc
+                uc.user._current_contact = contact_map.get(uc.contact_id)
+                user_map[uc.contact_id] = uc.user
+                
         for contact in contacts:
             contact._user = user_map.get(contact.id)
 

@@ -762,22 +762,27 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Project Code
+        // Always render a clickable <a> when the code is available, even if
+        // Project_ID / pathway_code are missing on this row. The server
+        // template also links whenever a code exists; falling back to a
+        // <span> here would produce a non-clickable badge that looks
+        // identical to a clickable one — a silent regression after a
+        // post-update re-render.
         if (log.project_code_display) {
           tooltipWrapper.appendChild(document.createTextNode(' ')); // Space
+          const aCode = document.createElement('a');
           if (log.Project_ID && log.pathway_code) {
-            const aCode = document.createElement('a');
             aCode.href = `/pathway_library?path=${log.pathway_code}&level=${log.level}&project_id=${log.Project_ID}`;
-            aCode.className = 'project-code-link';
             aCode.title = 'View in Pathways Library';
-            aCode.textContent = `(${log.project_code_display})`;
-            tooltipWrapper.appendChild(aCode);
           } else {
-            const spanCode = document.createElement('span');
-            spanCode.className = 'project-code-link';
-            spanCode.title = 'Project Code';
-            spanCode.textContent = `(${log.project_code_display})`;
-            tooltipWrapper.appendChild(spanCode);
+            // Fallback: link to the library index. Better a generic landing
+            // page than a dead element.
+            aCode.href = '/pathway_library';
+            aCode.title = 'Open Pathways Library';
           }
+          aCode.className = 'project-code-link';
+          aCode.textContent = `(${log.project_code_display})`;
+          tooltipWrapper.appendChild(aCode);
         }
 
         // Tooltip

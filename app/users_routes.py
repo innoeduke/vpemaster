@@ -11,6 +11,7 @@ from sqlalchemy import or_
 import csv
 import io
 from .club_context import get_current_club_id
+from .constants import GLOBAL_CLUB_ID
 
 users_bp = Blueprint('users_bp', __name__)
 
@@ -31,6 +32,10 @@ def _save_user_data(user=None, **kwargs):
     # 1. Create or Update User instance
     is_new = user is None
     is_sysadmin = is_authorized(Permissions.SYSADMIN)
+    # Username can only be changed by a sysadmin viewing the super club.
+    # A regular clubadmin in their own club has ROSTER_EDIT but not
+    # SYSADMIN, so this gates username edits to the super-club sysadmin.
+    is_super_club_sysadmin = is_sysadmin and get_current_club_id() == GLOBAL_CLUB_ID
     if is_new:
         user = User(
             username=kwargs.get('username'),
@@ -48,7 +53,7 @@ def _save_user_data(user=None, **kwargs):
         if current_user.is_authenticated and user.home_club:
             is_home_club_admin = current_user.has_club_permission(Permissions.SETTINGS_EDIT, user.home_club.id)
 
-        if is_sysadmin:
+        if is_super_club_sysadmin:
             if kwargs.get('username'):
                 user.username = kwargs.get('username')
             if kwargs.get('status'):
@@ -154,7 +159,7 @@ def show_users():
 
     from .models import AuthRole
     club_id = get_current_club_id()
-    
+
     # Auth Roles for User Modal - SysAdmin is now account-based, so filter it out
     all_auth_roles_query = AuthRole.query.filter(
         (AuthRole.club_id == club_id) | (AuthRole.club_id.is_(None))
@@ -169,10 +174,57 @@ def show_users():
         if club:
             club_name = club.club_name
 
-    return render_template('users.html', 
+    is_super_club_sysadmin = (
+        current_user.is_authenticated
+        and current_user.is_sysadmin
+        and club_id == GLOBAL_CLUB_ID
+    )
+
+    # KPI metrics: total members in the club. The "Members" page in the
+    # super club is used by sysadmins to manage users across every club,
+    # so the stat should reflect the total user count for that context
+    # rather than the (empty) ContactClub join against the super club.
+    if is_super_club_sysadmin:
+        # Use a simple users count; will be patched up below once
+        # users_total is computed by _build_users_data.
+        type_counts = {'Member': 0}
+    else:
+        from .models import Contact, ContactClub
+        from sqlalchemy import func
+        if club_id:
+            type_counts_rows = db.session.query(
+                Contact.Type, func.count(Contact.id)
+            ).join(ContactClub).filter(
+                ContactClub.club_id == club_id
+            ).group_by(Contact.Type).all()
+            type_counts = {t: c for t, c in type_counts_rows}
+        else:
+            type_counts = {}
+
+    # Server-render the first page so the user sees rows immediately.
+    # The JS background-loads the rest of the rows for client pagination.
+    # Local import to avoid circular import at module load time.
+    from .settings_routes import _build_users_data, DEFAULT_USERS_PER_PAGE
+    initial_users, users_total, _ = _build_users_data(
+        per_page=DEFAULT_USERS_PER_PAGE, offset=0
+    )
+    if initial_users is None:
+        initial_users = []
+        users_total = 0
+
+    # For the super club, the Members stat should match the user count
+    # (the sysadmin sees all users across every club on this page).
+    if is_super_club_sysadmin:
+        type_counts = {'Member': users_total}
+
+    return render_template('users.html',
                            club_id=club_id,
                            club_name=club_name,
-                           all_auth_roles=all_auth_roles)
+                           all_auth_roles=all_auth_roles,
+                           initial_users=initial_users,
+                           users_total=users_total,
+                           type_counts=type_counts,
+                           is_super_club_sysadmin=is_super_club_sysadmin)
 
 
 @users_bp.route('/user/form', defaults={'user_id': None}, methods=['GET', 'POST'])
@@ -249,6 +301,7 @@ def user_form(user_id):
         return redirect(url_for('users_bp.show_users'))
 
     current_user_is_sysadmin = current_user.is_authenticated and current_user.is_sysadmin
+    is_super_club_sysadmin = current_user_is_sysadmin and get_current_club_id() == GLOBAL_CLUB_ID
     all_auth_roles = AuthRole.query.filter(
         (AuthRole.club_id == club_id) | (AuthRole.club_id.is_(None))
     ).order_by(AuthRole.level.desc()).all()
@@ -313,11 +366,12 @@ def user_form(user_id):
         # New user: Always allow password setting
         can_reset_password = True
 
-    return render_template('user_form.html', user=user, user_contact=user_contact, source_contact=source_contact, 
-                           contacts=member_contacts, mentor_contacts=mentor_contacts, pathways=pathways, 
-                           all_auth_roles=filtered_roles, user_role_ids=user_role_ids, 
+    return render_template('user_form.html', user=user, user_contact=user_contact, source_contact=source_contact,
+                           contacts=member_contacts, mentor_contacts=mentor_contacts, pathways=pathways,
+                           all_auth_roles=filtered_roles, user_role_ids=user_role_ids,
                            club_id=club_id, club_name=club_name, is_edit_self=is_edit_self,
                            current_user_is_sysadmin=current_user_is_sysadmin,
+                           is_super_club_sysadmin=is_super_club_sysadmin,
                            is_home_club_admin=is_home_club_admin,
                            can_reset_password=can_reset_password)
 

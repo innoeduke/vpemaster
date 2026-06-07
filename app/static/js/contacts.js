@@ -12,6 +12,10 @@ let pageSize = 10;
 let sortColumnIndex = 3; // Metrics
 let sortDirection = 'desc';
 let selectedContactIds = new Set(); // Globally tracked selected IDs
+// Set true when the cache currently holds only the server-rendered first
+// page. The background load fills in the rest; the page-size dropdown
+// may need to re-fetch a different-sized first page.
+let initialFirstPageOnly = false;
 
 /**
  * Fetches all contacts from the API and caches them
@@ -20,7 +24,13 @@ async function fetchAndCacheContacts() {
   // Use server-injected data if available (and not empty), to respect server-side filters
   if (typeof INITIAL_CONTACTS !== 'undefined' && INITIAL_CONTACTS && INITIAL_CONTACTS.length > 0) {
     allContactsCache = INITIAL_CONTACTS;
+    initialFirstPageOnly = true;
     INITIAL_CONTACTS = null; // Consume once so subsequent refreshes fetch from API
+    // Kick off the background load for the rest of the rows (page 2+)
+    // so pagination works without waiting for the user to navigate.
+    fetchRemainingContacts().then(() => {
+      applyFiltersAndPaginate();
+    });
     return allContactsCache;
   }
 
@@ -47,11 +57,34 @@ async function fetchAndCacheContacts() {
       throw new Error('Failed to fetch contacts');
     }
     allContactsCache = await response.json();
+    initialFirstPageOnly = false;
 
     return allContactsCache;
   } catch (error) {
     console.error('Error fetching contacts:', error);
     return [];
+  }
+}
+
+/**
+ * Fetches contacts starting from page 2 and appends them to the cache.
+ * Used to fill in the rest of the rows after the server has rendered the
+ * first page directly in HTML.
+ */
+async function fetchRemainingContacts() {
+  try {
+    const url = '/api/contacts/all?t=' + new Date().getTime();
+    const response = await fetch(url);
+    if (!response.ok) return;
+    const rows = await response.json();
+    if (!Array.isArray(rows)) return;
+    // Skip the rows already in the cache (the server-rendered first page).
+    const seen = new Set(allContactsCache.map(c => c.id));
+    const extra = rows.filter(c => !seen.has(c.id));
+    allContactsCache = allContactsCache.concat(extra);
+    initialFirstPageOnly = false;
+  } catch (error) {
+    console.error('Error fetching remaining contacts:', error);
   }
 }
 
@@ -390,12 +423,32 @@ function goToPage(page) {
  * Changes the page size
  */
 function changePageSize(newSize) {
-  pageSize = parseInt(newSize);
+  const newSizeInt = parseInt(newSize);
+  const oldSize = pageSize;
+  pageSize = newSizeInt;
   currentPage = 1; // Reset to first page
-  renderContactsPage();
-
-  // Save state
   localStorage.setItem('contacts_page_size', pageSize);
+
+  // If the cache only holds the server-rendered first page and the new
+  // size differs, fetch a correctly-sized first page from the server.
+  if (initialFirstPageOnly && newSizeInt !== oldSize) {
+    fetch(`/api/contacts/all?page=1&per_page=${newSizeInt}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data && Array.isArray(data.rows)) {
+          allContactsCache = data.rows;
+          initialFirstPageOnly = true;
+          applyFiltersAndPaginate();
+          fetchRemainingContacts().then(() => applyFiltersAndPaginate());
+          return;
+        }
+        renderContactsPage();
+      })
+      .catch(() => renderContactsPage());
+    return;
+  }
+
+  renderContactsPage();
 }
 
 /**
@@ -580,6 +633,29 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
     resizeObserver.observe(actionBar);
+  }
+
+  // If the server-rendered first page used a different size than the
+  // user's saved page size, fetch the correct-sized first page now
+  // (rows are already on screen, so this swap is invisible).
+  const serverRenderedSize = (typeof INITIAL_CONTACTS !== 'undefined' && INITIAL_CONTACTS)
+    ? INITIAL_CONTACTS.length
+    : 0;
+  if (serverRenderedSize > 0 && serverRenderedSize !== pageSize) {
+    const correctSize = pageSize;
+    fetch(`/api/contacts/all?page=1&per_page=${correctSize}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data && Array.isArray(data.rows)) {
+          // Replace the server-rendered rows with the correctly-sized first page.
+          allContactsCache = data.rows;
+          initialFirstPageOnly = true;
+          applyFiltersAndPaginate();
+          // Continue loading the rest in the background.
+          fetchRemainingContacts().then(() => applyFiltersAndPaginate());
+        }
+      })
+      .catch(() => { /* fall back to whatever was server-rendered */ });
   }
 
   // Fetch and cache all contacts asynchronously (non-blocking)

@@ -5,6 +5,10 @@ class TablePaginator {
     this.pageSize = config.pageSize || 10;
     this.currentPage = 1;
     this.storageKey = config.storageKey;
+    // Optional total count, used when the table only holds the first
+    // page of rows (so the info text and total-pages reflect the real
+    // total, not the row count in the DOM).
+    this.totalCount = typeof config.totalCount === 'number' ? config.totalCount : null;
 
     this.table = document.getElementById(this.tableId);
     this.container = document.getElementById(this.containerId);
@@ -38,10 +42,49 @@ class TablePaginator {
     // Event listeners
     if (this.pageSizeSelect) {
       this.pageSizeSelect.addEventListener('change', (e) => {
-        this.pageSize = parseInt(e.target.value);
+        const newSize = parseInt(e.target.value);
+        const oldSize = this.pageSize;
+        this.pageSize = newSize;
         this.currentPage = 1;
         if (this.storageKey) {
           localStorage.setItem(`${this.storageKey}_page_size`, this.pageSize);
+        }
+        // If the table currently holds only the first page and the
+        // size changed, refetch the first page at the new size.
+        if (initialFirstPageOnly && newSize !== oldSize && this.storageKey === 'users_table') {
+          const correctSize = newSize;
+          fetch(`/api/settings/users?page=1&per_page=${correctSize}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+              if (!data || !data.success || !Array.isArray(data.users)) {
+                this.update();
+                return;
+              }
+              const tableBody = document.getElementById('users-table-body');
+              if (!tableBody) {
+                this.update();
+                return;
+              }
+              tableBody.innerHTML = '';
+              data.users.forEach((user, index) => {
+                const tr = document.createElement('tr');
+                tr.className = user.status === 'inactive' ? 'inactive-user' : '';
+                tr.dataset.id = user.id;
+                tr.dataset.username = user.username;
+                tr.dataset.firstName = user.first_name;
+                tr.dataset.lastName = user.last_name;
+                tr.dataset.email = user.email;
+                tr.dataset.phone = user.phone;
+                tr.dataset.contactId = user.contact_id;
+                tr.dataset.roles = user.roles_json;
+                tr.innerHTML = `<td class="col-no">${index + 1}</td><td class="col-name">${user.username}</td><td class="col-roles"></td><td class="col-email"></td><td class="col-phone"></td><td class="col-mentor"></td><td class="col-path"></td><td class="col-project"></td><td class="col-actions"></td>`;
+                tableBody.appendChild(tr);
+              });
+              this.update();
+              fetchRemainingUsers().then(() => this.update());
+            })
+            .catch(() => this.update());
+          return;
         }
         this.update();
       });
@@ -64,6 +107,9 @@ class TablePaginator {
   }
 
   getTotalPages() {
+    if (this.totalCount !== null) {
+      return Math.ceil(this.totalCount / this.pageSize) || 1;
+    }
     const rows = this.getFilteredRows();
     return Math.ceil(rows.length / this.pageSize) || 1;
   }
@@ -100,13 +146,14 @@ class TablePaginator {
     });
 
     const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+    const totalForInfo = this.totalCount !== null ? this.totalCount : filteredRows.length;
     if (this.infoDisplay) {
-      if (rows.length === 0) {
+      if (totalForInfo === 0) {
         this.infoDisplay.textContent = isChinese ? '没有找到记录' : 'No records found';
       } else {
         this.infoDisplay.textContent = isChinese
-          ? `显示第 ${startIndex + 1} - ${Math.min(endIndex, filteredRows.length)} 条记录，共 ${filteredRows.length} 条`
-          : `Showing ${startIndex + 1} - ${Math.min(endIndex, filteredRows.length)} of ${filteredRows.length}`;
+          ? `显示第 ${startIndex + 1} - ${Math.min(endIndex, totalForInfo)} 条记录，共 ${totalForInfo} 条`
+          : `Showing ${startIndex + 1} - ${Math.min(endIndex, totalForInfo)} of ${totalForInfo}`;
       }
     }
 
@@ -164,6 +211,22 @@ function openUserModal(userId = null, source = null) {
     document.getElementById('email').value = tr.dataset.email || '';
     document.getElementById('phone').value = tr.dataset.phone || '';
 
+    // Username is locked unless the current viewer is a sysadmin in the
+    // super club. The flag is injected by users.html as a JS global.
+    const usernameInput = document.getElementById('username');
+    if (usernameInput) {
+      const isSuperClubSysadmin = (typeof IS_SUPER_CLUB_SYSADMIN !== 'undefined') && IS_SUPER_CLUB_SYSADMIN;
+      if (!isSuperClubSysadmin) {
+        usernameInput.setAttribute('readonly', 'readonly');
+        usernameInput.classList.add('readonly-field');
+        usernameInput.title = isChinese ? '只有超级俱乐部的系统管理员可以修改用户名' : 'Only a sysadmin in the super club can change the username';
+      } else {
+        usernameInput.removeAttribute('readonly');
+        usernameInput.classList.remove('readonly-field');
+        usernameInput.title = '';
+      }
+    }
+
     try {
       const userRoles = JSON.parse(tr.dataset.roles || '[]');
       if (userRoles.length > 0 && roleSelect) {
@@ -184,6 +247,13 @@ function openUserModal(userId = null, source = null) {
     const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
     title.textContent = isChinese ? '添加新用户' : 'Add New User';
     document.getElementById('password').placeholder = isChinese ? '输入密码...' : 'Enter password...';
+    // New users always need to provide a username.
+    const usernameInput = document.getElementById('username');
+    if (usernameInput) {
+      usernameInput.removeAttribute('readonly');
+      usernameInput.classList.remove('readonly-field');
+      usernameInput.title = '';
+    }
   }
 
   modal.style.display = 'flex';
@@ -405,9 +475,33 @@ async function checkUserDuplicates() {
   }
 }
 
+/**
+ * Flag for whether the table currently holds only the server-rendered
+ * first page. When true and the user changes the page size, the JS
+ * fetches a correctly-sized first page from the paginated endpoint.
+ */
+let initialFirstPageOnly = false;
+
 async function loadUsersAsync() {
   const tableBody = document.getElementById('users-table-body');
   if (!tableBody) return;
+
+  // If the server already rendered the first page, skip the full-list
+  // fetch and treat the existing rows as the first page. We still need
+  // to load the rest in the background for client-side pagination.
+  if (typeof INITIAL_USERS !== 'undefined' && INITIAL_USERS && INITIAL_USERS.length > 0) {
+    initialFirstPageOnly = true;
+    if (window.activePaginators && window.activePaginators['user-settings']) {
+      window.activePaginators['user-settings'].update();
+    }
+    // Background-load the remaining rows (page 2+) for full pagination.
+    fetchRemainingUsers().then(() => {
+      if (window.activePaginators && window.activePaginators['user-settings']) {
+        window.activePaginators['user-settings'].update();
+      }
+    });
+    return;
+  }
 
   try {
     const response = await fetch('/api/settings/users');
@@ -453,7 +547,26 @@ async function loadUsersAsync() {
           pathHtml = `<span class="badge-path path-${user.path_abbr}">${user.current_path}</span>`;
         }
 
-        const contactDisplay = user.contact_name ? `${user.contact_name} (${user.username})` : `<em class="user-not-linked">${isChinese ? '未关联' : 'Not Linked'}</em>`;
+        const nameHtml = user.contact_name
+          ? `<span class="contact-name-info">${user.contact_name}</span><span class="member-username">(${user.username})</span>`
+          : `<span class="contact-name-info"><em class="user-not-linked">${isChinese ? '未关联' : 'Not Linked'}</em></span>`;
+
+        let avatarHtml;
+        if (user.avatar_url) {
+          let avatarPath = user.avatar_url;
+          if (avatarPath.indexOf('/') === -1) {
+            const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'avatars';
+            avatarPath = `${root}/${avatarPath}`;
+          }
+          avatarHtml = `<img src="/static/${avatarPath}" alt="Avatar" class="contact-avatar-small">`;
+        } else {
+          avatarHtml = `<div class="contact-avatar-placeholder-small"><i class="fas fa-user"></i></div>`;
+        }
+
+        const nameClickable = user.contact_id ? 'clickable-cell' : '';
+        const nameOnclick = user.contact_id
+          ? `onclick="window.location.href='/speech_logs?speaker_id=${user.contact_id}&view_mode=member'" title="${isChinese ? '查看成员页面' : 'View member page'}"`
+          : '';
 
         const escapedName = (user.contact_name || user.username).replace(/'/g, "\\'").replace(/"/g, '&quot;');
         let actionsHtml = `
@@ -469,7 +582,7 @@ async function loadUsersAsync() {
 
         tr.innerHTML = `
           <td class="col-no">${index + 1}</td>
-          <td class="col-name"><div class="member-name-cell ${typeof CAN_EDIT_USERS !== 'undefined' && CAN_EDIT_USERS ? 'clickable-cell' : ''}" ${typeof CAN_EDIT_USERS !== 'undefined' && CAN_EDIT_USERS ? `onclick="openUserModal('${user.id}', this.closest('tr'))"` : ''}>${contactDisplay}</div></td>
+          <td class="col-name"><div class="member-name-cell ${nameClickable}" ${nameOnclick}>${avatarHtml}<div class="contact-name-text">${nameHtml}</div></div></td>
           <td class="col-roles">${rolesHtml}</td>
           <td class="col-email">${user.email}</td>
           <td class="col-phone">${user.phone || ''}</td>
@@ -482,6 +595,7 @@ async function loadUsersAsync() {
         tableBody.appendChild(tr);
       });
 
+      initialFirstPageOnly = false;
       if (window.activePaginators && window.activePaginators['user-settings']) {
         window.activePaginators['user-settings'].update();
       }
@@ -502,6 +616,112 @@ async function loadUsersAsync() {
   }
 }
 
+/**
+ * Loads the full user list in the background and replaces the
+ * server-rendered rows in the tbody with the JS-rendered ones (so
+ * paginator + search work over the full set). No visible spinner
+ * because the user already sees rows.
+ */
+async function fetchRemainingUsers() {
+  const tableBody = document.getElementById('users-table-body');
+  if (!tableBody) return;
+  try {
+    const response = await fetch('/api/settings/users');
+    if (!response.ok) return;
+    const data = await response.json();
+    if (!data.success || !Array.isArray(data.users)) return;
+
+    // Replace server-rendered rows with the full set so the paginator
+    // can navigate across the whole list. Index 1-based for display.
+    tableBody.innerHTML = '';
+    data.users.forEach((user, index) => {
+      const tr = document.createElement('tr');
+      tr.className = user.status === 'inactive' ? 'inactive-user' : '';
+      tr.dataset.id = user.id;
+      tr.dataset.username = user.username;
+      tr.dataset.firstName = user.first_name;
+      tr.dataset.lastName = user.last_name;
+      tr.dataset.email = user.email;
+      tr.dataset.phone = user.phone;
+      tr.dataset.contactId = user.contact_id;
+      tr.dataset.roles = user.roles_json;
+
+      const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+      let rolesHtml = '';
+      if (user.best_role) {
+        const roleName = user.best_role.name;
+        const roleNameLower = roleName.toLowerCase();
+        const knownRoles = ['sysadmin', 'clubadmin', 'operator', 'staff', 'member'];
+        const badgeClass = knownRoles.includes(roleNameLower) ? `role-${roleNameLower}` : 'role-other';
+        let roleDisplay = roleName;
+        if (isChinese) {
+          if (roleNameLower === 'sysadmin') roleDisplay = '系统管理员';
+          else if (roleNameLower === 'clubadmin') roleDisplay = '俱乐部管理员';
+          else if (roleNameLower === 'operator') roleDisplay = '操作员';
+          else if (roleNameLower === 'staff') roleDisplay = '工作人员';
+          else if (roleNameLower === 'member') roleDisplay = '成员';
+        }
+        rolesHtml = `<span class="roster-role-tag ${badgeClass}">${roleDisplay}</span>`;
+      } else {
+        rolesHtml = `<em class="text-muted">${isChinese ? '无角色' : 'No Role'}</em>`;
+      }
+
+      let pathHtml = '';
+      if (user.current_path) {
+        pathHtml = `<span class="badge-path path-${user.path_abbr}">${user.current_path}</span>`;
+      }
+
+      const nameHtml = user.contact_name
+        ? `<span class="contact-name-info">${user.contact_name}</span><span class="member-username">(${user.username})</span>`
+        : `<span class="contact-name-info"><em class="user-not-linked">${isChinese ? '未关联' : 'Not Linked'}</em></span>`;
+
+      let avatarHtml;
+      if (user.avatar_url) {
+        let avatarPath = user.avatar_url;
+        if (avatarPath.indexOf('/') === -1) {
+          const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'avatars';
+          avatarPath = `${root}/${avatarPath}`;
+        }
+        avatarHtml = `<img src="/static/${avatarPath}" alt="Avatar" class="contact-avatar-small">`;
+      } else {
+        avatarHtml = `<div class="contact-avatar-placeholder-small"><i class="fas fa-user"></i></div>`;
+      }
+
+      const nameClickable = user.contact_id ? 'clickable-cell' : '';
+      const nameOnclick = user.contact_id
+        ? `onclick="window.location.href='/speech_logs?speaker_id=${user.contact_id}&view_mode=member'" title="${isChinese ? '查看成员页面' : 'View member page'}"`
+        : '';
+      const escapedName = (user.contact_name || user.username).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      const actionsHtml = `
+        <div class="action-links">
+          <button type="button" class="icon-btn edit-user-btn" onclick="openUserModal('${user.id}', this)" title="${isChinese ? '编辑' : 'Edit'}">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="delete-btn icon-btn" onclick="openRemoveUserModal('/user/delete/${user.id}', '${escapedName}')" title="${isChinese ? '移出俱乐部' : 'Remove from Club'}">
+            <i class="fas fa-user-minus"></i>
+          </button>
+        </div>
+      `;
+
+      tr.innerHTML = `
+        <td class="col-no">${index + 1}</td>
+        <td class="col-name"><div class="member-name-cell ${nameClickable}" ${nameOnclick}>${avatarHtml}<div class="contact-name-text">${nameHtml}</div></div></td>
+        <td class="col-roles">${rolesHtml}</td>
+        <td class="col-email">${user.email}</td>
+        <td class="col-phone">${user.phone || ''}</td>
+        <td class="col-mentor">${user.mentor_name}</td>
+        <td class="col-path">${pathHtml}</td>
+        <td class="col-project">${(user.next_project && user.next_project !== 'null') ? user.next_project : '-'}</td>
+        <td class="col-actions">${actionsHtml}</td>
+      `;
+      tableBody.appendChild(tr);
+    });
+    initialFirstPageOnly = false;
+  } catch (error) {
+    console.error('Error loading remaining users:', error);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   loadUsersAsync();
 
@@ -512,11 +732,63 @@ document.addEventListener('DOMContentLoaded', () => {
       tableId: "user-settings-table",
       containerId: "user-settings",
       pageSize: 10,
-      storageKey: "users_table"
+      storageKey: "users_table",
+      totalCount: (typeof USERS_TOTAL !== 'undefined') ? USERS_TOTAL : null
     });
 
     if (typeof setupTableSorting === "function") {
       setupTableSorting("user-settings-table");
+    }
+
+    // If the server rendered a different number of rows than the
+    // user's saved page size, fetch a correctly-sized first page so
+    // pagination matches the user's preference. Rows are already on
+    // screen, so the swap is invisible.
+    const paginator = window.activePaginators["user-settings"];
+    if (paginator && initialFirstPageOnly
+        && typeof INITIAL_USERS !== 'undefined' && INITIAL_USERS
+        && INITIAL_USERS.length !== paginator.pageSize
+        && typeof USERS_TOTAL !== 'undefined' && USERS_TOTAL > paginator.pageSize) {
+      const correctSize = paginator.pageSize;
+      fetch(`/api/settings/users?page=1&per_page=${correctSize}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (!data || !data.success || !Array.isArray(data.users)) return;
+          const tableBody = document.getElementById('users-table-body');
+          if (!tableBody) return;
+          // Replace the server-rendered rows with the correctly-sized
+          // first page using the same row format. The rest of the data
+          // will be filled in by the background load.
+          tableBody.innerHTML = '';
+          data.users.forEach((user, index) => {
+            const tr = document.createElement('tr');
+            tr.className = user.status === 'inactive' ? 'inactive-user' : '';
+            tr.dataset.id = user.id;
+            tr.dataset.username = user.username;
+            tr.dataset.firstName = user.first_name;
+            tr.dataset.lastName = user.last_name;
+            tr.dataset.email = user.email;
+            tr.dataset.phone = user.phone;
+            tr.dataset.contactId = user.contact_id;
+            tr.dataset.roles = user.roles_json;
+            tr.innerHTML = `
+              <td class="col-no">${index + 1}</td>
+              <td class="col-name">${user.username}</td>
+              <td class="col-roles"></td>
+              <td class="col-email"></td>
+              <td class="col-phone"></td>
+              <td class="col-mentor"></td>
+              <td class="col-path"></td>
+              <td class="col-project"></td>
+              <td class="col-actions"></td>
+            `;
+            tableBody.appendChild(tr);
+          });
+          paginator.update();
+          // Continue loading the rest in the background.
+          fetchRemainingUsers().then(() => paginator.update());
+        })
+        .catch(() => { /* keep server-rendered rows */ });
     }
   }
 

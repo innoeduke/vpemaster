@@ -70,8 +70,17 @@ class Role(db.Model):
         perm_id = db.session.query(Permission.id).filter_by(name=permission_name).scalar()
         if perm_id is None:
             return False
-        return db.session.query(RolePermission.id).filter_by(
+            
+        # Check specific club mapping
+        has_specific = db.session.query(RolePermission.id).filter_by(
             role_id=self.id, permission_id=perm_id, club_id=club_id
+        ).first() is not None
+        if has_specific:
+            return True
+            
+        # Fallback to check if a default/global mapping exists (club_id is None)
+        return db.session.query(RolePermission.id).filter_by(
+            role_id=self.id, permission_id=perm_id, club_id=None
         ).first() is not None
     
     def add_permission(self, permission):

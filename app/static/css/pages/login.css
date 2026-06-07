@@ -159,7 +159,7 @@ h6 {
 }
 
 .forgot-password-container {
-  text-align: right;
+  text-align: center;
   margin-top: -8px;
   margin-bottom: 20px;
 }
@@ -175,6 +175,21 @@ h6 {
 .forgot-password-container .login-link:hover {
   color: #2b6cb0;
   text-decoration: underline;
+}
+
+.forgot-password-container .login-link + .login-link {
+  margin-left: 16px;
+  padding-left: 4px;
+  position: relative;
+}
+
+.forgot-password-container .login-link + .login-link::before {
+  content: "|";
+  position: absolute;
+  left: -8px;
+  color: #cbd5e1;
+  font-weight: 400;
+  pointer-events: none;
 }
 
 .divider {

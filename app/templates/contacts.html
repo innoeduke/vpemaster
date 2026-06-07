@@ -88,15 +88,15 @@ head_extra %}
 <!-- Contact Tabs removed: Members & Guests are merged into a single view. -->
 
 <div class="contact-table-container">
-  <!-- Loading Spinner -->
-  <div id="contactsLoadingSpinner" class="loading-spinner-container">
+  <!-- Loading Spinner (hidden once server-rendered rows are present) -->
+  <div id="contactsLoadingSpinner" class="loading-spinner-container" {% if initial_contacts %}style="display: none"{% endif %}>
     <div class="loading-spinner">
       <i class="fas fa-spinner fa-spin"></i>
       <p>{{ _('Loading contacts...') }}</p>
     </div>
   </div>
- 
-  <table id="contactsTable" style="display: none">
+
+  <table id="contactsTable" {% if not initial_contacts %}style="display: none"{% endif %}>
     <thead>
       <tr>
         {% if is_authorized(Permissions.ROSTER_EDIT) %}
@@ -128,7 +128,109 @@ head_extra %}
       </tr>
     </thead>
     <tbody>
-      <!-- Contacts will be populated by JS -->
+      {%- macro contact_row(contact) -%}
+        <tr data-type="{{ contact.Type }}" data-contact-id="{{ contact.id }}">
+          {%- if is_authorized(Permissions.ROSTER_EDIT) -%}
+          <td class="col-checkbox" style="text-align: center;"><input type="checkbox" class="contact-select-checkbox" data-id="{{ contact.id }}" onchange="handleCheckboxChange(this)"></td>
+          {%- endif -%}
+          <td class="col-name">
+            <div class="contact-name-cell {% if can_view_members and contact.Member_ID and contact.Type != 'Guest' %}clickable-cell{% endif %}"
+                 {% if can_view_members and contact.Member_ID and contact.Type != 'Guest' %}onclick="window.location.href='/speech_logs?speaker_id={{ contact.id }}&view_mode=member'" title="View {{ contact.Name|replace('"', '&quot;') }}'s member page"{% endif %}>
+              {%- if not contact.Avatar_URL or contact.Avatar_URL == '-' -%}
+              <div class="contact-avatar-placeholder-small">
+                <i class="fas fa-user"></i>
+              </div>
+              {%- else -%}
+              {%- set avatar_path = contact.Avatar_URL -%}
+              {%- if '/' not in avatar_path -%}
+              {%- set avatar_path = config.AVATAR_ROOT_DIR ~ '/' ~ avatar_path -%}
+              {%- endif -%}
+              <img src="/static/{{ avatar_path }}" alt="Avatar" class="contact-avatar-small">
+              {%- endif -%}
+              <div class="contact-name-text">
+                <span class="contact-name-info">
+                  {{ contact.Name }}
+                  {%- if contact.DTM %}<sup class="dtm-superscript">DTM</sup>{% endif -%}
+                </span>
+                {%- if contact.Member_ID and contact.Type != 'Guest' -%}
+                <span class="badge-member-id">
+                  {{ contact.Member_ID }}
+                </span>
+                {%- endif -%}
+              </div>
+            </div>
+          </td>
+          <td class="col-type">
+            {%- if contact.is_officer and contact.officer_title -%}
+            <span class="contact-type-badge type-officer">{{ contact.officer_title }}</span>
+            {%- else -%}
+            {%- set is_member = contact.Type in ('Member', 'Past Member') -%}
+            <span class="contact-type-badge type-{% if is_member %}member{% else %}guest{% endif %}">{% if is_member %}Member{% else %}Guest{% endif %}</span>
+            {%- endif -%}
+          </td>
+          <td class="col-home-club">{{ contact.Home_Club or '-' }}</td>
+          <td class="col-part" data-sort="{{ '%03d_%03d_%d_%03d_%03d' % (contact.attendance_count or 0, contact.role_count or 0, 1 if contact.is_qualified else 0, contact.tt_count or 0, contact.award_count or 0) }}">
+            <div class="participation-container">
+              {%- if contact.is_qualified %}<i class="fas fa-star" title="Qualified Guest" style="color: #ffc107; font-size: 1.1em;"></i>{% endif -%}
+              {%- if can_view_members -%}
+              <a href="/speech_logs?speaker_id={{ contact.id }}" title="Attendance" class="participation-badge badge-attendance">
+                <i class="fas fa-calendar-check"></i> {{ contact.attendance_count or 0 }}
+              </a>
+              <a href="/speech_logs?speaker_id={{ contact.id }}" title="Roles Taken" class="participation-badge badge-roles">
+                <i class="fas fa-user-tag"></i> {{ contact.role_count or 0 }}
+              </a>
+              <a href="/speech_logs?speaker_id={{ contact.id }}" title="Topic Speeches" class="participation-badge badge-tt">
+                <i class="fas fa-comment"></i> {{ contact.tt_count or 0 }}
+              </a>
+              <a href="/speech_logs?speaker_id={{ contact.id }}" title="Awards Won" class="participation-badge badge-awards">
+                <i class="fas fa-trophy"></i> {{ contact.award_count or 0 }}
+              </a>
+              {%- else -%}
+              <span title="Attendance" class="participation-badge badge-attendance">
+                <i class="fas fa-calendar-check"></i> {{ contact.attendance_count or 0 }}
+              </span>
+              <span title="Roles Taken" class="participation-badge badge-roles">
+                <i class="fas fa-user-tag"></i> {{ contact.role_count or 0 }}
+              </span>
+              <span title="Topic Speeches" class="participation-badge badge-tt">
+                <i class="fas fa-comment"></i> {{ contact.tt_count or 0 }}
+              </span>
+              <span title="Awards Won" class="participation-badge badge-awards">
+                <i class="fas fa-trophy"></i> {{ contact.award_count or 0 }}
+              </span>
+              {%- endif -%}
+            </div>
+          </td>
+          <td class="col-phone">{{ contact.Phone_Number or '-' }}</td>
+          <td class="col-email"><a href="mailto:{{ contact.Email }}" class="contact-email-link">{{ contact.Email }}</a></td>
+          {%- if is_authorized(Permissions.ROSTER_EDIT) -%}
+          <td class="col-actions">
+            <div class="action-links">
+              <button class="icon-btn toggle-connection-btn" onclick="toggleConnection({{ contact.id }})" title="{% if contact.is_connected %}Connected{% else %}Disconnected{% endif %}">
+                <i class="fas {{ 'fa-toggle-on' if contact.is_connected else 'fa-toggle-off' }}" style="color: {{ '#28a745' if contact.is_connected else '#6c757d' }}"></i>
+              </button>
+              <button class="icon-btn edit-contact-btn" onclick="openContactModal({{ contact.id }})" title="Edit">
+                <i class="fas fa-edit"></i>
+              </button>
+              {%- if contact.Type == 'Guest' -%}
+              <button class="delete-btn icon-btn" onclick="openDeleteModal('/contact/delete/{{ contact.id }}', 'contact')" title="Delete">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+              {%- else -%}
+              <button class="delete-btn icon-btn" disabled title="Only Guest contacts can be deleted. Manage Members via their user account.">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+              {%- endif -%}
+            </div>
+          </td>
+          {%- endif -%}
+        </tr>
+      {%- endmacro -%}
+      {%- if initial_contacts -%}
+        {%- for contact in initial_contacts -%}
+          {{ contact_row(contact) }}
+        {%- endfor -%}
+      {%- endif -%}
     </tbody>
   </table>
 </div>
@@ -174,7 +276,7 @@ head_extra %}
 {% include '_contact_modal.html' %} {% include '_duplicate_modal.html' %} {%
 include '_merge_modal.html' %}
 <script id="contacts-data" type="application/json">
-  {{ contacts_json_data|tojson }}
+  {{ initial_contacts|tojson }}
 </script>
 
 <script id="mentor-data" type="application/json">
@@ -191,6 +293,7 @@ include '_merge_modal.html' %}
   var canViewMembers = {{ 'true' if can_view_members else 'false' }};
   var canSendMessages = {{ 'true' if can_send_messages else 'false' }};
   var hasEditPermission = {{ 'true' if is_authorized(Permissions.ROSTER_EDIT) else 'false' }};
+  var CONTACTS_TOTAL = {{ contacts_total|tojson }};
   // Dates are directly read from DOM instead of relying on injected global variables
 
   var INITIAL_CONTACTS = [];

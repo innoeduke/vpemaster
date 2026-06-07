@@ -44,6 +44,7 @@
           </div>
           <div class="forgot-password-container">
             <a href="{{ url_for('auth_bp.reset_password_request') }}" class="login-link">Forgot Password?</a>
+            <a href="{{ url_for('auth_bp.register') }}" id="sign-up-link" class="login-link">Sign Up</a>
           </div>
         </div>
         <div>
@@ -94,19 +95,17 @@
   <script src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      const usernameInput = document.getElementById('username');
       const guestLink = document.getElementById('guest-login-link');
       const guestModal = document.getElementById('guest-modal');
       const cancelGuestBtn = document.getElementById('cancel-guest');
       const confirmGuestBtn = document.getElementById('confirm-guest');
       const guestClubSelect = document.getElementById('guest-club-select');
-      let lookupTimeout = null;
-      let guestCustomSelect = null;
+      const signUpLink = document.getElementById('sign-up-link');
+      const usernameInput = document.getElementById('username');
 
       // Initialize guest custom select if modal exists
       if (guestClubSelect) {
-        // wait for modal to be potentially shown or just init it
-        guestCustomSelect = new CustomSelect('guest-club-select');
+        new CustomSelect('guest-club-select');
       }
 
       // Guest Modal Event Listeners
@@ -145,68 +144,19 @@
         });
       }
 
-      const submitBtn = document.getElementById('submit-btn');
-      const loginForm = document.querySelector('.login-form');
-      const passwordSection = document.getElementById('password-section');
-      const passwordInput = document.getElementById('password');
-      let isRegisterMode = false;
-
-      const setRegisterMode = (isRegister) => {
-        isRegisterMode = isRegister;
-        if (isRegister) {
-          submitBtn.textContent = 'Register';
-          passwordSection.style.display = 'none';
-          passwordInput.removeAttribute('required');
-        } else {
-          submitBtn.textContent = 'Login';
-          passwordSection.style.display = 'block';
-          passwordInput.setAttribute('required', 'required');
-        }
-      };
-
-      loginForm.addEventListener('submit', function (e) {
-        if (isRegisterMode) {
+      // Sign Up: pre-fill the register page with whatever the user has typed.
+      // The link's href is a fallback; we override it at click time so the
+      // current username value travels with the navigation.
+      if (signUpLink && usernameInput) {
+        signUpLink.addEventListener('click', function (e) {
           e.preventDefault();
           const username = usernameInput.value.trim();
-          window.location.href = "{{ url_for('auth_bp.register') }}?username=" + encodeURIComponent(username);
-        }
-      });
-
-      const lookupUserClubs = async (username) => {
-        if (!username || username.length < 2) {
-          setRegisterMode(false);
-          return;
-        }
-
-        try {
-          const response = await fetch("{{ url_for('auth_bp.lookup_user_clubs') }}", {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ username: username })
-          });
-
-          const data = await response.json();
-
-          if (data.exists === false) {
-            setRegisterMode(true);
-          } else {
-            setRegisterMode(false);
-          }
-        } catch (error) {
-          console.error('Error looking up user clubs:', error);
-          setRegisterMode(false);
-        }
-      };
-
-      // Debounced lookup on username input
-      usernameInput.addEventListener('input', function () {
-        clearTimeout(lookupTimeout);
-        lookupTimeout = setTimeout(() => {
-          lookupUserClubs(this.value.trim());
-        }, 300); // 300ms debounce
-      });
+          const base = "{{ url_for('auth_bp.register') }}";
+          window.location.href = username
+            ? base + "?username=" + encodeURIComponent(username)
+            : base;
+        });
+      }
     });
   </script>
 </body>
