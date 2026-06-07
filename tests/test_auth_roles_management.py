@@ -324,6 +324,101 @@ def test_delete_auth_role_and_bulk_detaching(app, client, auth, default_club, te
         assert uc_normal.auth_role_id == user_role.id
 
 
+# ---------------------------------------------------------------------------
+# Regression test for StaleDataError in delete_auth_role.
+#
+# This test is EXPECTED TO FAIL on the unfixed code and PASS on the fixed
+# code. See app/settings_routes.py:1546 (delete_auth_role) and
+# app/models/role.py:22 (Role.permissions lazy='joined').
+#
+# Root cause: Role.permissions is lazy='joined'. When a role has multiple
+# role_permissions rows pointing to the same Permission (one global with
+# club_id=None and one per-club override with club_id=<club>), the joined
+# load deduplicates the Permission objects. The cascade DELETE then
+# expects to delete N in-memory rows, but the underlying table has more
+# rows for the same role_id, raising StaleDataError.
+# ---------------------------------------------------------------------------
+def test_delete_auth_role_with_club_overrides_for_same_permission(app, client, auth, default_club, test_users):
+    """Deleting a role that has both a global and a per-club role_permissions
+    row for the same permission must not raise StaleDataError."""
+    from app.models import RolePermission
+
+    with app.app_context():
+        # Find or create the permission we'll use for the dual mapping.
+        library_view_perm = Permission.query.filter_by(name=Permissions.LIBRARY_VIEW).first()
+        if library_view_perm is None:
+            library_view_perm = Permission(
+                name=Permissions.LIBRARY_VIEW,
+                description='View Library',
+                category='library',
+            )
+            db.session.add(library_view_perm)
+            db.session.flush()
+
+        # Create a club-scoped role (level=1, club_id=default_club.id).
+        custom_role = AuthRole(
+            name='OverrideRole',
+            description='Role with global + per-club override for the same permission',
+            level=1,
+            club_id=default_club.id,
+        )
+        db.session.add(custom_role)
+        db.session.flush()
+        role_id = custom_role.id
+
+        # Insert TWO role_permissions rows for the same (role_id, permission_id):
+        #   - one global mapping (club_id=None)
+        #   - one per-club override (club_id=default_club.id)
+        # This mimics the 5-vs-7 mismatch: after joined load, role.permissions
+        # has 1 unique Permission but the role_permissions table has 2 rows.
+        db.session.add(RolePermission(
+            role_id=role_id,
+            permission_id=library_view_perm.id,
+            club_id=None,
+        ))
+        db.session.add(RolePermission(
+            role_id=role_id,
+            permission_id=library_view_perm.id,
+            club_id=default_club.id,
+        ))
+        db.session.commit()
+
+        # Sanity check: 2 rows in role_permissions for this role+permission.
+        rp_count = RolePermission.query.filter_by(
+            role_id=role_id,
+            permission_id=library_view_perm.id,
+        ).count()
+        assert rp_count == 2
+
+        # Log in as the club admin and attempt to delete the role.
+        auth.login(
+            username=test_users['admin_username'],
+            password=test_users['password'],
+            club_id=default_club.id,
+        )
+
+        response = client.post(f'/api/settings/auth-roles/delete/{role_id}')
+        data = json.loads(response.data)
+
+        # On the unfixed code, delete_auth_role catches the StaleDataError
+        # in its except block and returns HTTP 500 with the SQLAlchemy
+        # message. On the fixed code, the response is 200/success.
+        assert response.status_code == 200, (
+            f"Expected 200, got {response.status_code}: {data.get('message')!r}"
+        )
+        assert data['success'] is True
+
+        # Verify the role and its role_permissions rows are fully gone.
+        assert db.session.get(AuthRole, role_id) is None
+        remaining_rp = RolePermission.query.filter_by(role_id=role_id).count()
+        assert remaining_rp == 0
+
+        # Cleanup: AuthRole/RolePermission rows for this test are gone, but
+        # the Permission we may have created should not leak either.
+        # (clean_db in conftest drops all tables between tests, so this is
+        # belt-and-suspenders.)
+
+
 def test_direct_permission_check(app, default_club, test_users):
     with app.app_context():
         admin_user = User.query.filter_by(username="clubadmin").first()

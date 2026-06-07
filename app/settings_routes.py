@@ -10,6 +10,7 @@ from .constants import GLOBAL_CLUB_ID
 from .utils import get_valid_fa_icons
 import json
 from . import db
+from sqlalchemy import delete
 import os
 import csv
 import io
@@ -1576,7 +1577,17 @@ def delete_auth_role(id):
             uc.auth_role_id = user_role.id
             if uc.user:
                 uc.user._permission_cache = None
-        
+
+        # Delete role_permissions explicitly at the DB level. The Role.permissions
+        # relationship uses lazy='joined', which dedupes in-memory by Permission
+        # (not by RolePermission), so the in-memory collection can understate the
+        # actual row count when per-club overrides exist alongside global
+        # mappings. Bypassing the cascade avoids a StaleDataError rowcount
+        # mismatch on the secondary-table DELETE.
+        db.session.execute(
+            delete(RolePermission).where(RolePermission.role_id == id)
+        )
+        db.session.expire(role, ['permissions'])
         db.session.delete(role)
 
         # Audit log
