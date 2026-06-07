@@ -129,7 +129,7 @@
           </a>
         </li>
         {% endif %}
-        {% if is_module_enabled('Planner') and current_user.is_authenticated %}
+        {% if is_module_enabled('Planner') and current_user.is_authenticated and is_authorized(Permissions.MEMBERS_SELF) %}
         {% if not is_module_enabled('Journal') or not (is_authorized(Permissions.MEMBERS_SELF) and has_meetings) %}
         <li class="nav-divider"></li>
         {% endif %}
@@ -361,7 +361,7 @@
                 </a>
               </li>
               {% endif %}
-              {% if is_module_enabled('Planner') and current_user.is_authenticated %}
+              {% if is_module_enabled('Planner') and current_user.is_authenticated and is_authorized(Permissions.MEMBERS_SELF) %}
               <li class="{% if request.endpoint and request.endpoint.startswith('planner_bp') %}submenu-active{% endif %}">
                 <a href="{{ url_for('planner_bp.planner') }}">
                   <i class="fas fa-tasks"></i> {{ _('Planner') }}

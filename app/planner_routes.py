@@ -12,9 +12,12 @@ planner_bp = Blueprint('planner_bp', __name__)
 @planner_bp.before_request
 def check_planner_enabled():
     from app.club_context import is_module_enabled
+    from app.auth.utils import is_authorized
     from flask import abort
     if not is_module_enabled('Planner'):
         abort(404)
+    if not is_authorized(Permissions.MEMBERS_SELF):
+        abort(403)
 
 
 @planner_bp.route('/planner')

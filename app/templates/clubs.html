@@ -1463,5 +1463,19 @@
             btn.innerHTML = originalHtml;
         });
     }
+
+    // Reset any buttons still showing the in-flight "Entering..." state when
+    // the page is restored from the browser's back/forward cache. Without
+    // this, returning to /clubs from inside a club leaves the previously
+    // clicked card stuck on the spinner label.
+    window.addEventListener('pageshow', function(event) {
+        if (!event.persisted) return;
+        document.querySelectorAll('.btn-enter').forEach(function(btn) {
+            if (btn.querySelector('.fa-spinner')) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> {{ _("Enter") }}';
+            }
+        });
+    });
 </script>
 {% endblock %}
