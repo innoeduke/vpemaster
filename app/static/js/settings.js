@@ -1452,7 +1452,6 @@ function renderModulesTable(modules) {
       <tr>
         <td>
           <span style="font-weight: 500;">${isChinese ? translateModuleName(mod.name) : mod.name}</span>
-          ${mod.is_core ? `<span class="badge bg-secondary ms-2" style="font-size: 0.75rem; vertical-align: middle;">${isChinese ? '核心' : 'Core'}</span>` : ''}
         </td>
         <td>${toggleHtml}</td>
       </tr>

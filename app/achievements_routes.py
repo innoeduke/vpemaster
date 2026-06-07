@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from . import db
 from .models import Achievement, Contact, Pathway, User
 from .auth.utils import login_required, is_authorized
