@@ -1,0 +1,250 @@
+{% from 'components/custom_select.html' import render_custom_select %}
+
+{% extends "base.html" %}
+
+{% block title %}#{{ issue.id }} - {{ issue.title }}{% endblock %}
+
+{% block head_extra %}
+<style>
+    .issue-detail-page { padding: 20px 0; max-width: 1400px; margin: 0 auto; }
+    .issue-detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 280px;
+        gap: 20px;
+    }
+    @media (max-width: 768px) {
+        .issue-detail-grid { grid-template-columns: 1fr; }
+    }
+    .issue-main, .issue-sidebar {
+        background: #fff;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .issue-header {
+        display: flex; align-items: center; gap: 10px;
+        flex-wrap: wrap; margin-bottom: 12px;
+    }
+    .issue-id { color: #888; font-weight: 400; font-size: 0.7em; }
+    .issue-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 15px; }
+    .issue-badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 0.75em; font-weight: 600; color: #fff; text-transform: uppercase; letter-spacing: 0.04em; }
+    .badge-type-bug { background: #c0392b; }
+    .badge-type-feature { background: #2c7a7b; }
+    .badge-type-task { background: #4a5568; }
+    .badge-prio-high { background: #c0392b; }
+    .badge-prio-medium { background: #d69e2e; }
+    .badge-prio-low { background: #718096; }
+    .badge-status-open { background: #3182ce; }
+    .badge-status-in_progress { background: #d69e2e; }
+    .badge-status-closed { background: #38a169; }
+    .badge-status-rejected { background: #718096; }
+    .badge-status-cancelled { background: #a0aec0; }
+    .issue-description {
+        white-space: pre-wrap; background: #f7f8fa; padding: 15px;
+        border-radius: 6px; border-left: 3px solid #772432; margin: 15px 0;
+        font-size: 0.95em; line-height: 1.5;
+    }
+    .issue-sidebar h3 {
+        font-size: 0.95em; color: #555; margin: 0 0 12px 0;
+        text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;
+    }
+    .issue-sidebar .field { margin-bottom: 14px; }
+    .issue-sidebar .field-label { font-size: 0.8em; color: #888; margin-bottom: 3px; }
+    .issue-sidebar .field-value { font-size: 0.95em; color: #222; }
+    .issue-sidebar hr { border: none; border-top: 1px solid #eef0f3; margin: 18px 0; }
+
+    .comment-thread { margin-top: 25px; }
+    .comment { background: #f7f8fa; padding: 12px 15px; border-radius: 6px; margin-bottom: 10px; }
+    .comment-meta { font-size: 0.8em; color: #888; margin-bottom: 6px; }
+    .comment-meta strong { color: #555; }
+    .comment-body { white-space: pre-wrap; line-height: 1.45; font-size: 0.95em; }
+    .comment-form { margin-top: 15px; }
+    .comment-form textarea { width: 100%; min-height: 80px; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-family: inherit; font-size: 0.95em; box-sizing: border-box; }
+    .locked-notice {
+        margin-top: 15px; padding: 10px 15px; background: #fef3c7; color: #92400e;
+        border-radius: 6px; font-size: 0.9em; border-left: 3px solid #d69e2e;
+    }
+
+    .edit-form { margin-top: 20px; padding-top: 20px; border-top: 1px solid #eef0f3; }
+    .edit-form h3 { font-size: 0.95em; color: #555; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em; }
+    .edit-form .form-group { margin-bottom: 12px; }
+    .edit-form .form-group label,
+    .edit-form .custom-select-label {
+        font-family: Arial, sans-serif;
+        font-weight: 600;
+        font-size: 0.95em;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    .edit-form .custom-select-trigger,
+    .edit-form .autocomplete-result-item {
+        font-family: 'Gotham', 'Montserrat', 'Inter', sans-serif;
+    }
+    .edit-form input[type="text"], .edit-form textarea {
+        width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 4px;
+        font-family: inherit; font-size: 0.95em; box-sizing: border-box;
+    }
+    .edit-form textarea { min-height: 120px; resize: vertical; }
+    .edit-form .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    @media (max-width: 600px) { .edit-form .form-row { grid-template-columns: 1fr; } }
+
+    .back-link { display: inline-block; margin-bottom: 15px; color: #555; text-decoration: none; }
+    .back-link:hover { color: #772432; }
+
+    /* Buttons in the detail page */
+    .issue-detail-page .btn {
+        font-size: 0.9em;
+        padding: 0.5em 1em;
+        line-height: 1.4;
+    }
+    .issue-detail-page .btn i { font-size: 0.9em; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container issue-detail-page">
+
+    <a href="{{ url_for('issue_bp.list_issues') }}" class="back-link">
+        <i class="fas fa-arrow-left"></i> {{ _('Back to issues') }}
+    </a>
+
+    <div class="issue-detail-grid">
+
+        <div class="issue-main">
+            <div class="issue-header">
+                <h1 style="margin: 0; font-size: 1.5em;">{{ issue.title }} <span class="issue-id">#{{ issue.id }}</span></h1>
+            </div>
+
+            <div class="issue-badges">
+                <span class="issue-badge badge-type-{{ issue.type }}">{{ issue.type }}</span>
+                <span class="issue-badge badge-prio-{{ issue.priority }}">{{ _('Priority:') }} {{ issue.priority }}</span>
+                <span class="issue-badge badge-status-{{ issue.status }}">{{ issue.status.replace('_', ' ') }}</span>
+            </div>
+
+            <div class="issue-description">{{ issue.description }}</div>
+
+            {% if can_manage %}
+            <form method="POST" action="{{ url_for('issue_bp.update_issue', issue_id=issue.id) }}" class="edit-form">
+                <h3>{{ _('Manage Issue') }}</h3>
+                <div class="form-row">
+                    {% set status_opts = [] %}
+                    {% for s in issue.STATUSES %}
+                        {% set _ = status_opts.append({'value': s, 'text': s.replace('_', ' ').title()}) %}
+                    {% endfor %}
+                    <div class="form-group">
+                        {{ render_custom_select(
+                            status_opts,
+                            issue.status,
+                            label=_('Status'),
+                            select_id='status'
+                        ) }}
+                    </div>
+                    {% set prio_opts = [] %}
+                    {% for p in issue.PRIORITIES %}
+                        {% set _ = prio_opts.append({'value': p, 'text': p.title()}) %}
+                    {% endfor %}
+                    <div class="form-group">
+                        {{ render_custom_select(
+                            prio_opts,
+                            issue.priority,
+                            label=_('Priority'),
+                            select_id='priority'
+                        ) }}
+                    </div>
+                    {% set assignee_opts = [{'value': '', 'text': _('Unassigned')}] %}
+                    {% for u in assignable_users %}
+                        {% set _ = assignee_opts.append({'value': u.id, 'text': u.display_name or u.username}) %}
+                    {% endfor %}
+                    <div class="form-group">
+                        {{ render_custom_select(
+                            assignee_opts,
+                            issue.assignee_id or '',
+                            label=_('Assignee'),
+                            select_id='assignee_id'
+                        ) }}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="title">{{ _('Title') }}</label>
+                    <input type="text" id="title" name="title" value="{{ issue.title }}" maxlength="200" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">{{ _('Description') }}</label>
+                    <textarea id="description" name="description" required>{{ issue.description }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> {{ _('Save') }}
+                </button>
+            </form>
+            {% endif %}
+
+            <div class="comment-thread">
+                <h3 style="font-size: 0.95em; color: #555; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">
+                    {{ _('Comments') }} ({{ issue.comments|length }})
+                </h3>
+
+                {% for comment in issue.comments %}
+                <div class="comment">
+                    <div class="comment-meta">
+                        <strong>{{ comment.author.display_name if comment.author else _('Unknown') }}</strong>
+                        · {{ comment.created_at.strftime('%Y-%m-%d %H:%M') if comment.created_at else '' }}
+                    </div>
+                    <div class="comment-body">{{ comment.body }}</div>
+                </div>
+                {% else %}
+                <p style="color: #888; font-style: italic;">{{ _('No comments yet.') }}</p>
+                {% endfor %}
+
+                {% if issue.is_terminal() %}
+                <div class="locked-notice">
+                    <i class="fas fa-lock"></i> {{ _('Comments are locked because this issue is') }} <strong>{{ issue.status }}</strong>.
+                </div>
+                {% else %}
+                <form method="POST" action="{{ url_for('issue_bp.add_comment', issue_id=issue.id) }}" class="comment-form">
+                    <textarea name="body" required placeholder="{{ _('Add a comment...') }}"></textarea>
+                    <div style="margin-top: 8px; text-align: right;">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-comment"></i> {{ _('Comment') }}
+                        </button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <aside class="issue-sidebar">
+            <h3>{{ _('Details') }}</h3>
+
+            <div class="field">
+                <div class="field-label">{{ _('Submitter') }}</div>
+                <div class="field-value">{{ issue.submitter.display_name if issue.submitter else '—' }}</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">{{ _('Assignee') }}</div>
+                <div class="field-value">{{ issue.assignee.display_name if issue.assignee else '—' }}</div>
+            </div>
+
+            <hr>
+
+            <div class="field">
+                <div class="field-label">{{ _('Created') }}</div>
+                <div class="field-value">{{ issue.created_at.strftime('%Y-%m-%d %H:%M') if issue.created_at else '—' }}</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">{{ _('Last updated') }}</div>
+                <div class="field-value">{{ issue.updated_at.strftime('%Y-%m-%d %H:%M') if issue.updated_at else '—' }}</div>
+            </div>
+
+            {% if issue.closed_at %}
+            <div class="field">
+                <div class="field-label">{{ _('Closed') }}</div>
+                <div class="field-value">{{ issue.closed_at.strftime('%Y-%m-%d %H:%M') }}</div>
+            </div>
+            {% endif %}
+        </aside>
+
+    </div>
+</div>
+{% endblock %}

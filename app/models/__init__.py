@@ -23,6 +23,7 @@ from .planner import Planner
 
 from .upload_link import UploadLink
 from .chat_message import ChatMessage
+from .issue import Issue, IssueComment
 
 # Import permission system models
 from .permission import Permission
@@ -90,4 +91,6 @@ __all__ = [
 
     'UploadLink',
     'ChatMessage',
+    'Issue',
+    'IssueComment',
 ]

@@ -56,12 +56,6 @@
                     title="{{ _('View Profile') }}">
                     <i class="fas fa-id-card"></i> {{ _('Profile') }}
                 </a>
-                {% if is_authorized(Permissions.SPEECH_LOGS_MANAGE) or is_authorized(Permissions.ROSTER_EDIT) %}
-                <button type="button" class="btn-view-control btn-profile-small" id="btnManagePathways"
-                    title="{{ _('Manage Pathways') }}" onclick="openManagePathwaysModal()">
-                    <i class="fas fa-graduation-cap"></i> {{ _('Pathways') }}
-                </button>
-                {% endif %}
                 {% if viewed_contact.user_id and viewed_contact.id != current_user.contact_id %}
                 <a href="{{ url_for('messages.messages', recipient_id=viewed_contact.user_id, recipient_name=viewed_contact.Name, mode='new') }}" 
                    class="btn-view-control btn-message-small" title="{{ _('Send Message') }}">
@@ -90,8 +84,15 @@
                     <input type="hidden" name="speaker_id" value="{{ request.args.get('speaker_id') }}">
                     {% endif %}
 
+                    <style>
+                        .pathway-selector-group .custom-select-trigger { padding: 6px 20px 6px 12px !important; box-sizing: border-box !important; }
+                        .pathway-selector-group .custom-select-trigger::after,
+                        .pathway-selector-group .custom-select-trigger::before { content: none !important; display: none !important; }
+                        .pathway-selector-group .pathway-chevron { color: #888; font-size: 0.8rem; margin-left: 12px; flex-shrink: 0; transition: transform 0.2s; }
+                        .pathway-selector-group .custom-select-trigger.active .pathway-chevron { transform: rotate(180deg); }
+                    </style>
+
                     <div class="form-group pathway-selector-group filter-group-premium" style="display: flex; align-items: center;">
-                        <label class="label-premium label-filter">{{ _('Pathways') }}:</label>
                         {% set selected_pathway_name = selected_filters.pathway if selected_filters.pathway else (viewed_contact.Current_Path if viewed_contact else '') %}
                         {% set ns = namespace(selected_p=None, is_non_pathway=False) %}
                         {% if selected_pathway_name == 'Non Pathway' %}
@@ -107,51 +108,86 @@
                             {% endif %}
                         {% endif %}
 
-                        <div style="display: flex; align-items: center; width: 100%; gap: 10px;">
-                            <div class="custom-dropdown-container" style="position: relative; flex: 1;">
-                            <div class="custom-select-trigger" onclick="document.getElementById('pathway-dropdown-menu').style.display = document.getElementById('pathway-dropdown-menu').style.display === 'none' ? 'block' : 'none'; event.stopPropagation();" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; border: 1px solid #ddd; border-radius: 6px; background: white; cursor: pointer; height: 36px; user-select: none;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="display: flex; align-items: center; width: 100%; gap: 12px; flex-wrap: wrap;">
+                            <div class="custom-dropdown-container" style="position: relative; flex: 1; min-width: 200px;">
+                            <div class="custom-select-trigger pathway-select-trigger" onclick="document.getElementById('pathway-dropdown-menu').style.display = document.getElementById('pathway-dropdown-menu').style.display === 'none' ? 'block' : 'none'; event.stopPropagation();" style="display: flex; align-items: center; justify-content: space-between; border: none; background: transparent; box-shadow: none; outline: none; cursor: pointer; user-select: none;">
+                                <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; overflow: hidden;">
                                     {% if ns.is_non_pathway %}
-                                        <span style="background: #e8e8e8; color: #666; border-radius: 50px; padding: 2px 8px; font-size: 11px; font-weight: 600; display: inline-block; width: 80px; text-align: center; box-sizing: border-box;">{{ _('Other') }}</span>
-                                        <span style="font-size: 11px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #333;">Non Pathway</span>
+                                        <span style="font-size: 1rem; font-family: 'Montserrat', sans-serif; font-weight: 700; color: #333; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;">Non Pathway</span>
                                     {% elif ns.selected_p %}
-                                        {% set status_bg = '#e6f9ee' if ns.selected_p.status == 'completed' else '#fef3cd' %}
-                                        {% set status_color = '#155724' if ns.selected_p.status == 'completed' else '#856404' %}
-                                        <span style="background: {{ status_bg }}; color: {{ status_color }}; border-radius: 50px; padding: 2px 8px; font-size: 11px; font-weight: 600; display: inline-block; width: 80px; text-align: center; box-sizing: border-box;">{{ _(ns.selected_p.status|title) }}</span>
-                                        <span style="font-size: 11px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #333;">{{ ns.selected_p.name }}</span>
+                                        <span style="font-size: 1rem; font-family: 'Montserrat', sans-serif; font-weight: 700; color: #333; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;">{{ ns.selected_p.name }}</span>
                                     {% else %}
-                                        <span style="font-size: 11px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #777;">{{ _('No Pathways Registered') }}</span>
+                                        <span style="font-size: 1rem; font-family: 'Montserrat', sans-serif; font-weight: 700; color: #777; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;">{{ _('No Pathways Registered') }}</span>
                                     {% endif %}
                                 </div>
+                                <i class="fas fa-chevron-down pathway-chevron"></i>
                             </div>
                             
-                            <div id="pathway-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: white; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000; max-height: 300px; overflow-y: auto;">
+                            <div id="pathway-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: white; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000; min-width: 320px; max-height: 300px; overflow-y: auto;">
                                 <div class="dropdown-item" onclick="document.getElementById('hidden-pathway-input').value='Non Pathway'; document.getElementById('speech-logs-filter-form').submit();" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #f8f9fa; transition: background 0.2s;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
                                     <span style="background: #e8e8e8; color: #666; border-radius: 50px; padding: 2px 8px; font-size: 11px; font-weight: 600; display: inline-block; width: 80px; text-align: center; box-sizing: border-box;">{{ _('Other') }}</span>
-                                    <span style="font-size: 11px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #333;">Non Pathway</span>
+                                    <span style="font-size: 11px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #333; text-transform: uppercase;">Non Pathway</span>
                                 </div>
                                 {% for p in member_pathways %}
                                     {% set status_bg = '#e6f9ee' if p.status == 'completed' else '#fef3cd' %}
                                     {% set status_color = '#155724' if p.status == 'completed' else '#856404' %}
+                                    {% set status_label = _('Completed') if p.status == 'completed' else _('In Progress') %}
                                     <div class="dropdown-item" onclick="document.getElementById('hidden-pathway-input').value='{{ p.name }}'; document.getElementById('speech-logs-filter-form').submit();" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #f8f9fa; transition: background 0.2s;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-                                        <span style="background: {{ status_bg }}; color: {{ status_color }}; border-radius: 50px; padding: 2px 8px; font-size: 11px; font-weight: 600; display: inline-block; width: 80px; text-align: center; box-sizing: border-box;">{{ _(p.status|title) }}</span>
-                                        <span style="font-size: 11px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #333;">{{ p.name }}</span>
+                                        <span style="background: {{ status_bg }}; color: {{ status_color }}; border-radius: 50px; padding: 2px 8px; font-size: 11px; font-weight: 600; display: inline-block; width: 80px; text-align: center; box-sizing: border-box;">{{ status_label }}</span>
+                                        <span style="font-size: 11px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #333; text-transform: uppercase;">{{ p.name }}</span>
                                     </div>
                                 {% endfor %}
                             </div>
                         </div>
                         <input type="hidden" name="pathway" id="hidden-pathway-input" value="{{ selected_pathway_name }}">
 
-                        {% if current_user.contact_id == viewed_contact.id and ns.selected_p and ns.selected_p.path_id %}
-                            {% set is_default = (ns.selected_p.name == viewed_contact.Current_Path) %}
-                            <button type="button" 
-                                    {% if not is_default %}onclick="setDefaultPathwayFromFilter({{ ns.selected_p.path_id }}, '{{ ns.selected_p.name|replace("'", "\\'") }}')"{% endif %} 
-                                    title="{% if is_default %}{{ _('This is your default pathway') }}{% else %}{{ _('Set as default pathway') }}{% endif %}" 
-                                    style="background: none; border: none; color: {% if is_default %}#772432{% else %}#cbd5e1{% endif %}; cursor: {% if is_default %}default{% else %}pointer{% endif %}; padding: 0 8px; margin-left: 4px; transition: all 0.2s;" 
-                                    {% if not is_default %}onmouseover="this.style.color='#772432'; this.style.transform='scale(1.15)'" onmouseout="this.style.color='#cbd5e1'; this.style.transform='scale(1)'"{% endif %}>
-                                <i class="fas fa-check-circle" style="font-size: 1.2rem;"></i>
+                        {% set can_manage_pathways = is_authorized(Permissions.SPEECH_LOGS_MANAGE) %}
+                        {% set can_set_default = can_manage_pathways or current_user.contact_id == viewed_contact.id %}
+                        {% set is_default = ns.selected_p and (ns.selected_p.name == viewed_contact.Current_Path) %}
+                        {% set has_selected_registered = ns.selected_p and ns.selected_p.path_id %}
+                        <div class="pathway-action-buttons" style="display: flex; align-items: center; gap: 4px; margin-left: 6px; position: relative;">
+                            {% if can_set_default %}
+                            <button type="button"
+                                    id="btn-set-default-pathway"
+                                    {% if has_selected_registered and not is_default %}onclick="setDefaultFromFilter({{ ns.selected_p.path_id }}, '{{ ns.selected_p.name|replace("'", "\\'") }}')"{% endif %}
+                                    title="{% if is_default %}{{ _('This is your default pathway') }}{% else %}{{ _('Set as default pathway') }}{% endif %}"
+                                    style="background: none; border: none; color: {% if is_default %}#ffc107{% else %}#cbd5e1{% endif %}; cursor: {% if has_selected_registered and not is_default %}pointer{% else %}default{% endif %}; padding: 4px 6px; transition: all 0.2s; opacity: {% if has_selected_registered %}1{% else %}0.4{% endif %};"
+                                    {% if has_selected_registered and not is_default %}onmouseover="this.style.color='#ffc107'; this.style.transform='scale(1.15)'" onmouseout="this.style.color='#cbd5e1'; this.style.transform='scale(1)'"{% endif %}>
+                                <i class="fas fa-star" style="font-size: 1.2rem;"></i>
                             </button>
-                        {% endif %}
+                            {% endif %}
+                            {% if can_manage_pathways and available_pathways %}
+                            <button type="button"
+                                    id="btn-register-pathway"
+                                    onclick="openRegisterPicker(event)"
+                                    title="{{ _('Register a new pathway') }}"
+                                    style="background: none; border: none; color: #28a745; cursor: pointer; padding: 4px 6px; transition: all 0.2s;"
+                                    onmouseover="this.style.color='#1e7e34'; this.style.transform='scale(1.15)'" onmouseout="this.style.color='#28a745'; this.style.transform='scale(1)'">
+                                <i class="fas fa-plus-circle" style="font-size: 1.2rem;"></i>
+                            </button>
+                            {% endif %}
+                            {% if can_manage_pathways %}
+                            <button type="button"
+                                    id="btn-revoke-pathway"
+                                    {% if has_selected_registered %}onclick="revokeFromFilter({{ ns.selected_p.path_id }}, '{{ ns.selected_p.name|replace("'", "\\'") }}')"{% endif %}
+                                    title="{% if has_selected_registered %}{{ _('Revoke this pathway') }}{% else %}{{ _('Select a registered pathway to revoke') }}{% endif %}"
+                                    style="background: none; border: none; color: #dc3545; cursor: {% if has_selected_registered %}pointer{% else %}default{% endif %}; padding: 4px 6px; transition: all 0.2s; opacity: {% if has_selected_registered %}1{% else %}0.4{% endif %};"
+                                    {% if has_selected_registered %}onmouseover="this.style.color='#a71d2a'; this.style.transform='scale(1.15)'" onmouseout="this.style.color='#dc3545'; this.style.transform='scale(1)'"{% endif %}>
+                                <i class="fas fa-trash-alt" style="font-size: 1.1rem;"></i>
+                            </button>
+                            {% endif %}
+                            {% if can_manage_pathways and available_pathways %}
+                            <div id="register-picker" style="display: none; position: absolute; top: calc(100% + 6px); right: 0; background: white; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); z-index: 1100; min-width: 240px; max-height: 320px; overflow-y: auto;">
+                                <div style="padding: 10px 12px; border-bottom: 1px solid #dee2e6; font-size: 12px; font-weight: 600; color: #004165; text-transform: uppercase; letter-spacing: 0.5px;">{{ _('Register New Path') }}</div>
+                                {% for p in available_pathways %}
+                                <div class="register-picker-item" onclick="registerFromFilter({{ p.pathway_id }}, '{{ p.name|replace("'", "\\'") }}')" style="padding: 10px 12px; cursor: pointer; display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 12px; border-bottom: 1px solid #f8f9fa; transition: background 0.15s; white-space: nowrap;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+                                    <span style="font-size: 12px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #333;">{{ p.name }}</span>
+                                    {% if p.abbr %}<span style="font-size: 10px; color: #888; text-align: right; min-width: 50px;">({{ p.abbr }})</span>{% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
                         </div>
 
                         <script>
@@ -160,14 +196,14 @@
                                     const menu = document.getElementById('pathway-dropdown-menu');
                                     if (menu) menu.style.display = 'none';
                                 }
+                                if (!e.target.closest('#register-picker') && !e.target.closest('#btn-register-pathway')) {
+                                    const picker = document.getElementById('register-picker');
+                                    if (picker) picker.style.display = 'none';
+                                }
                             });
-                            
-                            function setDefaultPathwayFromFilter(pathId, pathName) {
-                                if (!confirm("{{ _('Are you sure you want to set \"{pathName}\" as your default pathway?') }}".replace('{pathName}', pathName))) return;
-                                
-                                fetch(`/api/contacts/{{ viewed_contact.id }}/pathways/${pathId}/set_default`, {
-                                     method: 'POST'
-                                })
+
+                            function setDefaultFromFilter(cpId, cpName) {
+                                fetch(`/api/contacts/{{ viewed_contact.id }}/pathways/${cpId}/set_default`, { method: 'POST' })
                                 .then(res => res.json())
                                 .then(data => {
                                     if (data.success) {
@@ -178,6 +214,53 @@
                                 })
                                 .catch(err => {
                                     console.error("Error setting default pathway:", err);
+                                    alert("{{ _('An error occurred. Please try again.') }}");
+                                });
+                            }
+
+                            function openRegisterPicker(event) {
+                                if (event) { event.stopPropagation(); event.preventDefault(); }
+                                const picker = document.getElementById('register-picker');
+                                if (!picker) return;
+                                picker.style.display = picker.style.display === 'block' ? 'none' : 'block';
+                            }
+
+                            function registerFromFilter(pathwayId, pathwayName) {
+                                if (!confirm("{{ _('Are you sure you want to register "{pathName}"?') }}".replace('{pathName}', pathwayName))) return;
+                                const picker = document.getElementById('register-picker');
+                                if (picker) picker.style.display = 'none';
+                                fetch(`/api/contacts/{{ viewed_contact.id }}/pathways/register`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ pathway_id: parseInt(pathwayId) })
+                                })
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        window.location.reload();
+                                    } else {
+                                        alert("{{ _('Failed to register pathway') }}: " + data.message);
+                                    }
+                                })
+                                .catch(err => {
+                                    console.error("Error registering pathway:", err);
+                                    alert("{{ _('An error occurred. Please try again.') }}");
+                                });
+                            }
+
+                            function revokeFromFilter(cpId, cpName) {
+                                if (!confirm("{{ _('Are you sure you want to revoke "{pathName}"? All metadata associated with it in this contact\'s record will be affected.') }}".replace('{pathName}', cpName))) return;
+                                fetch(`/api/contacts/{{ viewed_contact.id }}/pathways/${cpId}/deregister`, { method: 'POST' })
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        window.location.reload();
+                                    } else {
+                                        alert("{{ _('Failed to revoke pathway') }}: " + data.message);
+                                    }
+                                })
+                                .catch(err => {
+                                    console.error("Error revoking pathway:", err);
                                     alert("{{ _('An error occurred. Please try again.') }}");
                                 });
                             }
@@ -226,8 +309,6 @@
     {% if progress_data_rows %}
     <div class="path-progress-container">
         <div class="roadmap-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px;">
-            {% set display_path_name = selected_filters.pathway if selected_filters.pathway else (viewed_contact.Current_Path if viewed_contact else 'Path') %}
-            <h2 style="margin-bottom: 0;">{{ display_path_name if display_path_name else 'Path' }}</h2>
             {% if viewed_contact and current_user.contact_id == viewed_contact.id %}
             <button class="btn btn-success" id="add-plan-btn" style="padding: 6px 12px; font-size: 0.9em;">
                 <i class="fas fa-plus"></i> {{ _('New Item') }}
@@ -235,7 +316,7 @@
             {% endif %}
         </div>
 
-        
+
         <div class="roadmap-legend">
             <div class="legend-item">
                 <span class="dot completed"></span>
@@ -403,36 +484,6 @@
 
 {% block speech_log_modals %}
 {{ super() }}
-
-<!-- Pathways Management Modal -->
-<div id="pathwaysModal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 580px; padding: 0; overflow: hidden;">
-        <div style="background-color: #f8f9fa; padding: 20px 30px; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="margin: 0; color: #004165; font-size: 1.4rem; display: flex; align-items: center; gap: 10px;">
-                <i class="fas fa-graduation-cap" style="color: #772432;"></i> {{ _('Manage Pathways') }}
-            </h2>
-            <span class="close" onclick="closeManagePathwaysModal()" style="float: none; font-size: 28px; cursor: pointer; color: #aaa;">&times;</span>
-        </div>
-
-        <div style="padding: 24px 30px;">
-            <div id="pathwaysListContainer" style="min-height: 60px;">
-                <!-- Dynamic pathways list loaded here -->
-            </div>
-
-            {% if is_authorized(Permissions.SPEECH_LOGS_MANAGE) %}
-            <div style="border-top: 1px solid #dee2e6; padding-top: 20px; margin-top: 20px;">
-                <h4 style="margin-top: 0; margin-bottom: 12px; font-size: 1rem; color: #004165; font-weight: 600;">{{ _('Register New Pathway') }}</h4>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <select id="newPathwaySelect" style="flex: 1; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 15px; background-color: #fff; color: #333;">
-                        <option value="">{{ _('-- Choose a pathway --') }}</option>
-                    </select>
-                    <button type="button" onclick="registerNewPathway()" style="background-color: #772432; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">{{ _('Register') }}</button>
-                </div>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block speech_log_scripts %}
@@ -448,7 +499,7 @@
     document.addEventListener("DOMContentLoaded", function() {
         const pSelect = document.getElementById('pathway');
         if (pSelect) new CustomSelectAdapter(pSelect);
-        
+
         const addBtn = document.getElementById('add-plan-btn');
         if (addBtn) {
             addBtn.onclick = () => {
@@ -462,209 +513,6 @@
             };
         }
     });
-
-    const contactId = {{ viewed_contact.id }};
-    const canEditAchievements = {{ 'true' if is_authorized(Permissions.SPEECH_LOGS_MANAGE) else 'false' }};
-    const canEditDefault = {{ 'true' if is_authorized(Permissions.ROSTER_EDIT) else 'false' }};
-
-    function openManagePathwaysModal() {
-        const modal = document.getElementById("pathwaysModal");
-        if (modal) {
-            modal.style.display = "flex";
-        }
-        loadContactPathways();
-    }
-
-    function closeManagePathwaysModal() {
-        document.getElementById("pathwaysModal").style.display = "none";
-        if (window.pathwaysChanged) {
-            location.reload();
-        }
-    }
-
-    // Close when clicking outside modal content
-    window.addEventListener('click', function(event) {
-        const modal = document.getElementById("pathwaysModal");
-        if (event.target == modal) {
-            closeManagePathwaysModal();
-        }
-    });
-
-    function loadContactPathways() {
-        const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
-        const listContainer = document.getElementById("pathwaysListContainer");
-        listContainer.innerHTML = `<div style="text-align: center; color: #6c757d; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> ${isChinese ? '正在加载路径...' : 'Loading pathways...'}</div>`;
-
-        const contactIdVal = {{ viewed_contact.id }};
-        fetch(`/api/contacts/${contactIdVal}/pathways`)
-            .then(res => res.json())
-            .then(data => {
-                if (!data.success) {
-                    listContainer.innerHTML = `<div style="color: #dc3545; padding: 10px;"><i class="fas fa-exclamation-circle"></i> ${isChinese ? '错误' : 'Error'}: ${data.message}</div>`;
-                    return;
-                }
-                
-                // Render pathways
-                if (data.registered.length === 0) {
-                    listContainer.innerHTML = `<div style="text-align: center; color: #6c757d; padding: 24px; font-style: italic;"><i class="fas fa-info-circle" style="margin-right: 6px;"></i>${isChinese ? '此联系人未注册任何路径。' : 'No pathways registered for this contact.'}</div>`;
-                } else {
-                    let html = `
-                        <table style="width: 100%; border-collapse: collapse; font-family: 'Montserrat', sans-serif; font-size: 13px;">
-                            <thead>
-                                <tr style="border-bottom: 2px solid #dee2e6; text-align: left; color: #6c757d; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
-                                    <th style="padding: 8px 6px; width: 50px; text-align: center; font-weight: 600;">${isChinese ? '默认' : 'Default'}</th>
-                                    <th style="padding: 8px 6px; font-weight: 600;">${isChinese ? '路径' : 'Pathway'}</th>
-                                    <th style="padding: 8px 6px; width: 80px; font-weight: 600;">${isChinese ? '状态' : 'Status'}</th>
-                                    <th style="padding: 8px 6px; width: 60px; text-align: center; font-weight: 600;">${isChinese ? '操作' : 'Actions'}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                    `;
-                    
-                    data.registered.forEach(cp => {
-                        const statusBg = cp.status === 'completed' ? '#e6f9ee' : '#fef3cd';
-                        const statusTextColor = cp.status === 'completed' ? '#155724' : '#856404';
-                        const statusText = isChinese ? (cp.status === 'completed' ? '已完成' : '进行中') : (cp.status.charAt(0).toUpperCase() + cp.status.slice(1));
-                        const pathAbbr = cp.pathway_abbr ? cp.pathway_abbr.toLowerCase() : 'other';
-                        
-                        const radioChecked = cp.is_default ? 'checked' : '';
-                        const radioDisabled = !canEditDefault ? 'disabled' : '';
-                        
-                        let actionsHtml = '';
-                        if (canEditAchievements) {
-                            if (cp.status === 'working') {
-                                actionsHtml += `
-                                    <button type="button" title="${isChinese ? '标记为已完成' : 'Mark as completed'}" onclick="completePathway(${cp.path_id}, '${cp.pathway_name}')" style="background: none; color: #28a745; border: none; padding: 4px; cursor: pointer; transition: all 0.2s; font-size: 1.05rem; line-height: 1;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'"><i class="fas fa-check-circle"></i></button>
-                                `;
-                            } else {
-                                actionsHtml += `
-                                    <button type="button" style="background: none; border: none; padding: 4px; font-size: 1.05rem; line-height: 1; visibility: hidden;"><i class="fas fa-check-circle"></i></button>
-                                `;
-                            }
-                            actionsHtml += `
-                                <button type="button" title="${isChinese ? '删除路径' : 'Remove pathway'}" onclick="deregisterPathway(${cp.path_id}, '${cp.pathway_name}')" style="background: none; color: #dc3545; border: none; padding: 4px; cursor: pointer; transition: all 0.2s; font-size: 0.95rem; line-height: 1;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'"><i class="fas fa-trash-alt"></i></button>
-                            `;
-                        } else {
-                            actionsHtml = '<span style="color: #6c757d;">—</span>';
-                        }
-                        
-                        html += `
-                            <tr style="border-bottom: 1px solid #f0f0f0; transition: background-color 0.15s;" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='transparent'">
-                                <td style="padding: 10px 6px; text-align: center; vertical-align: middle;">
-                                    <input type="radio" name="default_pathway_radio" ${radioChecked} ${radioDisabled} onclick="setDefaultPathway(${cp.path_id}, '${cp.pathway_name}')" style="cursor: ${canEditDefault ? 'pointer' : 'not-allowed'}; transform: scale(1.15); accent-color: #772432;">
-                                </td>
-                                <td style="padding: 10px 6px; vertical-align: middle; font-weight: 500; color: #2d3748;">
-                                    <span class="badge-path path-${pathAbbr}" style="margin-right: 6px; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: 700;">${cp.pathway_abbr}</span>
-                                    ${cp.pathway_name}
-                                </td>
-                                <td style="padding: 10px 6px; vertical-align: middle;">
-                                    <span style="background: ${statusBg}; color: ${statusTextColor}; border-radius: 50px; padding: 2px 8px; font-size: 11px; font-weight: 600;">${statusText}</span>
-                                </td>
-                                <td style="padding: 10px 6px; text-align: center; vertical-align: middle;">
-                                    <div style="display: inline-flex; gap: 4px; align-items: center;">
-                                        ${actionsHtml}
-                                    </div>
-                                </td>
-                            </tr>
-                        `;
-                    });
-                    
-                    html += `
-                            </tbody>
-                        </table>
-                    `;
-                    listContainer.innerHTML = html;
-                }
-                
-                // Populate available pathways select dropdown
-                const selectEl = document.getElementById("newPathwaySelect");
-                if (selectEl) {
-                    selectEl.innerHTML = `<option value="">${isChinese ? '-- 选择路径 --' : '-- Choose a pathway --'}</option>`;
-                    data.available.forEach(p => {
-                        const opt = document.createElement("option");
-                        opt.value = p.id;
-                        opt.textContent = `${p.name} (${p.abbr})`;
-                        selectEl.appendChild(opt);
-                    });
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                listContainer.innerHTML = `<div style="color: #dc3545; padding: 10px;"><i class="fas fa-exclamation-triangle"></i> ${isChinese ? '加载路径时网络出错。' : 'Network error loading pathways.'}</div>`;
-            });
-    }
-
-    function registerNewPathway() {
-        const selectEl = document.getElementById("newPathwaySelect");
-        const pathwayId = selectEl.value;
-        if (!pathwayId) return;
-        
-        fetch(`/api/contacts/${contactId}/pathways/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ pathway_id: parseInt(pathwayId) })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                loadContactPathways();
-                window.pathwaysChanged = true;
-            } else {
-                alert(data.message);
-            }
-        });
-    }
-
-    function completePathway(pathwayId, pathwayName) {
-        const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
-        if (!confirm(isChinese ? `确定要将路径“${pathwayName}”标记为已完成吗？` : `Are you sure you want to complete the pathway: ${pathwayName}?`)) return;
-        
-        fetch(`/api/contacts/${contactId}/pathways/${pathwayId}/complete`, {
-            method: 'POST'
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                loadContactPathways();
-                window.pathwaysChanged = true;
-            } else {
-                alert(data.message);
-            }
-        });
-    }
-
-    function setDefaultPathway(pathwayId, pathwayName) {
-        fetch(`/api/contacts/${contactId}/pathways/${pathwayId}/set_default`, {
-            method: 'POST'
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                loadContactPathways();
-                window.pathwaysChanged = true;
-            } else {
-                alert(data.message);
-            }
-        });
-    }
-
-    function deregisterPathway(pathwayId, pathwayName) {
-        const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
-        if (!confirm(isChinese ? `确定要删除路径“${pathwayName}”吗？此联系人记录中与之关联的所有元数据都将受到影响。` : `Are you sure you want to remove the pathway: ${pathwayName}? All metadata associated with it in this contact's record will be affected.`)) return;
-        
-        fetch(`/api/contacts/${contactId}/pathways/${pathwayId}/deregister`, {
-            method: 'POST'
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                loadContactPathways();
-                window.pathwaysChanged = true;
-            } else {
-                alert(data.message);
-            }
-        });
-    }
 </script>
 {% endblock %}
 

@@ -116,6 +116,11 @@ def list_clubs():
     
     if current_user.is_authenticated:
         for membership in current_user.club_memberships:
+            # A UserClub with role 'Guest' is a guest-visit record, not a
+            # membership — it must not appear in user_memberships and must
+            # not qualify the club as the user's home club.
+            if membership.auth_role and membership.auth_role.name == 'Guest':
+                continue
             user_memberships[membership.club_id] = membership
             if membership.is_home:
                 home_club_id = membership.club_id

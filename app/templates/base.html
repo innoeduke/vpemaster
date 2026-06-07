@@ -474,7 +474,7 @@
               <a href="{{ url_for('about_club_bp.about_club') }}"><i class="fas fa-info-circle"></i> {{ _('About Club') }}</a>
               {% endif %}
               <div class="menu-divider"></div>
-              <a href="#" onclick="openReportBugModal()"><i class="fas fa-bug"></i> {{ _('Report Bug') }}</a>
+              <a href="{{ url_for('issue_bp.list_issues') }}"><i class="fas fa-tasks"></i> {{ _('Issues') }}</a>
               <div class="menu-divider"></div>
               <a href="{{ url_for('auth_bp.logout') }}"><i class="fas fa-sign-out-alt"></i> {{ _('Logout') }}</a>
             </div>
@@ -531,10 +531,10 @@
 
   {% include '_delete_modal.html' %}
   {% include '_usage_warning_modal.html' %}
+  {% include 'issues/_new_issue_modal.html' %}
   <script defer src="{{ url_for('static', filename='vendor/js/Sortable.min.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/main.js') }}?v={{ 'js/main.js' | static_version }}"></script>
   <script defer src="{{ url_for('static', filename='js/search.js') }}?v={{ 'js/search.js' | static_version }}"></script>
-  {% include '_report_bug_modal.html' %}
   {% block scripts %}{% endblock %}
 
   <script>

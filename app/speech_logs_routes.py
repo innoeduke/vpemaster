@@ -326,6 +326,7 @@ def _get_pathway_info(viewed_contact, raw_pathway, filters):
 
     # Get member pathways using model method
     member_pathways = []
+    available_pathways = []
     if viewed_contact:
         member_pathways = viewed_contact.get_member_pathways()
         # Ensure selected pathway is in list
@@ -333,9 +334,27 @@ def _get_pathway_info(viewed_contact, raw_pathway, filters):
             if not any(p['name'] == selected_pathway for p in member_pathways):
                 member_pathways.append({'name': selected_pathway, 'status': 'unknown', 'abbr': '', 'path_id': None})
                 member_pathways.sort(key=lambda x: x['name'])
+
+        # Available (unregistered) pathways — only populated when the current
+        # user has SPEECH_LOGS_MANAGE, because the Register popover in the
+        # filter-control is gated to that permission. Mirrors the exclusion
+        # logic in pathways_routes.get_contact_pathways.
+        if is_authorized(Permissions.SPEECH_LOGS_MANAGE):
+            registered_pathway_ids = {
+                cp.pathway.id for cp in viewed_contact.registered_paths if cp.pathway
+            }
+            all_active = Pathway.query.filter(
+                Pathway.status == 'active',
+                Pathway.type.in_(['pathway', 'program'])
+            ).order_by(Pathway.name).all()
+            available_pathways = [
+                {'pathway_id': p.id, 'name': p.name, 'abbr': p.abbr}
+                for p in all_active if p.id not in registered_pathway_ids
+            ]
     return {
         'selected_pathway': selected_pathway,
         'member_pathways': member_pathways,
+        'available_pathways': available_pathways,
         'impersonated_user_name': viewed_contact.Name if viewed_contact else None
     }
 
@@ -1722,6 +1741,7 @@ def show_speech_logs():
         all_contacts=dropdown_data['all_contacts'],
         viewed_contact=viewed_contact,
         member_pathways=pathway_info['member_pathways'],
+        available_pathways=pathway_info['available_pathways'],
         active_level=active_level,
         ProjectID=ProjectID,
         upcoming_meetings=upcoming_meetings,
