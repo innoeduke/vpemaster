@@ -410,9 +410,15 @@ class User(UserMixin, db.Model):
 
     @property
     def home_club(self):
-        """Get the user's home club."""
+        """Get the user's home club. Guest-role UserClub rows are skipped —
+        a guest visit does not make a club the user's home club."""
         from .user_club import UserClub
-        uc = UserClub.query.filter_by(user_id=self.id, is_home=True).first()
+        from .role import Role
+        from sqlalchemy import or_
+        uc = UserClub.query.filter_by(user_id=self.id, is_home=True)\
+            .outerjoin(Role, UserClub.auth_role_id == Role.id)\
+            .filter(or_(UserClub.auth_role_id.is_(None), Role.name != 'Guest'))\
+            .first()
         return uc.club if uc else None
 
     def set_home_club(self, club_id):
