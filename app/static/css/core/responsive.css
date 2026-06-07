@@ -458,6 +458,10 @@
         position: relative;
     }
 
+    .nav-dropdown-wrapper:not(:has(> ul.nav-submenu li)) {
+        display: none;
+    }
+
     .nav-dropdown-trigger {
         font-size: 0.85rem;
         font-weight: 600;

@@ -113,14 +113,15 @@ def create_app(config_class='config.Config'):
 
     @app.context_processor
     def inject_global_vars():
+        from flask import g
         from .models import Meeting, Club
         from .auth.permissions import Permissions
         from .club_context import get_or_set_default_club, get_current_club_id, is_module_enabled
         from .translations.translations import translate as _
-        
+
         # Ensure club context is initialized
         club_id = get_or_set_default_club()
-        
+
         # Get current club object
         club = db.session.get(Club, club_id) if club_id else None
         
@@ -160,6 +161,7 @@ def create_app(config_class='config.Config'):
             get_current_club_id=get_current_club_id,
             is_module_enabled=is_module_enabled,
             _=_,
+            in_club_directory=getattr(g, 'in_club_directory', False),
         )
 
     # Register Blueprints

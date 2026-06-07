@@ -291,6 +291,7 @@
         <ul class="header-nav-links">
           <!-- 1. Meetings Dropdown -->
           {% set meetings_active = request.endpoint and (request.endpoint == 'main_bp.calendar' or request.endpoint.startswith('agenda_bp') or request.endpoint.startswith('booking_bp') or request.endpoint.startswith('voting_bp') or request.endpoint.startswith('roster_bp')) %}
+          {% if not in_club_directory %}
           <li class="nav-dropdown-wrapper {% if meetings_active %}active{% endif %}">
             <a href="#" class="nav-dropdown-trigger">
               <span>{{ _('Meetings') }}</span>
@@ -334,6 +335,7 @@
               {% endif %}
             </ul>
           </li>
+          {% endif %}
 
           <!-- 2. Tools Dropdown -->
           {% if current_user.is_authenticated or is_authorized(Permissions.LIBRARY_VIEW) %}
@@ -345,6 +347,7 @@
             request.endpoint.startswith('tools_bp') or 
             request.endpoint.startswith('uploads_bp')
           ) %}
+          {% if not in_club_directory %}
           <li class="nav-dropdown-wrapper {% if tools_active %}active{% endif %}">
             <a href="#" class="nav-dropdown-trigger">
               <span>{{ _('Tools') }}</span>
@@ -395,8 +398,10 @@
             </ul>
           </li>
           {% endif %}
+          {% endif %}
 
           <!-- 3. Club Dropdown -->
+          {% if not in_club_directory %}
           {% set management_active = request.endpoint and (
             request.endpoint.startswith('users_bp') or 
             request.endpoint.startswith('contacts_bp') or 
@@ -433,6 +438,7 @@
               {% endif %}
             </ul>
           </li>
+          {% endif %}
           {% endif %}
         </ul>
       </div>

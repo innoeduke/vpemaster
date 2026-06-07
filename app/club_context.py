@@ -47,6 +47,12 @@ def get_or_set_default_club():
     except (ValueError, TypeError):
         pass
 
+    # If the request is rendering the club directory, do not auto-restore
+    # a default club context — the directory is a global view.
+    from flask import g, has_request_context
+    if has_request_context() and getattr(g, 'in_club_directory', False):
+        return session.get('current_club_id')
+
     club_id = get_current_club_id()
     
     # If club_id is set in session, VALIDATE it for the current authenticated user

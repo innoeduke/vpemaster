@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_login import login_required, current_user
 from app import db
 from app.models import Club, ExComm, Contact, ContactClub
@@ -16,7 +16,12 @@ def check_club_directory_enabled():
     # Allow enter_club route to bypass check
     if request.endpoint and (request.endpoint.endswith('.enter_club') or request.endpoint.endswith('.enter')):
         return
-        
+
+    from flask import g
+    # Flag that we're on the directory so the global context processor
+    # doesn't auto-restore a default club and re-disable the Enter button.
+    g.in_club_directory = True
+
     from app.club_context import is_module_enabled
     from flask import abort
     if not is_module_enabled('Club Directory'):
@@ -64,7 +69,11 @@ def list_clubs():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 12, type=int)
     search_query = request.args.get('q', '').strip()
-    
+
+    # Visiting the directory means stepping out of any active club context,
+    # so the current-club card renders with an active Enter button again.
+    session.pop('current_club_id', None)
+
     # 1. Fetch all clubs and filter in python (or database where status != 'super')
     # Filter out super clubs (Technical Support)
     clubs_query = Club.query.filter(Club.status != 'super')
