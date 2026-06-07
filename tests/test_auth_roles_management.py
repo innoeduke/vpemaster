@@ -423,3 +423,137 @@ def test_direct_permission_check(app, default_club, test_users):
     with app.app_context():
         admin_user = User.query.filter_by(username="clubadmin").first()
         assert admin_user.has_club_permission(Permissions.SETTINGS_EDIT, default_club.id) is True
+
+
+# ---------------------------------------------------------------------------
+# Guest semantics: is_guest_of_club + primary_role_name club-aware
+# ---------------------------------------------------------------------------
+
+def test_is_guest_of_club_anonymous(app, default_club):
+    """AnonymousUser is always a guest of any club."""
+    from app.models import AnonymousUser
+    anon = AnonymousUser()
+    with app.app_context():
+        assert anon.is_authenticated is False
+        assert anon.is_guest_of_club(default_club.id) is True
+        # No club_id supplied is also treated as guest (degenerate case)
+        assert anon.is_guest_of_club(None) is True
+
+
+def test_is_guest_of_club_authenticated_non_member(app, default_club, test_users):
+    """An authenticated user with no UserClub row for a club is a guest of that club."""
+    from app.models import db
+    with app.app_context():
+        normal_user = User.query.filter_by(username="normaluser").first()
+        # The fixture's normal user only has a UserClub for default_club
+        assert normal_user.get_user_club(default_club.id) is not None
+        # A second club they don't belong to: they are a guest
+        second = Club(
+            club_no='999999',
+            club_name='Other Club',
+            district='Test District',
+            division='Test Division',
+            area='Test Area',
+        )
+        db.session.add(second)
+        db.session.commit()
+        try:
+            assert normal_user.is_guest_of_club(second.id) is True
+            # But they are NOT a guest of their own club
+            assert normal_user.is_guest_of_club(default_club.id) is False
+        finally:
+            db.session.delete(second)
+            db.session.commit()
+
+
+def test_primary_role_name_club_aware_guest_label(app, default_club, test_users):
+    """primary_role_name returns 'Guest' for an authenticated non-member of the active club."""
+    from app.models import db
+    from app.club_context import set_current_club_id, session as club_session
+    with app.test_request_context():
+        with app.app_context():
+            normal_user = User.query.filter_by(username="normaluser").first()
+            second = Club(
+                club_no='888888',
+                club_name='Visiting Club',
+                district='Test District',
+                division='Test Division',
+                area='Test Area',
+            )
+            db.session.add(second)
+            db.session.commit()
+            try:
+                # No club context -> falls through to the joined-roles set
+                # (the user has a Member UserClub for default_club) -> 'Member'
+                assert normal_user.primary_role_name == 'Member'
+
+                # Active club = default_club (the user's home club) -> 'Member'
+                set_current_club_id(default_club.id)
+                assert normal_user.primary_role_name == 'Member'
+
+                # Active club = second (non-member) -> 'Guest'
+                set_current_club_id(second.id)
+                assert normal_user.primary_role_name == 'Guest'
+            finally:
+                set_current_club_id(None)
+                db.session.delete(second)
+                db.session.commit()
+
+
+def test_authenticated_non_member_gets_guest_permission(app, default_club, test_users):
+    """An authenticated non-member of a club gets the Guest role's per-club permission
+    via has_club_permission, matching the new open-registration guest definition.
+    """
+    from app.models import db
+    from app.club_context import set_current_club_id
+    with app.app_context():
+        normal_user = User.query.filter_by(username="normaluser").first()
+        second = Club(
+            club_no='777777',
+            club_name='Open Club',
+            district='Test District',
+            division='Test Division',
+            area='Test Area',
+        )
+        db.session.add(second)
+        db.session.commit()
+        try:
+            # Make sure Guest role has MEETING_VIEW_PUBLISHED for second (mirror
+            # what the per-club backfill did for every active club)
+            guest_role = AuthRole.query.filter_by(name='Guest', club_id=None).first()
+            view_perm = Permission.query.filter_by(name=Permissions.MEETING_VIEW_PUBLISHED).first()
+            if view_perm not in guest_role.permissions:
+                guest_role.permissions.append(view_perm)
+                db.session.commit()
+
+            # Without an active UserClub for second, the user gets Guest's
+            # per-club permission via the has_club_permission fallback.
+            assert normal_user.get_user_club(second.id) is None
+            assert normal_user.is_guest_of_club(second.id) is True
+            assert normal_user.has_club_permission(
+                Permissions.MEETING_VIEW_PUBLISHED, second.id
+            ) is True
+        finally:
+            db.session.delete(second)
+            db.session.commit()
+
+
+def test_anonymous_user_has_club_permission_uses_guest_role(app, default_club):
+    """AnonymousUser.has_club_permission routes through the Guest role's per-club matrix."""
+    from app.models import AnonymousUser
+    anon = AnonymousUser()
+    with app.app_context():
+        guest_role = AuthRole.query.filter_by(name='Guest', club_id=None).first()
+        view_perm = Permission.query.filter_by(name=Permissions.MEETING_VIEW_PUBLISHED).first()
+        if view_perm not in guest_role.permissions:
+            guest_role.permissions.append(view_perm)
+            db.session.commit()
+
+        assert anon.has_club_permission(
+            Permissions.MEETING_VIEW_PUBLISHED, default_club.id
+        ) is True
+        # A permission Guest does not have should be False
+        assert anon.has_club_permission(
+            Permissions.SETTINGS_EDIT, default_club.id
+        ) is False
+

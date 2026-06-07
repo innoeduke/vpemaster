@@ -146,22 +146,34 @@ class User(UserMixin, db.Model):
         from .user_club import UserClub
         from ..auth.permissions import Permissions
         from ..club_context import get_current_club_id
-        
+
         if not club_id:
             club_id = get_current_club_id()
-        
+
         if not club_id:
             return False
-            
+
         club_role = Role.get_by_name(Permissions.CLUBADMIN)
         if not club_role:
             return False
-            
+
         uc = UserClub.query.filter_by(user_id=self.id, club_id=club_id).first()
         if not uc:
             return False
-            
+
         return uc.auth_role_id == club_role.id
+
+    def is_guest_of_club(self, club_id):
+        """True when self has no UserClub row for club_id.
+
+        Covers both unauthenticated (AnonymousUser) and authenticated non-members.
+        A user is a guest of any club they have not been explicitly added to.
+        """
+        if not club_id:
+            return True
+        if not self.is_authenticated:
+            return True
+        return self.get_user_club(club_id) is None
 
     def get_roles_for_club(self, club_id):
         """Get all roles for this user in a specific club context."""
@@ -328,11 +340,16 @@ class User(UserMixin, db.Model):
 
     @property
     def primary_role_name(self):
-        """Returns the name of the user's highest-level role."""
+        """Returns the name of the user's highest-level role.
+
+        Club-aware: when the active club context is set and the user has
+        no role in that club, returns "Guest" (semantically a non-member).
+        Falls back to "Member" only when no club context is established.
+        """
         if self.is_sysadmin:
             return "SysAdmin"
         role = self.primary_role
-        return role.name if role else "Member"
+        return role.name if role else "Guest"
 
     def add_role(self, role):
         """Add a role to this user."""
@@ -822,6 +839,27 @@ class AnonymousUser(AnonymousUserMixin):
     def has_permission(self, permission_name, club_id=None):
         """Check if guest has a specific permission."""
         return permission_name in self.get_permissions()
+
+    def has_club_permission(self, permission_name, club_id, **kwargs):
+        """Per-club permission check for anonymous users.
+
+        Falls through to the Guest role's per-club matrix, mirroring the
+        ``if not uc:`` branch of ``User.has_club_permission``.
+        """
+        from .role import Role
+        guest_role = Role.get_by_name('Guest')
+        if guest_role:
+            return guest_role.has_permission(permission_name, club_id=club_id)
+        return False
+
+    def is_guest_of_club(self, club_id):
+        """Anonymous users are always guests of any club.
+
+        Mirrors ``User.is_guest_of_club`` for the unauthenticated path so
+        call sites can use the same helper regardless of authentication
+        state.
+        """
+        return True
 
     def can(self, permission):
         return self.has_permission(permission)

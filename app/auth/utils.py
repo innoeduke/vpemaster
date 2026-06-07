@@ -27,10 +27,9 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
         club_id = session.get('current_club_id')
     
     if not current_user.is_authenticated:
-        # Both Authenticated and Anonymous users now have has_permission() method
-        if hasattr(current_user, 'has_permission'):
-            return current_user.has_permission(target_perm)
-        return False
+        # Anonymous users still flow through has_club_permission, which
+        # consults the Guest role's per-club matrix.
+        pass
 
     # Imports inside function to avoid circular dependency
     from app.auth.permissions import Permissions
@@ -50,26 +49,24 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
         if user_contact_id and user_contact_id == meeting.sharing_master_id:
             # Grant Operator-level permissions relevant to meeting management
             if target_perm in {
-                'MEETING_MANAGE', 'MEMBERS_SELF', 'VOTING_VIEW_RESULTS', 
+                'MEETING_MANAGE', 'MEMBERS_SELF', 'VOTING_VIEW_RESULTS',
                 'VOTING_TRACK_PROGRESS', 'ROSTER_EDIT', 'MEETING_VIEW_PUBLISHED', 'ROSTER_VIEW'
             }:
                 return True
-                
-    # 4. Standard permission check via has_permission()
-    # (Checks global roles assigned in user_roles table if no club override matches)
-    
-    # ENHANCEMENT: Auto-detect club context for standard checks
+
+    # 3. Standard permission check via has_club_permission()
+    # When a club context is set, route every user (authenticated or not)
+    # through the per-club matrix. User.has_club_permission falls back to
+    # the Guest role when the user has no UserClub for club_id; the
+    # AnonymousUser.has_club_permission override does the same for guests.
     if not club_id:
         from app.club_context import get_current_club_id
         club_id = get_current_club_id()
 
-    if club_id:
-        # Check permissions specifically within this club
-        if hasattr(current_user, 'has_club_permission'):
-            return current_user.has_club_permission(target_perm, club_id, **kwargs)
-        return False
-            
-    # Fallback to global checks
+    if club_id and hasattr(current_user, 'has_club_permission'):
+        return current_user.has_club_permission(target_perm, club_id, **kwargs)
+
+    # Fallback to global checks (no club context)
     if hasattr(current_user, 'has_permission'):
         return current_user.has_permission(target_perm)
 

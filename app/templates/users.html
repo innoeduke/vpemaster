@@ -187,5 +187,5 @@
   const INITIAL_USERS = {{ initial_users|tojson }};
   const USERS_TOTAL = {{ users_total }};
 </script>
-<script src="{{ url_for('static', filename='js/members.js') }}?v={{ range(1, 10000) | random }}"></script>
+<script defer src="{{ url_for('static', filename='js/members.js') }}?v={{ 'js/members.js' | static_version }}"></script>
 {% endblock %}

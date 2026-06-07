@@ -179,8 +179,10 @@ def profile(contact_id=None):
     """
     Displays a user's profile page and handles password reset.
     """
-    # Guest Check: Block all guests from accessing profiles
-    if current_user.primary_role_name == 'Guest':
+    # Guest Check: Block visitors (authenticated non-members and anonymous)
+    # of the active club from accessing profiles.
+    from ..club_context import get_current_club_id
+    if current_user.is_guest_of_club(get_current_club_id()):
         flash('Guests do not have access to user profiles.', 'error')
         return redirect(url_for('main_bp.index'))
 

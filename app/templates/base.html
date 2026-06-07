@@ -531,9 +531,9 @@
 
   {% include '_delete_modal.html' %}
   {% include '_usage_warning_modal.html' %}
-  <script src="{{ url_for('static', filename='vendor/js/Sortable.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/main.js') }}?v={{ range(1, 10000) | random }}"></script>
-  <script src="{{ url_for('static', filename='js/search.js') }}?v={{ range(1, 10000) | random }}"></script>
+  <script defer src="{{ url_for('static', filename='vendor/js/Sortable.min.js') }}"></script>
+  <script defer src="{{ url_for('static', filename='js/main.js') }}?v={{ 'js/main.js' | static_version }}"></script>
+  <script defer src="{{ url_for('static', filename='js/search.js') }}?v={{ 'js/search.js' | static_version }}"></script>
   {% include '_report_bug_modal.html' %}
   {% block scripts %}{% endblock %}
 
@@ -624,7 +624,7 @@
 
   {% if is_module_enabled('Chatbot') and current_user.is_authenticated and (is_authorized(Permissions.CHAT_AI) or is_authorized(Permissions.CHAT_COMMANDS)) %}
     {% include 'partials/_chat_widget.html' %}
-    <script src="{{ url_for('static', filename='js/chat.js') }}?v={{ range(1, 10000) | random }}"></script>
+    <script defer src="{{ url_for('static', filename='js/chat.js') }}?v={{ 'js/chat.js' | static_version }}"></script>
   {% endif %}
 </body>
 

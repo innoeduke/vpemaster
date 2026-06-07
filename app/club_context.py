@@ -187,49 +187,41 @@ def authorized_club_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         from flask_login import current_user
-        from flask import abort
+        from flask import abort, redirect, url_for
         from app.auth.permissions import Permissions
-        from app.models import ContactClub, Club, ExComm
-        from app.models.base import db
-        
+        from app.models import UserClub
+
         # Ensure club context is established
         club_id = get_or_set_default_club()
         if not club_id:
             abort(404, description="No club context found")
-            
-        if current_user.is_authenticated:
-            # SysAdmin can access any club - global bypass
-            if current_user.is_sysadmin:
-                return f(*args, **kwargs)
-                
-            from app.models import UserClub
-            
-            # Check if user has a UserClub record for THIS specific club
-            user_club = UserClub.query.filter_by(user_id=current_user.id, club_id=club_id).first()
-            
-            if user_club:
-                # Relaxed: Any valid membership record grants access
-                return f(*args, **kwargs)
-            
-            # Non-member authenticated user: purely permission-based check
-            if current_user.has_club_permission(Permissions.MEETING_VIEW_PUBLISHED, club_id):
-                return f(*args, **kwargs)
-            
-            # If we fall through here, the authenticated user is unauthorized for this club
-            abort(403)
-            
-        else:
-            # Anonymous guests: check if they have general agenda view permission
-            # (The 'Guest' role in DB should typically have this)
-            if hasattr(current_user, 'can') and not current_user.can(Permissions.MEETING_VIEW_PUBLISHED):
-                from flask import redirect, url_for
-                return redirect(url_for('auth_bp.login'))
-            elif not hasattr(current_user, 'can'):
-                # Fallback if 'can' method missing (shouldn't happen with correct AnonymousUser)
-                 from flask import redirect, url_for
-                 return redirect(url_for('auth_bp.login'))
-                
-        return f(*args, **kwargs)
+
+        # SysAdmin bypass — global access to every club
+        if current_user.is_authenticated and current_user.is_sysadmin:
+            return f(*args, **kwargs)
+
+        # Membership-row bypass: any authenticated user with a UserClub row
+        # for this club is granted access. This is the relaxed "any valid
+        # membership record grants access" rule that keeps the per-club
+        # permission matrix from being a hard gate for actual members of
+        # the club (e.g. the super club has no per-club matrix by design,
+        # but Memory Maker users still need to reach the settings page).
+        if current_user.is_authenticated and current_user.get_user_club(club_id):
+            return f(*args, **kwargs)
+
+        # Unified guest check: any visitor (authenticated non-member or
+        # anonymous) without a UserClub row for club_id is a guest of that
+        # club. Both User and AnonymousUser now route through
+        # has_club_permission, which consults the Guest role's per-club
+        # matrix for non-members.
+        if current_user.has_club_permission(Permissions.MEETING_VIEW_PUBLISHED, club_id):
+            return f(*args, **kwargs)
+
+        # No view permission for this club. Anonymous visitors with no Guest
+        # permission for this club are bounced to login.
+        if not current_user.is_authenticated:
+            return redirect(url_for('auth_bp.login'))
+        abort(403)
     return decorated_function
 
 

@@ -973,7 +973,7 @@
     }
 </script>
 {% endblock %} {% block scripts %}
-<script src="{{ url_for('static', filename='js/settings.js') }}?v={{ range(1, 10000) | random }}"></script>
+<script defer src="{{ url_for('static', filename='js/settings.js') }}?v={{ 'js/settings.js' | static_version }}"></script>
 <script src="{{ url_for('static', filename='js/autocomplete.js') }}"></script>
 <script src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>
 <script src="{{ url_for('static', filename='js/settings_excomm.js') }}"></script>

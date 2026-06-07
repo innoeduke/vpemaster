@@ -379,8 +379,10 @@ def _get_user_bookings(current_user_contact_id):
 
 def _get_booking_page_context(meeting_id, user, current_user_contact_id):
     """Gathers all context needed for the booking page template."""
+    from flask_login import current_user
+    from .club_context import get_current_club_id
     # Show all recent meetings in the dropdown, even if booking is closed for them
-    is_guest = (user.primary_role_name == 'Guest') if user else True
+    is_guest = user.is_guest_of_club(get_current_club_id()) if user else True
     limit_past = 8 if is_guest else None
     
     upcoming_meetings, default_meeting_num = get_meetings_by_status(

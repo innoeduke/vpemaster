@@ -179,16 +179,13 @@ def _search_logs(query_str, can_view_all, current_club_id):
     query = query.outerjoin(PathwayProject, SessionLog.Project_ID == PathwayProject.project_id) \
                  .outerjoin(Pathway, PathwayProject.path_id == Pathway.id)
     
-    # Add guest check (if user is guest, restrict finished meetings)
-    is_guest = False
+    # Add guest check (if user is guest of the active club, restrict finished meetings)
     try:
-        if not current_user.is_authenticated or \
-           (hasattr(current_user, 'primary_role_name') and current_user.primary_role_name == 'Guest'):
-            is_guest = True
+        if current_user.is_guest_of_club(current_club_id):
+            query = query.filter(Meeting.status != 'finished')
     except (RuntimeError, AttributeError):
+        # No request context (helper called from tests) — skip the gate.
         pass
-    if is_guest:
-        query = query.filter(Meeting.status != 'finished')
         
     # Build the filters for each keyword
     for kw in keywords:
@@ -539,10 +536,11 @@ def _fetch_logs_with_filters(filters):
             logs = [l for l in logs if l.session_type and l.session_type.role and l.session_type.role.name == filters['role'] or l.session_type and l.session_type.Title == filters['role']]
             
         # Restriction for Guest: cannot view finished meetings (though usually guests won't have duties)
-        is_guest = not current_user.is_authenticated or \
-                   (hasattr(current_user, 'primary_role_name') and current_user.primary_role_name == 'Guest')
-        if is_guest:
-             logs = [l for l in logs if l.meeting and l.meeting.status != 'finished']
+        try:
+            if current_user.is_guest_of_club(current_club_id):
+                logs = [l for l in logs if l.meeting and l.meeting.status != 'finished']
+        except (RuntimeError, AttributeError):
+            pass
              
         return logs
 
@@ -560,10 +558,11 @@ def _fetch_logs_with_filters(filters):
     )
     
     # Restriction for Guest: cannot view finished meetings
-    is_guest = not current_user.is_authenticated or \
-               (hasattr(current_user, 'primary_role_name') and current_user.primary_role_name == 'Guest')
-    if is_guest:
-        base_query = base_query.filter(Meeting.status != 'finished')
+    try:
+        if current_user.is_guest_of_club(current_club_id):
+            base_query = base_query.filter(Meeting.status != 'finished')
+    except (RuntimeError, AttributeError):
+        pass
     
     if filters['meeting_id']:
         base_query = base_query.filter(SessionLog.meeting_id == filters['meeting_id'])

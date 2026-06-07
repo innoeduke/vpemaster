@@ -48,9 +48,9 @@
     };
 </script>
 
-<script src="{{ url_for('static', filename='js/speech_modal.js') }}?v={{ range(1, 10000) | random }}"></script>
-<script src="{{ url_for('static', filename='js/search.js') }}?v={{ range(1, 10000) | random }}"></script>
-<script src="{{ url_for('static', filename='js/speech_logs.js') }}?v={{ range(1, 10000) | random }}"></script>
+<script defer src="{{ url_for('static', filename='js/speech_modal.js') }}?v={{ 'js/speech_modal.js' | static_version }}"></script>
+<script defer src="{{ url_for('static', filename='js/search.js') }}?v={{ 'js/search.js' | static_version }}"></script>
+<script defer src="{{ url_for('static', filename='js/speech_logs.js') }}?v={{ 'js/speech_logs.js' | static_version }}"></script>
 
 {% block speech_log_scripts %}
 <script>

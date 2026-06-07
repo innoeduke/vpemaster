@@ -663,8 +663,7 @@ def get_meetings_by_status(limit_past=8, columns=None, status_filter=None, only_
                - default_meeting_num: The number of the soonest 'not started' meeting.
     """
     from flask_login import current_user
-    is_guest = not current_user.is_authenticated or \
-               (hasattr(current_user, 'primary_role_name') and current_user.primary_role_name == 'Guest')
+    is_guest = current_user.is_guest_of_club(get_current_club_id())
 
     query_cols = [Meeting] if columns is None else columns
     

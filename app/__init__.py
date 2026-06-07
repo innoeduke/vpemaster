@@ -76,6 +76,23 @@ def create_app(config_class='config.Config'):
     from .translations.translations import translate as _, get_locale
     app.jinja_env.globals['_'] = _
     app.jinja_env.globals['get_locale'] = get_locale
+
+    import os as _os
+    @app.template_filter('static_version')
+    def static_version_filter(filename):
+        """Return the static file's mtime as a cache-busting version.
+
+        Using a stable per-file version (rather than a random number) lets
+        the browser cache assets until the file actually changes, avoiding
+        the revalidation round-trip on every page load.
+        """
+        if not filename:
+            return '0'
+        try:
+            mtime = _os.path.getmtime(_os.path.join(app.static_folder, filename))
+            return str(int(mtime))
+        except OSError:
+            return '0'
     
     # Set up identity loader for Flask-Principal
     from flask_login import user_loaded_from_request, user_loaded_from_cookie, user_logged_in

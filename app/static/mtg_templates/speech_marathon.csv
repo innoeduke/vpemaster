@@ -6,18 +6,24 @@ Toastmaster of the Evening's Address,Toastmaster of the Evening's Address,Toastm
 Ah-Counter Introduction,Ah-Counter Introduction,Ah-Counter,,0,1
 Grammarian Introduction,Grammarian Introduction,Grammarian,,0,2
 Timer Introduction,Timer Introduction,Timer,,0,1
-Section,FEATURED SESSION,,,0,
-Panel Discussion,Panel Discussion,Panelist,,0,45
-Table Topics,Table Topics,Topicsmaster,,0,20
+General Evaluator's Address,General Evaluator's Address,General Evaluator,,0,1
+Section,FIRST ROUND,,,0,
+Prepared Speech,Prepared Speech,Prepared Speaker,,,
+Prepared Speech,Prepared Speech,Prepared Speaker,,,
+Prepared Speech,Prepared Speech,Prepared Speaker,,,
+Evaluation,,Individual Evaluator,,2,3
+Evaluation,,Individual Evaluator,,2,3
+Evaluation,,Individual Evaluator,,2,3
 Guest Talk,New Guest Greetings,,,0,5
 Generic,Networking & Break,,,0,10
-Section,PREPARED SPEECHES,,,0,
+Section,SECOND ROUND,,,0,
 Prepared Speech,Prepared Speech,Prepared Speaker,,,
 Prepared Speech,Prepared Speech,Prepared Speaker,,,
-Section,EVALUATION REPORTS,,,0,
-General Evaluator's Address,General Evaluator's Address,General Evaluator,,0,1
+Prepared Speech,Prepared Speech,Prepared Speaker,,,
 Evaluation,,Individual Evaluator,,2,3
 Evaluation,,Individual Evaluator,,2,3
+Evaluation,,Individual Evaluator,,2,3
+Table Topics,Table Topics,Topicsmaster,,0,15
 Ah-Counter Report,Ah-Counter Report,Ah-Counter,,0,1
 Grammarian Report,Grammarian Report,Grammarian,,0,2
 Timer Report,Timer Report,Timer,,0,1
@@ -27,20 +33,4 @@ Voting and Announcements,Voting and Announcements,Toastmaster,,0,3
 Awards / Meeting Closing,Awards / Meeting Closing,President,,0,2
 Hidden Section,ADDITIONAL ROLES,,,0,
 Photography,Photography,Photographer,,0,
-<<<<<<< Updated upstream:app/static/club_resources/0/templates/panel_discussion.csv
-Reception,Welcome Officer,Welcome Officer,,,,
-Topics Speech,Topics Speech,Topics Speaker,,1,2
-Topics Speech,Topics Speech,Topics Speaker,,1,2
-Topics Speech,Topics Speech,Topics Speaker,,1,2
-Topics Speech,Topics Speech,Topics Speaker,,1,2
-Topics Speech,Topics Speech,Topics Speaker,,1,2
-=======
 Reception,Welcome Officer,Welcome Officer,,0,
-Topics Speech,Topics Speech,Topics Speaker,,1,2,True
-Topics Speech,Topics Speech,Topics Speaker,,1,2,True
-Topics Speech,Topics Speech,Topics Speaker,,1,2,True
-Topics Speech,Topics Speech,Topics Speaker,,1,2,True
-Topics Speech,Topics Speech,Topics Speaker,,1,2,True
-Topics Speech,Topics Speech,Topics Speaker,,1,2,True
-Topics Speech,Topics Speech,Topics Speaker,,1,2,True
->>>>>>> Stashed changes:app/static/mtg_templates/panel_discussion.csv

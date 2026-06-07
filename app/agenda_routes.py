@@ -49,14 +49,56 @@ def _get_agenda_logs(meeting_id):
 
     # Order by sequence
     logs = query.order_by(SessionLog.Meeting_Seq.asc()).all()
-    # Populate users for all owners (SessionLog.owners is a list)
+
+    # Batch-pre-fetch owners for all logs in one query to avoid the N+1 in
+    # SessionLog.owners. The owners property joins Contact with
+    # OwnerMeetingRoles filtered by (meeting_id, role_id, [session_log_id
+    # if has_single_owner]). We load all OMRs for the meeting once with
+    # the Contact relationship joined, then materialize the per-log owner
+    # list and stash it on _cached_owners — which the property checks
+    # before re-querying.
+    if meeting_id and logs:
+        omrs = db.session.query(OwnerMeetingRoles)\
+            .options(orm.joinedload(OwnerMeetingRoles.contact))\
+            .filter(OwnerMeetingRoles.meeting_id == meeting_id)\
+            .all()
+        omr_index = {}
+        for omr in omrs:
+            omr_index.setdefault((omr.session_log_id, omr.role_id), []).append(omr.contact)
+        for log in logs:
+            if not log.meeting:
+                log._cached_owners = []
+                continue
+            target_role_id = None
+            has_single_owner = True
+            if log.session_type and log.session_type.role:
+                target_role_id = log.session_type.role_id
+                has_single_owner = log.session_type.role.has_single_owner
+            if has_single_owner:
+                log._cached_owners = list(omr_index.get((log.id, target_role_id), []))
+            else:
+                # Shared role: no session_log_id filter in the original
+                # property — match OMRs by role_id across any session_log_id.
+                seen = set()
+                result = []
+                for (sid, rid), contacts in omr_index.items():
+                    if rid != target_role_id:
+                        continue
+                    for c in contacts:
+                        if c is not None and c.id not in seen:
+                            seen.add(c.id)
+                            result.append(c)
+                log._cached_owners = result
+
+    # Populate users and primary clubs for all owners (SessionLog.owners is a list)
     all_owners = []
     for log in logs:
         all_owners.extend(log.owners)
-    
+
     if all_owners:
         from .club_context import get_current_club_id
         Contact.populate_users(all_owners, get_current_club_id())
+        Contact.populate_primary_clubs(all_owners)
     return logs
 
 
@@ -492,11 +534,6 @@ def _get_processed_logs_data(meeting_id, show_media=False):
         for s in speakers:
             speaker_dtm_cache[s.Name] = s.DTM
 
-        if evaluator_speaker_names:
-            speakers = Contact.query.filter(Contact.Name.in_(evaluator_speaker_names)).all()
-        for s in speakers:
-            speaker_dtm_cache[s.Name] = s.DTM
-
     for log in raw_session_logs:
         session_type = log.session_type
         meeting = log.meeting
@@ -705,8 +742,7 @@ def agenda():
     club_id = get_current_club_id()
 
     # --- Determine Selected Meeting ---
-    is_guest = not current_user.is_authenticated or \
-               (hasattr(current_user, 'primary_role_name') and current_user.primary_role_name == 'Guest')
+    is_guest = current_user.is_guest_of_club(club_id)
     
     limit_past = 8 if is_guest else None
     all_meetings, _ = get_meetings_by_status(

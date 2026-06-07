@@ -50,8 +50,7 @@ def roster():
 
     club_id = get_current_club_id()
     
-    is_guest = not current_user.is_authenticated or \
-               (hasattr(current_user, 'primary_role_name') and current_user.primary_role_name == 'Guest')
+    is_guest = current_user.is_guest_of_club(club_id)
     limit_past = 8 if is_guest else None
     
     all_meetings, default_meeting_id = get_meetings_by_status(
