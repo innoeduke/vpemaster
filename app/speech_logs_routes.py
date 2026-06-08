@@ -15,7 +15,7 @@ from .utils import (
     get_meetings_by_status,
     get_level_project_requirements
 )
-from sqlalchemy import distinct, or_
+from sqlalchemy import distinct, or_, func
 from sqlalchemy.orm import joinedload
 from datetime import datetime
 import re
@@ -218,17 +218,18 @@ def _get_view_settings():
     Returns: (can_view_all, view_mode, is_member_view)
     """
     can_view_all = is_authorized(Permissions.SPEECH_LOGS_MANAGE)
+    can_search = can_view_all or is_authorized(Permissions.MEMBERS_SELF)
     view_mode = request.args.get('view_mode', 'member')
-    
+
     if view_mode == 'admin':
         view_mode = 'member'
-        
+
     q = request.args.get('q', '').strip()
-    if q and can_view_all:
+    if q and can_search:
         view_mode = 'search'
-        
+
     is_member_view = (view_mode in ('member', 'search'))
-    
+
     return can_view_all, view_mode, is_member_view
 
 
@@ -1638,9 +1639,15 @@ def show_speech_logs():
         from .club_context import get_current_club_id
         club_id = get_current_club_id()
         all_logs = _search_logs(request.args.get('q', ''), can_view_all, club_id)
+        _attach_owners(all_logs)
+        # For MEMBERS_SELF users without SPEECH_LOGS_MANAGE, only show their own logs
+        if not can_view_all:
+            contact = current_user.get_contact(club_id) if current_user.is_authenticated else None
+            if contact:
+                all_logs = [log for log in all_logs if contact.id in [o.id for o in log.owners]]
     else:
         all_logs = _fetch_logs_with_filters(filters)
-    _attach_owners(all_logs)
+        _attach_owners(all_logs)
     
     # 6. Build pathway cache for performance
     project_ids = [log.Project_ID for log in all_logs if log.Project_ID]
@@ -1697,7 +1704,11 @@ def show_speech_logs():
         # Fetch unpublished meetings
         from .club_context import get_current_club_id
         club_id = get_current_club_id()
-        planner_meetings = Meeting.query.filter_by(club_id=club_id, status='unpublished').order_by(Meeting.Meeting_Number).all()
+        planner_meetings = Meeting.query.filter(
+            Meeting.club_id == club_id,
+            Meeting.status != 'unpublished',
+            Meeting.Meeting_Date >= func.current_date()
+        ).order_by(Meeting.Meeting_Number).all()
         
         # Fetch projects grouped by level
         contact = current_user.get_contact(club_id)
@@ -2306,7 +2317,12 @@ def update_speech_log(log_id):
             duration_max=log.Duration_Max,
             media_url=media_url,
             affected_log_ids=affected_log_ids,
-            speaker_is_dtm=speaker_is_dtm
+            speaker_is_dtm=speaker_is_dtm,
+            role_display_name=(
+                log.session_type.role.name
+                if log.session_type and log.session_type.role
+                else (log.session_type.Title if log.session_type else None)
+            ),
         )
 
     except Exception as e:

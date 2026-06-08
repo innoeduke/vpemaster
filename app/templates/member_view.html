@@ -2,6 +2,20 @@
 
 {% block content_class %}member-view-mode{% endblock %}
 
+{% block page_heading %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; margin-bottom: 20px;">
+    {% if is_authorized(Permissions.MEMBERS_MANAGE) %}
+    <a href="{{ url_for('users_bp.show_users') }}" style="color: #772432; text-decoration: none; font-size: 1.1em; white-space: nowrap;" title="{{ _('Back to Members') }}">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    {% else %}
+    <span></span>
+    {% endif %}
+    <h1 style="margin: 0;"><i class="fas fa-book-open"></i> {{ _('Journals') }}</h1>
+    <span></span>
+</div>
+{% endblock %}
+
 {% from "partials/_speech_log_macros.html" import render_log_card %}
 
 {% block speech_view_title %}{{ _('Speech Logs') }} - {{ viewed_contact.Name if viewed_contact else _('Member View') }}{% endblock %}
@@ -94,20 +108,45 @@
                         .member-view-mode .filters-container { margin-bottom: 0 !important; }
                         .speech-logs-filter-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; width: 100%; }
                         .speech-logs-filter-row .filter-group-premium { flex: 0 1 auto; min-width: 200px; order: 0; }
-                        .speech-logs-filter-row .pathway-action-buttons { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; order: 1; }
+                        .speech-logs-filter-row .pathway-action-buttons { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; order: -1; }
                         .speech-logs-filter-row .search-container { flex: 0 1 300px; min-width: 200px; margin-left: auto; order: 2; }
+                        .speech-logs-filter-row .toolbar-extras { flex: 0 0 auto; order: 3; }
+                        .speech-logs-filter-row .toolbar-extras .btn { padding: 6px 14px; font-size: 0.9em; white-space: nowrap; }
                         @media (max-width: 768px) {
+                            /* Pathway trigger: smaller font on mobile */
+                            .pathway-select-trigger span {
+                                font-size: 0.8rem !important;
+                            }
+                            /* Filter row grid */
                             .speech-logs-filter-row {
                                 display: grid;
-                                grid-template-columns: 3fr 2fr;
+                                grid-template-columns: auto 1fr;
                                 grid-template-areas:
-                                    "select select"
-                                    "search actions";
-                                gap: 10px;
+                                    "actions select"
+                                    "search search"
+                                    "extras extras";
+                                gap: 8px;
                             }
                             .speech-logs-filter-row .filter-group-premium { grid-area: select; min-width: 0; }
-                            .speech-logs-filter-row .pathway-action-buttons { grid-area: actions; justify-content: flex-end; }
+                            .speech-logs-filter-row .pathway-action-buttons { grid-area: actions; justify-content: flex-start; align-self: stretch; }
+                            .speech-logs-filter-row .pathway-action-buttons .pathway-action-btn {
+                                border: 1px solid #ddd;
+                                border-radius: 6px;
+                                padding: 8px 12px;
+                                background: #fff;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                            }
                             .speech-logs-filter-row .search-container { grid-area: search; margin-left: 0; min-width: 0; }
+                            .speech-logs-filter-row .toolbar-extras { grid-area: extras; justify-self: end; }
+                            .speech-logs-filter-row .toolbar-extras .btn-text { display: inline; }
+                            .speech-logs-filter-row .toolbar-extras .btn { padding: 6px 10px; font-size: 0.85em; }
+                            .speech-logs-filter-row #add-plan-btn { display: none; }
+                            .progress-table .actions-cell { display: none; }
+                            .progress-table thead th:last-child { display: none; }
+                            .achievement-actions { display: none; }
+                            .btn-roadmap-action { display: none; }
                         }
 
                         .progress-table .actions-cell,
@@ -190,6 +229,9 @@
                             {% endif %}
                         {% endif %}
 
+                        {% set can_manage_pathways = is_authorized(Permissions.SPEECH_LOGS_MANAGE) %}
+                        {% set can_set_default = can_manage_pathways or current_user.contact_id == viewed_contact.id %}
+
                         <div style="display: flex; align-items: center; width: 100%; gap: 12px; flex-wrap: wrap;">
                             <div class="custom-dropdown-container" style="position: relative; flex: 1; min-width: 200px;">
                             <div class="custom-select-trigger pathway-select-trigger" onclick="document.getElementById('pathway-dropdown-menu').style.display = document.getElementById('pathway-dropdown-menu').style.display === 'none' ? 'block' : 'none'; event.stopPropagation();"
@@ -221,6 +263,16 @@
                                         <span style="font-size: 11px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #333; text-transform: uppercase;">{{ p.name }}</span>
                                     </div>
                                 {% endfor %}
+                                {% if can_manage_pathways and available_pathways %}
+                                <div style="border-top: 1px solid #dee2e6; margin: 4px 0;"></div>
+                                <div style="padding: 8px 12px; text-align: right;">
+                                    <button type="button"
+                                            onclick="event.stopPropagation(); openRegisterPathwayModal();"
+                                            style="color: #28a745; background: none; border: 1px solid #28a745; border-radius: 6px; padding: 4px 12px; font-size: 11px; font-family: 'Montserrat', sans-serif; font-weight: 600; cursor: pointer;">
+                                        <i class="fas fa-plus-circle" style="margin-right: 4px;"></i> {{ _('Register Path') }}
+                                    </button>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                         <input type="hidden" name="pathway" id="hidden-pathway-input" value="{{ selected_pathway_name }}">
@@ -232,10 +284,6 @@
                                 if (!e.target.closest('.custom-dropdown-container')) {
                                     const menu = document.getElementById('pathway-dropdown-menu');
                                     if (menu) menu.style.display = 'none';
-                                }
-                                if (!e.target.closest('#register-picker') && !e.target.closest('#btn-register-pathway')) {
-                                    const picker = document.getElementById('register-picker');
-                                    if (picker) picker.style.display = 'none';
                                 }
                             });
 
@@ -288,11 +336,9 @@
                 </form>
             </div>
 
-            {% set can_manage_pathways = is_authorized(Permissions.SPEECH_LOGS_MANAGE) %}
-            {% set can_set_default = can_manage_pathways or current_user.contact_id == viewed_contact.id %}
             {% set is_default = ns.selected_p and (ns.selected_p.name == viewed_contact.Current_Path) %}
             {% set has_selected_registered = ns.selected_p and ns.selected_p.path_id %}
-            <div class="pathway-action-buttons" style="display: flex; align-items: center; gap: 4px; margin-left: 6px; position: relative; flex: 0 0 auto;">
+            <div class="pathway-action-buttons" style="display: flex; align-items: center; gap: 4px; margin-left: 6px; flex: 0 0 auto;">
                 {% if can_set_default %}
                 <button type="button"
                         id="btn-set-default-pathway"
@@ -303,30 +349,9 @@
                     <i class="fas fa-star" style="font-size: 1.2rem;"></i>
                 </button>
                 {% endif %}
-                {% if can_manage_pathways and available_pathways %}
-                <button type="button"
-                        id="btn-register-pathway"
-                        class="pathway-action-btn"
-                        onclick="openRegisterPicker(event)"
-                        title="{{ _('Register a new pathway') }}"
-                        style="color: #28a745; cursor: pointer;">
-                    <i class="fas fa-plus-circle" style="font-size: 1.2rem;"></i>
-                </button>
-                {% endif %}
-                {% if can_manage_pathways and available_pathways %}
-                <div id="register-picker" style="display: none; position: absolute; top: calc(100% + 6px); right: 0; background: white; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); z-index: 1100; min-width: 240px; max-height: 320px; overflow-y: auto;">
-                    <div style="padding: 10px 12px; border-bottom: 1px solid #dee2e6; font-size: 12px; font-weight: 600; color: #004165; text-transform: uppercase; letter-spacing: 0.5px;">{{ _('Register New Path') }}</div>
-                    {% for p in available_pathways %}
-                    <div class="register-picker-item" onclick="registerFromFilter({{ p.pathway_id }}, '{{ p.name|replace("'", "\\'") }}')" style="padding: 10px 12px; cursor: pointer; display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 12px; border-bottom: 1px solid #f8f9fa; transition: background 0.15s; white-space: nowrap;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-                        <span style="font-size: 12px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #333;">{{ p.name }}</span>
-                        {% if p.abbr %}<span style="font-size: 10px; color: #888; text-align: right; min-width: 50px;">({{ p.abbr }})</span>{% endif %}
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
             </div>
 
-            {% if can_view_all %}
+            {% if can_view_all or is_authorized(Permissions.MEMBERS_SELF) %}
             <div class="search-container filter-group-premium">
                 <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" id="global-search-form" style="display: flex; align-items: center; position: relative; width: 100%;">
                     <input type="hidden" name="view_mode" value="search">
@@ -338,9 +363,18 @@
                 </form>
             </div>
             {% endif %}
+
+            {% if viewed_contact and current_user.contact_id == viewed_contact.id %}
+            <div class="toolbar-extras" style="display: flex; align-items: center; gap: 8px; flex: 0 0 auto;">
+                <button class="btn btn-success" id="add-plan-btn">
+                    <i class="fas fa-plus"></i> <span class="btn-text">{{ _('New Task') }}</span>
+                </button>
+            </div>
+            {% endif %}
+
         </div>
     </div>
-    
+
     {% if is_member_view %}
         {% include 'partials/_planner_modal.html' %}
         {% if is_authorized(Permissions.SPEECH_LOGS_MANAGE) %}
@@ -353,15 +387,6 @@
 {% block speech_log_progress %}
     {% if progress_data_rows %}
     <div class="path-progress-container">
-        <div class="roadmap-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px;">
-            {% if viewed_contact and current_user.contact_id == viewed_contact.id %}
-            <button class="btn btn-success" id="add-plan-btn" style="padding: 6px 12px; font-size: 0.9em;">
-                <i class="fas fa-plus"></i> {{ _('New Item') }}
-            </button>
-            {% endif %}
-        </div>
-
-
         <div class="roadmap-legend">
             <div class="legend-item">
                 <span class="dot completed"></span>
@@ -531,6 +556,34 @@
 
 {% block speech_log_modals %}
 {{ super() }}
+<!-- Register Pathway Modal -->
+<div id="registerPathwayModal" class="history-modal" style="display: none;">
+    <div class="history-modal-content" style="max-width: 420px;">
+        <div class="history-modal-header">
+            <h3>{{ _('Register New Path') }}</h3>
+            <span class="close-history" onclick="closeRegisterPathwayModal()">&times;</span>
+        </div>
+        <div style="padding: 16px;">
+            <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 0.85em; color: #856404; font-family: 'Montserrat', sans-serif;">
+                <i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i>
+                <strong>{{ _('Warning') }}:</strong> {{ _('Pathway registration cannot be reverted. Please confirm before proceeding.') }}
+            </div>
+            <div style="max-height: 220px; overflow-y: auto; margin-bottom: 16px;">
+                {% for p in available_pathways %}
+                <div class="register-pathway-option" data-pathway-id="{{ p.pathway_id }}" data-pathway-name="{{ p.name }}" onclick="selectRegisterPathway(this, {{ p.pathway_id }}, '{{ p.name|replace("'", "\\'") }}')" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; border: 1px solid #eee; border-radius: 6px; margin-bottom: 6px; transition: all 0.15s;" onmouseover="if (!this.classList.contains('selected')) this.style.background='#f8f9fa'" onmouseout="if (!this.classList.contains('selected')) this.style.background='white'">
+                    <i class="far fa-circle select-indicator" style="color: #ccc; font-size: 1em; transition: color 0.15s;"></i>
+                    <span style="font-size: 13px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #333; flex: 1;">{{ p.name }}</span>
+                    {% if p.abbr %}<span style="font-size: 11px; color: #888;">({{ p.abbr }})</span>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                <button type="button" onclick="closeRegisterPathwayModal()" style="padding: 8px 18px; border: 1px solid #ddd; border-radius: 6px; background: #fff; color: #666; font-size: 0.9em; cursor: pointer; font-family: 'Montserrat', sans-serif; font-weight: 600;">{{ _('Cancel') }}</button>
+                <button type="button" id="btn-confirm-register-pathway" disabled onclick="confirmRegisterPathway()" style="padding: 8px 18px; border: none; border-radius: 6px; background: #28a745; color: #fff; font-size: 0.9em; cursor: pointer; font-family: 'Montserrat', sans-serif; font-weight: 600; opacity: 0.5;">{{ _('Register') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block speech_log_scripts %}
@@ -543,6 +596,55 @@
 <script src="{{ url_for('static', filename='js/components/custom_select_adapter.js') }}"></script>
 <script src="{{ url_for('static', filename='js/planner_modal.js') }}"></script>
 <script>
+    var selectedRegisterPathwayId = null;
+    function openRegisterPathwayModal() {
+        selectedRegisterPathwayId = null;
+        document.getElementById('pathway-dropdown-menu').style.display = 'none';
+        var modal = document.getElementById('registerPathwayModal');
+        if (modal) modal.style.display = 'flex';
+        var btn = document.getElementById('btn-confirm-register-pathway');
+        if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+        document.querySelectorAll('.register-pathway-option').forEach(function(el) {
+            el.classList.remove('selected');
+            el.style.background = 'white';
+            el.style.borderColor = '#eee';
+            var icon = el.querySelector('.select-indicator');
+            if (icon) { icon.className = 'far fa-circle select-indicator'; icon.style.color = '#ccc'; }
+        });
+    }
+    function selectRegisterPathway(el, pathwayId, pathwayName) {
+        document.querySelectorAll('.register-pathway-option').forEach(function(item) {
+            item.classList.remove('selected');
+            item.style.background = 'white';
+            item.style.borderColor = '#eee';
+            var icon = item.querySelector('.select-indicator');
+            if (icon) { icon.className = 'far fa-circle select-indicator'; icon.style.color = '#ccc'; }
+        });
+        el.classList.add('selected');
+        el.style.background = '#e6f9ee';
+        el.style.borderColor = '#28a745';
+        var icon = el.querySelector('.select-indicator');
+        if (icon) { icon.className = 'fas fa-check-circle select-indicator'; icon.style.color = '#28a745'; }
+        selectedRegisterPathwayId = pathwayId;
+        var btn = document.getElementById('btn-confirm-register-pathway');
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+    }
+    function confirmRegisterPathway() {
+        if (!selectedRegisterPathwayId) return;
+        registerFromFilter(selectedRegisterPathwayId, '');
+        closeRegisterPathwayModal();
+    }
+    function closeRegisterPathwayModal() {
+        var modal = document.getElementById('registerPathwayModal');
+        if (modal) modal.style.display = 'none';
+    }
+    document.addEventListener('click', function(e) {
+        var modal = document.getElementById('registerPathwayModal');
+        if (modal && e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+
     document.addEventListener("DOMContentLoaded", function() {
         const pSelect = document.getElementById('pathway');
         if (pSelect) new CustomSelectAdapter(pSelect);

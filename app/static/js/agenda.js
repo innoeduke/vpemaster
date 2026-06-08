@@ -42,6 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let isEditing = false;
   let sortable = null;
   let activeOwnerInput = null;
+  let pendingEditRequest = false;
 
   const sessionPairs = {
     "Ah-Counter Introduction": "Ah-Counter Report",
@@ -57,15 +58,29 @@ document.addEventListener("DOMContentLoaded", () => {
     reverseSessionPairs[sessionPairs[key]] = key;
   }
 
+  // --- Constants ---
+  const fieldsOrder = [
+    "Meeting_Seq",
+    "Start_Time",
+    "Type_ID",
+    "Session_Title",
+    "Owner_ID",
+    "Duration_Min",
+    "Duration_Max",
+  ];
+
   // --- Main Initialization Function (called after data is fetched) ---
+  let originalTableHTML = "";
   function initializeAgendaPage() {
-    initializeEventListeners(); // Attach listeners to buttons
+    originalTableHTML = tableBody.innerHTML;
     toggleEditMode(false); // Set initial UI state
-    // Any other initial setup that depends on fetched data
   }
 
+  // Attach event listeners immediately so the Edit button works even if the
+  // user clicks before the /api/data/all fetch resolves.
+  initializeEventListeners();
+
   // --- Fetch all necessary data asynchronously and then initialize the page ---
-  // This fetch is now inside the DOMContentLoaded listener.
   // Only fetch edit-related data if the edit button is present (i.e., user is authorized)
   if (editBtn) {
     fetch("/api/data/all")
@@ -93,27 +108,19 @@ document.addEventListener("DOMContentLoaded", () => {
         window.ProjectID = data.project_id_constants;
 
         initializeAgendaPage(); // Now that data is loaded, initialize the page
+        if (pendingEditRequest) {
+          pendingEditRequest = false;
+          toggleEditMode(true);
+        }
       })
       .catch((error) => {
         console.error("Error fetching initial data:", error);
         showCustomAlert("Warning", "Could not load some editing data. You may need to reload the page to edit fully.\n\nError: " + error.message);
-        // Even if data load fails, we MUST initialize the page so buttons work!
         initializeAgendaPage();
       });
   } else {
     initializeAgendaPage(); // Initialize for guest view without fetching edit data
   }
-
-  // --- Constants ---
-  const fieldsOrder = [
-    "Meeting_Seq",
-    "Start_Time",
-    "Type_ID",
-    "Session_Title",
-    "Owner_ID",
-    "Duration_Min",
-    "Duration_Max",
-  ];
 
   // --- Event Listeners ---
   function initializeEventListeners() {
@@ -126,7 +133,26 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
     if (editBtn) {
-      editBtn.addEventListener("click", () => toggleEditMode(true));
+      editBtn.addEventListener("click", () => {
+        if (allSessionTypes.length === 0) {
+          pendingEditRequest = true;
+        } else {
+          toggleEditMode(true);
+        }
+      });
+    }
+    const noHeaderInfo = document.getElementById("no-header-info");
+    const noHeaderTooltip = document.getElementById("no-header-tooltip");
+    if (noHeaderInfo && noHeaderTooltip) {
+      noHeaderInfo.addEventListener("click", (e) => {
+        e.stopPropagation();
+        noHeaderTooltip.classList.toggle("show");
+      });
+      document.addEventListener("click", (e) => {
+        if (!noHeaderTooltip.contains(e.target) && e.target !== noHeaderInfo) {
+          noHeaderTooltip.classList.remove("show");
+        }
+      });
     }
     if (saveBtn) {
       saveBtn.addEventListener("click", () => saveChanges(false));
@@ -134,37 +160,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (cancelButton) {
       cancelButton.addEventListener("click", () => {
         if (isEditing) {
-          const meetingId = meetingFilter.value;
-          if (!meetingId) {
+          if (originalTableHTML) {
+            tableBody.innerHTML = originalTableHTML;
+            toggleEditMode(false);
+          } else {
             window.location.reload();
-            return;
           }
-
-          // Fast Cancel: Fetch current data and re-render without reload
-          fetch(`/api/agenda/get_logs/${meetingId}`)
-            .then(response => response.json())
-            .then(data => {
-              if (data.success) {
-                if (data.project_speakers) {
-                  projectSpeakers = data.project_speakers;
-                  tableContainer.dataset.projectSpeakers = JSON.stringify(projectSpeakers);
-                }
-                if (data.logs_data) {
-                  renderTableRows(data.logs_data);
-                  toggleEditMode(false);
-                } else {
-                  // Fallback if no logs returned
-                  window.location.reload();
-                }
-              } else {
-                console.error("Fast cancel failed:", data.message);
-                window.location.reload();
-              }
-            })
-            .catch(err => {
-              console.error("Fast cancel error:", err);
-              window.location.reload();
-            });
         }
       });
     }
@@ -654,6 +655,8 @@ document.addEventListener("DOMContentLoaded", () => {
           // Re-render the table with the new data
           if (data.logs_data) {
             renderTableRows(data.logs_data);
+            // Refresh the cancel cache so a future cancel restores the saved state
+            originalTableHTML = tableBody.innerHTML;
             // Exit edit mode and update UI only after successful render
             toggleEditMode(false);
             closeMeetingDetailsModal(); // Close the modal if open
@@ -849,6 +852,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
           tdOwner.appendChild(ownerRow);
         });
+        if (ownersData.length === 0) {
+          tdOwner.textContent = '-';
+        }
         row.appendChild(tdOwner);
 
         // 4. Duration
@@ -1634,54 +1640,184 @@ document.addEventListener("DOMContentLoaded", () => {
     return cell;
   }
 
+  // --- Session Type Picker Modal ---
+  // The native <select> is replaced by a button that opens a grouped modal
+  // picker. A hidden <select> is kept in the DOM so existing query sites
+  // (row.querySelector('[data-field="Type_ID"] select')) keep working.
+  let stModal = null;
+  let stModalCtx = null; // { row, hiddenSelect, triggerBtn }
+
+  // Group metadata: label, icon, icon-color class, subtitle. Order = display order.
+  const ST_GROUP_META = [
+    { key: "Officers",                    icon: "fa-user-tie", iconClass: "st-icon--awards", subtitle: "Club officer-led sessions." },
+    { key: "Featured",                    icon: "fa-star",     iconClass: "st-icon--featured", subtitle: "Highlighted featured sessions." },
+    { key: "Standard",                    icon: "fa-cogs",     iconClass: "st-icon--info",   subtitle: "Sessions defined by the super club and shared with all clubs." },
+    { key: "Custom",                      icon: "fa-building", iconClass: "st-icon--media",  subtitle: "Custom sessions specific to this club." },
+  ];
+
+  function ensureSessionTypeModal() {
+    if (stModal) return stModal;
+
+    const backdrop = document.createElement("div");
+    backdrop.id = "session-type-modal";
+    backdrop.className = "st-modal-backdrop";
+    backdrop.style.display = "none";
+    backdrop.innerHTML = `
+      <div class="st-modal-panel" role="dialog" aria-modal="true" aria-label="Select Session Type">
+        <div class="st-modal-header">
+          <div>
+            <h2 class="st-modal-title">Select Session Type</h2>
+            <p class="st-modal-subtitle">Choose a session type for this row. Sections are added via the <strong>+Section</strong> button.</p>
+          </div>
+          <button type="button" class="st-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="st-modal-body" id="st-modal-body"></div>
+        <div class="st-modal-footer">
+          <button type="button" class="st-modal-cancel">Cancel</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(backdrop);
+
+    backdrop.addEventListener("click", (e) => {
+      if (e.target === backdrop) closeSessionTypeModal();
+    });
+    backdrop.querySelector(".st-modal-close").addEventListener("click", closeSessionTypeModal);
+    backdrop.querySelector(".st-modal-cancel").addEventListener("click", closeSessionTypeModal);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && backdrop.style.display === "flex") closeSessionTypeModal();
+    });
+
+    stModal = backdrop;
+    return stModal;
+  }
+
+  function classifySessionType(t) {
+    const rg = (t.Role_Group || "").toLowerCase();
+    if (rg === "officer") return "Officers";
+    if (t.featured)       return "Featured";
+    // "Standard" only means truly standard when it comes from the super club
+    // (GLOBAL_CLUB_ID). Club-specific types tagged 'standard' belong in Custom.
+    if (rg === "standard" && t.club_id === GLOBAL_CLUB_ID) return "Standard";
+    return "Custom";
+  }
+
+  function openSessionTypeModal(row, hiddenSelect, triggerBtn) {
+    ensureSessionTypeModal();
+    stModalCtx = { row, hiddenSelect, triggerBtn };
+
+    const body = stModal.querySelector("#st-modal-body");
+    const currentTypeId = String(hiddenSelect.value || "");
+
+    const candidates = allSessionTypes.filter((t) => !t.Is_Section);
+    const groups = {};
+    for (const meta of ST_GROUP_META) groups[meta.key] = [];
+    for (const t of candidates) groups[classifySessionType(t)].push(t);
+
+    body.innerHTML = "";
+    for (const meta of ST_GROUP_META) {
+      const items = groups[meta.key];
+      if (items.length === 0) continue;
+      items.sort((a, b) => a.Title.localeCompare(b.Title));
+
+      const section = document.createElement("div");
+      section.className = `st-section st-section--${meta.key.replace(/\s+/g, "-").toLowerCase()}`;
+
+      const header = document.createElement("div");
+      header.className = "st-section-header";
+      const icon = document.createElement("div");
+      icon.className = `st-section-icon ${meta.iconClass}`;
+      icon.innerHTML = `<i class="fas ${meta.icon}"></i>`;
+      header.appendChild(icon);
+      const titles = document.createElement("div");
+      const title = document.createElement("div");
+      title.className = "st-section-title";
+      title.textContent = meta.key;
+      titles.appendChild(title);
+      const desc = document.createElement("div");
+      desc.className = "st-section-desc";
+      desc.textContent = meta.subtitle;
+      titles.appendChild(desc);
+      header.appendChild(titles);
+      section.appendChild(header);
+
+      const grid = document.createElement("div");
+      grid.className = "st-item-grid";
+      for (const t of items) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "st-item";
+        if (String(t.id) === currentTypeId) btn.classList.add("selected");
+
+        const check = document.createElement("i");
+        check.className = "fas fa-check st-item-check";
+        btn.appendChild(check);
+
+        const text = document.createElement("span");
+        text.className = "st-item-text";
+        text.textContent = t.Title;
+        btn.appendChild(text);
+
+        btn.addEventListener("click", () => {
+          hiddenSelect.value = t.id;
+          hiddenSelect.dispatchEvent(new Event("change"));
+          const labelEl = triggerBtn.querySelector(".st-trigger-label");
+          if (labelEl) labelEl.textContent = t.Title;
+          closeSessionTypeModal();
+        });
+        grid.appendChild(btn);
+      }
+      section.appendChild(grid);
+      body.appendChild(section);
+    }
+
+    stModal.style.display = "flex";
+  }
+
+  function closeSessionTypeModal() {
+    if (stModal) stModal.style.display = "none";
+    stModalCtx = null;
+  }
+
   function createTypeSelect(selectedValue) {
+    // Hidden <select> — kept for compatibility with existing query sites
+    // (row.querySelector('[data-field="Type_ID"] select')) and so that
+    // dispatching 'change' triggers the existing handleSectionChange flow.
     const select = document.createElement("select");
+    select.style.display = "none";
     select.add(new Option("-- Select Session Type --", ""));
-
-    // Allow duplicate session types (User Request: "Ballot Counting" needs to appear twice)
-    const availableTypes = [...allSessionTypes];
-
-    const sections = availableTypes.filter(t => t.Is_Section);
-
-    // Group Non-Section types into Standard and Club Specific
-    const standard = availableTypes.filter(
-      (type) => !type.Is_Section && type.club_id === GLOBAL_CLUB_ID
-    );
-    const clubSpecific = availableTypes.filter(
-      (type) => !type.Is_Section && type.club_id !== GLOBAL_CLUB_ID
-    );
-
-    const createOptGroup = (label, types) => {
-      const optgroup = document.createElement("optgroup");
-      optgroup.label = label;
-      // Sort types alphabetically within the group
-      types.sort((a, b) => a.Title.localeCompare(b.Title));
-      types.forEach((type) => {
-        optgroup.appendChild(new Option(type.Title, type.id));
-      });
-      return optgroup;
-    };
-
-    // 1. Club Specific (Local) - Show first for visibility
-    if (clubSpecific.length > 0) {
-      select.appendChild(createOptGroup("--- Club Specific Sessions ---", clubSpecific));
-    }
-
-    // 2. Standard (Global)
-    if (standard.length > 0) {
-      select.appendChild(
-        createOptGroup("--- Standard Sessions ---", standard)
-      );
-    }
-
-    // 3. Section Headers
-    if (sections.length > 0) {
-      select.appendChild(createOptGroup("--- Section Headers ---", sections));
-    }
-
-    select.value = selectedValue;
+    const candidates = allSessionTypes.filter((t) => !t.Is_Section);
+    candidates.sort((a, b) => a.Title.localeCompare(b.Title));
+    for (const t of candidates) select.add(new Option(t.Title, t.id));
+    select.value = selectedValue || "";
     select.addEventListener("change", () => handleSectionChange(select));
-    return select;
+
+    // Visible trigger button — opens the grouped modal picker.
+    const trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = "st-trigger";
+
+    const label = document.createElement("span");
+    label.className = "st-trigger-label";
+    const initialType = allSessionTypes.find((st) => st.id == selectedValue);
+    label.textContent = initialType ? initialType.Title : "-- Select Session Type --";
+    trigger.appendChild(label);
+
+    const arrow = document.createElement("i");
+    arrow.className = "fas fa-caret-down st-trigger-arrow";
+    trigger.appendChild(arrow);
+
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const row = select.closest("tr");
+      openSessionTypeModal(row, select, trigger);
+    });
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "st-type-wrapper";
+    wrapper.appendChild(select);
+    wrapper.appendChild(trigger);
+    return wrapper;
   }
 
   function createSessionTitleControl(

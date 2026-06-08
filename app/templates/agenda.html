@@ -215,7 +215,9 @@
                     <th class="col-view-duration-header"><i class="fas fa-hourglass-half"></i> {{ _("Min'") }}</th>
                 </tr>
                 <tr class="edit-mode-header" style="display: none;">
-                    <th class="col-no">{{ _('No') }}</th>
+                    <th class="col-no">{{ _('No') }} <i id="no-header-info" class="fas fa-info-circle" style="cursor: pointer;"></i>
+                        <span id="no-header-tooltip" class="info-popover">{{ _('Drag and drop the No. column to change the sequence of agenda sessions') }}</span>
+                    </th>
                     <th class="col-start-time">{{ _('Start Time') }}</th>
                     <th class="col-session-type">{{ _('Session Type') }}</th>
                     <th class="col-session-title">{{ _('Session Title') }}</th>
