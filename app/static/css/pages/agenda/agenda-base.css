@@ -564,6 +564,56 @@ td.actions-column {
 .edit-mode-active .col-no {
 	min-width: 45px;
 	text-align: center;
+	white-space: nowrap;
+	position: relative;
+}
+
+.info-popover {
+	display: none;
+	position: absolute;
+	top: 100%;
+	left: 0;
+	margin-top: 12px;
+	background: #fffbe6;
+	border: 1px solid #f0e68c;
+	border-radius: 12px;
+	padding: 8px 12px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+	font-size: 0.85em;
+	font-weight: normal;
+	color: #333;
+	white-space: normal;
+	width: max-content;
+	max-width: 280px;
+	z-index: 1000;
+}
+
+.info-popover::after {
+	content: "";
+	position: absolute;
+	top: -8px;
+	left: 16px;
+	width: 0;
+	height: 0;
+	border-left: 8px solid transparent;
+	border-right: 8px solid transparent;
+	border-bottom: 8px solid #fffbe6;
+}
+
+.info-popover::before {
+	content: "";
+	position: absolute;
+	top: -9px;
+	left: 16px;
+	width: 0;
+	height: 0;
+	border-left: 8px solid transparent;
+	border-right: 8px solid transparent;
+	border-bottom: 8px solid #f0e68c;
+}
+
+.info-popover.show {
+	display: block;
 }
 
 #logs-table .edit-mode-header th:nth-child(6) {

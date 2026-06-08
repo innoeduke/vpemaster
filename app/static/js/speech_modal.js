@@ -18,6 +18,7 @@ const modalElements = {
   mediaUrl: document.getElementById("edit-speech-media-url"),
 
   standardSelection: document.getElementById("standard-selection"),
+  standardProjectFields: document.querySelector("#speech-mode-fields .sem-standard-project-fields"),
 
   projectModeFields: document.querySelector("#speech-mode-fields #project-mode-fields"),
   pathwayGenericRow: document.querySelector("#speech-mode-fields #pathway-generic-row"),
@@ -551,7 +552,8 @@ function resetModal(logData, sessionType) {
   modalElements.credential.disabled = false;
   
   // Reset visibility of Speech Title form group (might be hidden by role modal)
-  modalElements.speechTitle.closest('.form-group').style.display = 'block';
+  const speechTitleRow = modalElements.speechTitle.closest('.form-group, .sem-field');
+  if (speechTitleRow) speechTitleRow.style.display = 'block';
 
   // Reset disabled states for checkboxes and clear custom event handlers
   if (modalElements.isProjectCheckbox) {
@@ -581,6 +583,7 @@ function resetModal(logData, sessionType) {
     modalElements.projectGroup,
     modalElements.pathwayGroup,
     modalElements.projectModeFields,
+    modalElements.standardProjectFields,
   ];
   optionalElements.forEach((el) => {
     if (el) el.style.display = "none";
@@ -623,7 +626,8 @@ const SpeechModalSetupManager = {
     modalElements.speechTitle.disabled = true;
     modalElements.standardSelection.style.display = "none";
     modalElements.projectGroup.style.display = "none";
-    modalElements.speechTitle.closest('.form-group').style.display = 'none';
+    const speechTitleRow = modalElements.speechTitle.closest('.form-group, .sem-field');
+    if (speechTitleRow) speechTitleRow.style.display = 'none';
 
     // Populate owner name header inside the card
     const ownerNameElement = document.getElementById("project-role-owner-name");
@@ -672,14 +676,27 @@ const SpeechModalSetupManager = {
     syncRoleLevel();
   },
 
+  getTitlePlaceholder(sessionType) {
+    const placeholders = {
+      "Keynote Speech": "e.g. The Leader in You",
+      "Table Topics": "e.g. Table Topics",
+      "Panel Discussion": "e.g. Panel Discussion",
+      "Evaluation": "e.g. Evaluating Tom's Ice Breaker",
+      "Individual Evaluator": "e.g. Evaluating Tom's Ice Breaker",
+      "Prepared Speech": "e.g. My Ice Breaker",
+      "Pathway Speech": "e.g. My Pathway Speech",
+      "Presentation": "e.g. My Club Presentation",
+    };
+    return placeholders[sessionType] || "Enter title";
+  },
+
   setupProjectRole(logData, { sessionType, workingPath, projectIds, defaultOption, speechTitleLabelText }) {
     modalElements.title.textContent = "Edit Details";
     if (speechTitleLabelText) {
       modalElements.speechTitleLabel.textContent = speechTitleLabelText;
     }
-    if (sessionType !== "Evaluation" && sessionType !== "Individual Evaluator") {
-      modalElements.speechTitle.disabled = true;
-    }
+    modalElements.speechTitle.disabled = false;
+    modalElements.speechTitle.placeholder = SpeechModalSetupManager.getTitlePlaceholder(sessionType);
 
     // Populate owner name header inside the card
     const ownerNameElement = document.getElementById("project-role-owner-name");
@@ -785,7 +802,11 @@ const SpeechModalSetupManager = {
 
   setupSpeech(logData, { workingPath, nextProject, sessionType }) {
     modalElements.title.textContent = "Edit Details";
+    modalElements.speechTitle.placeholder = SpeechModalSetupManager.getTitlePlaceholder(sessionType);
     modalElements.standardSelection.style.display = "block";
+    if (modalElements.standardProjectFields) {
+      modalElements.standardProjectFields.style.display = "block";
+    }
     modalElements.pathwaySelect.required = true;
     modalElements.pathwayGenericRow.style.display = "block";
     modalElements.levelSelectGroup.style.display = "block";
@@ -1054,16 +1075,19 @@ function buildSavePayload() {
       payload.project_id = isProject ? ProjectID.MODERATOR_PROJECT : null;
       payload.pathway = pathwaySelectDropdown.value || "";
       payload.level = levelDropdownValue;
+      payload.session_title = speechTitle.value || "";
       break;
     case "Table Topics":
       payload.project_id = isProject ? ProjectID.TOPICSMASTER_PROJECT : null;
       payload.pathway = pathwaySelectDropdown.value || "";
       payload.level = levelDropdownValue;
+      payload.session_title = speechTitle.value || "";
       break;
     case "Keynote Speech":
       payload.project_id = isProject ? ProjectID.KEYNOTE_SPEAKER_PROJECT : null;
       payload.pathway = pathwaySelectDropdown.value || "";
       payload.level = levelDropdownValue;
+      payload.session_title = speechTitle.value || "";
       break;
     case "Evaluation":
     case "Individual Evaluator":

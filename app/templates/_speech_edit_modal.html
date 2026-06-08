@@ -85,6 +85,14 @@
             background: linear-gradient(135deg, #f5f3ff 0%, #f8fafc 70%);
             border-color: #ddd6fe;
         }
+        #speechEditModal .sem-section--info {
+            background: linear-gradient(135deg, #f0f9ff 0%, #f8fafc 70%);
+            border-color: #bae6fd;
+        }
+        #speechEditModal .sem-section--media {
+            background: linear-gradient(135deg, #f0fdf4 0%, #f8fafc 70%);
+            border-color: #bbf7d0;
+        }
 
         #speechEditModal .sem-section-header {
             display: flex;
@@ -106,6 +114,8 @@
         }
         #speechEditModal .sem-section-icon--role   { background: rgba(0, 65, 101, 0.10); color: #004165; }
         #speechEditModal .sem-section-icon--owners { background: rgba(124, 58, 237, 0.10); color: #6d28d9; }
+        #speechEditModal .sem-section-icon--info   { background: rgba(2, 132, 199, 0.12); color: #0369a1; }
+        #speechEditModal .sem-section-icon--media  { background: rgba(46, 125, 50, 0.12); color: #2e7d32; }
 
         #speechEditModal .sem-section-title {
             margin: 0;
@@ -122,6 +132,83 @@
             font-family: "Inter", sans-serif;
             line-height: 1.4;
             text-align: left;
+        }
+
+        /* --- Field grid (used in Project Info & Media) --- */
+        #speechEditModal .sem-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 14px;
+        }
+        #speechEditModal .sem-field { display: flex; flex-direction: column; }
+        #speechEditModal .sem-field label {
+            display: block;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #475569;
+            margin: 0 0 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-align: left;
+        }
+        #speechEditModal .sem-field input[type="text"],
+        #speechEditModal .sem-field input[type="url"],
+        #speechEditModal .sem-field input[type="number"],
+        #speechEditModal .sem-field select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            background: #fff;
+            font-size: 14px;
+            font-family: "Inter", sans-serif;
+            color: #1e293b;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            box-sizing: border-box;
+        }
+        #speechEditModal .sem-field input:focus,
+        #speechEditModal .sem-field select:focus {
+            outline: none;
+            border-color: #772432;
+            box-shadow: 0 0 0 3px rgba(119, 36, 50, 0.12);
+        }
+        #speechEditModal .sem-field input:disabled,
+        #speechEditModal .sem-field select:disabled {
+            background: #f1f5f9;
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        /* --- Inline checkbox row --- */
+        #speechEditModal .sem-checkbox {
+            display: inline-flex;
+            align-items: center;
+            gap: 16px;
+            padding: 10px 14px;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            user-select: none;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #1e293b;
+            font-family: "Inter", sans-serif;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        #speechEditModal .sem-checkbox:hover {
+            border-color: #cbd5e0;
+        }
+        #speechEditModal .sem-checkbox input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #772432;
+            cursor: pointer;
+            margin: 0;
+        }
+        #speechEditModal .sem-checkbox input[type="checkbox"]:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
         }
 
         /* --- Role display (read-only name) --- */
@@ -280,66 +367,84 @@
         <div id="speech-mode-fields">
           <input type="hidden" id="edit-session-owner" />
 
-          <div class="form-group">
-            <label for="edit-credential" class="modal-label">Credential:</label>
-            <input type="text" id="edit-credential" name="credential" placeholder="e.g. DTM" />
-          </div>
-
-          <div class="form-group">
-            <label for="edit-speech-title" id="edit-speech-title-label" class="modal-label">Session Title:</label>
-            <input type="text" id="edit-speech-title" name="speech_title" required />
-          </div>
-
-          <!-- Card for Project Roles (Evaluation, Panel Discussion, Table Topics, Keynote Speech) -->
-          <div class="role-owner-card" id="pathway-group" style="display: none; flex-direction: column; margin-bottom: 20px;">
-            <div class="card-owner-name" id="project-role-owner-name">Owner Name</div>
-
-            <div class="form-group">
-              <label for="pathway-select-dropdown">Pathway</label>
-              <select id="pathway-select-dropdown" name="pathway_dropdown">
-                <option value="">-- Select Pathway --</option>
-              </select>
-            </div>
-            <div class="form-group" id="level-group">
-              <label for="level-select-dropdown">Level</label>
-              <select id="level-select-dropdown" name="level_dropdown">
-                <option value="">-- Select Level --</option>
-                {% for i in range(1, 6) %}
-                <option value="{{ i }}">Level {{ i }}</option>
-                {% endfor %}
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group" id="project-group" style="display: none;">
-            <div class="checkbox-input-wrapper" style="display: flex; align-items: center;">
-              <input type="checkbox" id="is-project-chk" name="is_project" class="scaled-checkbox">
-              <label for="is-project-chk" style="margin-left: 10px; cursor: pointer; margin-bottom: 0;">Is Project?</label>
-            </div>
-          </div>
-
-          <div id="project-mode-fields" style="display: none;">
-            <div class="form-group">
-              <label for="project-select-dropdown" class="modal-label">Project:</label>
-              <select id="project-select-dropdown" name="project_dropdown">
-                <option value="">-- Select Project --</option>
-              </select>
-            </div>
-          </div>
-
-          <div id="standard-selection" style="display: none;">
-            <!-- Card for Standard Speech (Prepared Speech, Pathway Speech, Presentation) -->
-            <div class="role-owner-card" id="speech-owner-card" style="display: flex; flex-direction: column; margin-bottom: 20px;">
-              <div class="card-owner-name" id="speech-owner-name">Owner Name</div>
-
-              <div class="form-group" id="pathway-generic-row">
-                <label for="edit-pathway" id="label-pathway-series">Pathway</label>
-                <select id="edit-pathway" name="pathway" onchange="updateDynamicOptions()" required></select>
+          <!-- Section 1: Project Information -->
+          <section class="sem-section sem-section--info">
+            <header class="sem-section-header">
+              <span class="sem-section-icon sem-section-icon--info"><i class="fas fa-info-circle"></i></span>
+              <div>
+                <h3 class="sem-section-title">Project Information</h3>
+                <p class="sem-section-desc">Core details of this project or speech session.</p>
+              </div>
+            </header>
+            <div class="sem-grid">
+              <!-- Title (first row) -->
+              <div class="sem-field">
+                <label for="edit-speech-title" id="edit-speech-title-label">Title</label>
+                <input type="text" id="edit-speech-title" name="speech_title" required placeholder="Enter title" />
               </div>
 
-              <div class="form-group" id="level-select-group">
-                <label for="edit-level" id="label-level">Level</label>
-                <select id="edit-level" name="level" onchange="updateDynamicOptions()">
+              <!-- Is Project? (project role case) -->
+              <div class="sem-field" id="project-group" style="display: none;">
+                <label class="sem-checkbox">
+                  <input type="checkbox" id="is-project-chk" name="is_project" class="scaled-checkbox">
+                  <span>Is Project?</span>
+                </label>
+              </div>
+
+              <!-- Project select (project role case, conditional) -->
+              <div class="sem-field" id="project-mode-fields" style="display: none;">
+                <label for="project-select-dropdown">Project</label>
+                <select id="project-select-dropdown" name="project_dropdown">
+                  <option value="">-- Select Project --</option>
+                </select>
+              </div>
+
+              <!-- Standard speech case: Is Project? + Project select (moved out of standard-selection) -->
+              <div class="sem-standard-project-fields" style="display: none;">
+                <div class="sem-field">
+                  <label class="sem-checkbox">
+                    <input type="checkbox" id="edit-is-project" name="is_project" class="scaled-checkbox" checked />
+                    <span>Is Project?</span>
+                  </label>
+                </div>
+                <div class="sem-field" id="project-select-group">
+                  <label for="edit-project" id="label-project-presentation">Project</label>
+                  <select id="edit-project" name="project_id">
+                    <option value="">-- Select a Project --</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Displayed Credential (last) -->
+              <div class="sem-field">
+                <label for="edit-credential">Displayed Credential</label>
+                <input type="text" id="edit-credential" name="credential" placeholder="e.g. DTM" />
+              </div>
+            </div>
+          </section>
+
+          <!-- Section 2: Owners & Pathway -->
+          <section class="sem-section sem-section--owners">
+            <header class="sem-section-header">
+              <span class="sem-section-icon sem-section-icon--owners"><i class="fas fa-user"></i></span>
+              <div>
+                <h3 class="sem-section-title">Owners &amp; Pathway</h3>
+                <p class="sem-section-desc">The member(s) assigned and their pathway progress.</p>
+              </div>
+            </header>
+
+            <!-- Project role case: owner card with pathway/level -->
+            <div class="role-owner-card" id="pathway-group" style="display: none; flex-direction: column;">
+              <div class="card-owner-name" id="project-role-owner-name">Owner Name</div>
+              <div class="form-group">
+                <label for="pathway-select-dropdown">Pathway</label>
+                <select id="pathway-select-dropdown" name="pathway_dropdown">
+                  <option value="">-- Select Pathway --</option>
+                </select>
+              </div>
+              <div class="form-group" id="level-group">
+                <label for="level-select-dropdown">Level</label>
+                <select id="level-select-dropdown" name="level_dropdown">
                   <option value="">-- Select Level --</option>
                   {% for i in range(1, 6) %}
                   <option value="{{ i }}">Level {{ i }}</option>
@@ -348,24 +453,43 @@
               </div>
             </div>
 
-            <!-- Is Project Checkbox stacked below the card -->
-            <div class="form-group" style="display: flex; align-items: center; margin-bottom: 15px;">
-              <input type="checkbox" id="edit-is-project" name="is_project" class="scaled-checkbox" checked />
-              <label for="edit-is-project" style="margin-left: 10px; cursor: pointer; font-weight: 700; margin-bottom: 0; color: #555;">Is Project?</label>
+            <!-- Standard speech case: owner card with pathway/level -->
+            <div id="standard-selection" style="display: none;">
+              <div class="role-owner-card" id="speech-owner-card" style="display: flex; flex-direction: column;">
+                <div class="card-owner-name" id="speech-owner-name">Owner Name</div>
+                <div class="form-group" id="pathway-generic-row">
+                  <label for="edit-pathway" id="label-pathway-series">Pathway</label>
+                  <select id="edit-pathway" name="pathway" onchange="updateDynamicOptions()" required></select>
+                </div>
+                <div class="form-group" id="level-select-group">
+                  <label for="edit-level" id="label-level">Level</label>
+                  <select id="edit-level" name="level" onchange="updateDynamicOptions()">
+                    <option value="">-- Select Level --</option>
+                    {% for i in range(1, 6) %}
+                    <option value="{{ i }}">Level {{ i }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
             </div>
+          </section>
 
-            <div class="form-group" id="project-select-group">
-              <label for="edit-project" id="label-project-presentation" class="modal-label">Project:</label>
-              <select id="edit-project" name="project_id">
-                <option value="">-- Select a Project --</option>
-              </select>
+          <!-- Section 3: Media -->
+          <section class="sem-section sem-section--media">
+            <header class="sem-section-header">
+              <span class="sem-section-icon sem-section-icon--media"><i class="fas fa-video"></i></span>
+              <div>
+                <h3 class="sem-section-title">Media</h3>
+                <p class="sem-section-desc">Link to the meeting recording or any external reference.</p>
+              </div>
+            </header>
+            <div class="sem-grid">
+              <div class="sem-field">
+                <label for="edit-speech-media-url">Video URL</label>
+                <input type="text" id="edit-speech-media-url" name="media_url" placeholder="e.g. https://youtu.be/..." />
+              </div>
             </div>
-          </div>
-
-          <div class="form-group">
-            <label for="edit-speech-media-url" class="modal-label">Media URL:</label>
-            <input type="text" id="edit-speech-media-url" name="media_url" placeholder="e.g., https://youtu.be/..." />
-          </div>
+          </section>
         </div>
 
         <!-- Role Mode Fields Container -->

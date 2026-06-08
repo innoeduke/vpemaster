@@ -42,6 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let isEditing = false;
   let sortable = null;
   let activeOwnerInput = null;
+  let pendingEditRequest = false;
 
   const sessionPairs = {
     "Ah-Counter Introduction": "Ah-Counter Report",
@@ -57,15 +58,29 @@ document.addEventListener("DOMContentLoaded", () => {
     reverseSessionPairs[sessionPairs[key]] = key;
   }
 
+  // --- Constants ---
+  const fieldsOrder = [
+    "Meeting_Seq",
+    "Start_Time",
+    "Type_ID",
+    "Session_Title",
+    "Owner_ID",
+    "Duration_Min",
+    "Duration_Max",
+  ];
+
   // --- Main Initialization Function (called after data is fetched) ---
+  let originalTableHTML = "";
   function initializeAgendaPage() {
-    initializeEventListeners(); // Attach listeners to buttons
+    originalTableHTML = tableBody.innerHTML;
     toggleEditMode(false); // Set initial UI state
-    // Any other initial setup that depends on fetched data
   }
 
+  // Attach event listeners immediately so the Edit button works even if the
+  // user clicks before the /api/data/all fetch resolves.
+  initializeEventListeners();
+
   // --- Fetch all necessary data asynchronously and then initialize the page ---
-  // This fetch is now inside the DOMContentLoaded listener.
   // Only fetch edit-related data if the edit button is present (i.e., user is authorized)
   if (editBtn) {
     fetch("/api/data/all")
@@ -93,27 +108,19 @@ document.addEventListener("DOMContentLoaded", () => {
         window.ProjectID = data.project_id_constants;
 
         initializeAgendaPage(); // Now that data is loaded, initialize the page
+        if (pendingEditRequest) {
+          pendingEditRequest = false;
+          toggleEditMode(true);
+        }
       })
       .catch((error) => {
         console.error("Error fetching initial data:", error);
         showCustomAlert("Warning", "Could not load some editing data. You may need to reload the page to edit fully.\n\nError: " + error.message);
-        // Even if data load fails, we MUST initialize the page so buttons work!
         initializeAgendaPage();
       });
   } else {
     initializeAgendaPage(); // Initialize for guest view without fetching edit data
   }
-
-  // --- Constants ---
-  const fieldsOrder = [
-    "Meeting_Seq",
-    "Start_Time",
-    "Type_ID",
-    "Session_Title",
-    "Owner_ID",
-    "Duration_Min",
-    "Duration_Max",
-  ];
 
   // --- Event Listeners ---
   function initializeEventListeners() {
@@ -126,7 +133,26 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
     if (editBtn) {
-      editBtn.addEventListener("click", () => toggleEditMode(true));
+      editBtn.addEventListener("click", () => {
+        if (allSessionTypes.length === 0) {
+          pendingEditRequest = true;
+        } else {
+          toggleEditMode(true);
+        }
+      });
+    }
+    const noHeaderInfo = document.getElementById("no-header-info");
+    const noHeaderTooltip = document.getElementById("no-header-tooltip");
+    if (noHeaderInfo && noHeaderTooltip) {
+      noHeaderInfo.addEventListener("click", (e) => {
+        e.stopPropagation();
+        noHeaderTooltip.classList.toggle("show");
+      });
+      document.addEventListener("click", (e) => {
+        if (!noHeaderTooltip.contains(e.target) && e.target !== noHeaderInfo) {
+          noHeaderTooltip.classList.remove("show");
+        }
+      });
     }
     if (saveBtn) {
       saveBtn.addEventListener("click", () => saveChanges(false));
@@ -134,37 +160,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (cancelButton) {
       cancelButton.addEventListener("click", () => {
         if (isEditing) {
-          const meetingId = meetingFilter.value;
-          if (!meetingId) {
+          if (originalTableHTML) {
+            tableBody.innerHTML = originalTableHTML;
+            toggleEditMode(false);
+          } else {
             window.location.reload();
-            return;
           }
-
-          // Fast Cancel: Fetch current data and re-render without reload
-          fetch(`/api/agenda/get_logs/${meetingId}`)
-            .then(response => response.json())
-            .then(data => {
-              if (data.success) {
-                if (data.project_speakers) {
-                  projectSpeakers = data.project_speakers;
-                  tableContainer.dataset.projectSpeakers = JSON.stringify(projectSpeakers);
-                }
-                if (data.logs_data) {
-                  renderTableRows(data.logs_data);
-                  toggleEditMode(false);
-                } else {
-                  // Fallback if no logs returned
-                  window.location.reload();
-                }
-              } else {
-                console.error("Fast cancel failed:", data.message);
-                window.location.reload();
-              }
-            })
-            .catch(err => {
-              console.error("Fast cancel error:", err);
-              window.location.reload();
-            });
         }
       });
     }
@@ -654,6 +655,8 @@ document.addEventListener("DOMContentLoaded", () => {
           // Re-render the table with the new data
           if (data.logs_data) {
             renderTableRows(data.logs_data);
+            // Refresh the cancel cache so a future cancel restores the saved state
+            originalTableHTML = tableBody.innerHTML;
             // Exit edit mode and update UI only after successful render
             toggleEditMode(false);
             closeMeetingDetailsModal(); // Close the modal if open
@@ -849,6 +852,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
           tdOwner.appendChild(ownerRow);
         });
+        if (ownersData.length === 0) {
+          tdOwner.textContent = '-';
+        }
         row.appendChild(tdOwner);
 
         // 4. Duration
