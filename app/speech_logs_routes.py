@@ -326,6 +326,7 @@ def _get_pathway_info(viewed_contact, raw_pathway, filters):
 
     # Get member pathways using model method
     member_pathways = []
+    available_pathways = []
     if viewed_contact:
         member_pathways = viewed_contact.get_member_pathways()
         # Ensure selected pathway is in list
@@ -333,9 +334,27 @@ def _get_pathway_info(viewed_contact, raw_pathway, filters):
             if not any(p['name'] == selected_pathway for p in member_pathways):
                 member_pathways.append({'name': selected_pathway, 'status': 'unknown', 'abbr': '', 'path_id': None})
                 member_pathways.sort(key=lambda x: x['name'])
+
+        # Available (unregistered) pathways — only populated when the current
+        # user has SPEECH_LOGS_MANAGE, because the Register popover in the
+        # filter-control is gated to that permission. Mirrors the exclusion
+        # logic in pathways_routes.get_contact_pathways.
+        if is_authorized(Permissions.SPEECH_LOGS_MANAGE):
+            registered_pathway_ids = {
+                cp.pathway.id for cp in viewed_contact.registered_paths if cp.pathway
+            }
+            all_active = Pathway.query.filter(
+                Pathway.status == 'active',
+                Pathway.type.in_(['pathway', 'program'])
+            ).order_by(Pathway.name).all()
+            available_pathways = [
+                {'pathway_id': p.id, 'name': p.name, 'abbr': p.abbr}
+                for p in all_active if p.id not in registered_pathway_ids
+            ]
     return {
         'selected_pathway': selected_pathway,
         'member_pathways': member_pathways,
+        'available_pathways': available_pathways,
         'impersonated_user_name': viewed_contact.Name if viewed_contact else None
     }
 
@@ -359,13 +378,13 @@ def _get_pathway_date_range(contact, pathway_name):
         achievements = Achievement.query.filter_by(
             user_id=uid,
             achievement_type='path-completion'
-        ).order_by(Achievement.issue_date).all()
+        ).order_by(Achievement.award_date).all()
     else:
         # Fall back to member_id if no user_id
         achievements = Achievement.query.filter_by(
             member_id=str(contact.id),
             achievement_type='path-completion'
-        ).order_by(Achievement.issue_date).all()
+        ).order_by(Achievement.award_date).all()
     
     # Identify segments
     start_date = datetime.min.date()
@@ -375,12 +394,12 @@ def _get_pathway_date_range(contact, pathway_name):
     
     for ach in achievements:
         if ach.path_name == pathway_name:
-            end_date = ach.issue_date
+            end_date = ach.award_date
             found_path = True
             break
         # If we haven't found our path yet, this achievement marks the END of a previous segment,
         # so our path must start AFTER this.
-        start_date = ach.issue_date # We'll start checking from day after usually, but inclusive logic is safer if same day switch
+        start_date = ach.award_date # We'll start checking from day after usually, but inclusive logic is safer if same day switch
     
     # Refine start_date logic: strictly speaking, roles for a new path 
     # shouldn't overlap with the *completion* event of the old one, but 
@@ -1722,6 +1741,7 @@ def show_speech_logs():
         all_contacts=dropdown_data['all_contacts'],
         viewed_contact=viewed_contact,
         member_pathways=pathway_info['member_pathways'],
+        available_pathways=pathway_info['available_pathways'],
         active_level=active_level,
         ProjectID=ProjectID,
         upcoming_meetings=upcoming_meetings,
@@ -1736,45 +1756,53 @@ def show_speech_logs():
 def show_project_view():
     """
     Display speech logs in a project-centric view (bar chart style).
-    Accessible to admins mainly, but logic could allow others.
+    Requires MEETING_VIEW_ALL permission.
     """
-    if not is_authorized(Permissions.SPEECH_LOGS_MANAGE):
-        from flask import redirect, url_for
-        return redirect(url_for('speech_logs_bp.show_speech_logs', view_mode='member')) 
+    if not is_authorized(Permissions.MEETING_VIEW_ALL):
+        from flask import abort
+        abort(403)
              
-    from .utils import get_terms, get_active_term, get_date_ranges_for_terms
+    from .utils import get_terms, get_active_term
              
     terms = get_terms()
     # Get dropdown data for filter
-    
+
     # User requested: show pathways.path (name) with pathway.type=pathway, separated by status
     pathways_query = db.session.query(Pathway.name, Pathway.status).filter(Pathway.type == 'pathway').order_by(Pathway.name).all()
-    
+
     active_pathways = []
     inactive_pathways = []
-    
+
     for name, status in pathways_query:
         if status == 'active':
             active_pathways.append(name)
         else:
             inactive_pathways.append(name)
-    
-    # Multi-select support for terms
-    selected_term_ids = request.args.getlist('term')
-    
+
+    # Date range filter (Start/End Date) — defaults to the active term
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+
     current_term = get_active_term(terms)
-    
-    if not selected_term_ids:
-        # Default to current term if available, else first one
+
+    if not start_date and not end_date:
         if current_term:
-            selected_term_ids = [current_term['id']]
-        elif terms:
-            selected_term_ids = [terms[0]['id']]
-            
-    # Calculate date ranges for all selected terms
-    date_ranges = get_date_ranges_for_terms(selected_term_ids, terms)
-    should_filter_date = bool(selected_term_ids)
-    
+            start_date = current_term['start']
+            end_date = current_term['end']
+
+    from datetime import datetime
+    date_ranges = []
+    should_filter_date = False
+    if start_date and end_date:
+        try:
+            s = datetime.strptime(start_date, '%Y-%m-%d').date()
+            e = datetime.strptime(end_date, '%Y-%m-%d').date()
+            if s <= e:
+                date_ranges = [(s, e)]
+                should_filter_date = True
+        except ValueError:
+            pass
+
     selected_pathway_id = request.args.get('pathway')
     
     from .club_context import get_current_club_id
@@ -1880,8 +1908,9 @@ def show_project_view():
     return render_template(
         'project_view.html',
         terms=terms,
-        current_term=current_term, # Kept for backward compat or display title
-        selected_term_ids=selected_term_ids, # Pass selected IDs list
+        current_term=current_term,
+        start_date=start_date,
+        end_date=end_date,
         chart_data=chart_data,
         max_count=current_max_count,
         active_pathways=active_pathways,

@@ -39,7 +39,7 @@
         <tbody>
             {% for achievement in achievements %}
             <tr>
-                <td>{{ achievement.issue_date.strftime('%Y-%m-%d') }}</td>
+                <td>{{ achievement.award_date.strftime('%Y-%m-%d') }}</td>
                 <td>{{ achievement.contact.Name }}</td>
                 <td>{{ achievement.member_id or '-' }}</td>
                 <td>{{ 'DTM' if achievement.achievement_type == 'dtm' else achievement.achievement_type.replace('-', '

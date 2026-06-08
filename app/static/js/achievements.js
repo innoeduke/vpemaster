@@ -43,7 +43,7 @@ function openAchievementModal(action, userId, memberName, memberId, achievementT
 	const typeSelect = document.getElementById('achievement_type');
 	if (typeSelect) typeSelect.value = achievementType || 'level-completion';
 
-	const dateInput = document.getElementById('issue_date');
+	const dateInput = document.getElementById('award_date');
 	if (dateInput) {
 	    if (issueDate) {
 	        dateInput.value = issueDate;
@@ -80,7 +80,7 @@ function closeAchievementModal() {
 		const searchInput = document.getElementById('achievement_contact_search');
 		if (searchInput) searchInput.readOnly = false;
 		// Reset date
-		const dateInput = document.getElementById('issue_date');
+		const dateInput = document.getElementById('award_date');
 		if (dateInput) dateInput.value = '';
 	}
 }
@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		const payload = {
 			user_id: userId,
 			achievement_type: document.getElementById('achievement_type')?.value,
-			issue_date: document.getElementById('issue_date')?.value,
+			award_date: document.getElementById('award_date')?.value,
 			path_name: document.getElementById('path_name')?.value,
 			level: document.getElementById('level')?.value,
 			notes: document.getElementById('notes')?.value

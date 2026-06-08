@@ -235,7 +235,7 @@ class Contact(db.Model):
     def get_level_achievement_dates(self, pathway_name):
         """
         Get achievement issue dates for the given pathway.
-        Returns dict of {level: issue_date (str)}.
+        Returns dict of {level: award_date (str)}.
         """
         from .achievement import Achievement
         
@@ -256,7 +256,7 @@ class Contact(db.Model):
         else:
             achievements = []
             
-        res = {int(a.level): a.issue_date.strftime('%Y-%m-%d') for a in achievements if a.level and a.issue_date}
+        res = {int(a.level): a.award_date.strftime('%Y-%m-%d') for a in achievements if a.level and a.award_date}
         setattr(self, cache_key, res)
         return res
     
@@ -307,8 +307,8 @@ class Contact(db.Model):
                 return level
                 
             # Level completed: was it completed AFTER the reference date?
-            # If reference_date is on or before issue_date, it belongs to this level
-            if reference_date <= comp.issue_date:
+            # If reference_date is on or before award_date, it belongs to this level
+            if reference_date <= comp.award_date:
                 return level
                 
         # If all 5 levels completed on or before reference_date

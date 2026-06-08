@@ -35,7 +35,7 @@ def test_ensure_contact_aggregates_centralized_achievements(app, default_club):
         # Add achievements linked to USER
         db.session.add(Achievement(
             user_id=user.id,
-            issue_date=date(2025, 6, 1),
+            award_date=date(2025, 6, 1),
             achievement_type="path-completion",
             path_name="Dynamic Leadership"
         ))

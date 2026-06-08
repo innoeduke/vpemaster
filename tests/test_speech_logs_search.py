@@ -118,11 +118,10 @@ def test_speech_logs_view_transitions(client, app, default_club, staff_user):
         resp = client.get('/speech_logs?view_mode=admin')
         assert resp.status_code == 200
         # Check that meeting_view was not rendered, but member_view was
-        # Let's inspect the html text or verify it loaded member toolbar
+        # The member view's filter form has a unique id
         html_text = resp.data.decode('utf-8')
-        assert "Member" in html_text
+        assert "speech-logs-filter-form" in html_text
         assert "btn-meeting-view" not in html_text # meeting button hidden/removed
-        assert "Project" in html_text
 
     # 2. Access speech logs with search query q=Samantha -> should render search_view
     with patch('app.speech_logs_routes.is_authorized', return_value=True):
@@ -137,4 +136,4 @@ def test_speech_logs_view_transitions(client, app, default_club, staff_user):
         assert resp.status_code == 200
         html_text = resp.data.decode('utf-8')
         assert "Search Results for" not in html_text
-        assert "Member" in html_text
+        assert "speech-logs-filter-form" in html_text

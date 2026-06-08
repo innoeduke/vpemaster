@@ -1,6 +1,8 @@
 {% extends "speech_logs.html" %}
 
-{% block speech_view_title %}{{ _('Project View') }}{% endblock %}
+{% block speech_view_title %}{{ _('Projects') }}{% endblock %}
+
+{% block page_heading %}<h1><i class="fas fa-project-diagram"></i> {{ _('Projects') }}</h1>{% endblock %}
 
 {% block content_class %}project-view-container{% endblock %}
 
@@ -9,21 +11,28 @@
 		id="speech-logs-filter-form">
 		<div class="filter-row-premium">
 			<div class="filters-set">
-				<div class="form-group filter-group-premium flex-1">
-					<label for="term" class="label-premium label-filter">{{ _('Club Terms:') }}</label>
-					<select name="term" id="term" multiple>
-						{% for term in terms %}
-						<option value="{{ term.id }}" {% if selected_term_ids and term.id in selected_term_ids %}selected{% endif %}>
-							{{ term.label }}
-						</option>
-						{% endfor %}
-					</select>
+				<div class="form-group filter-group-premium date-filter-form">
+					<div class="date-filter-group">
+						<div class="date-input-wrapper">
+							<label class="filter-label" for="start_date">{{ _('Start Date') }}:</label>
+							<input type="date" id="start_date" name="start_date" class="form-control"
+								value="{{ start_date or (current_term['start'] if current_term else '') }}"
+								onchange="this.form.submit()">
+						</div>
+						<div class="date-input-wrapper">
+							<label class="filter-label" for="end_date">{{ _('End Date') }}:</label>
+							<input type="date" id="end_date" name="end_date" class="form-control"
+								value="{{ end_date or (current_term['end'] if current_term else '') }}"
+								onchange="this.form.submit()">
+						</div>
+					</div>
 				</div>
 				<div class="form-group filter-group-premium flex-1">
-					<label for="pathway" class="label-premium label-filter">{{ _('Pathways:') }}</label>
-					<select name="pathway" id="pathway" onchange="this.form.submit()">
+					<div style="display: flex; flex-direction: column; flex: 1; min-width: 200px;">
+						<label for="pathway" class="filter-label">{{ _('Pathways:') }}</label>
+						<select name="pathway" id="pathway" onchange="this.form.submit()">
 						<option value="" {% if not selected_pathway %}selected{% endif %}>{{ _('All Pathways') }}</option>
-						
+
 						<optgroup label="{{ _('Active') }}">
 							{% for p in active_pathways %}
 							<option value="{{ p }}" {% if selected_pathway == p %}selected{% endif %}>{{ p }}</option>
@@ -38,6 +47,7 @@
 						</optgroup>
 						{% endif %}
 					</select>
+					</div>
 				</div>
 			</div>
             {% if can_view_all %}
@@ -52,29 +62,15 @@
                 </form>
             </div>
             {% endif %}
-
-			<div class="view-mode-toggle">
-				<a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}" class="btn-view-control btn-member-view">
-					<i class="fas fa-user-circle"></i> {{ _('Member') }}
-				</a>
-				<a href="{{ url_for('speech_logs_bp.show_project_view') }}" class="btn-view-control btn-project-view active" onclick="return false;">
-					<i class="fas fa-chart-line"></i> {{ _('Project') }}
-				</a>
-			</div>
 		</div>
 	</form>
 {% endblock %}
 
 {% block speech_log_main %}
 	<div class="chart-container">
- 		<h3 id="project-metrics-header">{{ _('Project Completion Metrics') }} 
- 			{% if terms and selected_term_ids %}
- 				{% set selected_count = selected_term_ids|length %}
- 				{% if selected_count == terms|length %}
- 					{{ _('(All Terms)') }}
- 				{% else %}
- 					<span id="header-term-text">({% for tid in selected_term_ids %}{% for term in terms %}{% if term.id == tid %}{{ term.label }}{% endif %}{% endfor %}{% if not loop.last %}, {% endif %}{% endfor %})</span>
- 				{% endif %}
+ 		<h3 id="project-metrics-header">{{ _('Project Completion Metrics') }}
+ 			{% if start_date and end_date %}
+ 				<span id="header-date-text">({{ start_date }} - {{ end_date }})</span>
  			{% endif %}
          </h3>
 
@@ -139,7 +135,7 @@
 			{% endfor %}
 		</div>
 		{% else %}
-		<p class="no-logs-message">{{ _('No project completions found for this term.') }}</p>
+		<p class="no-logs-message">{{ _('No project completions found in this date range.') }}</p>
 		{% endif %}
 	</div>
 {% endblock %}
@@ -149,20 +145,9 @@
  <script src="{{ url_for('static', filename='js/components/custom_select_adapter.js') }}"></script>
  <script>
      document.addEventListener('DOMContentLoaded', function() {
-         const tSelect = document.getElementById('term');
          const pSelect = document.getElementById('pathway');
          const form = document.getElementById('speech-logs-filter-form');
 
-         if (tSelect) {
-             const tAdapter = new CustomSelectAdapter(tSelect);
-             const originalClose = tAdapter.close.bind(tAdapter);
-             tAdapter.close = function() {
-                 const wasOpen = this.isOpen;
-                 originalClose();
-                 if (wasOpen) form.submit();
-             };
-         }
-         
          if (pSelect) {
              new CustomSelectAdapter(pSelect);
          }

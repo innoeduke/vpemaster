@@ -912,14 +912,14 @@ class DataImportService:
             if uid:
                 existing = Achievement.query.filter(
                     Achievement.user_id == uid,
-                    Achievement.issue_date == self._parse_date(row[3]),
+                    Achievement.award_date == self._parse_date(row[3]),
                     Achievement.achievement_type == row[4],
                     Achievement.level == row[6]
                 ).first()
             else:
                 existing = Achievement.query.filter_by(
                     user_id=0,  # Will never match, acts as skip
-                    issue_date=self._parse_date(row[3]),
+                    award_date=self._parse_date(row[3]),
                     achievement_type=row[4],
                     level=row[6]
                 ).first()
@@ -928,7 +928,7 @@ class DataImportService:
                 new_ach = Achievement(
                     user_id=uid if uid else 0,
                     member_id=row[2],
-                    issue_date=self._parse_date(row[3]),
+                    award_date=self._parse_date(row[3]),
                     achievement_type=row[4],
                     path_name=row[5],
                     level=row[6],

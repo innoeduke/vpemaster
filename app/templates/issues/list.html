@@ -1,0 +1,367 @@
+{% from 'components/custom_select.html' import render_custom_select %}
+
+{% extends "base.html" %}
+
+{% block title %}{{ _('Issues') }}{% endblock %}
+
+{% block head_extra %}
+<style>
+    .issue-list-page { padding: 20px 0; width: 100%; max-width: 1400px; margin: 0 auto; }
+    .issue-filters {
+        display: flex; flex-wrap: wrap; gap: 15px;
+        background: #fff; padding: 15px; border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        margin-bottom: 20px; align-items: end;
+    }
+    .issue-filters .form-group { margin-bottom: 0; min-width: 160px; flex: 0 0 auto; }
+    .issue-filters .form-group .custom-select-label { margin-bottom: 10px; }
+    .issue-filters .filter-actions { margin-left: auto; }
+    .issue-filters .custom-select-label { font-family: Arial, sans-serif; font-weight: 600; font-size: 0.95em; color: #333; }
+    .issue-filters .custom-select-trigger,
+    .issue-filters .autocomplete-result-item { font-family: 'Gotham', 'Montserrat', 'Inter', sans-serif; }
+    .issue-table {
+        width: 100%;
+        table-layout: auto;
+        border-collapse: collapse;
+        background: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .issue-table th, .issue-table td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid #eef0f3;
+        font-size: 0.92em;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+    .issue-table th { background: #f7f8fa; font-weight: 600; color: #555; }
+    .issue-table col.col-id { width: 60px; }
+    .issue-table col.col-title { width: auto; }
+    .issue-table col.col-type,
+    .issue-table col.col-priority,
+    .issue-table col.col-status { width: 100px; }
+    .issue-table col.col-submitter { width: 1%; }
+    .issue-table col.col-assignee { width: 1%; }
+    .issue-table col.col-date { width: 110px; }
+    .issue-table td.title-cell { white-space: normal; }
+    .issue-table tr:last-child td { border-bottom: none; }
+    .issue-table tr:hover { background: #fafbfc; }
+    .issue-table a { color: #772432; text-decoration: none; font-weight: 500; }
+    .issue-table a:hover { text-decoration: underline; }
+    .issue-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.72em; font-weight: 600; color: #fff; text-transform: uppercase; letter-spacing: 0.04em; }
+    .badge-type-bug { background: #c0392b; }
+    .badge-type-feature { background: #2c7a7b; }
+    .badge-type-task { background: #4a5568; }
+    .badge-prio-high { background: #c0392b; }
+    .badge-prio-medium { background: #d69e2e; }
+    .badge-prio-low { background: #718096; }
+    .badge-status-open { background: #3182ce; }
+    .badge-status-in_progress { background: #d69e2e; }
+    .badge-status-closed { background: #38a169; }
+    .badge-status-rejected { background: #718096; }
+    .badge-status-cancelled { background: #a0aec0; }
+    .empty-row td { text-align: center; padding: 40px; color: #888; font-style: italic; }
+    .muted { color: #888; }
+
+    /* Buttons in the list page */
+    .issue-list-page .btn {
+        font-size: 0.9em;
+        padding: 0.5em 1em;
+        line-height: 1.4;
+    }
+    .issue-list-page .btn i { font-size: 0.9em; }
+
+    /* Subdued, consistent Filter + Reset buttons in the filter bar.
+       One shared class drives both, so they look identical by default and
+       behave identically on hover/focus. */
+    .issue-list-page .filter-action-btn {
+        background: transparent;
+        color: #772432;
+        border: 1px solid #772432;
+        font-weight: 600;
+        box-shadow: none;
+    }
+    .issue-list-page .filter-action-btn:hover {
+        background: #e5e7eb;
+        color: #772432;
+    }
+    /* Focus: light gray fill (subtle, non-maroon) */
+    .issue-list-page .filter-action-btn:focus {
+        outline: none;
+        background: rgba(0, 0, 0, 0.06);
+    }
+    /* When hovered while focused, hover takes precedence (more specific) */
+    .issue-list-page .filter-action-btn:focus:hover {
+        background: #e5e7eb;
+        color: #772432;
+    }
+    .issue-list-page .filter-action-btn i {
+        display: inline-block;
+        border-radius: 50%;
+        padding: 0;
+        margin: 0;
+        color: inherit;
+        transition: background-color 0.15s, padding 0.15s, margin 0.15s;
+    }
+    .issue-list-page .filter-action-btn:hover i {
+        padding: 4px 6px;
+        margin: -4px -6px;
+        background: rgba(119, 36, 50, 0.12);
+    }
+    .issue-list-page .filter-action-btn:focus i {
+        padding: 4px 6px;
+        margin: -4px -6px;
+        background: rgba(119, 36, 50, 0.1);
+    }
+    .issue-list-page .filter-action-btn:focus:hover i {
+        background: rgba(119, 36, 50, 0.12);
+    }
+
+    /* =========================================================
+       Mobile layout (≤ 768px): convert the table to stacked cards
+       ========================================================= */
+    @media (max-width: 768px) {
+        .issue-list-page { padding: 12px; }
+
+        /* Stack the page header so the title sits above the button */
+        .issue-list-page > div:first-child {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+        }
+        .issue-list-page > div:first-child h1 {
+            text-align: center;
+            font-size: 1.4em;
+            margin-bottom: 0;
+        }
+        .issue-list-page > div:first-child .btn { width: 100%; }
+
+        /* Filters: 2-up grid; action row goes full-width below */
+        .issue-filters { padding: 12px; gap: 10px; }
+        .issue-filters .form-group {
+            flex: 1 1 calc(50% - 10px);
+            min-width: 0;
+        }
+        .issue-filters .filter-actions {
+            flex: 1 1 100%;
+            margin-left: 0;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        /* Table → card list */
+        .issue-table, .issue-table thead, .issue-table tbody,
+        .issue-table tr, .issue-table td,
+        .issue-table colgroup, .issue-table col {
+            display: block; width: 100%; box-sizing: border-box;
+            border: none;
+            background: transparent;
+        }
+        .issue-table { box-shadow: none; border-radius: 0; }
+        .issue-table colgroup, .issue-table col { display: none; }
+        .issue-table thead { display: none; }
+        .issue-table tbody { display: block; }
+        .issue-table tr {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            margin-bottom: 12px;
+            padding: 14px;
+            border: none;
+        }
+        .issue-table tr:hover { background: #fff; }
+        .issue-table td {
+            padding: 0;
+            border: none;
+            white-space: normal;
+            text-align: left;
+        }
+        .issue-table td + td { margin-top: 6px; }
+
+        /* Title row: id chip + title link, side by side */
+        .issue-table td.title-cell {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .issue-table td.cell-id {
+            font-weight: 600;
+            color: #888;
+            font-size: 0.9em;
+            flex: 0 0 auto;
+        }
+        .issue-table td.title-cell a {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #222;
+            line-height: 1.3;
+        }
+
+        /* Badge row: all three inline */
+        .issue-table td.cell-type,
+        .issue-table td.cell-priority,
+        .issue-table td.cell-status {
+            display: inline-block;
+            width: auto;
+            margin-top: 0;
+        }
+        .issue-table td.cell-type     { margin-right: 6px; }
+        .issue-table td.cell-priority { margin-right: 6px; }
+
+        /* Metadata: stacked lines with a small label */
+        .issue-table td.cell-submitter,
+        .issue-table td.cell-assignee,
+        .issue-table td.cell-date {
+            font-size: 0.85em;
+            color: #555;
+            display: block;
+        }
+        .issue-table td.cell-submitter::before { content: "{{ _('From:') }} "; color: #999; }
+        .issue-table td.cell-assignee::before  { content: "{{ _('To:') }} "; color: #999; }
+        .issue-table td.cell-created::before   { content: "{{ _('Created:') }} "; color: #999; }
+        .issue-table td.cell-updated::before   { content: "{{ _('Updated:') }} "; color: #999; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container issue-list-page">
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <h1 style="margin-bottom: 0;"><i class="fas fa-tasks"></i> {{ _('Issues') }}</h1>
+        <button type="button" class="btn btn-primary" onclick="openNewIssueModal()">
+            <i class="fas fa-plus"></i> {{ _('New Issue') }}
+        </button>
+    </div>
+
+    <form method="GET" class="issue-filters">
+        {% if is_sysadmin and clubs %}
+        {% set club_options = [] %}
+        {% for c in clubs %}
+            {% set _ = club_options.append({'value': c.id, 'text': c.club_name}) %}
+        {% endfor %}
+        <div class="form-group">
+            {{ render_custom_select(
+                club_options,
+                selected_club_id or '',
+                label=_('Club'),
+                select_id='club_id',
+                placeholder=''
+            ) }}
+        </div>
+        {% endif %}
+
+        {% set status_options = [] %}
+        {% for s in Issue.STATUSES %}
+            {% set _ = status_options.append({'value': s, 'text': s.replace('_', ' ').title()}) %}
+        {% endfor %}
+        <div class="form-group">
+            {{ render_custom_select(
+                status_options,
+                filters.get('status', ''),
+                label=_('Status'),
+                select_id='status',
+                placeholder=''
+            ) }}
+        </div>
+
+        {% set type_options = [] %}
+        {% for t in Issue.TYPES %}
+            {% set _ = type_options.append({'value': t, 'text': t.title()}) %}
+        {% endfor %}
+        <div class="form-group">
+            {{ render_custom_select(
+                type_options,
+                filters.get('type', ''),
+                label=_('Type'),
+                select_id='type',
+                placeholder=''
+            ) }}
+        </div>
+
+        {% set priority_options = [] %}
+        {% for p in Issue.PRIORITIES %}
+            {% set _ = priority_options.append({'value': p, 'text': p.title()}) %}
+        {% endfor %}
+        <div class="form-group">
+            {{ render_custom_select(
+                priority_options,
+                filters.get('priority', ''),
+                label=_('Priority'),
+                select_id='priority',
+                placeholder=''
+            ) }}
+        </div>
+
+        {% set assignee_options = [] %}
+        {% for u in assignable_users %}
+            {% set _ = assignee_options.append({'value': u.id, 'text': u.display_name or u.username}) %}
+        {% endfor %}
+        <div class="form-group">
+            {{ render_custom_select(
+                assignee_options,
+                assignee_id or '',
+                label=_('Assignee'),
+                select_id='assignee_id',
+                placeholder=''
+            ) }}
+        </div>
+
+        <div class="form-group filter-actions">
+            <button type="submit" class="btn filter-action-btn"><i class="fas fa-filter"></i> {{ _('Filter') }}</button>
+            <a href="{{ url_for('issue_bp.list_issues') }}" class="btn filter-action-btn"><i class="fas fa-undo"></i> {{ _('Reset') }}</a>
+        </div>
+    </form>
+
+    <table class="issue-table">
+        <colgroup>
+            <col class="col-id">
+            <col class="col-title">
+            <col class="col-type">
+            <col class="col-priority">
+            <col class="col-status">
+            <col class="col-submitter">
+            <col class="col-assignee">
+            <col class="col-date">
+            <col class="col-date">
+        </colgroup>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>{{ _('Title') }}</th>
+                <th>{{ _('Type') }}</th>
+                <th>{{ _('Priority') }}</th>
+                <th>{{ _('Status') }}</th>
+                <th>{{ _('Submitter') }}</th>
+                <th>{{ _('Assignee') }}</th>
+                <th>{{ _('Created') }}</th>
+                <th>{{ _('Updated') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for issue in issues %}
+            <tr>
+                <td class="cell-id muted" data-label="#">#{{ issue.id }}</td>
+                <td class="cell-title title-cell" data-label="{{ _('Title') }}">
+                    <a href="{{ url_for('issue_bp.detail_issue', issue_id=issue.id) }}">{{ issue.title }}</a>
+                </td>
+                <td class="cell-type" data-label="{{ _('Type') }}"><span class="issue-badge badge-type-{{ issue.type }}">{{ issue.type }}</span></td>
+                <td class="cell-priority" data-label="{{ _('Priority') }}"><span class="issue-badge badge-prio-{{ issue.priority }}">{{ issue.priority }}</span></td>
+                <td class="cell-status" data-label="{{ _('Status') }}"><span class="issue-badge badge-status-{{ issue.status }}">{{ issue.status.replace('_', ' ') }}</span></td>
+                <td class="cell-submitter" data-label="{{ _('Submitter') }}">{{ issue.submitter.display_name if issue.submitter else '—' }}</td>
+                <td class="cell-assignee" data-label="{{ _('Assignee') }}">{{ issue.assignee.display_name if issue.assignee else '—' }}</td>
+                <td class="cell-date cell-created muted" data-label="{{ _('Created') }}">{{ issue.created_at.strftime('%Y-%m-%d') if issue.created_at else '—' }}</td>
+                <td class="cell-date cell-updated muted" data-label="{{ _('Updated') }}">{{ issue.updated_at.strftime('%Y-%m-%d') if issue.updated_at else '—' }}</td>
+            </tr>
+            {% else %}
+            <tr class="empty-row">
+                <td colspan="9">{{ _('No issues found.') }} <a href="#" onclick="openNewIssueModal(); return false;">{{ _('Create the first one.') }}</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -2342,7 +2342,7 @@ function openAchievementModal(id = null) {
         document.getElementById('member_id').value = contact.Member_ID || "";
       }
 
-      document.getElementById('issue_date').value = date;
+      document.getElementById('award_date').value = date;
       document.getElementById('achievement_type').value = typeValue;
       document.getElementById('path_name').value = (path === "-" ? "" : path);
       document.getElementById('level').value = (level === "-" ? "" : level);

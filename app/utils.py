@@ -437,7 +437,7 @@ def recalculate_contact_metadata(contact, avatar_url=None):
     # Fetch achievements for ALL related users, sorted by date descending
     achievements = Achievement.query.filter(
         Achievement.user_id.in_(list(user_ids))
-    ).order_by(Achievement.issue_date.desc()).all() if user_ids else []
+    ).order_by(Achievement.award_date.desc()).all() if user_ids else []
     
     # 1. DTM
     is_dtm = False
@@ -477,7 +477,22 @@ def recalculate_contact_metadata(contact, avatar_url=None):
 
     # 3. Credentials
     new_credentials = None
-    
+
+    # Self-healing: if the current default ContactPath is completed and a
+    # working path exists, switch the default to the working one. This
+    # ensures the user always lands on an in-progress path after completing
+    # one, regardless of which code path triggered the completion.
+    current_default = next((cp for cp in contact.registered_paths if cp.is_default), None)
+    if current_default and current_default.status == 'completed':
+        working = next(
+            (cp for cp in contact.registered_paths if cp.status == 'working'),
+            None
+        )
+        if working and working.id != current_default.id:
+            current_default.is_default = False
+            working.is_default = True
+            contact._Current_Path = working.pathway.name
+
     # Priority A: Check for Level Progress in Current Path
     if contact.Current_Path:
         level_achievements = [
@@ -493,7 +508,7 @@ def recalculate_contact_metadata(contact, avatar_url=None):
     # Priority B: Fallback to Most Recently Completed Path (XX5)
     # This ensures that even without progress in a current path, the user shows their last completion.
     if not new_credentials:
-        # Since achievements are sorted by issue_date DESC, path_comps[0] is the most recent
+        # Since achievements are sorted by award_date DESC, path_comps[0] is the most recent
         path_comps = [a for a in achievements if a.achievement_type == 'path-completion']
         if path_comps:
             pathway = Pathway.query.filter_by(name=path_comps[0].path_name).first()

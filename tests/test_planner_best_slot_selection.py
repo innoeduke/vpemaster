@@ -1,7 +1,8 @@
 import unittest
 from unittest.mock import patch
 from app import create_app, db
-from app.models import Meeting, Club, User
+from app.models import Meeting, Club, User, AuthRole, Permission, RolePermission, UserClub
+from app.auth.permissions import Permissions
 from config import Config
 
 class TestConfig(Config):
@@ -25,14 +26,31 @@ class TestPlannerSlotSelection(unittest.TestCase):
         # Create Meeting
         self.meeting = Meeting(Meeting_Number=1, status='unpublished', club_id=self.club.id)
         db.session.add(self.meeting)
-        
+
         # Create User
         self.user = User(username='testuser', email='test@example.com', password_hash='dummy')
         db.session.add(self.user)
+
+        # Grant MEMBERS_SELF via a Member role so the planner before_request
+        # hook (which gates on MEMBERS_SELF) lets the API through.
+        perm = Permission.query.filter_by(name=Permissions.MEMBERS_SELF).first()
+        if perm is None:
+            perm = Permission(name=Permissions.MEMBERS_SELF, description='Members self', category='members')
+            db.session.add(perm)
+            db.session.flush()
+        member_role = AuthRole.query.filter_by(name='Member').first()
+        if member_role is None:
+            member_role = AuthRole(name='Member', description='Member', level=1)
+            db.session.add(member_role)
+            db.session.flush()
+        if not RolePermission.query.filter_by(role_id=member_role.id, permission_id=perm.id).first():
+            db.session.add(RolePermission(role_id=member_role.id, permission_id=perm.id))
+        uc = UserClub(user_id=self.user.id, club_id=self.club.id, auth_role_id=member_role.id)
+        db.session.add(uc)
         db.session.commit()
 
         self.client = self.app.test_client()
-        
+
         # Mock login
         with self.client.session_transaction() as sess:
             sess['_user_id'] = str(self.user.id)

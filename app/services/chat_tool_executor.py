@@ -597,7 +597,7 @@ class ChatToolExecutor:
         contact_name = params.get('contact_name')
         pathway_name = params.get('pathway_name')
         level = params.get('level')
-        issue_date_str = params.get('issue_date')
+        award_date_str = params.get('award_date')
         
         contact = cls.resolve_contact(contact_name, club_id)
         if not contact:
@@ -630,10 +630,10 @@ class ChatToolExecutor:
         except ValueError:
             return {'success': False, 'message': "Level must be an integer between 1 and 5."}
 
-        issue_date = date.today()
-        if issue_date_str:
+        award_date = date.today()
+        if award_date_str:
             try:
-                issue_date = datetime.strptime(issue_date_str, '%Y-%m-%d').date()
+                award_date = datetime.strptime(award_date_str, '%Y-%m-%d').date()
             except ValueError:
                 return {'success': False, 'message': "Invalid date format. Use YYYY-MM-DD."}
 
@@ -654,7 +654,7 @@ class ChatToolExecutor:
                 user_id=contact_user_id,
                 requestor_id=user.id,
                 achievement_type='level-completion',
-                issue_date=issue_date,
+                award_date=award_date,
                 path_name=pathway.name,
                 level=level_num,
                 notes=f"Recorded via AI Assistant"
@@ -669,7 +669,7 @@ class ChatToolExecutor:
             if level_num == 5:
                 c_path.status = 'completed'
                 c_path.completed_date = date.today()
-                
+
             db.session.commit()
             return {
                 'success': True,
