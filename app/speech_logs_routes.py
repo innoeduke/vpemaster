@@ -2317,7 +2317,12 @@ def update_speech_log(log_id):
             duration_max=log.Duration_Max,
             media_url=media_url,
             affected_log_ids=affected_log_ids,
-            speaker_is_dtm=speaker_is_dtm
+            speaker_is_dtm=speaker_is_dtm,
+            role_display_name=(
+                log.session_type.role.name
+                if log.session_type and log.session_type.role
+                else (log.session_type.Title if log.session_type else None)
+            ),
         )
 
     except Exception as e:

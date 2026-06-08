@@ -130,6 +130,23 @@ async function openEditDetailsModal(
       document.querySelector(`tr[data-id="${logId}"]`)?.dataset.sessionTypeTitle;
     const currentSessionType = passedSessionType || "Pathway Speech";
 
+    // Pick up any in-flight edit the user made on the agenda row before opening
+    // the modal — otherwise we'd discard their unsaved typing and show the
+    // server's stale value.
+    const agendaRow = document.querySelector(`tr[data-id="${logId}"]`);
+    if (agendaRow) {
+      const editTitleCell = agendaRow.querySelector('td[data-field="Session_Title"]');
+      if (editTitleCell) {
+        const ctl = editTitleCell.querySelector("input, select, span");
+        if (ctl) {
+          const liveValue = ctl.tagName === "SPAN" ? ctl.textContent : ctl.value;
+          if (liveValue !== undefined && liveValue !== null) {
+            data.log.Session_Title = liveValue;
+          }
+        }
+      }
+    }
+
     // Setup basic details
     resetModal(data.log, currentSessionType);
 
@@ -679,8 +696,11 @@ const SpeechModalSetupManager = {
   getTitlePlaceholder(sessionType) {
     const placeholders = {
       "Keynote Speech": "e.g. The Leader in You",
+      "Keynote Speaker": "e.g. The Leader in You",
       "Table Topics": "e.g. Table Topics",
+      "Topicsmaster": "e.g. Table Topics",
       "Panel Discussion": "e.g. Panel Discussion",
+      "Moderator": "e.g. Panel Discussion",
       "Evaluation": "e.g. Evaluating Tom's Ice Breaker",
       "Individual Evaluator": "e.g. Evaluating Tom's Ice Breaker",
       "Prepared Speech": "e.g. My Ice Breaker",
@@ -695,7 +715,14 @@ const SpeechModalSetupManager = {
     if (speechTitleLabelText) {
       modalElements.speechTitleLabel.textContent = speechTitleLabelText;
     }
-    modalElements.speechTitle.disabled = false;
+    // Evaluation / Individual Evaluator: title holds the speaker being evaluated
+    // (used by backend's speaker_is_dtm lookup) — keep it locked to that name.
+    const editableTitleTypes = [
+      "Keynote Speech", "Keynote Speaker",
+      "Table Topics", "Topicsmaster",
+      "Panel Discussion", "Moderator",
+    ];
+    modalElements.speechTitle.disabled = !editableTitleTypes.includes(sessionType);
     modalElements.speechTitle.placeholder = SpeechModalSetupManager.getTitlePlaceholder(sessionType);
 
     // Populate owner name header inside the card
@@ -1062,6 +1089,7 @@ function buildSavePayload() {
     session_type_title: sessionType.value,
     media_url: mediaUrl.value || null,
     credential: credential.value || null,
+    session_title: speechTitle.value || "",
   };
   const isProject = isProjectChk?.checked || false;
 
@@ -1072,22 +1100,22 @@ function buildSavePayload() {
 
   switch (sessionType.value) {
     case "Panel Discussion":
+    case "Moderator":
       payload.project_id = isProject ? ProjectID.MODERATOR_PROJECT : null;
       payload.pathway = pathwaySelectDropdown.value || "";
       payload.level = levelDropdownValue;
-      payload.session_title = speechTitle.value || "";
       break;
     case "Table Topics":
+    case "Topicsmaster":
       payload.project_id = isProject ? ProjectID.TOPICSMASTER_PROJECT : null;
       payload.pathway = pathwaySelectDropdown.value || "";
       payload.level = levelDropdownValue;
-      payload.session_title = speechTitle.value || "";
       break;
     case "Keynote Speech":
+    case "Keynote Speaker":
       payload.project_id = isProject ? ProjectID.KEYNOTE_SPEAKER_PROJECT : null;
       payload.pathway = pathwaySelectDropdown.value || "";
       payload.level = levelDropdownValue;
-      payload.session_title = speechTitle.value || "";
       break;
     case "Evaluation":
     case "Individual Evaluator":
@@ -1097,13 +1125,11 @@ function buildSavePayload() {
           : null;
       payload.pathway = pathwaySelectDropdown.value || "";
       payload.level = levelDropdownValue;
-      payload.session_title = speechTitle.value || "";
       break;
     default:
       // Include speech-specific fields if the standard selection UI is visible
       if (modalElements.standardSelection && modalElements.standardSelection.style.display !== "none") {
         const isGeneric = !modalElements.isProjectCheckbox.checked;
-        payload.session_title = speechTitle.value;
         payload.project_id = isGeneric ? ProjectID.GENERIC : projectSelect.value || ProjectID.GENERIC;
         payload.pathway = pathwaySelect.value;
         payload.level = modalElements.levelSelect.value || null;
@@ -1168,27 +1194,35 @@ function updateAgendaRow(logId, updateResult, payload) {
     agendaRow.dataset.pathway = updateResult.pathway || "";
   }
 
+  // Always update the edit-mode title cell (if the row is in edit mode)
+  // so the user's typed value is reflected in the agenda immediately.
+  const editTitleCell = agendaRow.querySelector(
+    'td[data-field="Session_Title"]'
+  );
+  if (editTitleCell) {
+    const ctl = editTitleCell.querySelector("input, select, span");
+    if (ctl)
+      ctl.tagName === "SPAN"
+        ? (ctl.textContent = updateResult.session_title)
+        : (ctl.value = updateResult.session_title);
+  }
 
-
-  if (sessionType === "Table Topics" || sessionType === "Panel Discussion") {
+  if (sessionType === "Table Topics" || sessionType === "Panel Discussion" || sessionType === "Keynote Speech") {
     agendaRow.dataset.projectId = updateResult.project_id || "";
+    agendaRow.dataset.sessionTitle = updateResult.session_title || "";
     const viewTitleCell = agendaRow.querySelector(
       ".non-edit-mode-cell:nth-child(2)"
     );
     if (viewTitleCell) {
-      let title =
-        sessionType === "Table Topics"
-          ? "Table Topics Master"
-          : sessionType === "Keynote Speech"
-            ? "Keynote Speech"
-            : "Panel Discussion";
-      let code = updateResult.project_code
-        ? `(${updateResult.project_code})`
-        : "";
+      // Server is the source of truth: the saved session_title is the title to show.
+      // If the server didn't persist a title (e.g. cleared + no project), fall back
+      // to the role display name the server also returns, so the cell is never blank.
+      const title = updateResult.session_title || updateResult.role_display_name || sessionType;
+      const code = updateResult.project_code ? `(${updateResult.project_code})` : "";
 
-      let projName = updateResult.project_name;
+      const projName = updateResult.project_name;
       const proj = allProjects.find((p) => p.id == updateResult.project_id);
-      let projPurpose = proj ? proj.Purpose : "";
+      const projPurpose = proj ? proj.Purpose : "";
 
       viewTitleCell.innerHTML = ""; // Clear
       const wrapper = document.createElement("div");
@@ -1213,18 +1247,6 @@ function updateAgendaRow(logId, updateResult, payload) {
   agendaRow.dataset.durationMin = updateResult.duration_min || "";
   agendaRow.dataset.durationMax = updateResult.duration_max || "";
   agendaRow.dataset.pathway = updateResult.pathway || "";
-
-  // Update Session Title Input/Span
-  const editTitleCell = agendaRow.querySelector(
-    'td[data-field="Session_Title"]'
-  );
-  if (editTitleCell) {
-    const ctl = editTitleCell.querySelector("input, select, span");
-    if (ctl)
-      ctl.tagName === "SPAN"
-        ? (ctl.textContent = updateResult.session_title)
-        : (ctl.value = updateResult.session_title);
-  }
 
   // Update Duration Inputs (Fixes overwrite issue)
   const durationMinInput = agendaRow.querySelector(

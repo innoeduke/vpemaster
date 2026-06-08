@@ -953,7 +953,8 @@ A single endpoint to fetch all data needed for the agenda modals.
             "Valid_for_Project": s.Valid_for_Project,
             "Role": s.role.name if s.role else '', "Role_Group": s.role.type if s.role else '',
             "Duration_Min": s.Duration_Min, "Duration_Max": s.Duration_Max,
-            "club_id": s.club_id
+            "club_id": s.club_id,
+            "featured": bool(s.Featured)
         } for s in session_types
     ]
     club_id = get_current_club_id()
