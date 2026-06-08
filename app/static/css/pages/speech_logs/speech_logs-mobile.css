@@ -235,16 +235,13 @@
   }
 
   /* Achievement Buttons Refinement for Mobile */
-  .btn-roadmap-action .btn-label-text,
-  .btn-achievement-revoke .btn-label-text,
-  .btn-achievement-record .btn-label-text {
+  /* Hide label text only on the generic roadmap action buttons (icon-only) */
+  .btn-roadmap-action .btn-label-text {
     display: none !important;
   }
 
-  /* Force compact size and override global .btn min-width */
-  .btn-roadmap-action,
-  .btn-achievement-revoke,
-  .btn-achievement-record {
+  /* Force compact size and override global .btn min-width for generic roadmap actions */
+  .btn-roadmap-action {
     padding: 0 !important;
     min-width: 32px !important;
     width: 32px !important;
@@ -257,9 +254,49 @@
     border-width: 2px !important;
   }
 
-  /* Record/Complete - Premium Green */
-  .btn-outline-success.btn-roadmap-action,
-  .btn-achievement-record {
+  /* Record / Revoke buttons keep their full label visible on mobile.
+     They sit in `.level-heading .achievement-actions` (next to chevron) and
+     in `.progress-table .actions-cell` — both need readable text, not an icon.
+     Sized to match `.btn-profile-small` for visual consistency. */
+  .btn-achievement-record,
+  .btn-achievement-revoke {
+    min-width: 0 !important;
+    width: auto !important;
+    height: 32px !important;
+    padding: 0 12px !important;
+    border-radius: 6px !important;
+    border-width: 1px !important;
+    color: #fff !important;
+    font-weight: 700 !important;
+    font-size: 12.5px !important;
+    text-align: center !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    justify-content: center;
+    align-items: center;
+    display: inline-flex !important;
+  }
+
+  .btn-achievement-record .btn-label-text,
+  .btn-achievement-revoke .btn-label-text {
+    display: inline !important;
+    color: #fff !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.3px !important;
+    line-height: 1 !important;
+  }
+
+  .btn-achievement-record:hover,
+  .btn-achievement-revoke:hover,
+  .btn-achievement-record:focus,
+  .btn-achievement-revoke:focus {
+    color: #fff !important;
+  }
+
+  /* Record/Complete - Premium Green (outline style for icon-only roadmap actions) */
+  .btn-outline-success.btn-roadmap-action {
     color: #28a745 !important;
     border-color: #28a745 !important;
     background-color: #fff !important;
@@ -267,32 +304,29 @@
   }
 
   /* Give it a distinctive "Record" look - like a target or a focused button */
-  .btn-achievement-record {
+  .btn-outline-success.btn-roadmap-action {
     background-color: #f0fff4 !important;
     border-style: solid !important;
   }
 
-  .btn-outline-success.btn-roadmap-action:hover,
-  .btn-achievement-record:hover {
+  .btn-outline-success.btn-roadmap-action:hover {
     background-color: #28a745 !important;
     color: white !important;
   }
 
-  /* Revoke - Toastmasters Maroon */
-  .btn-outline-danger.btn-roadmap-action,
-  .btn-achievement-revoke {
+  /* Revoke (outline) - Toastmasters Maroon */
+  .btn-outline-danger.btn-roadmap-action {
     color: #772432 !important;
     border-color: #772432 !important;
     background-color: #fff !important;
   }
 
   /* Subtly different background for revoke */
-  .btn-achievement-revoke {
+  .btn-outline-danger.btn-roadmap-action {
     background-color: #fff5f5 !important;
   }
 
-  .btn-outline-danger.btn-roadmap-action:hover,
-  .btn-achievement-revoke:hover {
+  .btn-outline-danger.btn-roadmap-action:hover {
     background-color: #772432 !important;
     color: white !important;
   }
