@@ -25,7 +25,12 @@ def upgrade():
 
     with op.batch_alter_table('achievements', schema=None) as batch_op:
         if 'issue_date' in columns and 'award_date' not in columns:
-            batch_op.alter_column('issue_date', new_column_name='award_date')
+            batch_op.alter_column(
+                'issue_date',
+                new_column_name='award_date',
+                existing_type=sa.Date(),
+                existing_nullable=False,
+            )
 
 
 def downgrade():
@@ -37,4 +42,9 @@ def downgrade():
 
     with op.batch_alter_table('achievements', schema=None) as batch_op:
         if 'award_date' in columns and 'issue_date' not in columns:
-            batch_op.alter_column('award_date', new_column_name='issue_date')
+            batch_op.alter_column(
+                'award_date',
+                new_column_name='issue_date',
+                existing_type=sa.Date(),
+                existing_nullable=False,
+            )
