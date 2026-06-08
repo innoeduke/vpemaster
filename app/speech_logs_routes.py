@@ -15,7 +15,7 @@ from .utils import (
     get_meetings_by_status,
     get_level_project_requirements
 )
-from sqlalchemy import distinct, or_
+from sqlalchemy import distinct, or_, func
 from sqlalchemy.orm import joinedload
 from datetime import datetime
 import re
@@ -1697,7 +1697,11 @@ def show_speech_logs():
         # Fetch unpublished meetings
         from .club_context import get_current_club_id
         club_id = get_current_club_id()
-        planner_meetings = Meeting.query.filter_by(club_id=club_id, status='unpublished').order_by(Meeting.Meeting_Number).all()
+        planner_meetings = Meeting.query.filter(
+            Meeting.club_id == club_id,
+            Meeting.status != 'unpublished',
+            Meeting.Meeting_Date >= func.current_date()
+        ).order_by(Meeting.Meeting_Number).all()
         
         # Fetch projects grouped by level
         contact = current_user.get_contact(club_id)

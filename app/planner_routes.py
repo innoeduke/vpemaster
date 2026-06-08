@@ -45,17 +45,21 @@ def planner():
             start_date = current_term['start']
             end_date = current_term['end']
             
-    # 4. Fetch unpublished meetings filtered by date ranges
-    from sqlalchemy import or_
+    # 4. Fetch future published meetings filtered by date ranges
+    from sqlalchemy import or_, func
     date_ranges = []
     if start_date and end_date:
         date_ranges = [(start_date, end_date)]
-    
-    query = Meeting.query.filter_by(club_id=club_id, status='unpublished')
+
+    query = Meeting.query.filter(
+        Meeting.club_id == club_id,
+        Meeting.status != 'unpublished',
+        Meeting.Meeting_Date >= func.current_date()
+    )
     if date_ranges:
         conditions = [Meeting.Meeting_Date.between(start, end) for start, end in date_ranges]
         query = query.filter(or_(*conditions))
-    
+
     unpublished_meetings = query.order_by(Meeting.Meeting_Date.asc(), Meeting.id.asc()).all()
     
     # 5. Fetch projects grouped by level
