@@ -312,6 +312,10 @@
 	color: #333;
 }
 
+.edit-mode-active .action-bar-left {
+	display: none;
+}
+
 /* --- Action Bar --- */
 .action-bar {
 	display: flex;
