@@ -76,7 +76,7 @@
 
 {% block speech_log_toolbar %}
     <div class="filters-container">
-        <div class="filter-row-premium">
+        <div class="filter-row-premium speech-logs-filter-row">
             <div class="filter-group-premium">
                 <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" id="speech-logs-filter-form">
                     <input type="hidden" name="view_mode" value="{{ view_mode }}">
@@ -90,6 +90,42 @@
                         .pathway-selector-group .custom-select-trigger::before { content: none !important; display: none !important; }
                         .pathway-selector-group .pathway-chevron { color: #888; font-size: 0.8rem; margin-left: 12px; flex-shrink: 0; transition: transform 0.2s; }
                         .pathway-selector-group .custom-select-trigger.active .pathway-chevron { transform: rotate(180deg); }
+
+                        .member-view-mode .filters-container { margin-bottom: 0 !important; }
+                        .speech-logs-filter-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; width: 100%; }
+                        .speech-logs-filter-row .filter-group-premium { flex: 0 1 auto; min-width: 200px; order: 0; }
+                        .speech-logs-filter-row .pathway-action-buttons { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; order: 1; }
+                        .speech-logs-filter-row .search-container { flex: 0 1 300px; min-width: 200px; margin-left: auto; order: 2; }
+                        @media (max-width: 768px) {
+                            .speech-logs-filter-row {
+                                display: grid;
+                                grid-template-columns: 3fr 2fr;
+                                grid-template-areas:
+                                    "select select"
+                                    "search actions";
+                                gap: 10px;
+                            }
+                            .speech-logs-filter-row .filter-group-premium { grid-area: select; min-width: 0; }
+                            .speech-logs-filter-row .pathway-action-buttons { grid-area: actions; justify-content: flex-end; }
+                            .speech-logs-filter-row .search-container { grid-area: search; margin-left: 0; min-width: 0; }
+                        }
+
+                        .progress-table .actions-cell,
+                        .progress-table thead th:last-child { border-left: 1px solid #dee2e6 !important; }
+
+                        .pathway-action-btn {
+                            background: none;
+                            border: none;
+                            padding: 4px 6px;
+                            transition: transform 0.2s ease, filter 0.2s ease, opacity 0.2s ease;
+                        }
+                        .pathway-action-btn.is-enabled {
+                            cursor: pointer;
+                        }
+                        .pathway-action-btn.is-enabled:hover {
+                            transform: scale(1.15);
+                            filter: brightness(0.7);
+                        }
                     </style>
 
                     <div class="form-group pathway-selector-group filter-group-premium" style="display: flex; align-items: center;">
@@ -125,7 +161,7 @@
                             
                             <div id="pathway-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: white; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000; min-width: 320px; max-height: 300px; overflow-y: auto;">
                                 <div class="dropdown-item" onclick="document.getElementById('hidden-pathway-input').value='Non Pathway'; document.getElementById('speech-logs-filter-form').submit();" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #f8f9fa; transition: background 0.2s;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-                                    <span style="background: #e8e8e8; color: #666; border-radius: 50px; padding: 2px 8px; font-size: 11px; font-weight: 600; display: inline-block; width: 80px; text-align: center; box-sizing: border-box;">{{ _('Other') }}</span>
+                                    <span style="background: #e8e8e8; color: #666; border-radius: 50px; padding: 2px 8px; font-size: 11px; font-weight: 600; font-family: 'Gotham', sans-serif; display: inline-block; width: 80px; text-align: center; box-sizing: border-box;">{{ _('Other') }}</span>
                                     <span style="font-size: 11px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #333; text-transform: uppercase;">Non Pathway</span>
                                 </div>
                                 {% for p in member_pathways %}
@@ -133,7 +169,7 @@
                                     {% set status_color = '#155724' if p.status == 'completed' else '#856404' %}
                                     {% set status_label = _('Completed') if p.status == 'completed' else _('In Progress') %}
                                     <div class="dropdown-item" onclick="document.getElementById('hidden-pathway-input').value='{{ p.name }}'; document.getElementById('speech-logs-filter-form').submit();" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #f8f9fa; transition: background 0.2s;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-                                        <span style="background: {{ status_bg }}; color: {{ status_color }}; border-radius: 50px; padding: 2px 8px; font-size: 11px; font-weight: 600; display: inline-block; width: 80px; text-align: center; box-sizing: border-box;">{{ status_label }}</span>
+                                        <span style="background: {{ status_bg }}; color: {{ status_color }}; border-radius: 50px; padding: 2px 8px; font-size: 11px; font-weight: 600; font-family: 'Gotham', sans-serif; display: inline-block; width: 80px; text-align: center; box-sizing: border-box;">{{ status_label }}</span>
                                         <span style="font-size: 11px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #333; text-transform: uppercase;">{{ p.name }}</span>
                                     </div>
                                 {% endfor %}
@@ -141,53 +177,6 @@
                         </div>
                         <input type="hidden" name="pathway" id="hidden-pathway-input" value="{{ selected_pathway_name }}">
 
-                        {% set can_manage_pathways = is_authorized(Permissions.SPEECH_LOGS_MANAGE) %}
-                        {% set can_set_default = can_manage_pathways or current_user.contact_id == viewed_contact.id %}
-                        {% set is_default = ns.selected_p and (ns.selected_p.name == viewed_contact.Current_Path) %}
-                        {% set has_selected_registered = ns.selected_p and ns.selected_p.path_id %}
-                        <div class="pathway-action-buttons" style="display: flex; align-items: center; gap: 4px; margin-left: 6px; position: relative;">
-                            {% if can_set_default %}
-                            <button type="button"
-                                    id="btn-set-default-pathway"
-                                    {% if has_selected_registered and not is_default %}onclick="setDefaultFromFilter({{ ns.selected_p.path_id }}, '{{ ns.selected_p.name|replace("'", "\\'") }}')"{% endif %}
-                                    title="{% if is_default %}{{ _('This is your default pathway') }}{% else %}{{ _('Set as default pathway') }}{% endif %}"
-                                    style="background: none; border: none; color: {% if is_default %}#ffc107{% else %}#cbd5e1{% endif %}; cursor: {% if has_selected_registered and not is_default %}pointer{% else %}default{% endif %}; padding: 4px 6px; transition: all 0.2s; opacity: {% if has_selected_registered %}1{% else %}0.4{% endif %};"
-                                    {% if has_selected_registered and not is_default %}onmouseover="this.style.color='#ffc107'; this.style.transform='scale(1.15)'" onmouseout="this.style.color='#cbd5e1'; this.style.transform='scale(1)'"{% endif %}>
-                                <i class="fas fa-star" style="font-size: 1.2rem;"></i>
-                            </button>
-                            {% endif %}
-                            {% if can_manage_pathways and available_pathways %}
-                            <button type="button"
-                                    id="btn-register-pathway"
-                                    onclick="openRegisterPicker(event)"
-                                    title="{{ _('Register a new pathway') }}"
-                                    style="background: none; border: none; color: #28a745; cursor: pointer; padding: 4px 6px; transition: all 0.2s;"
-                                    onmouseover="this.style.color='#1e7e34'; this.style.transform='scale(1.15)'" onmouseout="this.style.color='#28a745'; this.style.transform='scale(1)'">
-                                <i class="fas fa-plus-circle" style="font-size: 1.2rem;"></i>
-                            </button>
-                            {% endif %}
-                            {% if can_manage_pathways %}
-                            <button type="button"
-                                    id="btn-revoke-pathway"
-                                    {% if has_selected_registered %}onclick="revokeFromFilter({{ ns.selected_p.path_id }}, '{{ ns.selected_p.name|replace("'", "\\'") }}')"{% endif %}
-                                    title="{% if has_selected_registered %}{{ _('Revoke this pathway') }}{% else %}{{ _('Select a registered pathway to revoke') }}{% endif %}"
-                                    style="background: none; border: none; color: #dc3545; cursor: {% if has_selected_registered %}pointer{% else %}default{% endif %}; padding: 4px 6px; transition: all 0.2s; opacity: {% if has_selected_registered %}1{% else %}0.4{% endif %};"
-                                    {% if has_selected_registered %}onmouseover="this.style.color='#a71d2a'; this.style.transform='scale(1.15)'" onmouseout="this.style.color='#dc3545'; this.style.transform='scale(1)'"{% endif %}>
-                                <i class="fas fa-trash-alt" style="font-size: 1.1rem;"></i>
-                            </button>
-                            {% endif %}
-                            {% if can_manage_pathways and available_pathways %}
-                            <div id="register-picker" style="display: none; position: absolute; top: calc(100% + 6px); right: 0; background: white; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); z-index: 1100; min-width: 240px; max-height: 320px; overflow-y: auto;">
-                                <div style="padding: 10px 12px; border-bottom: 1px solid #dee2e6; font-size: 12px; font-weight: 600; color: #004165; text-transform: uppercase; letter-spacing: 0.5px;">{{ _('Register New Path') }}</div>
-                                {% for p in available_pathways %}
-                                <div class="register-picker-item" onclick="registerFromFilter({{ p.pathway_id }}, '{{ p.name|replace("'", "\\'") }}')" style="padding: 10px 12px; cursor: pointer; display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 12px; border-bottom: 1px solid #f8f9fa; transition: background 0.15s; white-space: nowrap;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-                                    <span style="font-size: 12px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #333;">{{ p.name }}</span>
-                                    {% if p.abbr %}<span style="font-size: 10px; color: #888; text-align: right; min-width: 50px;">({{ p.abbr }})</span>{% endif %}
-                                </div>
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
                         </div>
 
                         <script>
@@ -268,12 +257,60 @@
                     </div>
                 </form>
             </div>
-            
+
+            {% set can_manage_pathways = is_authorized(Permissions.SPEECH_LOGS_MANAGE) %}
+            {% set can_set_default = can_manage_pathways or current_user.contact_id == viewed_contact.id %}
+            {% set is_default = ns.selected_p and (ns.selected_p.name == viewed_contact.Current_Path) %}
+            {% set has_selected_registered = ns.selected_p and ns.selected_p.path_id %}
+            <div class="pathway-action-buttons" style="display: flex; align-items: center; gap: 4px; margin-left: 6px; position: relative; flex: 0 0 auto;">
+                {% if can_set_default %}
+                <button type="button"
+                        id="btn-set-default-pathway"
+                        class="pathway-action-btn"
+                        {% if has_selected_registered and not is_default %}onclick="setDefaultFromFilter({{ ns.selected_p.path_id }}, '{{ ns.selected_p.name|replace("'", "\\'") }}')"{% endif %}
+                        title="{% if is_default %}{{ _('This is your default pathway') }}{% else %}{{ _('Set as default pathway') }}{% endif %}"
+                        style="color: {% if is_default %}#ffc107{% else %}#cbd5e1{% endif %}; cursor: {% if has_selected_registered and not is_default %}pointer{% else %}default{% endif %}; opacity: {% if has_selected_registered %}1{% else %}0.4{% endif %};">
+                    <i class="fas fa-star" style="font-size: 1.2rem;"></i>
+                </button>
+                {% endif %}
+                {% if can_manage_pathways and available_pathways %}
+                <button type="button"
+                        id="btn-register-pathway"
+                        class="pathway-action-btn"
+                        onclick="openRegisterPicker(event)"
+                        title="{{ _('Register a new pathway') }}"
+                        style="color: #28a745; cursor: pointer;">
+                    <i class="fas fa-plus-circle" style="font-size: 1.2rem;"></i>
+                </button>
+                {% endif %}
+                {% if can_manage_pathways %}
+                <button type="button"
+                        id="btn-revoke-pathway"
+                        class="pathway-action-btn"
+                        {% if has_selected_registered %}onclick="revokeFromFilter({{ ns.selected_p.path_id }}, '{{ ns.selected_p.name|replace("'", "\\'") }}')"{% endif %}
+                        title="{% if has_selected_registered %}{{ _('Revoke this pathway') }}{% else %}{{ _('Select a registered pathway to revoke') }}{% endif %}"
+                        style="color: #dc3545; cursor: {% if has_selected_registered %}pointer{% else %}default{% endif %}; opacity: {% if has_selected_registered %}1{% else %}0.4{% endif %};">
+                    <i class="fas fa-trash-alt" style="font-size: 1.1rem;"></i>
+                </button>
+                {% endif %}
+                {% if can_manage_pathways and available_pathways %}
+                <div id="register-picker" style="display: none; position: absolute; top: calc(100% + 6px); right: 0; background: white; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); z-index: 1100; min-width: 240px; max-height: 320px; overflow-y: auto;">
+                    <div style="padding: 10px 12px; border-bottom: 1px solid #dee2e6; font-size: 12px; font-weight: 600; color: #004165; text-transform: uppercase; letter-spacing: 0.5px;">{{ _('Register New Path') }}</div>
+                    {% for p in available_pathways %}
+                    <div class="register-picker-item" onclick="registerFromFilter({{ p.pathway_id }}, '{{ p.name|replace("'", "\\'") }}')" style="padding: 10px 12px; cursor: pointer; display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 12px; border-bottom: 1px solid #f8f9fa; transition: background 0.15s; white-space: nowrap;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+                        <span style="font-size: 12px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #333;">{{ p.name }}</span>
+                        {% if p.abbr %}<span style="font-size: 10px; color: #888; text-align: right; min-width: 50px;">({{ p.abbr }})</span>{% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
             {% if can_view_all %}
-            <div class="search-container filter-group-premium" style="margin-left: auto;">
+            <div class="search-container filter-group-premium">
                 <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" id="global-search-form" style="display: flex; align-items: center; position: relative; width: 100%;">
                     <input type="hidden" name="view_mode" value="search">
-                    <input type="text" name="q" class="search-box" placeholder="{{ _('Search sessions (e.g. name, role)...') }}" value="{{ request.args.get('q', '') }}" style="width: 100%; max-width: 100%; padding-left: 35px; border-radius: 6px; border: 1px solid #ddd; height: 36px; box-sizing: border-box; font-family: 'Montserrat', sans-serif;">
+                    <input type="text" name="q" class="search-box" placeholder="{{ _('Search ...') }}" value="{{ request.args.get('q', '') }}" style="width: 100%; max-width: 100%; padding-left: 35px; border-radius: 6px; border: 1px solid #ddd; height: 36px; box-sizing: border-box; font-family: 'Montserrat', sans-serif;">
                     <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; pointer-events: none;"></i>
                     {% if request.args.get('q') %}
                     <button type="button" class="clear-search-btn" onclick="window.location.href='{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}'" style="right: 12px;">&times;</button>
@@ -281,18 +318,6 @@
                 </form>
             </div>
             {% endif %}
-
-			<div class="view-mode-toggle">
-
-				<a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}" class="btn-view-control btn-member-view active" onclick="return false;">
-					<i class="fas fa-user-circle"></i> {{ _('Member') }}
-				</a>
-				{% if can_view_all %}
-				<a href="{{ url_for('speech_logs_bp.show_project_view') }}" class="btn-view-control btn-project-view">
-					<i class="fas fa-chart-line"></i> {{ _('Project') }}
-				</a>
-				{% endif %}
-			</div>
         </div>
     </div>
     
@@ -344,6 +369,9 @@
                     <th colspan="3">{{ _('Required Roles') }}</th>
                     <th>{{ _('Elective Roles') }}</th>
                     <th colspan="2">{{ _('Education Series') }}</th>
+                    {% if is_authorized(Permissions.SPEECH_LOGS_MANAGE) and viewed_contact.user_id %}
+                    <th>{{ _('Actions') }}</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -356,27 +384,8 @@
                         <div class="level-name-row">
                             {{ _('Level') }} {{ row.level }}
                         </div>
-                        
-                        {% if is_authorized(Permissions.SPEECH_LOGS_MANAGE) and viewed_contact.user_id %}
-                        <div class="achievement-quick-actions">
-                            {% set pathway_name = selected_filters.pathway if selected_filters.pathway and selected_filters.pathway != 'all' else viewed_contact.Current_Path %}
-                            {% if row.level|int in completed_levels %}
-                            <button class="btn btn-xs btn-outline-danger btn-roadmap-action" 
-                                    onclick="event.stopPropagation(); openAchievementModal('revoke', '{{ viewed_contact.user_id }}', '{{ viewed_contact.Name }}', '{{ viewed_contact.Member_ID or '' }}', 'level-completion', '{{ pathway_name }}', '{{ row.level }}', '{{ achievement_dates.get(row.level|int, '') }}')"
-                                    title="{{ _('Revoke Level Achievement') }}">
-                                <i class="fas fa-undo"></i> <span class="btn-label-text">{{ _('Revoke') }}</span>
-                            </button>
-                            {% else %}
-                            <button class="btn btn-xs btn-outline-success btn-roadmap-action" 
-                                    onclick="event.stopPropagation(); openAchievementModal('record', '{{ viewed_contact.user_id }}', '{{ viewed_contact.Name }}', '{{ viewed_contact.Member_ID or '' }}', 'level-completion', '{{ pathway_name }}', '{{ row.level }}')"
-                                    title="{{ _('Record Level Achievement') }}">
-                                <i class="fas fa-check"></i> <span class="btn-label-text">{{ _('Complete') }}</span>
-                            </button>
-                            {% endif %}
-                        </div>
-                        {% endif %}
                     </td>
-                    
+
                     <td class="band-cell speech-column">
                         {% for speech in row.speeches %}
                             <div class="role-badge speech-badge {{ speech.status }}"
@@ -396,7 +405,7 @@
                     {% for band_data in row.bands %}
                     <td class="band-cell {% if band_data.is_elective %}elective-cell{% endif %}">
                         {% if band_data.is_elective and row.extra_roles %}
-                        <div class="extra-roles-badge" 
+                        <div class="extra-roles-badge"
                              data-role="{{ _('Additional Role') }}"
                              data-history="{{ row.extra_roles|tojson|forceescape }}"
                              onclick="showRoleHistory(this)">{{ _('more') }}</div>
@@ -417,6 +426,24 @@
                         {% endfor %}
                     </td>
                     {% endfor %}
+                    {% if is_authorized(Permissions.SPEECH_LOGS_MANAGE) and viewed_contact.user_id %}
+                    <td class="actions-cell">
+                        {% set pathway_name = selected_filters.pathway if selected_filters.pathway and selected_filters.pathway != 'all' else viewed_contact.Current_Path %}
+                        {% if row.level|int in completed_levels %}
+                        <button class="btn btn-xs btn-outline-danger btn-roadmap-action"
+                                onclick="event.stopPropagation(); openAchievementModal('revoke', '{{ viewed_contact.user_id }}', '{{ viewed_contact.Name }}', '{{ viewed_contact.Member_ID or '' }}', 'level-completion', '{{ pathway_name }}', '{{ row.level }}', '{{ achievement_dates.get(row.level|int, '') }}')"
+                                title="{{ _('Revoke Level Achievement') }}">
+                            <i class="fas fa-undo"></i> <span class="btn-label-text">{{ _('Revoke') }}</span>
+                        </button>
+                        {% else %}
+                        <button class="btn btn-xs btn-outline-success btn-roadmap-action"
+                                onclick="event.stopPropagation(); openAchievementModal('record', '{{ viewed_contact.user_id }}', '{{ viewed_contact.Name }}', '{{ viewed_contact.Member_ID or '' }}', 'level-completion', '{{ pathway_name }}', '{{ row.level }}')"
+                                title="{{ _('Record Level Achievement') }}">
+                            <i class="fas fa-check"></i> <span class="btn-label-text">{{ _('Complete') }}</span>
+                        </button>
+                        {% endif %}
+                    </td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
             </tbody>
@@ -512,6 +539,14 @@
                 }
             };
         }
+
+        // Mark pathway action buttons as enabled for the CSS hover effect
+        document.querySelectorAll('.pathway-action-btn').forEach(btn => {
+            const style = btn.getAttribute('style') || '';
+            if (style.indexOf('cursor: pointer') !== -1 || style.indexOf('opacity: 1') !== -1) {
+                btn.classList.add('is-enabled');
+            }
+        });
     });
 </script>
 {% endblock %}

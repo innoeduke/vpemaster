@@ -52,15 +52,6 @@
                 </form>
             </div>
             {% endif %}
-
-			<div class="view-mode-toggle">
-				<a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}" class="btn-view-control btn-member-view">
-					<i class="fas fa-user-circle"></i> {{ _('Member') }}
-				</a>
-				<a href="{{ url_for('speech_logs_bp.show_project_view') }}" class="btn-view-control btn-project-view active" onclick="return false;">
-					<i class="fas fa-chart-line"></i> {{ _('Project') }}
-				</a>
-			</div>
 		</div>
 	</form>
 {% endblock %}

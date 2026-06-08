@@ -1756,11 +1756,11 @@ def show_speech_logs():
 def show_project_view():
     """
     Display speech logs in a project-centric view (bar chart style).
-    Accessible to admins mainly, but logic could allow others.
+    Requires MEETING_VIEW_ALL permission.
     """
-    if not is_authorized(Permissions.SPEECH_LOGS_MANAGE):
-        from flask import redirect, url_for
-        return redirect(url_for('speech_logs_bp.show_speech_logs', view_mode='member')) 
+    if not is_authorized(Permissions.MEETING_VIEW_ALL):
+        from flask import abort
+        abort(403)
              
     from .utils import get_terms, get_active_term, get_date_ranges_for_terms
              
