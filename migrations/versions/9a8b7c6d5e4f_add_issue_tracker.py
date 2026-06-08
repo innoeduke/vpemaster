@@ -17,47 +17,60 @@ depends_on = None
 
 
 def upgrade():
-    op.create_table(
-        'issues',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('club_id', sa.Integer(), nullable=False),
-        sa.Column('type', sa.String(length=20), nullable=False),
-        sa.Column('status', sa.String(length=20), nullable=False),
-        sa.Column('priority', sa.String(length=10), nullable=False),
-        sa.Column('title', sa.String(length=200), nullable=False),
-        sa.Column('description', sa.Text(), nullable=False),
-        sa.Column('submitter_id', sa.Integer(), nullable=False),
-        sa.Column('assignee_id', sa.Integer(), nullable=True),
-        sa.Column('created_at', sa.DateTime(), nullable=False),
-        sa.Column('updated_at', sa.DateTime(), nullable=False),
-        sa.Column('closed_at', sa.DateTime(), nullable=True),
-        sa.ForeignKeyConstraint(['assignee_id'], ['users.id'], name=op.f('fk_issues_assignee_id_users')),
-        sa.ForeignKeyConstraint(['club_id'], ['clubs.id'], name=op.f('fk_issues_club_id_clubs'), ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(['submitter_id'], ['users.id'], name=op.f('fk_issues_submitter_id_users')),
-        sa.PrimaryKeyConstraint('id', name=op.f('pk_issues')),
-    )
-    with op.batch_alter_table('issues', schema=None) as batch_op:
-        batch_op.create_index(batch_op.f('ix_issues_club_id'), ['club_id'], unique=False)
-        batch_op.create_index(batch_op.f('ix_issues_submitter_id'), ['submitter_id'], unique=False)
-        batch_op.create_index(batch_op.f('ix_issues_assignee_id'), ['assignee_id'], unique=False)
-        batch_op.create_index('ix_issues_club_created', ['club_id', 'created_at'], unique=False)
+    from sqlalchemy.engine.reflection import Inspector
+    conn = op.get_bind()
+    inspector = Inspector.from_engine(conn)
+    existing_tables = set(inspector.get_table_names())
 
-    op.create_table(
-        'issue_comments',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('issue_id', sa.Integer(), nullable=False),
-        sa.Column('author_id', sa.Integer(), nullable=False),
-        sa.Column('body', sa.Text(), nullable=False),
-        sa.Column('created_at', sa.DateTime(), nullable=False),
-        sa.ForeignKeyConstraint(['author_id'], ['users.id'], name=op.f('fk_issue_comments_author_id_users')),
-        sa.ForeignKeyConstraint(['issue_id'], ['issues.id'], name=op.f('fk_issue_comments_issue_id_issues'), ondelete='CASCADE'),
-        sa.PrimaryKeyConstraint('id', name=op.f('pk_issue_comments')),
-    )
+    if 'issues' not in existing_tables:
+        op.create_table(
+            'issues',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('club_id', sa.Integer(), nullable=False),
+            sa.Column('type', sa.String(length=20), nullable=False),
+            sa.Column('status', sa.String(length=20), nullable=False),
+            sa.Column('priority', sa.String(length=10), nullable=False),
+            sa.Column('title', sa.String(length=200), nullable=False),
+            sa.Column('description', sa.Text(), nullable=False),
+            sa.Column('submitter_id', sa.Integer(), nullable=False),
+            sa.Column('assignee_id', sa.Integer(), nullable=True),
+            sa.Column('created_at', sa.DateTime(), nullable=False),
+            sa.Column('updated_at', sa.DateTime(), nullable=False),
+            sa.Column('closed_at', sa.DateTime(), nullable=True),
+            sa.ForeignKeyConstraint(['assignee_id'], ['users.id'], name=op.f('fk_issues_assignee_id_users')),
+            sa.ForeignKeyConstraint(['club_id'], ['clubs.id'], name=op.f('fk_issues_club_id_clubs'), ondelete='CASCADE'),
+            sa.ForeignKeyConstraint(['submitter_id'], ['users.id'], name=op.f('fk_issues_submitter_id_users')),
+            sa.PrimaryKeyConstraint('id', name=op.f('pk_issues')),
+        )
+    existing_issue_indexes = {i['name'] for i in inspector.get_indexes('issues')} if 'issues' in existing_tables else set()
+    with op.batch_alter_table('issues', schema=None) as batch_op:
+        if 'ix_issues_club_id' not in existing_issue_indexes:
+            batch_op.create_index(batch_op.f('ix_issues_club_id'), ['club_id'], unique=False)
+        if 'ix_issues_submitter_id' not in existing_issue_indexes:
+            batch_op.create_index(batch_op.f('ix_issues_submitter_id'), ['submitter_id'], unique=False)
+        if 'ix_issues_assignee_id' not in existing_issue_indexes:
+            batch_op.create_index(batch_op.f('ix_issues_assignee_id'), ['assignee_id'], unique=False)
+        if 'ix_issues_club_created' not in existing_issue_indexes:
+            batch_op.create_index('ix_issues_club_created', ['club_id', 'created_at'], unique=False)
+
+    if 'issue_comments' not in existing_tables:
+        op.create_table(
+            'issue_comments',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('issue_id', sa.Integer(), nullable=False),
+            sa.Column('author_id', sa.Integer(), nullable=False),
+            sa.Column('body', sa.Text(), nullable=False),
+            sa.Column('created_at', sa.DateTime(), nullable=False),
+            sa.ForeignKeyConstraint(['author_id'], ['users.id'], name=op.f('fk_issue_comments_author_id_users')),
+            sa.ForeignKeyConstraint(['issue_id'], ['issues.id'], name=op.f('fk_issue_comments_issue_id_issues'), ondelete='CASCADE'),
+            sa.PrimaryKeyConstraint('id', name=op.f('pk_issue_comments')),
+        )
+    existing_ic_indexes = {i['name'] for i in inspector.get_indexes('issue_comments')} if 'issue_comments' in existing_tables else set()
     with op.batch_alter_table('issue_comments', schema=None) as batch_op:
-        batch_op.create_index(batch_op.f('ix_issue_comments_issue_id'), ['issue_id'], unique=False)
+        if 'ix_issue_comments_issue_id' not in existing_ic_indexes:
+            batch_op.create_index(batch_op.f('ix_issue_comments_issue_id'), ['issue_id'], unique=False)
 
     from datetime import datetime, timezone
-    conn = op.get_bind()
 
     existing = conn.execute(
         sa.text("SELECT id FROM permissions WHERE name = 'ISSUE_MANAGE'")
@@ -115,13 +128,10 @@ def downgrade():
             sa.text("DELETE FROM permissions WHERE name = 'ISSUE_MANAGE'"),
         )
 
-    with op.batch_alter_table('issue_comments', schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f('ix_issue_comments_issue_id'))
-    op.drop_table('issue_comments')
-
-    with op.batch_alter_table('issues', schema=None) as batch_op:
-        batch_op.drop_index('ix_issues_club_created')
-        batch_op.drop_index(batch_op.f('ix_issues_assignee_id'))
-        batch_op.drop_index(batch_op.f('ix_issues_submitter_id'))
-        batch_op.drop_index(batch_op.f('ix_issues_club_id'))
-    op.drop_table('issues')
+    # Drop the dependent table first — that removes its indexes and the
+    # foreign keys that reference the parent table. Trying to drop the
+    # index first fails with "needed in a foreign key constraint".
+    if 'issue_comments' in {t.lower() for t in sa.inspect(op.get_bind()).get_table_names()}:
+        op.drop_table('issue_comments')
+    if 'issues' in {t.lower() for t in sa.inspect(op.get_bind()).get_table_names()}:
+        op.drop_table('issues')
