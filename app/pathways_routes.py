@@ -227,6 +227,23 @@ def complete_contact_pathway(contact_id, pathway_id):
     cp.status = 'completed'
     cp.completed_date = date.today()
 
+    # If this was the default pathway, reset default to first in-progress path;
+    # if none in-progress, clear the default (Non Pathway).
+    was_default = cp.is_default
+    if was_default:
+        cp.is_default = False
+        # Query fresh from the DB to avoid stale relationship caching
+        working_paths = ContactPath.query.filter_by(
+            contact_id=contact_id, status='working'
+        ).order_by(ContactPath.registered_date.asc()).all()
+        next_default = working_paths[0] if working_paths else None
+        if next_default:
+            next_default.is_default = True
+            contact._Current_Path = next_default.pathway.name
+        else:
+            contact._Current_Path = None
+        db.session.flush()
+
     # Automatically record achievement if user is linked
     user_id = contact.user_id
     if user_id:
@@ -243,7 +260,7 @@ def complete_contact_pathway(contact_id, pathway_id):
                 user_id=user_id,
                 requestor_id=current_user.id,
                 achievement_type='path-completion',
-                issue_date=date.today(),
+                award_date=date.today(),
                 path_name=cp.pathway.name
             )
 
@@ -303,17 +320,16 @@ def deregister_contact_pathway(contact_id, pathway_id):
     was_default = cp.is_default
     pathway_name = cp.pathway.name
     
-    # Also remove associated path-completion achievement to prevent
+    # Also remove associated completion achievements to prevent
     # sync_contact_metadata from re-creating this ContactPath from achievements
-    if cp.status == 'completed':
-        user_id = contact.user_id
-        if user_id:
-            from .models.achievement import Achievement
-            Achievement.query.filter_by(
-                user_id=user_id,
-                achievement_type='path-completion',
-                path_name=pathway_name
-            ).delete()
+    user_id = contact.user_id
+    if user_id:
+        from .models.achievement import Achievement
+        Achievement.query.filter(
+            Achievement.user_id == user_id,
+            Achievement.achievement_type.in_(['path-completion', 'program-completion', 'level-completion']),
+            Achievement.path_name == pathway_name
+        ).delete(synchronize_session=False)
     
     db.session.delete(cp)
     

@@ -643,11 +643,11 @@ class BackupService:
                         completed_date = None
                         path_ach = next((a for a in achievements if a.achievement_type == 'path-completion' and a.path_name == pathway.name), None)
                         if path_ach:
-                            completed_date = path_ach.issue_date
+                            completed_date = path_ach.award_date
                         else:
                             lvl5_ach = next((a for a in achievements if a.achievement_type == 'level-completion' and a.path_name == pathway.name and a.level == 5), None)
                             if lvl5_ach:
-                                completed_date = lvl5_ach.issue_date
+                                completed_date = lvl5_ach.award_date
                         
                         # Check if already registered
                         existing_cp = ContactPath.query.filter_by(contact_id=contact.id, path_id=pathway.id).first()

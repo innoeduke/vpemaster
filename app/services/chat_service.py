@@ -118,7 +118,7 @@ CHAT_TOOLS = [
                     "type": "integer",
                     "description": "Level number completed (1-5)."
                 },
-                "issue_date": {
+                "award_date": {
                     "type": "string",
                     "description": "Optional date in YYYY-MM-DD format."
                 }

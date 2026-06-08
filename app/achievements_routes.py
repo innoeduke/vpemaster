@@ -36,7 +36,7 @@ def achievement_form(id):
 
     if request.method == 'POST':
         contact_id = request.form.get('contact_id')
-        issue_date_str = request.form.get('issue_date')
+        award_date_str = request.form.get('award_date')
         achievement_type = request.form.get('achievement_type')
         path_name = request.form.get('path_name')
         level = request.form.get('level')
@@ -48,7 +48,7 @@ def achievement_form(id):
                 member_id = contact.Member_ID
 
         try:
-            issue_date = datetime.strptime(issue_date_str, '%Y-%m-%d').date()
+            award_date = datetime.strptime(award_date_str, '%Y-%m-%d').date()
         except ValueError:
             flash('Invalid date format.', 'error')
             return redirect(request.url)
@@ -96,7 +96,7 @@ def achievement_form(id):
             db.session.add(achievement)
 
         achievement.user_id = uid
-        achievement.issue_date = issue_date
+        achievement.award_date = award_date
         achievement.achievement_type = achievement_type
         achievement.path_name = path_name
         achievement.level = int(level) if level else None
@@ -111,18 +111,36 @@ def achievement_form(id):
                         path_name=path_name,
                         level=i
                     ).first()
-                    
+
                     if not lower_exists:
                         new_lower = Achievement(
                             user_id=uid,
                             member_id=member_id,
-                            issue_date=issue_date,
+                            award_date=award_date,
                             achievement_type='level-completion',
                             path_name=path_name,
                             level=i,
                             notes=f"Auto-added based on Level {achievement.level} completion"
                         )
                         db.session.add(new_lower)
+
+            # Completing level 5 also completes the path
+            if achievement.level == 5:
+                path_complete_exists = Achievement.query.filter_by(
+                    user_id=uid,
+                    achievement_type='path-completion',
+                    path_name=path_name
+                ).first()
+                if not path_complete_exists:
+                    new_path_complete = Achievement(
+                        user_id=uid,
+                        member_id=member_id,
+                        award_date=award_date,
+                        achievement_type='path-completion',
+                        path_name=path_name,
+                        notes=f"Auto-added based on Level 5 completion"
+                    )
+                    db.session.add(new_path_complete)
         
         achievement.notes = notes
         achievement.member_id = member_id
@@ -185,7 +203,7 @@ def api_record_achievement():
     data = request.get_json()
     user_id = data.get('user_id')
     achievement_type = data.get('achievement_type')
-    issue_date_str = data.get('issue_date')
+    award_date_str = data.get('award_date')
     path_name = data.get('path_name')
     level = data.get('level')
     notes = data.get('notes')
@@ -194,12 +212,12 @@ def api_record_achievement():
         return jsonify({'success': False, 'message': 'Missing required fields (user_id, achievement_type).'}), 400
 
     try:
-        issue_date = datetime.strptime(issue_date_str, '%Y-%m-%d').date() if issue_date_str else date.today()
+        award_date = datetime.strptime(award_date_str, '%Y-%m-%d').date() if award_date_str else date.today()
         achievement = AchievementService.record_achievement(
             user_id=user_id,
             requestor_id=current_user.id,
             achievement_type=achievement_type,
-            issue_date=issue_date,
+            award_date=award_date,
             path_name=path_name,
             level=level,
             notes=notes
@@ -295,7 +313,7 @@ def get_achievement_status():
         return jsonify({
             'exists': True,
             'id': achievement.id,
-            'issue_date': achievement.issue_date.strftime('%Y-%m-%d'),
+            'award_date': achievement.award_date.strftime('%Y-%m-%d'),
             'notes': achievement.notes
         })
     else:

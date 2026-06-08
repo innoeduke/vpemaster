@@ -113,6 +113,52 @@
                         .progress-table .actions-cell,
                         .progress-table thead th:last-child { border-left: 1px solid #dee2e6 !important; }
 
+                        button.btn-achievement-record,
+                        button.btn-achievement-revoke {
+                            border-radius: 14px !important;
+                            padding: 4px 14px !important;
+                            font-weight: 700 !important;
+                            font-size: 12px !important;
+                            min-width: 105px !important;
+                            width: 105px !important;
+                            text-align: center !important;
+                            display: inline-block !important;
+                            box-shadow: 0 1px 2px rgba(0,0,0,0.10);
+                            transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+                        }
+                        button.btn-achievement-record {
+                            background-color: #28a745 !important;
+                            border: 1px solid #28a745 !important;
+                            color: #fff !important;
+                        }
+                        button.btn-achievement-record:hover {
+                            background-color: #1e7e34 !important;
+                            border-color: #1e7e34 !important;
+                            color: #fff !important;
+                            transform: translateY(-1px);
+                            box-shadow: 0 4px 8px rgba(0,0,0,0.18);
+                        }
+                        button.btn-achievement-record:focus {
+                            box-shadow: none !important;
+                            color: #fff !important;
+                        }
+                        button.btn-achievement-revoke {
+                            background-color: #772432 !important;
+                            border: 1px solid #772432 !important;
+                            color: #fff !important;
+                        }
+                        button.btn-achievement-revoke:hover {
+                            background-color: #5e1c27 !important;
+                            border-color: #5e1c27 !important;
+                            color: #fff !important;
+                            transform: translateY(-1px);
+                            box-shadow: 0 4px 8px rgba(0,0,0,0.18);
+                        }
+                        button.btn-achievement-revoke:focus {
+                            box-shadow: none !important;
+                            color: #fff !important;
+                        }
+
                         .pathway-action-btn {
                             background: none;
                             border: none;
@@ -146,12 +192,14 @@
 
                         <div style="display: flex; align-items: center; width: 100%; gap: 12px; flex-wrap: wrap;">
                             <div class="custom-dropdown-container" style="position: relative; flex: 1; min-width: 200px;">
-                            <div class="custom-select-trigger pathway-select-trigger" onclick="document.getElementById('pathway-dropdown-menu').style.display = document.getElementById('pathway-dropdown-menu').style.display === 'none' ? 'block' : 'none'; event.stopPropagation();" style="display: flex; align-items: center; justify-content: space-between; border: none; background: transparent; box-shadow: none; outline: none; cursor: pointer; user-select: none;">
+                            <div class="custom-select-trigger pathway-select-trigger" onclick="document.getElementById('pathway-dropdown-menu').style.display = document.getElementById('pathway-dropdown-menu').style.display === 'none' ? 'block' : 'none'; event.stopPropagation();"
+                                 style="display: flex; align-items: center; justify-content: space-between; border: 1px solid {% if ns.is_non_pathway %}#cfcfcf{% elif ns.selected_p and ns.selected_p.status == 'completed' %}#c3e6cb{% elif ns.selected_p %}#f5d57c{% else %}#ddd{% endif %}; border-radius: 6px; background: {% if ns.is_non_pathway %}#f0f0f0{% elif ns.selected_p and ns.selected_p.status == 'completed' %}#e6f9ee{% elif ns.selected_p %}#fef3cd{% else %}#fff{% endif %}; box-shadow: none; outline: none; cursor: pointer; user-select: none; padding: 8px 12px;">
                                 <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; overflow: hidden;">
                                     {% if ns.is_non_pathway %}
-                                        <span style="font-size: 1rem; font-family: 'Montserrat', sans-serif; font-weight: 700; color: #333; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;">Non Pathway</span>
+                                        <span style="font-size: 1rem; font-family: 'Montserrat', sans-serif; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;">Non Pathway</span>
                                     {% elif ns.selected_p %}
-                                        <span style="font-size: 1rem; font-family: 'Montserrat', sans-serif; font-weight: 700; color: #333; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;">{{ ns.selected_p.name }}</span>
+                                        {% set trigger_color = '#155724' if ns.selected_p.status == 'completed' else '#856404' %}
+                                        <span style="font-size: 1rem; font-family: 'Montserrat', sans-serif; font-weight: 700; color: {{ trigger_color }}; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;">{{ ns.selected_p.name }}</span>
                                     {% else %}
                                         <span style="font-size: 1rem; font-family: 'Montserrat', sans-serif; font-weight: 700; color: #777; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;">{{ _('No Pathways Registered') }}</span>
                                     {% endif %}
@@ -215,7 +263,6 @@
                             }
 
                             function registerFromFilter(pathwayId, pathwayName) {
-                                if (!confirm("{{ _('Are you sure you want to register "{pathName}"?') }}".replace('{pathName}', pathwayName))) return;
                                 const picker = document.getElementById('register-picker');
                                 if (picker) picker.style.display = 'none';
                                 fetch(`/api/contacts/{{ viewed_contact.id }}/pathways/register`, {
@@ -233,23 +280,6 @@
                                 })
                                 .catch(err => {
                                     console.error("Error registering pathway:", err);
-                                    alert("{{ _('An error occurred. Please try again.') }}");
-                                });
-                            }
-
-                            function revokeFromFilter(cpId, cpName) {
-                                if (!confirm("{{ _('Are you sure you want to revoke "{pathName}"? All metadata associated with it in this contact\'s record will be affected.') }}".replace('{pathName}', cpName))) return;
-                                fetch(`/api/contacts/{{ viewed_contact.id }}/pathways/${cpId}/deregister`, { method: 'POST' })
-                                .then(res => res.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        window.location.reload();
-                                    } else {
-                                        alert("{{ _('Failed to revoke pathway') }}: " + data.message);
-                                    }
-                                })
-                                .catch(err => {
-                                    console.error("Error revoking pathway:", err);
                                     alert("{{ _('An error occurred. Please try again.') }}");
                                 });
                             }
@@ -281,16 +311,6 @@
                         title="{{ _('Register a new pathway') }}"
                         style="color: #28a745; cursor: pointer;">
                     <i class="fas fa-plus-circle" style="font-size: 1.2rem;"></i>
-                </button>
-                {% endif %}
-                {% if can_manage_pathways %}
-                <button type="button"
-                        id="btn-revoke-pathway"
-                        class="pathway-action-btn"
-                        {% if has_selected_registered %}onclick="revokeFromFilter({{ ns.selected_p.path_id }}, '{{ ns.selected_p.name|replace("'", "\\'") }}')"{% endif %}
-                        title="{% if has_selected_registered %}{{ _('Revoke this pathway') }}{% else %}{{ _('Select a registered pathway to revoke') }}{% endif %}"
-                        style="color: #dc3545; cursor: {% if has_selected_registered %}pointer{% else %}default{% endif %}; opacity: {% if has_selected_registered %}1{% else %}0.4{% endif %};">
-                    <i class="fas fa-trash-alt" style="font-size: 1.1rem;"></i>
                 </button>
                 {% endif %}
                 {% if can_manage_pathways and available_pathways %}
@@ -430,16 +450,16 @@
                     <td class="actions-cell">
                         {% set pathway_name = selected_filters.pathway if selected_filters.pathway and selected_filters.pathway != 'all' else viewed_contact.Current_Path %}
                         {% if row.level|int in completed_levels %}
-                        <button class="btn btn-xs btn-outline-danger btn-roadmap-action"
+                        <button class="btn btn-achievement-revoke btn-roadmap-action"
                                 onclick="event.stopPropagation(); openAchievementModal('revoke', '{{ viewed_contact.user_id }}', '{{ viewed_contact.Name }}', '{{ viewed_contact.Member_ID or '' }}', 'level-completion', '{{ pathway_name }}', '{{ row.level }}', '{{ achievement_dates.get(row.level|int, '') }}')"
                                 title="{{ _('Revoke Level Achievement') }}">
-                            <i class="fas fa-undo"></i> <span class="btn-label-text">{{ _('Revoke') }}</span>
+                            <span class="btn-label-text">{{ _('Revoke') }}</span>
                         </button>
                         {% else %}
-                        <button class="btn btn-xs btn-outline-success btn-roadmap-action"
+                        <button class="btn btn-achievement-record btn-roadmap-action"
                                 onclick="event.stopPropagation(); openAchievementModal('record', '{{ viewed_contact.user_id }}', '{{ viewed_contact.Name }}', '{{ viewed_contact.Member_ID or '' }}', 'level-completion', '{{ pathway_name }}', '{{ row.level }}')"
                                 title="{{ _('Record Level Achievement') }}">
-                            <i class="fas fa-check"></i> <span class="btn-label-text">{{ _('Complete') }}</span>
+                            <span class="btn-label-text">{{ _('Complete') }}</span>
                         </button>
                         {% endif %}
                     </td>
@@ -470,16 +490,16 @@
             <div class="achievement-actions">
                 {% set pathway_name = selected_filters.pathway if selected_filters.pathway and selected_filters.pathway != 'all' else viewed_contact.Current_Path %}
                 {% if level|int in completed_levels %}
-                <button class="btn btn-sm btn-outline-danger btn-achievement-revoke" 
+                <button class="btn btn-achievement-revoke"
                         onclick="event.stopPropagation(); openAchievementModal('revoke', '{{ viewed_contact.user_id }}', '{{ viewed_contact.Name }}', '{{ viewed_contact.Member_ID or '' }}', 'level-completion', '{{ pathway_name }}', '{{ level }}', '{{ achievement_dates.get(level|int, '') }}')"
                         title="{{ _('Revoke Level Achievement') }}">
-                    <i class="fas fa-undo"></i> <span class="btn-label-text">{{ _('Revoke') }}</span>
+                    <span class="btn-label-text">{{ _('Revoke') }}</span>
                 </button>
                 {% else %}
-                <button class="btn btn-sm btn-outline-success btn-achievement-record" 
+                <button class="btn btn-achievement-record"
                         onclick="event.stopPropagation(); openAchievementModal('record', '{{ viewed_contact.user_id }}', '{{ viewed_contact.Name }}', '{{ viewed_contact.Member_ID or '' }}', 'level-completion', '{{ pathway_name }}', '{{ level }}')"
                         title="{{ _('Record Level Achievement') }}">
-                    <i class="fas fa-check"></i> <span class="btn-label-text">{{ _('Record') }}</span>
+                    <span class="btn-label-text">{{ _('Record') }}</span>
                 </button>
                 {% endif %}
             </div>

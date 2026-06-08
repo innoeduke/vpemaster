@@ -578,7 +578,7 @@ def test_non_pathway_filtering_and_level_resolution(client, app, default_club, s
             path_name="Dynamic Leadership",
             achievement_type="level-completion",
             level=1,
-            issue_date=completion_date
+            award_date=completion_date
         )
         db.session.add(ach)
         db.session.commit()

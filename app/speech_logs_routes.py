@@ -378,13 +378,13 @@ def _get_pathway_date_range(contact, pathway_name):
         achievements = Achievement.query.filter_by(
             user_id=uid,
             achievement_type='path-completion'
-        ).order_by(Achievement.issue_date).all()
+        ).order_by(Achievement.award_date).all()
     else:
         # Fall back to member_id if no user_id
         achievements = Achievement.query.filter_by(
             member_id=str(contact.id),
             achievement_type='path-completion'
-        ).order_by(Achievement.issue_date).all()
+        ).order_by(Achievement.award_date).all()
     
     # Identify segments
     start_date = datetime.min.date()
@@ -394,12 +394,12 @@ def _get_pathway_date_range(contact, pathway_name):
     
     for ach in achievements:
         if ach.path_name == pathway_name:
-            end_date = ach.issue_date
+            end_date = ach.award_date
             found_path = True
             break
         # If we haven't found our path yet, this achievement marks the END of a previous segment,
         # so our path must start AFTER this.
-        start_date = ach.issue_date # We'll start checking from day after usually, but inclusive logic is safer if same day switch
+        start_date = ach.award_date # We'll start checking from day after usually, but inclusive logic is safer if same day switch
     
     # Refine start_date logic: strictly speaking, roles for a new path 
     # shouldn't overlap with the *completion* event of the old one, but 
@@ -1762,39 +1762,47 @@ def show_project_view():
         from flask import abort
         abort(403)
              
-    from .utils import get_terms, get_active_term, get_date_ranges_for_terms
+    from .utils import get_terms, get_active_term
              
     terms = get_terms()
     # Get dropdown data for filter
-    
+
     # User requested: show pathways.path (name) with pathway.type=pathway, separated by status
     pathways_query = db.session.query(Pathway.name, Pathway.status).filter(Pathway.type == 'pathway').order_by(Pathway.name).all()
-    
+
     active_pathways = []
     inactive_pathways = []
-    
+
     for name, status in pathways_query:
         if status == 'active':
             active_pathways.append(name)
         else:
             inactive_pathways.append(name)
-    
-    # Multi-select support for terms
-    selected_term_ids = request.args.getlist('term')
-    
+
+    # Date range filter (Start/End Date) — defaults to the active term
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+
     current_term = get_active_term(terms)
-    
-    if not selected_term_ids:
-        # Default to current term if available, else first one
+
+    if not start_date and not end_date:
         if current_term:
-            selected_term_ids = [current_term['id']]
-        elif terms:
-            selected_term_ids = [terms[0]['id']]
-            
-    # Calculate date ranges for all selected terms
-    date_ranges = get_date_ranges_for_terms(selected_term_ids, terms)
-    should_filter_date = bool(selected_term_ids)
-    
+            start_date = current_term['start']
+            end_date = current_term['end']
+
+    from datetime import datetime
+    date_ranges = []
+    should_filter_date = False
+    if start_date and end_date:
+        try:
+            s = datetime.strptime(start_date, '%Y-%m-%d').date()
+            e = datetime.strptime(end_date, '%Y-%m-%d').date()
+            if s <= e:
+                date_ranges = [(s, e)]
+                should_filter_date = True
+        except ValueError:
+            pass
+
     selected_pathway_id = request.args.get('pathway')
     
     from .club_context import get_current_club_id
@@ -1900,8 +1908,9 @@ def show_project_view():
     return render_template(
         'project_view.html',
         terms=terms,
-        current_term=current_term, # Kept for backward compat or display title
-        selected_term_ids=selected_term_ids, # Pass selected IDs list
+        current_term=current_term,
+        start_date=start_date,
+        end_date=end_date,
         chart_data=chart_data,
         max_count=current_max_count,
         active_pathways=active_pathways,

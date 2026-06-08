@@ -46,7 +46,7 @@ def test_merge_contacts_logic(app, client, default_club):
         db.session.commit()
 
         # Achievement (belongs to u3)
-        a1 = Achievement(user_id=u3.id, achievement_type='level-completion', issue_date=date.today())
+        a1 = Achievement(user_id=u3.id, achievement_type='level-completion', award_date=date.today())
         db.session.add(a1)
         
         db.session.commit()
