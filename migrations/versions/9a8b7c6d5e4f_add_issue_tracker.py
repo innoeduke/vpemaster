@@ -76,21 +76,27 @@ def upgrade():
     ).fetchone()
     if perm_row:
         pid = perm_row[0]
+        # role_permissions.club_id is NOT NULL on prod (set by
+        # a1b2c3d4e5f7). Insert one row per (role, club) so the
+        # permission is granted in every club.
+        club_rows = conn.execute(sa.text("SELECT id FROM clubs")).fetchall()
         for role_name in ('SysAdmin', 'ClubAdmin'):
             role_row = conn.execute(
                 sa.text("SELECT id FROM auth_roles WHERE name = :role_name"),
                 {'role_name': role_name},
             ).fetchone()
-            if role_row:
-                rid = role_row[0]
+            if not role_row:
+                continue
+            rid = role_row[0]
+            for (cid,) in club_rows:
                 exists = conn.execute(
-                    sa.text("SELECT 1 FROM role_permissions WHERE role_id = :rid AND permission_id = :pid"),
-                    {'rid': rid, 'pid': pid},
+                    sa.text("SELECT 1 FROM role_permissions WHERE role_id = :rid AND permission_id = :pid AND club_id = :cid"),
+                    {'rid': rid, 'pid': pid, 'cid': cid},
                 ).fetchone()
                 if not exists:
                     conn.execute(
-                        sa.text("INSERT INTO role_permissions (role_id, permission_id) VALUES (:rid, :pid)"),
-                        {'rid': rid, 'pid': pid},
+                        sa.text("INSERT INTO role_permissions (role_id, permission_id, club_id) VALUES (:rid, :pid, :cid)"),
+                        {'rid': rid, 'pid': pid, 'cid': cid},
                     )
 
 
