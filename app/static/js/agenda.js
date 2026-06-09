@@ -26,6 +26,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const statusDisplayElement = document.querySelector(
     ".meeting-status-display"
   );
+  const clockEl = document.getElementById("meeting-clock");
+  const clockDisplayEl = document.getElementById("meeting-clock-display");
 
   // Global identifier for classification
   let GLOBAL_CLUB_ID = 1; // Default fallback, will be updated from API
@@ -43,6 +45,144 @@ document.addEventListener("DOMContentLoaded", () => {
   let sortable = null;
   let activeOwnerInput = null;
   let pendingEditRequest = false;
+  let clockInterval = null;
+  let serverSyncInterval = null;
+  let meetingStartTime = null;
+  let clockOffset = 0;
+
+  // --- Clock & Session Highlighting ---
+
+  function getMeetingStartDateTime() {
+    const dateStr = agendaContent.dataset.meetingDate;
+    const timeStr = meetingStartTime || agendaContent.dataset.meetingStartTime;
+    if (!dateStr || !timeStr) return null;
+    return new Date(dateStr + 'T' + timeStr + ':00');
+  }
+
+  function startClock() {
+    if (!clockEl) return;
+    stopClock();
+    clockEl.classList.remove('hidden');
+
+    function tick() {
+      const now = new Date(Date.now() + clockOffset);
+      if (clockDisplayEl) {
+        clockDisplayEl.textContent = now.toTimeString().slice(0, 8);
+      }
+      highlightCurrentSession(now);
+    }
+
+    tick();
+    clockInterval = setInterval(tick, 1000);
+    serverSyncInterval = setInterval(syncServerTime, 60000);
+  }
+
+  function stopClock() {
+    if (clockInterval) {
+      clearInterval(clockInterval);
+      clockInterval = null;
+    }
+    if (serverSyncInterval) {
+      clearInterval(serverSyncInterval);
+      serverSyncInterval = null;
+    }
+  }
+
+  function syncServerTime() {
+    fetch('/agenda/server-time')
+      .then(r => r.json())
+      .then(data => {
+        const serverTime = new Date(data.iso);
+        clockOffset = serverTime - Date.now();
+        if (clockDisplayEl) {
+          const now = new Date(Date.now() + clockOffset);
+          clockDisplayEl.textContent = now.toTimeString().slice(0, 8);
+        }
+      })
+      .catch(() => {}); // Silently ignore sync failures
+  }
+
+  function highlightCurrentSession(now) {
+    if (!meetingStartTime && !agendaContent.dataset.meetingStartTime) return;
+    if (!tableBody) return;
+
+    const startDateTime = getMeetingStartDateTime();
+    if (!startDateTime) return;
+
+    const elapsedMinutes = (now - startDateTime) / 60000;
+    if (elapsedMinutes < 0) return;
+
+    const timeStr = meetingStartTime || agendaContent.dataset.meetingStartTime;
+    const [sh, sm] = timeStr.split(':').map(Number);
+    const meetingStartMinutes = sh * 60 + sm;
+    const virtualClock = (meetingStartMinutes + elapsedMinutes) % 1440;
+
+    let matchingRow = null;
+    const rows = tableBody.querySelectorAll('tr');
+
+    rows.forEach(row => {
+      if (row.dataset.isSection === 'true') return;
+      if (row.dataset.isHidden === 'true') return;
+      const rowStart = row.dataset.startTime;
+      if (!rowStart) return;
+      const durationMax = parseInt(row.dataset.durationMax, 10) || 0;
+      if (durationMax === 0) return;
+
+      const [rh, rm] = rowStart.split(':').map(Number);
+      const rowStartMinutes = rh * 60 + rm;
+      const rowEndMinutes = rowStartMinutes + durationMax;
+
+      if (virtualClock >= rowStartMinutes && virtualClock < rowEndMinutes) {
+        matchingRow = row;
+      }
+    });
+
+    rows.forEach(r => r.classList.remove('current-session'));
+    if (matchingRow) {
+      matchingRow.classList.add('current-session');
+    }
+  }
+
+  function clearHighlights() {
+    if (!tableBody) return;
+    tableBody.querySelectorAll('tr.current-session').forEach(r => {
+      r.classList.remove('current-session');
+    });
+  }
+
+  async function initMeetingClock() {
+    if (!clockEl) return;
+
+    // Sync server time first
+    try {
+      const resp = await fetch('/agenda/server-time');
+      const data = await resp.json();
+      const serverTime = new Date(data.iso);
+      clockOffset = serverTime - Date.now();
+      if (clockDisplayEl) {
+        clockDisplayEl.textContent = serverTime.toTimeString().slice(0, 8);
+      }
+    } catch (e) {
+      // Fall back to client time
+      if (clockDisplayEl) {
+        clockDisplayEl.textContent = new Date().toTimeString().slice(0, 8);
+      }
+    }
+
+    meetingStartTime = agendaContent.dataset.meetingStartTime || null;
+
+    const status = meetingStatusBtn
+      ? meetingStatusBtn.dataset.currentStatus
+      : '';
+
+    if (status === 'running') {
+      startClock();
+    } else if (status === 'finished' && meetingStartTime) {
+      clockEl.classList.remove('hidden');
+      // Show frozen time — clock display already set above
+      stopClock();
+    }
+  }
 
   const sessionPairs = {
     "Ah-Counter Introduction": "Ah-Counter Report",
@@ -544,6 +684,24 @@ document.addEventListener("DOMContentLoaded", () => {
                   button.classList.add("btn-light");
                   button.title = "Publish to allow members to book roles.";
                 }
+              }
+            }
+
+            // --- Clock State Sync ---
+            if (clockEl && data.meeting_info) {
+              if (data.meeting_info.start_time) {
+                meetingStartTime = data.meeting_info.start_time;
+                agendaContent.dataset.meetingStartTime = data.meeting_info.start_time;
+              }
+              if (data.meeting_info.status === 'running') {
+                if (clockInterval === null) startClock();
+              } else if (data.meeting_info.status === 'finished') {
+                stopClock();
+                clearHighlights();
+              } else {
+                stopClock();
+                clockEl.classList.add('hidden');
+                clearHighlights();
               }
             }
           }
@@ -1079,6 +1237,24 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             statusDisplayElement.innerHTML = `<i class="fas fa-fw ${iconClass}"></i>${statusText}`;
+
+            // --- Clock Management ---
+            if (clockEl) {
+              if (newStatus === 'running') {
+                if (data.start_time) {
+                  meetingStartTime = data.start_time;
+                  agendaContent.dataset.meetingStartTime = data.start_time;
+                }
+                startClock();
+              } else if (newStatus === 'finished') {
+                stopClock();
+                clearHighlights();
+              } else {
+                stopClock();
+                clockEl.classList.add('hidden');
+                clearHighlights();
+              }
+            }
           } else {
             showCustomAlert("Error", "Error updating status: " + data.message);
           }
@@ -1688,6 +1864,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="st-modal-body" id="st-modal-body"></div>
         <div class="st-modal-footer">
           <button type="button" class="st-modal-cancel">Cancel</button>
+          <button type="button" class="st-modal-ok">OK</button>
         </div>
       </div>
     `;
@@ -1698,6 +1875,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     backdrop.querySelector(".st-modal-close").addEventListener("click", closeSessionTypeModal);
     backdrop.querySelector(".st-modal-cancel").addEventListener("click", closeSessionTypeModal);
+    backdrop.querySelector(".st-modal-ok").addEventListener("click", () => {
+      if (stModalCtx && stModalCtx.pendingTypeId) {
+        stModalCtx.hiddenSelect.value = stModalCtx.pendingTypeId;
+        stModalCtx.hiddenSelect.dispatchEvent(new Event("change"));
+        const labelEl = stModalCtx.triggerBtn.querySelector(".st-trigger-label");
+        const t = allSessionTypes.find((st) => st.id == stModalCtx.pendingTypeId);
+        if (labelEl && t) labelEl.textContent = t.Title;
+      }
+      closeSessionTypeModal();
+    });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && backdrop.style.display === "flex") closeSessionTypeModal();
     });
@@ -1718,7 +1905,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function openSessionTypeModal(row, hiddenSelect, triggerBtn) {
     ensureSessionTypeModal();
-    stModalCtx = { row, hiddenSelect, triggerBtn };
+    stModalCtx = { row, hiddenSelect, triggerBtn, pendingTypeId: String(hiddenSelect.value || "") };
 
     const body = stModal.querySelector("#st-modal-body");
     const currentTypeId = String(hiddenSelect.value || "");
@@ -1773,11 +1960,10 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.appendChild(text);
 
         btn.addEventListener("click", () => {
-          hiddenSelect.value = t.id;
-          hiddenSelect.dispatchEvent(new Event("change"));
-          const labelEl = triggerBtn.querySelector(".st-trigger-label");
-          if (labelEl) labelEl.textContent = t.Title;
-          closeSessionTypeModal();
+          // Highlight the selection; OK confirms, Cancel discards.
+          stModalCtx.pendingTypeId = String(t.id);
+          body.querySelectorAll(".st-item.selected").forEach((b) => b.classList.remove("selected"));
+          btn.classList.add("selected");
         });
         grid.appendChild(btn);
       }
@@ -2486,6 +2672,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Init ---
+  initMeetingClock();
+  window.addEventListener('beforeunload', stopClock);
 }); // End of DOMContentLoaded listener
 
 window.closeModal = function (modalId) {

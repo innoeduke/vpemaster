@@ -81,13 +81,14 @@
   .action-bar {
     flex-direction: column;
     align-items: center;
-    gap: 15px;
+    gap: 12px;
+    padding: 0 8px;
   }
 
   .action-bar-left {
     flex-direction: column;
     align-items: center;
-    gap: 15px;
+    gap: 10px;
     width: 100%;
     overflow: visible !important;
   }
@@ -95,7 +96,7 @@
   .action-bar-left #meeting-filter {
     max-width: 100%;
     width: auto;
-    min-width: 200px;
+    min-width: 180px;
   }
 
   .wod-display {
@@ -206,48 +207,51 @@
     max-width: 100%;
   }
 
-  /* Container for both groups */
+  /* Container for both groups — single row */
   .action-bar-right #view-mode-buttons {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 10px;
-    width: 100%;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 8px;
+    width: auto;
     align-items: center;
+    justify-content: center;
   }
 
   /* Reset min-height from base styles to avoid stretching buttons */
   .action-bar-right {
     min-height: auto !important;
+    max-width: 100%;
+    min-width: 0;
   }
 
   /* Status group: status display and action button side by side */
   .action-bar-right .status-group {
     display: flex;
     flex-wrap: nowrap;
-    gap: 8px;
-    justify-content: center;
-    width: 100%;
+    gap: 6px;
     align-items: center;
+    flex: 0 0 auto;
   }
 
   .action-bar-right .status-group .meeting-status-display {
-    flex: 1 1 auto;
-    font-size: 0.8rem;
-    /* Reduced font size */
-    min-width: 0;
+    font-size: 0.75rem;
     white-space: nowrap;
+    padding: 4px 8px;
+    flex: 0 0 auto;
   }
 
   .action-bar-right .status-group #meeting-status-btn {
-    flex: 1 1 auto;
-    min-width: 0;
+    flex: 0 0 auto;
     height: var(--mobile-control-height, 36px);
     min-height: var(--mobile-control-height, 36px);
-    padding: 0 15px;
+    min-width: 0;
+    padding: 0 10px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     line-height: 1;
+    font-size: 0.8rem;
   }
 
   .action-bar-right .status-group #meeting-status-btn:hover {
@@ -262,15 +266,13 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
-  /* Action group: New, Edit, Export, PPT buttons in a row */
+  /* Action group: icon buttons compact alongside status */
   .action-bar-right .action-group {
     display: flex;
     flex-wrap: nowrap;
-    gap: 10px;
-    justify-content: flex-end;
-    width: auto;
-    flex: 0 0 auto;
+    gap: 6px;
     align-items: center;
+    flex: 0 0 auto;
   }
 
   .action-bar-right .action-group #create-btn,
@@ -280,23 +282,26 @@
   .action-bar-right .action-group #jpg-btn,
   .action-bar-right .action-group #role-guide-btn,
   .action-bar-right .action-group #share-btn {
+    flex: 0 0 42px;
     height: var(--mobile-control-height, 36px);
     min-height: var(--mobile-control-height, 36px);
+    min-width: 0;
+    width: 42px;
     padding: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     line-height: 1;
+    font-size: 0.95rem;
+    border-radius: 8px;
   }
-
   .action-bar-right .action-group #create-btn,
   .action-bar-right .action-group #edit-btn {
     display: none;
   }
 
   .action-bar-right .action-group #xlsx-btn,
-  .action-bar-right .action-group #ppt-btn,
-  .action-bar-right .action-group #role-guide-btn {
+  .action-bar-right .action-group #ppt-btn {
     display: none;
   }
 
@@ -314,8 +319,10 @@
   }
 
   .action-dropdown #action-btn {
-    width: 50px;
-    min-width: 50px;
+    width: 42px;
+    min-width: 42px;
+    height: var(--mobile-control-height, 36px);
+    border-radius: 8px;
   }
 
   /* Agenda-specific pop-up menu instead of drop-down */

@@ -166,6 +166,11 @@
             transition: border-color 0.15s, box-shadow 0.15s;
             box-sizing: border-box;
         }
+        /* Project selects: compact to match the app's compact-form pattern */
+        #speechEditModal .sem-field select {
+            padding: 6px 10px;
+            font-size: 0.9em;
+        }
         #speechEditModal .sem-field input:focus,
         #speechEditModal .sem-field select:focus {
             outline: none;
@@ -190,7 +195,7 @@
         #speechEditModal .sem-checkbox {
             display: inline-flex;
             align-items: center;
-            gap: 16px;
+            gap: 8px;
             padding: 10px 14px;
             background: #fff;
             border: 1px solid #e2e8f0;
@@ -202,6 +207,10 @@
             color: #1e293b;
             font-family: "Inter", sans-serif;
             transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        #speechEditModal .sem-checkbox input[type="checkbox"] {
+            margin: 0 10px 0 0 !important;
+            flex-shrink: 0;
         }
         #speechEditModal .sem-checkbox:hover {
             border-color: #cbd5e0;

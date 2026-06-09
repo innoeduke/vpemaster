@@ -169,7 +169,12 @@ def _create_or_update_session(item, meeting_id, seq, updated_role_groups=None):
 
     # --- Project ID and Status ---
     project_id = safe_int(item.get('project_id'))
-    
+
+    # When the session type doesn't support projects (e.g. Debate converted
+    # from Panel Discussion), discard any stale project_id the client sent.
+    if project_id and session_type and not session_type.Valid_for_Project:
+        project_id = None
+
     status = item.get('status') if item.get('status') else 'Booked'
     session_title = item.get('session_title')
     
@@ -1775,6 +1780,13 @@ def update_logs():
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
 
+@agenda_bp.route('/agenda/server-time')
+def server_time():
+    """Return current server time for clock synchronization."""
+    now = datetime.now()
+    return jsonify(time=now.strftime('%H:%M:%S'), iso=now.isoformat())
+
+
 @agenda_bp.route('/api/agenda/get_logs/<int:meeting_id>')
 @login_required
 @authorized_club_required
@@ -1798,7 +1810,8 @@ def get_logs(meeting_id):
             'status': meeting.status,
             'title': meeting.Meeting_Title or f"Meeting {meeting.Meeting_Number}",
             'subtitle': meeting.Subtitle or '',
-            'wod': meeting.WOD or ''
+            'wod': meeting.WOD or '',
+            'start_time': meeting.Start_Time.strftime('%H:%M') if meeting.Start_Time else ''
         }
         
         return jsonify(success=True, logs_data=logs_data, project_speakers=project_speakers, meeting_info=meeting_info)
@@ -1948,6 +1961,7 @@ def update_meeting_status(meeting_id):
         new_status = 'not started'
     elif current_status == 'not started':
         new_status = 'running'
+        meeting.Start_Time = datetime.now().time()
     elif current_status == 'running':
         new_status = 'finished'
         meeting.status = new_status
@@ -2004,7 +2018,8 @@ def update_meeting_status(meeting_id):
         # Invalidate Cache
         RoleService._clear_meeting_cache(meeting.id)
         
-        return jsonify(success=True, new_status=new_status)
+        return jsonify(success=True, new_status=new_status,
+                       start_time=meeting.Start_Time.strftime('%H:%M') if meeting.Start_Time else '')
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500

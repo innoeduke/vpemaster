@@ -94,14 +94,13 @@ function toggleGeneric(isGeneric) {
   } = modalElements;
   const display = isGeneric ? "none" : "block";
   if (pathwayGenericRow) pathwayGenericRow.style.display = "block";
-  if (levelSelectGroup) levelSelectGroup.style.display = display;
-  if (projectSelectGroup) projectSelectGroup.style.display = display;
+  if (levelSelectGroup) levelSelectGroup.style.display = "block";
+  if (projectSelectGroup) projectSelectGroup.style.display = "block";
   if (pathwaySelect) pathwaySelect.disabled = false;
-  if (levelSelect) levelSelect.disabled = isGeneric;
+  if (levelSelect) levelSelect.disabled = false;
   if (projectSelect) projectSelect.disabled = isGeneric;
 
   if (isGeneric) {
-    if (levelSelect) levelSelect.value = "";
     if (projectSelect) {
       projectSelect.value = "";
       projectSelect.innerHTML = '<option value="">-- Select --</option>';
@@ -986,19 +985,25 @@ function mountSpeechModeOwnerPicker({
         defaultPath = savedTarget.pathway;
       }
       pathwaySelectEl.value = defaultPath;
+      // Fire change so the project select (and level options) update for the new pathway.
+      pathwaySelectEl.dispatchEvent(new Event("change", { bubbles: true }));
 
-      if (defaultPath === "Non Pathway") {
-        if (levelSelectEl) {
-          levelSelectEl.value = "";
-          levelSelectEl.disabled = true;
+      if (levelSelectEl) {
+        let defaultLevel = "";
+        if (defaultPath !== "Non Pathway") {
+          const levelMatch = (newContact && newContact.Credentials || "").match(/\d+/);
+          defaultLevel = savedTarget && savedTarget.level
+            ? savedTarget.level
+            : (levelMatch ? Math.min(parseInt(levelMatch[0], 10) + 1, 5).toString() : "1");
         }
-      } else if (levelSelectEl) {
-        const levelMatch = (newContact && newContact.Credentials || "").match(/\d+/);
-        const defaultLevel = savedTarget && savedTarget.level
-          ? savedTarget.level
-          : (levelMatch ? Math.min(parseInt(levelMatch[0], 10) + 1, 5).toString() : "1");
         levelSelectEl.value = defaultLevel;
-        levelSelectEl.disabled = false;
+      }
+
+      // When the owner is removed, reset the title and credential so the
+      // saved record reflects the unassigned state.
+      if (!newContact) {
+        modalElements.credential.value = "";
+        modalElements.speechTitle.value = modalElements.sessionType.value || "";
       }
     },
     placeholder: logData.owner_id ? "Change owner..." : "Add owner...",
@@ -1139,23 +1144,10 @@ const SpeechModalSetupManager = {
     }
     modalElements.levelSelectDropdown.value = defaultLevel;
 
-    const syncRoleLevel = () => {
-      const pathway = modalElements.pathwaySelectDropdown.value;
-      if (pathway === "Non Pathway") {
-        if (modalElements.levelSelectDropdown) {
-          modalElements.levelSelectDropdown.value = "";
-          modalElements.levelSelectDropdown.disabled = true;
-        }
-      } else {
-        if (modalElements.levelSelectDropdown) {
-          modalElements.levelSelectDropdown.disabled = false;
-        }
-      }
-    };
     modalElements.pathwaySelectDropdown.onchange = () => {
-      syncRoleLevel();
+      // Keep the pathway-level link but don't force-clear the level — the user
+      // can still review or change it before saving.
     };
-    syncRoleLevel();
   },
 
   getTitlePlaceholder(sessionType) {
@@ -1274,18 +1266,7 @@ const SpeechModalSetupManager = {
     const syncProjectChk = () => {
       const pathway = modalElements.pathwaySelectDropdown.value;
       if (pathway === "Non Pathway") {
-        modalElements.isProjectChk.checked = false;
-        modalElements.isProjectChk.disabled = true;
-        if (modalElements.levelSelectDropdown) {
-          modalElements.levelSelectDropdown.value = "";
-          modalElements.levelSelectDropdown.disabled = true;
-        }
         toggleFields(false);
-      } else {
-        modalElements.isProjectChk.disabled = false;
-        if (modalElements.levelSelectDropdown) {
-          modalElements.levelSelectDropdown.disabled = false;
-        }
       }
     };
 
@@ -1403,15 +1384,13 @@ const SpeechModalSetupManager = {
     modalElements.pathwaySelect.value = pathwayToSelect || "";
 
     if (pathwayToSelect === "Non Pathway") {
-      modalElements.isProjectCheckbox.checked = false;
-      modalElements.isProjectCheckbox.disabled = true;
-      toggleGeneric(true);
-      if (modalElements.levelSelect) {
-        modalElements.levelSelect.value = "";
-        modalElements.levelSelect.disabled = true;
+      // Clear project options — Non Pathway has no projects — but don't
+      // force-disable the select; the Is Project checkbox controls that.
+      if (modalElements.projectSelect) {
+        modalElements.projectSelect.value = "";
+        modalElements.projectSelect.innerHTML = '<option value="">-- Select --</option>';
       }
     } else {
-      modalElements.isProjectCheckbox.disabled = false;
       modalElements.isProjectCheckbox.checked = !isGeneric;
       toggleGeneric(isGeneric);
       if (!isGeneric) {
@@ -1428,15 +1407,14 @@ const SpeechModalSetupManager = {
 function updateDynamicOptions() {
   const pathway = modalElements.pathwaySelect.value;
   if (pathway === "Non Pathway") {
-    modalElements.isProjectCheckbox.checked = false;
-    modalElements.isProjectCheckbox.disabled = true;
-    toggleGeneric(true);
-    if (modalElements.levelSelect) {
-      modalElements.levelSelect.value = "";
-      modalElements.levelSelect.disabled = true;
+    // Clear project options — Non Pathway has no projects — but leave the
+    // Is Project checkbox and the disabled state alone so the user stays in
+    // control.
+    if (modalElements.projectSelect) {
+      modalElements.projectSelect.value = "";
+      modalElements.projectSelect.innerHTML = '<option value="">-- Select --</option>';
     }
   } else {
-    modalElements.isProjectCheckbox.disabled = false;
     updateLevelOptions();
     updateProjectOptions();
   }
@@ -1581,12 +1559,10 @@ function buildSavePayload() {
   const isProject = isProjectChk?.checked || false;
 
   // If the speech-mode owner picker is mounted, send the chosen owner so
-  // the backend persists the change. (Owner is single per speech-mode log.)
+  // the backend persists the change. Send null when owner is removed so
+  // the backend clears the assignment. (Owner is single per speech-mode log.)
   if (modalElements.ownerPicker) {
-    const newOwnerId = modalElements.ownerPicker.getOwnerId();
-    if (newOwnerId) {
-      payload.owner_id = newOwnerId;
-    }
+    payload.owner_id = modalElements.ownerPicker.getOwnerId() || null;
   }
 
   // Helper to read the level dropdown (shared across all session types that use pathwayGroup)
@@ -1658,11 +1634,14 @@ function handleSaveSuccess(updateResult, payload) {
 
   // Refresh the main log's owner cell with the new per-owner credentials
   // returned by the server, so the agenda reflects the change without a
-  // full page reload. Owners of *affected* logs are unchanged.
-  if (Array.isArray(updateResult.owners_data) && updateResult.owners_data.length > 0) {
-    const mainRow = document.querySelector(`tr[data-id="${logId}"]`);
-    if (mainRow) {
+  // full page reload.
+  const mainRow = document.querySelector(`tr[data-id="${logId}"]`);
+  if (mainRow) {
+    if (Array.isArray(updateResult.owners_data) && updateResult.owners_data.length > 0) {
       refreshAgendaOwnerCell(mainRow, updateResult.owners_data);
+    } else if (Array.isArray(updateResult.owners_data)) {
+      // Owner was removed — clear the owner cell.
+      clearAgendaOwnerCell(mainRow);
     }
   }
 
@@ -1680,12 +1659,28 @@ function refreshAgendaOwnerCell(agendaRow, ownersData) {
   const ownerCell = agendaRow.querySelector("td.col-owner");
   if (!ownerCell) return;
 
+  // Remove any bare text placeholder (the template's "—") but keep
+  // existing .owner-row elements so their <a> links are preserved.
+  for (const node of Array.from(ownerCell.childNodes)) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      node.remove();
+    }
+  }
+
   const ownerRows = ownerCell.querySelectorAll(".owner-row");
-  // Match by position: the server response and the rendered cell both
-  // list owners in the same order (log.owners).
+
   ownersData.forEach((owner, idx) => {
-    const ownerRow = ownerRows[idx];
-    if (!ownerRow) return;
+    let ownerRow = ownerRows[idx];
+    if (!ownerRow) {
+      // No existing row at this position — create one.
+      ownerRow = document.createElement("div");
+      ownerRow.className = "owner-row";
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "owner-name";
+      nameSpan.textContent = owner.name || "";
+      ownerRow.appendChild(nameSpan);
+      ownerCell.appendChild(ownerRow);
+    }
 
     const existingSup = ownerRow.querySelector(".dtm-superscript");
     if (existingSup) existingSup.remove();
@@ -1705,11 +1700,39 @@ function refreshAgendaOwnerCell(agendaRow, ownersData) {
     }
   });
 
-  // Keep the row-level data-credentials in sync with the primary owner
-  // so the next save round-trips the new value and the dataset reflects
-  // what is on screen.
   if (ownersData[0]) {
     agendaRow.dataset.credentials = ownersData[0].credentials || "";
+    agendaRow.dataset.ownerId = ownersData[0].id || "";
+    agendaRow.dataset.ownerIds = JSON.stringify(ownersData.map(o => o.id));
+  }
+}
+
+/**
+ * Clear the owner column of an agenda row when the owner has been removed.
+ */
+function clearAgendaOwnerCell(agendaRow) {
+  if (!agendaRow) return;
+  const ownerCell = agendaRow.querySelector("td.col-owner");
+  if (!ownerCell) return;
+  clearOwnerCellContent(ownerCell);
+  ownerCell.textContent = "-";
+  agendaRow.dataset.credentials = "";
+  agendaRow.dataset.ownerId = "";
+  agendaRow.dataset.ownerIds = "[]";
+}
+
+/**
+ * Remove all owner-rows and bare text nodes from an owner cell,
+ * leaving it clean for fresh content.
+ */
+function clearOwnerCellContent(ownerCell) {
+  // Remove .owner-row divs
+  ownerCell.querySelectorAll(".owner-row").forEach((row) => row.remove());
+  // Remove bare text nodes (the template's "—" placeholder)
+  for (const node of Array.from(ownerCell.childNodes)) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      node.remove();
+    }
   }
 }
 
@@ -1777,7 +1800,26 @@ function updateAgendaRow(logId, updateResult, payload) {
       viewTitleCell.innerHTML = ""; // Clear
       const wrapper = document.createElement("div");
       wrapper.className = "speech-tooltip-wrapper";
-      wrapper.textContent = `${title} ${code}`.trim();
+      wrapper.appendChild(document.createTextNode(title));
+
+      // Render project code as a clickable <a> link, matching the
+      // server-rendered template and the speech-mode branch below.
+      if (code) {
+        wrapper.appendChild(document.createTextNode(' '));
+        const aCode = document.createElement('a');
+        aCode.className = 'project-code-link';
+        aCode.textContent = code;
+        const pathwayCode = updateResult.pathway_code;
+        const level = updateResult.level;
+        if (updateResult.project_id && pathwayCode && level != null) {
+          aCode.href = `/pathway_library?path=${pathwayCode}&level=${level}&project_id=${updateResult.project_id}`;
+          aCode.title = 'View in Pathways Library';
+        } else {
+          aCode.href = '/pathway_library';
+          aCode.title = 'Open Pathways Library';
+        }
+        wrapper.appendChild(aCode);
+      }
 
       if (updateResult.project_id && updateResult.project_id != ProjectID.GENERIC) {
         const tooltip = document.createElement("div");

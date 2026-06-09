@@ -2160,12 +2160,16 @@ def update_speech_log(log_id):
     # 1. Update Owner Logic: Handle list of owners FIRST so target updates apply to them
     from .services.role_service import RoleService
     owner_ids = data.get('owner_ids', []) # Expected list of IDs
-    
+
     # Backward compatibility: if single 'owner_id' provided and no 'owner_ids', use it
     if not owner_ids and 'owner_id' in data:
          val = data.get('owner_id')
          if val:
              owner_ids = [int(val)]
+
+    # Normalize to ints — the client sends string IDs, but Contact.id is integer
+    if owner_ids:
+        owner_ids = [int(oid) for oid in owner_ids if oid]
 
     if 'owner_ids' in data or 'owner_id' in data:
         RoleService.assign_meeting_role(log, owner_ids, is_admin=is_authorized(Permissions.SPEECH_LOGS_MANAGE))
@@ -2261,8 +2265,11 @@ def update_speech_log(log_id):
         updated_project = db.session.get(Project, project_id)
 
     # 1. Update Basic Fields
-    if 'session_title' in data:
-        log.Session_Title = data['session_title'] or (updated_project.Project_Name if updated_project else None)
+    if 'session_title' in data and data['session_title']:
+        log.Session_Title = data['session_title']
+    elif 'session_title' in data:
+        # session_title was explicitly cleared — set to project name or None
+        log.Session_Title = updated_project.Project_Name if updated_project else None
 
     # 2. Use Model Methods for Complex logic
     log.update_media(media_url)
@@ -2355,7 +2362,7 @@ def update_speech_log(log_id):
             success=True,
             session_title=log.Session_Title,
             project_name=summary['project_name'],
-            project_code=summary['project_code'],
+            project_code=log.project_code or "",
             pathway=pathway_val if pathway_val else summary['pathway'],
             project_id=log.Project_ID,
             duration_min=log.Duration_Min,

@@ -33,6 +33,7 @@
 	text-align: center;
 	margin-bottom: 10px;
 	padding-bottom: 20px;
+	position: relative;
 }
 
 .agenda-header-logo {
@@ -1192,22 +1193,61 @@ a.owner-link:hover {
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* --- Meeting Clock --- */
+.meeting-clock {
+    position: absolute;
+    top: 0;
+    right: 0;
+    color: #772432;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 10;
+    letter-spacing: 0.03em;
+}
+
+.meeting-clock.hidden {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .meeting-clock {
+        font-size: 0.95rem;
+        padding: 4px 12px;
+        top: 4px;
+        right: 4px;
+    }
+}
+
+/* --- Current Session Row Highlight --- */
+#logs-table tbody tr.current-session td {
+    background: linear-gradient(90deg, #fff8e1, #fff3cd);
+}
+
+#logs-table tbody tr.current-session td:first-child {
+    border-left: 4px solid #f59e0b;
+}
+
 /* Consistent hover behaviors for New and Edit buttons */
 #create-btn,
 #edit-btn {
-	transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background-color: #5b9bb5;
+    border-color: #5b9bb5;
+    color: #fff;
 }
 
-#create-btn:hover {
-	background-color: #218838;
-	transform: scale(1.05) translateY(-1px);
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
+#create-btn:hover,
 #edit-btn:hover {
-	transform: scale(1.05) translateY(-1px);
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-	opacity: 0.9;
+    background-color: #4a8aa4;
+    border-color: #4a8aa4;
+    transform: scale(1.05) translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* Enforce fixed size for icon buttons to ensure vertical alignment */
@@ -1914,6 +1954,7 @@ td.non-edit-mode-cell.col-session a {
 }
 
 .st-modal-cancel {
+	min-width: 100px;
 	background: #fff;
 	border: 1px solid #cbd5e0;
 	color: #1e293b;
@@ -1927,4 +1968,23 @@ td.non-edit-mode-cell.col-session a {
 
 .st-modal-cancel:hover {
 	background: #f1f5f9;
+}
+
+.st-modal-ok {
+	min-width: 100px;
+	background: #772432;
+	border: 1px solid #772432;
+	color: #fff;
+	padding: 9px 18px;
+	border-radius: 8px;
+	font-size: 13.5px;
+	font-weight: 600;
+	font-family: 'Inter', sans-serif;
+	cursor: pointer;
+	box-shadow: 0 1px 3px rgba(119, 36, 50, 0.20);
+}
+
+.st-modal-ok:hover {
+	background: #5e1c27;
+	box-shadow: 0 2px 6px rgba(119, 36, 50, 0.28);
 }
