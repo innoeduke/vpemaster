@@ -372,4 +372,19 @@
     flex-shrink: 0;
     margin-left: 0 !important;
   }
+
+  /* Journals header: tighter on mobile */
+  .journals-header {
+    padding: 14px 14px 12px;
+    margin: 0 -12px 20px;
+  }
+
+  .journals-title {
+    font-size: 1.4rem;
+  }
+
+  .journals-back-btn {
+    width: 34px;
+    height: 34px;
+  }
 }

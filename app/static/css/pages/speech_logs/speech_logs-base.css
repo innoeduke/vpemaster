@@ -940,15 +940,31 @@
 
 /* Speech Log Header */
 .speech-log-header {
-	display: flex;
-	align-items: stretch;
-	background-color: #fff;
-	padding: 20px;
-	border-radius: 8px;
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-	margin-bottom: 25px;
+	display: grid;
+	grid-template-columns: auto 1fr auto;
+	gap: 28px;
+	align-items: center;
+	background: linear-gradient(135deg, #faf9f6 0%, #ffffff 65%);
+	padding: 28px 32px;
+	border-radius: 14px;
+	box-shadow:
+		0 1px 2px rgba(17, 14, 12, 0.04),
+		0 6px 18px rgba(17, 14, 12, 0.06);
+	margin-bottom: 0;
 	border-left: 5px solid #772432;
 	position: relative;
+	overflow: hidden;
+}
+
+.speech-log-header::before {
+	content: "";
+	position: absolute;
+	top: -40px;
+	right: -40px;
+	width: 220px;
+	height: 220px;
+	background: radial-gradient(circle, rgba(119, 36, 50, 0.04) 0%, transparent 70%);
+	pointer-events: none;
 }
 
 .speech-log-header .header-right {
@@ -964,6 +980,8 @@
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
+	gap: 4px;
+	min-width: 0;
 }
 
 .header-actions {
@@ -973,21 +991,22 @@
 }
 
 .header-avatar {
-	margin-right: 20px;
 	text-align: center;
+	position: relative;
+	flex-shrink: 0;
 }
 
 .header-avatar .avatar-placeholder,
 .header-avatar .avatar-img {
-	width: 150px;
-	height: 150px;
+	width: 110px;
+	height: 110px;
 	border-radius: 50%;
 }
 
 .header-avatar .avatar-img {
 	object-fit: cover;
 	border: 3px solid #772432;
-	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+	box-shadow: 0 4px 12px rgba(119, 36, 50, 0.18);
 }
 
 .header-avatar .avatar-placeholder {
@@ -1003,8 +1022,83 @@
 .header-info h2 {
 	margin: 0;
 	font-size: 1.8em;
-	color: #333;
-	font-family: 'Montserrat', sans-serif;
+	color: #1a1714;
+	font-family: 'Fraunces', 'Playfair Display', 'Source Serif Pro', Georgia, serif;
+	font-weight: 600;
+	letter-spacing: -0.01em;
+	line-height: 1.1;
+}
+
+.header-info .member-id-line {
+	font-size: 0.7rem;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: #a09888;
+	font-weight: 600;
+	margin-bottom: 2px;
+}
+
+.header-info .name-credential {
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.header-info .credential-text {
+	font-size: 0.8rem;
+	color: #772432;
+	background: rgba(119, 36, 50, 0.08);
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+}
+
+.header-info .next-project-line {
+	font-size: 0.78rem;
+	color: #6b6560;
+	margin-top: 4px;
+}
+
+.header-info .next-project-line .next-project-code {
+	font-weight: 700;
+	color: #772432;
+	font-family: 'JetBrains Mono', 'Menlo', monospace;
+	font-size: 0.85em;
+}
+
+.header-info .header-profile-action {
+	margin-top: 8px;
+}
+
+/* Connected filter bar — visually attached to the header card */
+.speech-log-header + .filters-container {
+	margin-top: -1px;
+	background: #ffffff;
+	border: 1px solid #ece8e1;
+	border-top: none;
+	border-radius: 0 0 14px 14px;
+	box-shadow: 0 4px 12px rgba(17, 14, 12, 0.04);
+	padding: 14px 28px;
+}
+
+.speech-log-header + .filters-container .speech-logs-filter-row {
+	gap: 14px;
+}
+
+.speech-log-header + .filters-container .filter-group-premium .pathway-selector-group {
+	min-width: 220px;
+}
+
+/* Right side decorative stats — make the white area feel intentional */
+.speech-log-header .header-right {
+	gap: 10px;
+}
+
+.speech-log-header .header-right .speech-logs-toolbar {
+	flex-direction: row;
+	gap: 8px;
 }
 
 /* Toolbar Styles */
@@ -1725,4 +1819,395 @@
 .extra-roles-badge:hover {
 	background-color: #e2e8f0;
 	transform: scale(1.1);
+}
+
+/* =========================================
+   Journals Header (Speech Logs page)
+   Refined editorial header with a two-line wordmark
+   and a subtle accent bar.
+   ========================================= */
+.journals-header {
+	display: grid;
+	grid-template-columns: 1fr auto 1fr;
+	align-items: center;
+	gap: 16px;
+	padding: 18px 28px 16px;
+	margin: 0 -20px 28px;
+	background: linear-gradient(180deg, #faf9f6 0%, #ffffff 100%);
+	border-bottom: 1px solid #e8e5df;
+	position: relative;
+}
+
+.journals-header::after {
+	content: "";
+	position: absolute;
+	left: 28px;
+	bottom: -1px;
+	width: 56px;
+	height: 3px;
+	background: linear-gradient(90deg, #772432 0%, #c4a48c 100%);
+	border-radius: 0 2px 2px 0;
+}
+
+.journals-back-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 38px;
+	height: 38px;
+	border-radius: 50%;
+	background: #ffffff;
+	border: 1px solid #e8e5df;
+	color: #5c5651;
+	font-size: 0.95rem;
+	cursor: pointer;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	text-decoration: none;
+	justify-self: start;
+}
+
+.journals-back-btn:hover {
+	background: #772432;
+	color: #fff;
+	border-color: #772432;
+	transform: translateX(-2px);
+	box-shadow: 0 4px 10px rgba(119, 36, 50, 0.18);
+}
+
+.journals-header-center {
+	text-align: center;
+}
+
+.journals-title {
+	margin: 0;
+	font-family: "Fraunces", "Playfair Display", "Source Serif Pro", Georgia, serif;
+	font-weight: 600;
+	font-size: 1.7rem;
+	color: #1a1714;
+	letter-spacing: -0.01em;
+	display: inline-flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+	line-height: 1.1;
+	text-align: center;
+}
+
+.journals-title-icon {
+	font-size: 0.55em;
+	color: #772432;
+	opacity: 0.55;
+	order: 2;
+	letter-spacing: 0.3em;
+}
+
+.journals-title-text {
+	order: 1;
+}
+
+.journals-header::before {
+	content: "MEMBER JOURNAL";
+	display: block;
+	position: absolute;
+	top: 4px;
+	left: 50%;
+	transform: translateX(-50%);
+	font-size: 0.6rem;
+	font-weight: 700;
+	letter-spacing: 0.25em;
+	color: #a09888;
+	font-family: "Inter", sans-serif;
+}
+
+/* =========================================
+   Speech Logs Page Surface
+   Subtle background so the page doesn't feel
+   like a sea of blank white.
+   ========================================= */
+.speech-logs-content {
+	background:
+		radial-gradient(ellipse 1200px 400px at 50% -100px, rgba(196, 164, 140, 0.08) 0%, transparent 70%),
+		linear-gradient(180deg, #f7f4ee 0%, #faf8f3 60%, #fdfcfa 100%);
+	padding: 18px 24px 32px;
+	margin: -20px -15px -32px;
+	min-height: calc(100vh - 60px);
+}
+
+/* Pathways / Completed badges — small refinement */
+.speech-log-header .header-badges-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 6px;
+}
+
+.speech-log-header .badge-path {
+	font-size: 0.65rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: rgba(0, 65, 101, 0.08);
+	color: #004165;
+}
+
+/* Profile / Message buttons — softer */
+.speech-log-header .btn-view-control {
+	font-size: 0.78rem;
+	padding: 6px 12px;
+	border-radius: 8px;
+	font-weight: 600;
+	background: #772432;
+	color: #fff;
+	border: none;
+	transition: all 0.2s;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.speech-log-header .btn-view-control:hover {
+	background: #5e1c27;
+	transform: translateY(-1px);
+}
+
+.speech-log-header .btn-view-control.btn-message-small {
+	background: #004165;
+}
+
+.speech-log-header .btn-view-control.btn-message-small:hover {
+	background: #003355;
+}
+
+/* =========================================
+   Pathway Selector — Editorial pill
+   ========================================= */
+.speech-logs-filter-bar .pathway-selector-group {
+	margin: 0;
+	width: 100%;
+}
+
+.speech-logs-filter-bar .pathway-select-trigger {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	background: #ffffff;
+	border: 1px solid #e2e1dc;
+	border-radius: 999px;
+	padding: 8px 16px;
+	min-height: 38px;
+	cursor: pointer;
+	user-select: none;
+	box-shadow: 0 1px 2px rgba(17, 14, 12, 0.03);
+	transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+	font-family: "Inter", sans-serif;
+}
+
+.speech-logs-filter-bar .pathway-select-trigger:hover {
+	border-color: #b8b0a8;
+	background: #fefdfc;
+}
+
+.speech-logs-filter-bar .pathway-select-trigger.active {
+	border-color: #772432;
+	background: #fff;
+	box-shadow: 0 0 0 3px rgba(119, 36, 50, 0.1);
+}
+
+.speech-logs-filter-bar .pathway-select-trigger .pathway-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+	flex: 1;
+	overflow: hidden;
+}
+
+.speech-logs-filter-bar .pathway-select-trigger .pathway-status-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	flex-shrink: 0;
+	background: #c4a48c;
+}
+
+.speech-logs-filter-bar .pathway-select-trigger.is-completed .pathway-status-dot {
+	background: #4a9b6e;
+}
+
+.speech-logs-filter-bar .pathway-select-trigger.is-in-progress .pathway-status-dot {
+	background: #d99a3a;
+}
+
+.speech-logs-filter-bar .pathway-select-trigger.is-non-pathway .pathway-status-dot {
+	background: #b0aca5;
+}
+
+.speech-logs-filter-bar .pathway-select-trigger .pathway-name {
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: #1a1714;
+	letter-spacing: 0.01em;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	min-width: 0;
+}
+
+.speech-logs-filter-bar .pathway-select-trigger .pathway-chevron {
+	color: #a09888;
+	font-size: 0.7rem;
+	flex-shrink: 0;
+	transition: transform 0.25s ease;
+}
+
+.speech-logs-filter-bar .pathway-select-trigger.active .pathway-chevron {
+	transform: rotate(180deg);
+	color: #772432;
+}
+
+/* Dropdown menu */
+.speech-logs-filter-bar .pathway-dropdown-menu {
+	position: absolute;
+	top: calc(100% + 6px);
+	left: 0;
+	right: 0;
+	background: #ffffff;
+	border: 1px solid #e2e1dc;
+	border-radius: 12px;
+	box-shadow:
+		0 4px 8px rgba(17, 14, 12, 0.06),
+		0 12px 28px rgba(17, 14, 12, 0.1);
+	z-index: 1000;
+	min-width: 280px;
+	max-height: 320px;
+	overflow-y: auto;
+	padding: 6px;
+}
+
+.speech-logs-filter-bar .pathway-dropdown-menu .dropdown-item {
+	padding: 9px 12px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	border-radius: 8px;
+	transition: background 0.15s;
+}
+
+.speech-logs-filter-bar .pathway-dropdown-menu .dropdown-item:hover {
+	background: #f7f4ee;
+}
+
+.speech-logs-filter-bar .pathway-dropdown-menu .pathway-item-status {
+	font-size: 0.65rem;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	padding: 2px 8px;
+	border-radius: 999px;
+	min-width: 78px;
+	text-align: center;
+	flex-shrink: 0;
+	background: #faf9f6;
+	color: #6b6560;
+}
+
+.speech-logs-filter-bar .pathway-dropdown-menu .pathway-item-status.is-completed {
+	background: rgba(74, 155, 110, 0.12);
+	color: #2d6e4a;
+}
+
+.speech-logs-filter-bar .pathway-dropdown-menu .pathway-item-status.is-in-progress {
+	background: rgba(217, 154, 58, 0.12);
+	color: #9c6a1a;
+}
+
+.speech-logs-filter-bar .pathway-dropdown-menu .pathway-item-name {
+	font-size: 0.82rem;
+	font-weight: 600;
+	color: #1a1714;
+	letter-spacing: 0.01em;
+}
+
+.speech-logs-filter-bar .pathway-dropdown-menu .register-path-row {
+	border-top: 1px solid #ece8e1;
+	margin: 4px 4px 0;
+	padding: 8px 4px 4px;
+	text-align: right;
+}
+
+.speech-logs-filter-bar .pathway-dropdown-menu .register-path-btn {
+	background: rgba(74, 155, 110, 0.08);
+	color: #2d6e4a;
+	border: 1px solid rgba(74, 155, 110, 0.2);
+	border-radius: 999px;
+	padding: 4px 12px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.2s;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.speech-logs-filter-bar .pathway-dropdown-menu .register-path-btn:hover {
+	background: rgba(74, 155, 110, 0.16);
+	border-color: rgba(74, 155, 110, 0.4);
+}
+
+/* Hide the global chevron ::after on mobile — we use an explicit <i> element */
+:root body .pathway-select-trigger::after {
+	display: none !important;
+}
+:root body .pathway-select-trigger::before {
+	display: none !important;
+}
+
+/* =========================================
+   Filter bar attached to the header card
+   ========================================= */
+.speech-logs-filter-bar {
+	background: #ffffff;
+	border: 1px solid #ece8e1;
+	border-top: 1px dashed #ece8e1;
+	border-radius: 0 0 14px 14px;
+	box-shadow: 0 6px 18px rgba(17, 14, 12, 0.05);
+	padding: 14px 28px;
+	margin-bottom: 20px;
+}
+
+.speech-logs-filter-bar .filter-row-premium {
+	gap: 14px;
+}
+
+.speech-logs-filter-bar .search-container {
+	background: #faf9f6;
+	border: 1px solid #ece8e1;
+	border-radius: 999px;
+	padding: 2px 4px 2px 14px;
+	transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.speech-logs-filter-bar .search-container:focus-within {
+	border-color: #772432;
+	box-shadow: 0 0 0 3px rgba(119, 36, 50, 0.1);
+	background: #fff;
+}
+
+.speech-logs-filter-bar .toolbar-extras .btn {
+	background: #772432;
+	color: #fff;
+	border-radius: 8px;
+	padding: 6px 14px;
+	font-weight: 600;
+	font-size: 0.85rem;
+	transition: all 0.2s;
+}
+
+.speech-logs-filter-bar .toolbar-extras .btn:hover {
+	background: #5e1c27;
+	transform: translateY(-1px);
 }

@@ -89,7 +89,7 @@
 {% endblock %}
 
 {% block speech_log_toolbar %}
-    <div class="filters-container">
+    <div class="speech-logs-filter-bar">
         <div class="filter-row-premium speech-logs-filter-row">
             <div class="filter-group-premium">
                 <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" id="speech-logs-filter-form">
@@ -99,12 +99,6 @@
                     {% endif %}
 
                     <style>
-                        .pathway-selector-group .custom-select-trigger { padding: 6px 20px 6px 12px !important; box-sizing: border-box !important; }
-                        .pathway-selector-group .custom-select-trigger::after,
-                        .pathway-selector-group .custom-select-trigger::before { content: none !important; display: none !important; }
-                        .pathway-selector-group .pathway-chevron { color: #888; font-size: 0.8rem; margin-left: 12px; flex-shrink: 0; transition: transform 0.2s; }
-                        .pathway-selector-group .custom-select-trigger.active .pathway-chevron { transform: rotate(180deg); }
-
                         .member-view-mode .filters-container { margin-bottom: 0 !important; }
                         .speech-logs-filter-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; width: 100%; }
                         .speech-logs-filter-row .filter-group-premium { flex: 0 1 auto; min-width: 200px; order: 0; }
@@ -234,42 +228,39 @@
 
                         <div style="display: flex; align-items: center; width: 100%; gap: 12px; flex-wrap: wrap;">
                             <div class="custom-dropdown-container" style="position: relative; flex: 1; min-width: 200px;">
-                            <div class="custom-select-trigger pathway-select-trigger" onclick="document.getElementById('pathway-dropdown-menu').style.display = document.getElementById('pathway-dropdown-menu').style.display === 'none' ? 'block' : 'none'; event.stopPropagation();"
-                                 style="display: flex; align-items: center; justify-content: space-between; border: 1px solid {% if ns.is_non_pathway %}#cfcfcf{% elif ns.selected_p and ns.selected_p.status == 'completed' %}#c3e6cb{% elif ns.selected_p %}#f5d57c{% else %}#ddd{% endif %}; border-radius: 6px; background: {% if ns.is_non_pathway %}#f0f0f0{% elif ns.selected_p and ns.selected_p.status == 'completed' %}#e6f9ee{% elif ns.selected_p %}#fef3cd{% else %}#fff{% endif %}; box-shadow: none; outline: none; cursor: pointer; user-select: none; padding: 8px 12px;">
-                                <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; overflow: hidden;">
+                            <div class="custom-select-trigger pathway-select-trigger {% if ns.is_non_pathway %}is-non-pathway{% elif ns.selected_p and ns.selected_p.status == 'completed' %}is-completed{% elif ns.selected_p %}is-in-progress{% endif %}"
+                                 onclick="document.getElementById('pathway-dropdown-menu').style.display = document.getElementById('pathway-dropdown-menu').style.display === 'none' ? 'block' : 'none'; this.classList.toggle('active'); event.stopPropagation();">
+                                <div class="pathway-pill">
+                                    <span class="pathway-status-dot"></span>
                                     {% if ns.is_non_pathway %}
-                                        <span style="font-size: 1rem; font-family: 'Montserrat', sans-serif; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;">Non Pathway</span>
+                                        <span class="pathway-name">{{ _('Non Pathway') }}</span>
                                     {% elif ns.selected_p %}
-                                        {% set trigger_color = '#155724' if ns.selected_p.status == 'completed' else '#856404' %}
-                                        <span style="font-size: 1rem; font-family: 'Montserrat', sans-serif; font-weight: 700; color: {{ trigger_color }}; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;">{{ ns.selected_p.name }}</span>
+                                        <span class="pathway-name">{{ ns.selected_p.name }}</span>
                                     {% else %}
-                                        <span style="font-size: 1rem; font-family: 'Montserrat', sans-serif; font-weight: 700; color: #777; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;">{{ _('No Pathways Registered') }}</span>
+                                        <span class="pathway-name" style="color: #999;">{{ _('No Pathways Registered') }}</span>
                                     {% endif %}
                                 </div>
                                 <i class="fas fa-chevron-down pathway-chevron"></i>
                             </div>
-                            
-                            <div id="pathway-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: white; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000; min-width: 320px; max-height: 300px; overflow-y: auto;">
-                                <div class="dropdown-item" onclick="document.getElementById('hidden-pathway-input').value='Non Pathway'; document.getElementById('speech-logs-filter-form').submit();" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #f8f9fa; transition: background 0.2s;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-                                    <span style="background: #e8e8e8; color: #666; border-radius: 50px; padding: 2px 8px; font-size: 11px; font-weight: 600; font-family: 'Gotham', sans-serif; display: inline-block; width: 80px; text-align: center; box-sizing: border-box;">{{ _('Other') }}</span>
-                                    <span style="font-size: 11px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #333; text-transform: uppercase;">Non Pathway</span>
+
+                            <div id="pathway-dropdown-menu" class="pathway-dropdown-menu" style="display: none;">
+                                <div class="dropdown-item" onclick="document.getElementById('hidden-pathway-input').value='Non Pathway'; document.getElementById('speech-logs-filter-form').submit();">
+                                    <span class="pathway-item-status is-non-pathway">Other</span>
+                                    <span class="pathway-item-name">Non Pathway</span>
                                 </div>
                                 {% for p in member_pathways %}
-                                    {% set status_bg = '#e6f9ee' if p.status == 'completed' else '#fef3cd' %}
-                                    {% set status_color = '#155724' if p.status == 'completed' else '#856404' %}
+                                    {% set status_class = 'is-completed' if p.status == 'completed' else 'is-in-progress' %}
                                     {% set status_label = _('Completed') if p.status == 'completed' else _('In Progress') %}
-                                    <div class="dropdown-item" onclick="document.getElementById('hidden-pathway-input').value='{{ p.name }}'; document.getElementById('speech-logs-filter-form').submit();" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #f8f9fa; transition: background 0.2s;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
-                                        <span style="background: {{ status_bg }}; color: {{ status_color }}; border-radius: 50px; padding: 2px 8px; font-size: 11px; font-weight: 600; font-family: 'Gotham', sans-serif; display: inline-block; width: 80px; text-align: center; box-sizing: border-box;">{{ status_label }}</span>
-                                        <span style="font-size: 11px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #333; text-transform: uppercase;">{{ p.name }}</span>
+                                    <div class="dropdown-item" onclick="document.getElementById('hidden-pathway-input').value='{{ p.name }}'; document.getElementById('speech-logs-filter-form').submit();">
+                                        <span class="pathway-item-status {{ status_class }}">{{ status_label }}</span>
+                                        <span class="pathway-item-name">{{ p.name }}</span>
                                     </div>
                                 {% endfor %}
                                 {% if can_manage_pathways and available_pathways %}
-                                <div style="border-top: 1px solid #dee2e6; margin: 4px 0;"></div>
-                                <div style="padding: 8px 12px; text-align: right;">
-                                    <button type="button"
-                                            onclick="event.stopPropagation(); openRegisterPathwayModal();"
-                                            style="color: #28a745; background: none; border: 1px solid #28a745; border-radius: 6px; padding: 4px 12px; font-size: 11px; font-family: 'Montserrat', sans-serif; font-weight: 600; cursor: pointer;">
-                                        <i class="fas fa-plus-circle" style="margin-right: 4px;"></i> {{ _('Register Path') }}
+                                <div class="register-path-row">
+                                    <button type="button" class="register-path-btn"
+                                            onclick="event.stopPropagation(); openRegisterPathwayModal();">
+                                        <i class="fas fa-plus-circle"></i> {{ _('Register Path') }}
                                     </button>
                                 </div>
                                 {% endif %}
@@ -284,6 +275,8 @@
                                 if (!e.target.closest('.custom-dropdown-container')) {
                                     const menu = document.getElementById('pathway-dropdown-menu');
                                     if (menu) menu.style.display = 'none';
+                                    const trigger = document.querySelector('.pathway-select-trigger');
+                                    if (trigger) trigger.classList.remove('active');
                                 }
                             });
 
@@ -600,6 +593,8 @@
     function openRegisterPathwayModal() {
         selectedRegisterPathwayId = null;
         document.getElementById('pathway-dropdown-menu').style.display = 'none';
+        const trigger = document.querySelector('.pathway-select-trigger');
+        if (trigger) trigger.classList.remove('active');
         var modal = document.getElementById('registerPathwayModal');
         if (modal) modal.style.display = 'flex';
         var btn = document.getElementById('btn-confirm-register-pathway');

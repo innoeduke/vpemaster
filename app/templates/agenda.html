@@ -90,55 +90,54 @@
                 selected_meeting_id else none, is_disabled=is_editing, data_format='tuple') }}
                 {% endif %}
             </div>
+            {% if selected_meeting %}
+            <div class="button-group status-group">
+                {% if selected_meeting.status %}
+                <span class="meeting-status-display status-{{ selected_meeting.status|replace(' ', '-') }}"
+                    title="{{ _('Meeting Status:') }} {{ _(selected_meeting.status) }}">
+                    <i
+                        class="fas fa-fw {% if selected_meeting.status == 'unpublished' %}fa-eye-slash{% elif selected_meeting.status == 'not started' %}fa-play-circle{% elif selected_meeting.status == 'running' %}fa-broadcast-tower{% elif selected_meeting.status == 'finished' %}fa-check-circle{% elif selected_meeting.status == 'cancelled' %}fa-ban{% endif %}"></i>{{
+                    _(selected_meeting.status) }}
+                </span>
+                {% endif %}
+
+                {% set can_edit = is_authorized(Permissions.MEETING_MANAGE, meeting=selected_meeting) %}
+                {% set can_delete = is_authorized(Permissions.MEETING_CREATE, meeting=selected_meeting) %}
+
+                {% if (selected_meeting.status != 'finished' and can_edit) or (selected_meeting.status == 'finished' and can_delete) %}
+                <button id="meeting-status-btn"
+                    class="btn {% if selected_meeting.status in ['finished','cancelled'] %}btn-secondary{% elif selected_meeting.status == 'not started' %}btn-success{% elif selected_meeting.status == 'running' %}btn-danger{% elif selected_meeting.status == 'unpublished' %}btn-light{% else %}btn-primary{% endif %}"
+                    data-meeting-id="{{ selected_meeting.id }}"
+                    data-current-status="{{ selected_meeting.status }}"
+                    {% if selected_meeting.status == 'unpublished' %}
+                    title="{{ _('Publish to allow members to book roles.') }}"
+                    {% elif selected_meeting.status == 'not started' %}
+                    title="{{ _('Start to let audience vote.') }}"
+                    {% elif selected_meeting.status == 'running' %}
+                    title="{{ _('Stop to end voting and show results.') }}"
+                    {% endif %}
+                    {% if selected_meeting.status=='cancelled'
+                    %}disabled{% endif %}>
+                    {% if selected_meeting.status == 'unpublished' %}
+                    {{ _('Publish') }}
+                    {% elif selected_meeting.status == 'not started' %}
+                    <i class="fas fa-fw fa-play"></i> {{ _('Start') }}
+                    {% elif selected_meeting.status == 'running' %}
+                    <i class="fas fa-fw fa-stop"></i> {{ _('Stop') }}
+                    {% elif selected_meeting.status == 'finished' %}
+                    <i class="fas fa-fw fa-check-circle"></i> {{ _('Delete') }}
+                    {% elif selected_meeting.status == 'cancelled' %}
+                    <i class="fas fa-fw fa-ban"></i> {{ _('Cancelled') }}
+                    {% else %}
+                    {{ _(selected_meeting.status) }}
+                    {% endif %}
+                </button>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
         <div class="action-bar-right">
             <div id="view-mode-buttons">
-                {% if selected_meeting %}
-                <div class="button-group status-group">
-                    {% if selected_meeting.status %}
-                    <span class="meeting-status-display status-{{ selected_meeting.status|replace(' ', '-') }}"
-                        title="{{ _('Meeting Status:') }} {{ _(selected_meeting.status) }}">
-                        <i
-                            class="fas fa-fw {% if selected_meeting.status == 'unpublished' %}fa-eye-slash{% elif selected_meeting.status == 'not started' %}fa-play-circle{% elif selected_meeting.status == 'running' %}fa-broadcast-tower{% elif selected_meeting.status == 'finished' %}fa-check-circle{% elif selected_meeting.status == 'cancelled' %}fa-ban{% endif %}"></i>{{
-                        _(selected_meeting.status) }}
-                    </span>
-                    {% endif %}
-
-                    {% set can_edit = is_authorized(Permissions.MEETING_MANAGE, meeting=selected_meeting) %}
-                    {% set can_delete = is_authorized(Permissions.MEETING_CREATE, meeting=selected_meeting) %}
-                    
-                    {% if (selected_meeting.status != 'finished' and can_edit) or (selected_meeting.status == 'finished' and can_delete) %}
-                    <button id="meeting-status-btn"
-                        class="btn {% if selected_meeting.status in ['finished','cancelled'] %}btn-secondary{% elif selected_meeting.status == 'not started' %}btn-success{% elif selected_meeting.status == 'running' %}btn-danger{% elif selected_meeting.status == 'unpublished' %}btn-light{% else %}btn-primary{% endif %}"
-                        data-meeting-id="{{ selected_meeting.id }}"
-                        data-current-status="{{ selected_meeting.status }}"
-                        {% if selected_meeting.status == 'unpublished' %}
-                        title="{{ _('Publish to allow members to book roles.') }}"
-                        {% elif selected_meeting.status == 'not started' %}
-                        title="{{ _('Start to let audience vote.') }}"
-                        {% elif selected_meeting.status == 'running' %}
-                        title="{{ _('Stop to end voting and show results.') }}"
-                        {% endif %}
-                        {% if selected_meeting.status=='cancelled'
-                        %}disabled{% endif %}>
-                        {% if selected_meeting.status == 'unpublished' %}
-                        {{ _('Publish') }}
-                        {% elif selected_meeting.status == 'not started' %}
-                        <i class="fas fa-fw fa-play"></i> {{ _('Start') }}
-                        {% elif selected_meeting.status == 'running' %}
-                        <i class="fas fa-fw fa-stop"></i> {{ _('Stop') }}
-                        {% elif selected_meeting.status == 'finished' %}
-                        <i class="fas fa-fw fa-check-circle"></i> {{ _('Delete') }}
-                        {% elif selected_meeting.status == 'cancelled' %}
-                        <i class="fas fa-fw fa-ban"></i> {{ _('Cancelled') }}
-                        {% else %}
-                        {{ _(selected_meeting.status) }}
-                        {% endif %}
-                    </button>
-                    {% endif %}
-                </div>
-                {% endif %}
-
                 <div class="button-group action-group">
                     {% if selected_meeting %}
                     <button id="jpg-btn" class="btn btn-secondary action-icon-btn" title="{{ _('Export as Image') }}"><i class="fas fa-print"></i></button>

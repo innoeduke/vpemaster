@@ -55,33 +55,73 @@
 /* --- Voting Instruction Alert --- */
 .voting-instruction-alert {
   font-family: "Montserrat", sans-serif;
-  background-color: #f8f9fa;
-  color: #333;
-  padding: 12px 20px;
-  border-radius: 8px;
-  margin: 10px 0 20px 0;
+  background: linear-gradient(180deg, #fefdfc 0%, #faf5f0 100%);
+  color: #4a1a26;
+  padding: 16px 22px 16px 24px;
+  border-radius: 0 14px 14px 0;
+  border-left: 4px solid #772432;
+  margin: 14px 0 24px 0;
   display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  box-shadow: 0 6px 16px rgba(119, 36, 50, 0.06);
+}
+
+.voting-instruction-alert > span:first-child > i,
+.voting-instruction-alert i.fas.fa-info-circle {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
-  font-size: 0.8em;
-  border: 1px solid #772432;
-  border-left-width: 5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  justify-content: center;
+  background: #772432;
+  color: #ffffff;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 10px rgba(119, 36, 50, 0.20);
+  margin-right: 4px;
+}
+
+.voting-instruction-alert strong {
+  color: #2a1a1f;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+}
+
+.voting-instruction-alert p {
+  margin: 4px 0 0;
+  color: #6b5f63;
+  font-style: italic;
+  font-size: 0.9rem;
 }
 
 /* --- Accordion Styles --- */
 .accordion-list {
   margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .page-container .accordion-list .accordion-item {
-  padding: 20px;
-  border-radius: 8px;
-  margin-top: 20px;
-  box-shadow: none;
-  background-color: transparent;
-  border: none;
-  overflow: visible;
+  padding: 0;
+  border-radius: 12px;
+  margin-top: 0;
+  background: linear-gradient(180deg, #ffffff 0%, #fbf8f6 100%);
+  border: 1px solid rgba(119, 36, 50, 0.08);
+  box-shadow: 0 1px 2px rgba(43, 11, 22, 0.04);
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.page-container .accordion-list .accordion-item:hover {
+  transform: translateY(-1px);
+  border-color: rgba(119, 36, 50, 0.18);
+  box-shadow: 0 6px 18px rgba(43, 11, 22, 0.06);
 }
 
 .accordion-list .accordion-header {
@@ -89,9 +129,8 @@
   color: #333;
   font-weight: bold;
   font-family: "Montserrat", sans-serif;
-  transition: opacity 0.2s ease;
   cursor: pointer;
-  padding: 5px 0;
+  padding: 16px 20px;
   width: 100%;
   text-align: left;
   outline: none;
@@ -99,28 +138,33 @@
   justify-content: space-between;
   align-items: center;
   font-size: inherit;
+  border: none;
+  transition: opacity 0.2s ease;
 }
 
 .accordion-list .accordion-header:hover {
   background-color: transparent;
-  opacity: 0.8;
+  opacity: 1;
 }
 
 .accordion-list .accordion-header.disabled {
   cursor: pointer;
+  opacity: 0.7;
 }
 
 .accordion-list .accordion-header.disabled .question-text {
-  color: #999;
+  color: #b0a0a4;
 }
 
 .accordion-list .accordion-header.disabled .question-number {
-  background-color: #ccc;
+  background: linear-gradient(180deg, #c8bdbf 0%, #ada0a3 100%);
+  box-shadow: none;
 }
 
 .accordion-list .accordion-header.active {
   background-color: transparent;
-  margin-bottom: 15px;
+  margin-bottom: 0;
+  border-bottom: 1px solid rgba(119, 36, 50, 0.10);
 }
 
 .accordion-list .accordion-header-right {
@@ -167,8 +211,8 @@
 }
 
 .booking-table tr.voted {
-  background-color: #e9f7ef;
-  border-left: 5px solid #28a745;
+  background-color: #eef7f0;
+  border-left: 5px solid #3f7a4e;
 }
 
 /* --- Vote Bricks --- */
@@ -204,20 +248,22 @@
   opacity: 1 !important;
 }
 
-/* Voted label badge */
+/* Voted label badge — refined deep-sage green, on palette with maroon brand. */
 .voted-label {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background-color: #28a745;
-  color: white;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.75em;
-  font-weight: bold;
+  background: linear-gradient(180deg, #4a8c5a 0%, #3f7a4e 100%);
+  color: #ffffff;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   white-space: nowrap;
   line-height: 1;
-  /* Center icon and text vertically */
+  box-shadow: 0 2px 6px rgba(63, 122, 78, 0.30);
 }
 
 .voted-label i {
@@ -226,18 +272,19 @@
 
 /* --- Unified Voting Section (for NPS and Feedback) --- */
 .page-container .voting-section {
-  padding: 0 !important;
-  border-radius: 8px;
-  margin-top: 20px;
-  box-shadow: none;
-  background-color: transparent;
+  padding: 18px 22px 22px !important;
+  border-radius: 12px;
+  margin-top: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbf8f6 100%);
+  border: 1px solid rgba(119, 36, 50, 0.08);
+  box-shadow: 0 1px 2px rgba(43, 11, 22, 0.04);
 }
 
 .section-header {
   display: flex;
   align-items: center;
-  gap: 15px;
-  margin-bottom: 15px;
+  gap: 14px;
+  margin-bottom: 16px;
 }
 
 .section-title {
@@ -249,8 +296,10 @@
 }
 
 .rating-question {
-  margin-bottom: 15px;
-  color: #333;
+  margin-bottom: 18px;
+  color: #3a141f;
+  font-size: 0.95rem;
+  line-height: 1.4;
 }
 
 .rating-question i {
@@ -258,58 +307,93 @@
   font-size: 0.9em;
 }
 
+/* --- NPS rating scale: tactile tile strip ---
+   Each digit is a deliberate, tactile button — cream gradient surface,
+   maroon-tinted hover, strong maroon fill when selected. Reads as a real
+   rating instrument rather than a Bootstrap segmented control. */
 .rating-scale {
-  display: flex;
-  justify-content: space-between;
-  gap: 0;
-  margin-bottom: 10px;
-  background-color: white;
+  display: grid;
+  grid-template-columns: repeat(11, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 12px;
+  background: transparent;
   padding: 0;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  overflow: hidden;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
 }
 
 .rating-btn {
   flex: 1;
-  padding: 12px 0;
-  border: none;
-  border-right: 1px solid #eee;
-  background-color: white;
+  padding: 0;
+  height: 46px;
+  border: 1px solid rgba(119, 36, 50, 0.14);
+  background: linear-gradient(180deg, #ffffff 0%, #faf5f0 100%);
   cursor: pointer;
-  font-weight: normal;
-  color: #aaa;
-  min-width: 30px;
-  transition: all 0.2s ease;
-  font-size: 1.1em;
+  font-weight: 600;
+  color: #8a7d80;
+  min-width: 0;
+  border-radius: 10px;
+  transition: transform 0.18s ease, background 0.18s ease,
+              color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  font-size: 1.05rem;
+  font-family: "Montserrat", sans-serif;
   display: flex;
   justify-content: center;
   align-items: center;
   line-height: 1;
+  box-shadow: 0 1px 2px rgba(43, 11, 22, 0.04);
 }
 
 .rating-btn:last-child {
-  border-right: none;
+  border-right: 1px solid rgba(119, 36, 50, 0.14);
 }
 
-.rating-btn:hover {
-  background-color: #f8f9fa;
-  color: #555;
+.rating-btn:hover:not(:disabled):not(.selected) {
+  background: linear-gradient(180deg, #fbf0f2 0%, #f6e3e7 100%);
+  color: #5a1a26;
+  border-color: rgba(119, 36, 50, 0.30);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(119, 36, 50, 0.12);
 }
 
 .rating-btn.selected {
-  background-color: #772432;
-  color: white;
-  font-weight: bold;
+  background: linear-gradient(180deg, #8c2a3c 0%, #5a1a26 100%);
+  color: #ffffff;
+  font-weight: 700;
+  border-color: #5a1a26;
+  box-shadow: 0 6px 16px rgba(119, 36, 50, 0.32),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
 }
 
+/* Anchor labels — refined uppercase eyebrows at the scale ends. */
 .rating-labels {
   display: flex;
   justify-content: space-between;
-  color: #333;
-  font-size: 0.9em;
-  margin-top: 10px;
-  padding: 0 5px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: #8a7d80;
+  margin-top: 12px;
+  padding: 0 4px;
+}
+
+.rating-labels span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rating-labels span:first-child::before,
+.rating-labels span:last-child::after {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 1px;
+  background: rgba(119, 36, 50, 0.30);
 }
 
 /* --- Feedback Section --- */
@@ -320,21 +404,25 @@
   margin-bottom: 15px;
 }
 
-/* Standardize question numbers for all sections using specific chained selectors */
+/* Numbered "ballot stubs" — each section gets a deliberate maroon tile.
+   Promoted from flat squares to a tile with gentle gradient + shadow. */
 .accordion-list .question-number,
 .voting-section .question-number {
-  background-color: #772432;
-  color: white;
-  width: 30px;
-  height: 30px;
+  background: linear-gradient(180deg, #8c2a3c 0%, #5a1a26 100%);
+  color: #fdf6f1;
+  width: 34px;
+  height: 34px;
   display: flex;
   justify-content: center;
   align-items: center;
-  border-radius: 4px;
-  font-weight: bold;
-  font-size: 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
   font-family: "Montserrat", sans-serif;
   flex-shrink: 0;
+  letter-spacing: 0.01em;
+  box-shadow: 0 2px 6px rgba(119, 36, 50, 0.25),
+              inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .question-text {
@@ -367,27 +455,42 @@
 }
 
 .feedback-input-container {
-  margin-top: 10px;
+  margin-top: 4px;
 }
 
 .feedback-input {
   width: 100%;
-  height: 120px;
+  height: 130px;
   box-sizing: border-box;
-  padding: 15px;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  background-color: #f8f9fa;
-  font-size: 1em;
-  font-family: inherit;
-  resize: none;
-  transition: border-color 0.2s;
+  padding: 16px 18px;
+  border: 1px solid rgba(119, 36, 50, 0.18);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fefdfc 0%, #faf5f0 100%);
+  font-size: 0.95rem;
+  font-family: "Open Sans", system-ui, sans-serif;
+  color: #3a141f;
+  line-height: 1.55;
+  resize: vertical;
+  min-height: 96px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  box-shadow: inset 0 1px 2px rgba(43, 11, 22, 0.04);
+}
+
+.feedback-input::placeholder {
+  color: #a89aa0;
+  font-style: italic;
+}
+
+.feedback-input:hover:not(:disabled) {
+  border-color: rgba(119, 36, 50, 0.30);
 }
 
 .feedback-input:focus {
-  border-color: #7d7d7d;
-  background-color: white;
+  border-color: #772432;
+  background: #ffffff;
   outline: none;
+  box-shadow: 0 0 0 4px rgba(119, 36, 50, 0.10),
+              inset 0 1px 2px rgba(43, 11, 22, 0.04);
 }
 
 /* --- Additional Styles Refactored from Inline --- */
@@ -411,9 +514,17 @@
 }
 
 .candidate-warning {
-  font-size: 0.8em;
-  color: #777;
-  margin-right: 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8a4f5a;
+  background: #fbf0f2;
+  border: 1px solid rgba(119, 36, 50, 0.18);
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-right: 6px;
+  white-space: nowrap;
 }
 
 .accordion-content.force-open {
@@ -438,10 +549,35 @@
 
 #batch-vote-actions {
   text-align: center;
-  margin-top: 20px;
+  margin-top: 28px;
   padding-bottom: 30px;
 }
 
 #done-voting-btn {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  min-width: 220px;
+  height: 50px;
+  padding: 0 36px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(180deg, #8c2a3c 0%, #5a1a26 100%);
+  color: #ffffff;
+  font-family: "Montserrat", sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(119, 36, 50, 0.28),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+#done-voting-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(119, 36, 50, 0.36),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+#done-voting-btn:active:not(:disabled) {
+  transform: translateY(0);
 }

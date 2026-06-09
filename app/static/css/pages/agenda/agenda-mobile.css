@@ -192,12 +192,12 @@
 
   .meeting-status-display {
     display: inline-flex;
-    padding: 5px 12px;
-    border-radius: 15px;
-    font-size: 0.9em;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.7rem;
     align-items: center;
-    color: #333;
-    gap: 8px;
+    gap: 6px;
+    white-space: nowrap;
   }
 
   .action-bar .button-group {
@@ -207,66 +207,53 @@
     max-width: 100%;
   }
 
-  /* Container for both groups — single row */
-  .action-bar-right #view-mode-buttons {
-    display: flex;
-    flex-direction: row;
+  /* --- Status cluster (status pill + Start/Stop) ---
+     Now lives inside .action-bar-left after the HTML restructure. Sits as a
+     compact pill+button pair on its own row, centered, content-width. No
+     vertical separator on mobile (it only made sense in the desktop row). */
+  .action-bar-left .status-group {
+    display: inline-flex;
     flex-wrap: nowrap;
-    gap: 8px;
-    width: auto;
+    gap: 6px;
     align-items: center;
-    justify-content: center;
+    width: auto;
+    max-width: 100%;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    border-left: none !important;
   }
 
-  /* Reset min-height from base styles to avoid stretching buttons */
+  .action-bar-left .status-group .meeting-status-display {
+    font-size: 0.72rem;
+    white-space: nowrap;
+    padding: 4px 10px;
+    flex: 0 0 auto;
+    min-height: 32px;
+  }
+
+  .action-bar-left .status-group #meeting-status-btn {
+    flex: 0 0 auto;
+    height: 32px;
+    min-height: 32px;
+    min-width: 0;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    font-size: 0.78rem;
+    gap: 6px;
+  }
+
+  /* --- Right side: command zone (icon toolbar + Edit + New / overflow ⋮) ---
+     Compact 32 px ghost pills matched to the status row above. Edit/New are
+     hidden on mobile in favor of the overflow menu (existing behaviour). */
   .action-bar-right {
     min-height: auto !important;
     max-width: 100%;
     min-width: 0;
   }
 
-  /* Status group: status display and action button side by side */
-  .action-bar-right .status-group {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 6px;
-    align-items: center;
-    flex: 0 0 auto;
-  }
-
-  .action-bar-right .status-group .meeting-status-display {
-    font-size: 0.75rem;
-    white-space: nowrap;
-    padding: 4px 8px;
-    flex: 0 0 auto;
-  }
-
-  .action-bar-right .status-group #meeting-status-btn {
-    flex: 0 0 auto;
-    height: var(--mobile-control-height, 36px);
-    min-height: var(--mobile-control-height, 36px);
-    min-width: 0;
-    padding: 0 10px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-    font-size: 0.8rem;
-  }
-
-  .action-bar-right .status-group #meeting-status-btn:hover {
-    transform: scale(1.05) translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border-color: #772432;
-    background-color: #ffffff;
-  }
-
-  .action-bar-right .status-group #meeting-status-btn:active {
-    transform: scale(0.98) translateY(0);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-
-  /* Action group: icon buttons compact alongside status */
   .action-bar-right .action-group {
     display: flex;
     flex-wrap: nowrap;
@@ -275,26 +262,26 @@
     flex: 0 0 auto;
   }
 
-  .action-bar-right .action-group #create-btn,
-  .action-bar-right .action-group #edit-btn,
-  .action-bar-right .action-group #xlsx-btn,
-  .action-bar-right .action-group #ppt-btn,
+  .action-bar-right .action-group .action-icon-btn,
   .action-bar-right .action-group #jpg-btn,
   .action-bar-right .action-group #role-guide-btn,
+  .action-bar-right .action-group #xlsx-btn,
+  .action-bar-right .action-group #ppt-btn,
   .action-bar-right .action-group #share-btn {
-    flex: 0 0 42px;
-    height: var(--mobile-control-height, 36px);
-    min-height: var(--mobile-control-height, 36px);
-    min-width: 0;
-    width: 42px;
+    flex: 0 0 36px;
+    height: 32px;
+    min-height: 32px;
+    width: 36px;
+    min-width: 36px;
     padding: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     line-height: 1;
-    font-size: 0.95rem;
-    border-radius: 8px;
+    font-size: 0.85rem;
+    border-radius: 999px;
   }
+
   .action-bar-right .action-group #create-btn,
   .action-bar-right .action-group #edit-btn {
     display: none;

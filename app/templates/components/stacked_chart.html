@@ -35,7 +35,7 @@
 		{% for item in legend_items %}
 		<div class="legend-item">
 			{% if item.type == 'line' %}
-			<span class="legend-line" style="{% if item.color %}background-color: {{ item.color }};{% endif %}"></span>
+			<span class="legend-line" style="{% if item.color %}background-color: {{ item.color }}; color: {{ item.color }};{% endif %}"></span>
 			{% else %}
 			<span class="legend-color" style="background-color: {{ item.color }}; border: 1px solid {{ item.border_color or item.color }};"></span>
 			{% endif %}

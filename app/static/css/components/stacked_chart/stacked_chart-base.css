@@ -9,13 +9,13 @@
 }
 
 .chart-container-root {
-	background: #fcfcfd;
-	border-radius: 16px;
-	padding: 24px;
+	background: linear-gradient(180deg, #fefdfc 0%, #faf5f0 100%);
+	border-radius: 18px;
+	padding: 28px 24px 24px;
 	box-shadow:
-		0 10px 25px -5px rgba(0, 0, 0, 0.05),
-		0 8px 10px -6px rgba(0, 0, 0, 0.05),
-		0 0 0 1px rgba(0, 0, 0, 0.03);
+		0 2px 4px rgba(43, 11, 22, 0.04),
+		0 16px 36px rgba(43, 11, 22, 0.08),
+		0 0 0 1px rgba(119, 36, 50, 0.06);
 	display: grid;
 	grid-template-areas:
 		". title-top ."
@@ -27,35 +27,82 @@
 	z-index: 1;
 	height: 560px;
 	gap: 12px;
+	overflow: hidden;
 }
 
+/* Decorative top stripe — same maroon→peach gradient used on the Self
+   Check-In modal, threading a visual signature across the app. */
+.chart-container-root::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 3px;
+	background: linear-gradient(90deg, #772432 0%, #9b3d4a 50%, #c4a48c 100%);
+	z-index: 11;
+}
+
+/* Editorial pull-quote treatment for the prompt that drove the survey.
+   Cream surface with a thick maroon left rule, italicized text, and a
+   small maroon medallion holding the existing question-mark icon. */
 .chart-header {
-	background: #772432;
-	color: #ffffff;
-	padding: 15px 20px;
-	border-radius: 12px;
+	background: linear-gradient(180deg, #fefdfc 0%, #faf5f0 100%);
+	color: #4a1a26;
+	padding: 18px 24px 18px 28px;
+	border-radius: 0 14px 14px 0;
+	border-left: 4px solid #772432;
 	font-family: 'Montserrat', sans-serif;
-	font-size: 1.1rem;
-	font-weight: 600;
+	font-size: 1rem;
+	font-weight: 500;
+	line-height: 1.5;
 	display: flex;
 	align-items: center;
-	gap: 12px;
-	margin-bottom: 20px;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	gap: 16px;
+	margin-bottom: 24px;
+	box-shadow: 0 6px 16px rgba(119, 36, 50, 0.06);
 }
 
 .chart-header i {
-	font-size: 1.2rem;
+	flex: 0 0 auto;
+	width: 36px;
+	height: 36px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: #772432;
+	color: #ffffff;
+	border-radius: 50%;
+	font-size: 0.95rem;
+	box-shadow: 0 4px 10px rgba(119, 36, 50, 0.20);
+}
+
+.chart-header span {
+	font-style: italic;
+	color: #3a141f;
+	letter-spacing: 0.005em;
 }
 
 .chart-title-main {
 	text-align: center;
 	font-family: 'Montserrat', sans-serif;
-	font-size: 1.25rem;
-	font-weight: bold;
-	color: #333;
-	margin: 0 0 15px 0;
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: #2a1a1f;
+	margin: 0 0 18px 0;
+	letter-spacing: -0.005em;
 	width: 100%;
+}
+
+/* Small maroon rule above the title — editorial marker, no translatable text. */
+.chart-title-main::before {
+	content: "";
+	display: block;
+	width: 28px;
+	height: 2px;
+	background: #772432;
+	margin: 0 auto 10px;
+	border-radius: 1px;
 }
 
 /* Axis Titles */
@@ -130,14 +177,14 @@
 	height: 100%;
 }
 
-/* Legend */
+/* Legend — refined cream pills, mirror the chart card surface. */
 .chart-legend {
 	display: flex;
 	justify-content: center;
-	gap: 24px;
+	gap: 14px;
 	margin-bottom: 24px;
 	font-family: 'Montserrat', sans-serif;
-	font-size: 0.95rem;
+	font-size: 0.88rem;
 	flex-wrap: wrap;
 }
 
@@ -145,32 +192,38 @@
 	display: flex;
 	align-items: center;
 	gap: 10px;
-	padding: 6px 12px;
-	background: #fff;
-	border-radius: 20px;
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-	border: 1px solid rgba(0, 0, 0, 0.05);
-	transition: all 0.2s ease;
+	padding: 7px 14px;
+	background: #ffffff;
+	color: #3a2128;
+	border-radius: 999px;
+	border: 1px solid rgba(119, 36, 50, 0.10);
+	box-shadow: 0 1px 2px rgba(43, 11, 22, 0.04);
+	transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 	cursor: default;
+	font-weight: 500;
 }
 
 .legend-item:hover {
 	transform: translateY(-1px);
-	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
-	border-color: rgba(0, 0, 0, 0.1);
+	box-shadow: 0 6px 14px rgba(43, 11, 22, 0.08);
+	border-color: rgba(119, 36, 50, 0.25);
 }
 
 .legend-color {
 	width: 14px;
 	height: 14px;
-	border-radius: 3px;
+	border-radius: 4px;
 }
 
+/* Line legend — dot now inherits the dataset color from the parent .legend-line
+   (the macro sets both background-color and color from item.color), so the
+   marker reads as a real connector instead of a gray ring. */
 .legend-line {
-	width: 25px;
+	width: 28px;
 	height: 2px;
-	background-color: #ccc;
+	background-color: #c4a48c;
 	position: relative;
+	color: #c4a48c;
 }
 
 .legend-line::after {
@@ -179,11 +232,12 @@
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
-	width: 8px;
-	height: 8px;
-	background-color: white;
-	border: 2px solid #ccc;
+	width: 9px;
+	height: 9px;
+	background-color: #ffffff;
+	border: 2px solid currentColor;
 	border-radius: 50%;
+	box-shadow: 0 0 0 1px rgba(43, 11, 22, 0.06);
 }
 
 
