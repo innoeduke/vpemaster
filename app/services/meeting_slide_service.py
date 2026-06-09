@@ -358,10 +358,21 @@ class MeetingSlideService:
     @staticmethod
     def _populate_standard_roles(context, meeting, replacements, info_fmt, dur_fmt, avatar_map=None):
         """Internal v1 helper."""
+        def format_multi_owner_info(owners, role_label):
+            """Format 'Name1, cred1 & Name2, cred2\nRole' for multiple owners."""
+            parts = []
+            for o in owners:
+                if not o: continue
+                creds = derive_credentials(o)
+                parts.append(f"{o.Name}, {creds}" if creds else o.Name)
+            if not parts: return ""
+            joined = " & ".join(parts)
+            return f"{joined}\n{role_label}" if role_label else joined
+
         def populate_role(role_pattern=None, title_pattern=None, info_key=None, dur_key=None):
             last_match = None
             for log, st in context.logs:
-                if not log.owner: continue
+                if not log.owners: continue
                 role_name = (st.role.name if st.role else st.Title)
                 if (role_pattern and role_name and re.search(role_pattern, role_name, re.I)) or (title_pattern and log.Session_Title and re.search(title_pattern, log.Session_Title, re.I)):
                     last_match = (log, st)
@@ -369,8 +380,12 @@ class MeetingSlideService:
                 log, st = last_match
                 if info_key:
                     prefix = info_key.replace("{{", "").replace("_info}}", "")
-                    replacements[info_key] = info_fmt(log.owner.Name, derive_credentials(log.owner), prefix.replace("-", " ").title())
-                    if avatar_map is not None: avatar_map[f"{prefix}_avatar"] = log.owner
+                    role_label = prefix.replace("-", " ").title()
+                    if len(log.owners) > 1:
+                        replacements[info_key] = format_multi_owner_info(log.owners, role_label)
+                    else:
+                        replacements[info_key] = info_fmt(log.owners[0].Name, derive_credentials(log.owners[0]), role_label)
+                    if avatar_map is not None: avatar_map[f"{prefix}_avatar"] = log.owners[0]
                 if dur_key: replacements[dur_key] = dur_fmt(log)
                 if info_key:
                     prefix = info_key.replace("{{", "").replace("_info}}", "")
@@ -387,6 +402,7 @@ class MeetingSlideService:
                 p = role_to_prefix.get(r)
                 k = "{{" + p + "_info}}" if p else None
                 if p and c and k and not replacements.get(k):
+                    # `c` is the officer contact (single); only applies if no session log already populated it
                     replacements[k] = info_fmt(c.Name, derive_credentials(c), p.replace("-", " ").title())
                     if avatar_map is not None: avatar_map[f"{p}_avatar"] = c
 
