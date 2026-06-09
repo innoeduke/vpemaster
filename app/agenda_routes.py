@@ -675,6 +675,9 @@ def _get_processed_logs_data(meeting_id, show_media=False):
             # Detailed owner info for modals/logic (could return list)
             'owner_ids': [o.id for o in owners],
             'owners_data': [{'id': o.id, 'name': o.Name, 'dtm': o.DTM, 'club': o.get_primary_club().club_name if o.get_primary_club() else '', 'credentials': get_owner_credential(o)} for o in owners],
+            # Per-owner names/credentials for slide export (multi-owner support)
+            'owner_names': [o.Name for o in owners],
+            'owner_credentials': [get_owner_credential(o) for o in owners],
             
             'owner_dtm': primary_owner.DTM if primary_owner else False,
             'owner_type': primary_owner.Type if primary_owner else '',

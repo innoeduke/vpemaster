@@ -221,13 +221,6 @@
     grid-row: 2 / 3;
   }
 
-  .ticket-badge {
-    font-size: 0.75rem;
-    padding: 3px 8px;
-    display: inline-flex;
-    width: auto;
-  }
-
   /* 4. Actions (Top Right) */
   .page-container .cell-actions {
     grid-column: 3 / 4;

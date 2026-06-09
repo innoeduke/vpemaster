@@ -158,7 +158,16 @@ class MeetingSlideService:
 
                 name = log.get('owner_name') or ''
                 creds = log.get('Credentials') or ''
-                subtitle_text = f"{name}, {creds}" if creds and name else (name or creds)
+                # Format subtitle: each owner gets their own credential when multiple owners exist
+                owner_names = log.get('owner_names') or ([name] if name else [])
+                owner_creds = log.get('owner_credentials') or ([creds] if creds else [])
+                if len(owner_names) > 1:
+                    parts = []
+                    for n, c in zip(owner_names, owner_creds):
+                        parts.append(f"{n}, {c}" if c and n else (n or c))
+                    subtitle_text = " & ".join(parts)
+                else:
+                    subtitle_text = f"{name}, {creds}" if creds and name else (name or creds)
                 duration_text = f"{dur_min}-{dur_max}'" if dur_min != dur_max else f"{dur_max}'"
 
                 project_info_text = ""

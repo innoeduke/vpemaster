@@ -824,6 +824,12 @@ function populateExportPages() {
     // Create new row for print table
     const tr = document.createElement("tr");
 
+    // Column order: V | Order | Name | Ticket | Roles | Qty
+    const tdV = document.createElement("td");
+    tdV.className = "print-cell-v";
+    tdV.innerHTML = '<div style="width: 18px; height: 18px; border: 2px solid #ccc; border-radius: 4px; display: inline-block; margin-top: 5px;"></div>';
+    tr.appendChild(tdV);
+
     const tdOrder = document.createElement("td");
     tdOrder.className = "print-cell-order";
     tdOrder.innerHTML = orderCell ? orderCell.innerHTML : '';
@@ -846,11 +852,6 @@ function populateExportPages() {
     tdQty.className = "print-cell-qty";
     tdQty.innerHTML = qtyCell ? qtyCell.innerHTML : '1';
     tr.appendChild(tdQty);
-
-    const tdV = document.createElement("td");
-    tdV.className = "print-cell-v";
-    tdV.innerHTML = '<div style="width: 20px; height: 20px; border: 2px solid #ccc; border-radius: 4px; display: inline-block; margin-top: 5px;"></div>';
-    tr.appendChild(tdV);
 
     extractedRows.push(tr);
   });
@@ -915,12 +916,12 @@ function populateExportPages() {
     table.innerHTML = `
       <thead>
           <tr>
-              <th style="width: 70px; white-space: nowrap;">Order</th>
-              <th style="width: 220px;">Name</th>
-              <th style="width: 150px;">Ticket</th>
+              <th style="width: 40px; text-align: center;">V</th>
+              <th style="width: 60px; white-space: nowrap;">Order</th>
+              <th style="width: 200px;">Name</th>
+              <th style="width: 130px;">Ticket</th>
               <th style="width: 160px;">Roles</th>
-              <th style="width: 50px; text-align: center;">Qty</th>
-              <th style="width: 64px; text-align: center;">V</th>
+              <th style="width: 50px; text-align: center; white-space: nowrap;">Qty</th>
           </tr>
       </thead>
       <tbody></tbody>
