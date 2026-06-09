@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, jsonif
 from flask_login import current_user
 from .auth.utils import login_required, is_authorized, club_permission_required
 from .auth.permissions import Permissions
-from .models import SessionLog, SessionType, Contact, Meeting, Project, Media, Roster, MeetingRole, Vote, Pathway, PathwayProject, OwnerMeetingRoles, Planner, Waitlist, Club, Ticket
+from .models import SessionLog, SessionType, Contact, Meeting, Project, Media, Roster, MeetingRole, Vote, Pathway, PathwayProject, OwnerMeetingRoles, Planner, Waitlist, Club, Ticket, ContactClub, ContactPath
 from .constants import ProjectID, SPEECH_TYPES_WITH_PROJECT, GLOBAL_CLUB_ID
 from .services.export import MeetingExportService
 from .services.export.context import MeetingExportContext
@@ -983,10 +983,17 @@ A single endpoint to fetch all data needed for the agenda modals.
         } for s in session_types
     ]
     club_id = get_current_club_id()
-    contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)\
-        .order_by(Contact.Name.asc()).all()
-    
+    contacts = Contact.query \
+        .join(ContactClub).filter(ContactClub.club_id == club_id) \
+        .options(
+            orm.selectinload(Contact.registered_paths)
+                .selectinload(ContactPath.pathway),
+        ) \
+        .order_by(Contact.Name.asc()) \
+        .all()
+
     Contact.populate_users(contacts, club_id)
+    Contact.populate_primary_clubs(contacts)
     
     contacts_data = [
         {
