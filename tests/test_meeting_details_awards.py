@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch
-from app.models import db, Contact, Meeting, ContactClub, MeetingRole, SessionType, SessionLog
+from app.models import db, Contact, Meeting, ContactClub, MeetingRole, SessionType, SessionLog, Roster, Ticket
 
 def test_meeting_details_awards_saving(client, app, default_club, staff_user):
     """Verify that updating meeting details with award winners persists the IDs correctly."""
@@ -19,30 +19,37 @@ def test_meeting_details_awards_saving(client, app, default_club, staff_user):
         c_evaluator = Contact(Name="Best Evaluator Nominee", Type="Member")
         c_table_topic = Contact(Name="Best Table Topic Nominee", Type="Member")
         c_role_taker = Contact(Name="Best Role Taker Nominee", Type="Member")
-        
-        db.session.add_all([c_speaker, c_evaluator, c_table_topic, c_role_taker])
+        c_debater = Contact(Name="Best Debater Nominee", Type="Member")
+        c_lucky = Contact(Name="Lucky Draw Nominee", Type="Member")
+
+        db.session.add_all([c_speaker, c_evaluator, c_table_topic, c_role_taker,
+                            c_debater, c_lucky])
         db.session.commit()
-        
+
         # Associate them with the default club
-        for c in [c_speaker, c_evaluator, c_table_topic, c_role_taker]:
+        for c in [c_speaker, c_evaluator, c_table_topic, c_role_taker,
+                  c_debater, c_lucky]:
             cc = ContactClub(contact_id=c.id, club_id=default_club.id)
             db.session.add(cc)
-        
+
         from datetime import date
         meeting = Meeting(
             Meeting_Number=999,
             Meeting_Date=date.today(),
             club_id=default_club.id,
-            status='finished'
+            status='finished',
+            type='Debate',
         )
         db.session.add(meeting)
         db.session.commit()
-        
+
         meeting_id = meeting.id
         speaker_id = c_speaker.id
         evaluator_id = c_evaluator.id
         table_topic_id = c_table_topic.id
         role_taker_id = c_role_taker.id
+        debater_id = c_debater.id
+        lucky_id = c_lucky.id
 
     # Authenticate client
     client.post('/login', data=dict(
@@ -64,20 +71,24 @@ def test_meeting_details_awards_saving(client, app, default_club, staff_user):
                 'best_speaker_id': str(speaker_id),
                 'best_evaluator_id': str(evaluator_id),
                 'best_table_topic_id': str(table_topic_id),
-                'best_role_taker_id': str(role_taker_id)
+                'best_role_taker_id': str(role_taker_id),
+                'best_debater_id': str(debater_id),
+                'lucky_draw_winner_id': str(lucky_id),
             }
         )
-        
+
         assert resp.status_code == 200
         data = resp.get_json()
         assert data.get('success') is True
-        
+
         with app.app_context():
             updated_meeting = db.session.get(Meeting, meeting_id)
             assert updated_meeting.best_speaker_id == speaker_id
             assert updated_meeting.best_evaluator_id == evaluator_id
             assert updated_meeting.best_table_topic_id == table_topic_id
             assert updated_meeting.best_role_taker_id == role_taker_id
+            assert updated_meeting.best_debater_id == debater_id
+            assert updated_meeting.lucky_draw_winner_id == lucky_id
 
         # Now update to None/empty string and check that they are cleared
         resp_clear = client.post(
@@ -88,7 +99,9 @@ def test_meeting_details_awards_saving(client, app, default_club, staff_user):
                 'best_speaker_id': "",
                 'best_evaluator_id': "",
                 'best_table_topic_id': "",
-                'best_role_taker_id': ""
+                'best_role_taker_id': "",
+                'best_debater_id': "",
+                'lucky_draw_winner_id': "",
             }
         )
         assert resp_clear.status_code == 200
@@ -101,6 +114,162 @@ def test_meeting_details_awards_saving(client, app, default_club, staff_user):
             assert cleared_meeting.best_evaluator_id is None
             assert cleared_meeting.best_table_topic_id is None
             assert cleared_meeting.best_role_taker_id is None
+            assert cleared_meeting.best_debater_id is None
+            assert cleared_meeting.lucky_draw_winner_id is None
+
+
+def test_best_debater_rejected_on_non_debate_meeting(client, app, default_club, staff_user):
+    """Setting best_debater_id on a non-Debate meeting must 400, not silently save."""
+    with app.app_context():
+        from app.models import AuthRole, Permission
+        from app.auth.permissions import Permissions
+        staff_role = AuthRole.query.filter_by(name='Staff').first()
+        perm = Permission.query.filter_by(name=Permissions.MEETING_MANAGE).first()
+        if staff_role and perm and perm not in staff_role.permissions:
+            staff_role.permissions.append(perm)
+            db.session.commit()
+
+        c_debater = Contact(Name="Debater Not Allowed", Type="Member")
+        db.session.add(c_debater)
+        db.session.commit()
+        db.session.add(ContactClub(contact_id=c_debater.id, club_id=default_club.id))
+        db.session.commit()
+
+        from datetime import date
+        meeting = Meeting(
+            Meeting_Number=1000,
+            Meeting_Date=date.today(),
+            club_id=default_club.id,
+            status='finished',
+            type='Keynote Speech',  # NOT Debate
+        )
+        db.session.add(meeting)
+        db.session.commit()
+        meeting_id = meeting.id
+        debater_id = c_debater.id
+
+    client.post('/login', data=dict(username='staff', password='password'))
+    with client.session_transaction() as sess:
+        sess['club_id'] = default_club.id
+        sess['current_club_id'] = default_club.id
+
+    with patch('app.agenda_routes.is_authorized', return_value=True):
+        resp = client.post(
+            '/agenda/update',
+            json={
+                'meeting_id': meeting_id,
+                'agenda_data': [],
+                'best_debater_id': str(debater_id),
+            },
+        )
+
+    assert resp.status_code == 400
+    assert resp.get_json().get('success') is False
+
+    with app.app_context():
+        untouched = db.session.get(Meeting, meeting_id)
+        assert untouched.best_debater_id is None
+
+
+def test_lucky_draw_dropdown_excludes_cancelled(client, app, default_club, staff_user):
+    """Lucky Draw dropdown should list rostered contacts but skip cancelled-ticket rows."""
+    with app.app_context():
+        from app.models import AuthRole, Permission
+        from app.auth.permissions import Permissions
+        staff_role = AuthRole.query.filter_by(name='Staff').first()
+        perm = Permission.query.filter_by(name=Permissions.MEETING_MANAGE).first()
+        if staff_role and perm and perm not in staff_role.permissions:
+            staff_role.permissions.append(perm)
+            db.session.commit()
+
+        # Build the two tickets used by the lucky-draw roster query.
+        active_ticket = Ticket.query.filter_by(name='Member').first()
+        if not active_ticket:
+            active_ticket = Ticket(name='Member')
+            db.session.add(active_ticket)
+        cancelled_ticket = Ticket.query.filter_by(name='Cancelled').first()
+        if not cancelled_ticket:
+            cancelled_ticket = Ticket(name='Cancelled')
+            db.session.add(cancelled_ticket)
+        db.session.commit()
+
+        c_active = Contact(Name="Lucky Active Member", Type="Member")
+        c_cancelled = Contact(Name="Lucky Cancelled Member", Type="Member")
+        db.session.add_all([c_active, c_cancelled])
+        db.session.commit()
+        for c in [c_active, c_cancelled]:
+            db.session.add(ContactClub(contact_id=c.id, club_id=default_club.id))
+        db.session.commit()
+
+        from datetime import date
+        meeting = Meeting(
+            Meeting_Number=1001,
+            Meeting_Date=date.today(),
+            club_id=default_club.id,
+            status='finished',
+        )
+        db.session.add(meeting)
+        db.session.commit()
+
+        db.session.add(Roster(meeting_id=meeting.id, contact_id=c_active.id,
+                              ticket_id=active_ticket.id, order_number=1))
+        db.session.add(Roster(meeting_id=meeting.id, contact_id=c_cancelled.id,
+                              ticket_id=cancelled_ticket.id, order_number=2))
+        db.session.commit()
+        meeting_id = meeting.id
+        active_id = c_active.id
+
+    client.post('/login', data=dict(username='staff', password='password'))
+    with client.session_transaction() as sess:
+        sess['club_id'] = default_club.id
+        sess['current_club_id'] = default_club.id
+
+    with patch('app.agenda_routes.is_authorized', return_value=True):
+        resp = client.get(f'/agenda?meeting_id={meeting_id}')
+
+    assert resp.status_code == 200
+    html = resp.get_data(as_text=True)
+    assert 'Lucky Active Member' in html
+    assert f'value="{active_id}"' in html
+    assert 'Lucky Cancelled Member' not in html
+
+
+def test_lucky_draw_placeholder_in_modal_for_finished_meeting(client, app, default_club, staff_user):
+    """The new select should render in the modal even when the meeting has no roster
+    entries yet — the placeholder option should be present."""
+    with app.app_context():
+        from app.models import AuthRole, Permission
+        from app.auth.permissions import Permissions
+        staff_role = AuthRole.query.filter_by(name='Staff').first()
+        perm = Permission.query.filter_by(name=Permissions.MEETING_MANAGE).first()
+        if staff_role and perm and perm not in staff_role.permissions:
+            staff_role.permissions.append(perm)
+            db.session.commit()
+
+        from datetime import date
+        meeting = Meeting(
+            Meeting_Number=1002,
+            Meeting_Date=date.today(),
+            club_id=default_club.id,
+            status='finished',
+        )
+        db.session.add(meeting)
+        db.session.commit()
+        meeting_id = meeting.id
+
+    client.post('/login', data=dict(username='staff', password='password'))
+    with client.session_transaction() as sess:
+        sess['club_id'] = default_club.id
+        sess['current_club_id'] = default_club.id
+
+    with patch('app.agenda_routes.is_authorized', return_value=True):
+        resp = client.get(f'/agenda?meeting_id={meeting_id}')
+
+    assert resp.status_code == 200
+    html = resp.get_data(as_text=True)
+    assert 'id="edit-lucky-draw-winner"' in html
+    assert 'id="edit-best-debater"' in html
+
 
 
 def test_meeting_details_awards_dropdown_options(client, app, default_club, staff_user):

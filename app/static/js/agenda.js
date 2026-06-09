@@ -310,18 +310,27 @@ document.addEventListener("DOMContentLoaded", () => {
       viewDetailsBtn.addEventListener("click", () => {
         const currentStatus = meetingStatusBtn ? meetingStatusBtn.dataset.currentStatus : '';
         const isFinished = (currentStatus === 'finished');
-        const awardSelects = [
+        const currentType = viewDetailsBtn.dataset.meetingType || '';
+        // The four classic best_* awards and Lucky Draw Winner only need
+        // the meeting to be finished. Best Debater is meaningful only on
+        // Debate-type meetings, so it needs both gates.
+        const finishedOnlySelects = [
           "edit-best-speaker",
           "edit-best-evaluator",
           "edit-best-table-topic",
-          "edit-best-role-taker"
+          "edit-best-role-taker",
+          "edit-lucky-draw-winner"
         ];
-        awardSelects.forEach(id => {
+        finishedOnlySelects.forEach(id => {
           const select = document.getElementById(id);
           if (select) {
             select.disabled = !isFinished;
           }
         });
+        const debaterSelect = document.getElementById("edit-best-debater");
+        if (debaterSelect) {
+          debaterSelect.disabled = !(isFinished && currentType === 'Debate');
+        }
         document.getElementById("meetingDetailsModal").style.display = "flex";
       });
     }
@@ -630,6 +639,8 @@ document.addEventListener("DOMContentLoaded", () => {
         best_evaluator_id: document.getElementById("edit-best-evaluator") ? document.getElementById("edit-best-evaluator").value : null,
         best_table_topic_id: document.getElementById("edit-best-table-topic") ? document.getElementById("edit-best-table-topic").value : null,
         best_role_taker_id: document.getElementById("edit-best-role-taker") ? document.getElementById("edit-best-role-taker").value : null,
+        best_debater_id: document.getElementById("edit-best-debater") ? document.getElementById("edit-best-debater").value : null,
+        lucky_draw_winner_id: document.getElementById("edit-lucky-draw-winner") ? document.getElementById("edit-lucky-draw-winner").value : null,
       }),
     })
       .then((response) => response.json())

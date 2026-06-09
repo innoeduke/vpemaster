@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, jsonif
 from flask_login import current_user
 from .auth.utils import login_required, is_authorized, club_permission_required
 from .auth.permissions import Permissions
-from .models import SessionLog, SessionType, Contact, Meeting, Project, Media, Roster, MeetingRole, Vote, Pathway, PathwayProject, OwnerMeetingRoles, Planner, Waitlist, Club
+from .models import SessionLog, SessionType, Contact, Meeting, Project, Media, Roster, MeetingRole, Vote, Pathway, PathwayProject, OwnerMeetingRoles, Planner, Waitlist, Club, Ticket
 from .constants import ProjectID, SPEECH_TYPES_WITH_PROJECT, GLOBAL_CLUB_ID
 from .services.export import MeetingExportService
 from .services.export.context import MeetingExportContext
@@ -464,6 +464,7 @@ def _get_processed_logs_data(meeting_id, show_media=False):
             orm.joinedload(Meeting.best_evaluator),
             orm.joinedload(Meeting.best_speaker),
             orm.joinedload(Meeting.best_role_taker),
+            orm.joinedload(Meeting.best_debater),
             orm.joinedload(Meeting.media),
             orm.joinedload(Meeting.sharing_master)
         ).filter(Meeting.id == meeting_id)
@@ -485,6 +486,8 @@ def _get_processed_logs_data(meeting_id, show_media=False):
         if selected_meeting.best_table_topic_id:
             award_winners.add(
                 ('table-topic', selected_meeting.best_table_topic_id))
+        if selected_meeting.best_debater_id:
+            award_winners.add(('debater', selected_meeting.best_debater_id))
 
     # --- Fetch Raw Data ---
     raw_session_logs = _get_agenda_logs(meeting_id)
@@ -895,7 +898,9 @@ def agenda():
         'speaker': [],
         'evaluator': [],
         'table-topic': [],
-        'role-taker': []
+        'role-taker': [],
+        'debater': [],
+        'lucky-draw-winner': [],
     }
     for r in voting_roles:
         cat = r.get('award_category')
@@ -905,6 +910,26 @@ def agenda():
             if oid and oname:
                 if not any(c['id'] == oid for c in voting_candidates[cat]):
                     voting_candidates[cat].append({'id': oid, 'name': oname})
+
+    # Lucky Draw candidates: the meeting roster, deduped by contact_id,
+    # excluding cancelled tickets. Mirrors the query used by the standalone
+    # /lucky_draw page so both UIs offer the same pool.
+    if selected_meeting:
+        roster_rows = Roster.query \
+            .options(db.joinedload(Roster.contact), db.joinedload(Roster.ticket)) \
+            .join(Ticket, Roster.ticket_id == Ticket.id) \
+            .filter(Roster.meeting_id == selected_meeting.id,
+                    Ticket.name != 'Cancelled') \
+            .order_by(Roster.order_number.asc()) \
+            .all()
+        seen_contacts = set()
+        for r in roster_rows:
+            if r.contact_id in seen_contacts:
+                continue
+            seen_contacts.add(r.contact_id)
+            name = r.contact.Name if r.contact else f'Contact {r.contact_id}'
+            voting_candidates['lucky-draw-winner'].append(
+                {'id': r.contact_id, 'name': name})
     
     # --- Render Template ---
     # Serialize ProjectID as a dictionary for safe JSON conversion in template
@@ -1661,6 +1686,18 @@ def update_logs():
             meeting.best_table_topic_id = parse_award_id(data.get('best_table_topic_id'))
         if 'best_role_taker_id' in data:
             meeting.best_role_taker_id = parse_award_id(data.get('best_role_taker_id'))
+        if 'best_debater_id' in data:
+            # Best Debater is meaningful only on Debate-type meetings. Mirror
+            # the client-side gate server-side so a stale or crafted request
+            # cannot set a debater on, say, a Keynote Speech meeting.
+            if meeting.type != 'Debate':
+                return jsonify(
+                    success=False,
+                    message="Best Debater can only be set on Debate-type meetings.",
+                ), 400
+            meeting.best_debater_id = parse_award_id(data.get('best_debater_id'))
+        if 'lucky_draw_winner_id' in data:
+            meeting.lucky_draw_winner_id = parse_award_id(data.get('lucky_draw_winner_id'))
 
         new_media_id = None
         if new_media_url:
