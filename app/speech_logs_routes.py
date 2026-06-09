@@ -2120,7 +2120,8 @@ def get_speech_log_details(log_id):
         "owner_ids": owner_ids,
         "owner_targets": owner_targets,
         "role": role_name,
-        "owners_data": owners_data
+        "owners_data": owners_data,
+        "has_single_owner": role_obj.has_single_owner if role_obj else True,
     }
 
     return jsonify(success=True, log=log_data)

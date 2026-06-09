@@ -681,11 +681,243 @@ def test_non_pathway_filtering_and_level_resolution(client, app, default_club, s
             # Should be grouped under "1" and "2"
             assert "1" in grouped_logs
             assert "2" in grouped_logs
-            
+
             # Verify the specific log objects are present
             g1_ids = [l.id for l in grouped_logs["1"] if hasattr(l, "id")]
             g2_ids = [l.id for l in grouped_logs["2"] if hasattr(l, "id")]
-            
+
             assert log1_id in g1_ids
             assert log2_id in g2_ids
+
+
+def test_speech_log_details_includes_has_single_owner(client, app, default_club, staff_user):
+    """The Edit Details modal needs has_single_owner to decide whether to
+    show the 'Add Owner' button on roles that allow multiple owners.
+    """
+    with app.app_context():
+        contact = Contact(Name="Detail Test User", Type="Member")
+        db.session.add(contact)
+        db.session.commit()
+
+        cc = ContactClub(contact_id=contact.id, club_id=default_club.id)
+        db.session.add(cc)
+        db.session.commit()
+
+        # Single-owner role (Timer-style)
+        role_single = MeetingRole(name="TimerRole", type="standard",
+                                   needs_approval=False, has_single_owner=True)
+        role_shared = MeetingRole(name="SharedRole", type="standard",
+                                   needs_approval=False, has_single_owner=False)
+        db.session.add_all([role_single, role_shared])
+        db.session.commit()
+
+        st_single = SessionType(Title="Timer", role_id=role_single.id, club_id=default_club.id)
+        st_shared = SessionType(Title="SharedRoleType", role_id=role_shared.id, club_id=default_club.id)
+        db.session.add_all([st_single, st_shared])
+        db.session.commit()
+
+        from datetime import date
+        meeting = Meeting(Meeting_Number=200, Meeting_Date=date.today(), club_id=default_club.id)
+        db.session.add(meeting)
+        db.session.commit()
+
+        log_single = SessionLog(meeting_id=meeting.id, Meeting_Seq=1,
+                                 Type_ID=st_single.id, Status="Booked")
+        log_shared = SessionLog(meeting_id=meeting.id, Meeting_Seq=2,
+                                 Type_ID=st_shared.id, Status="Booked")
+        db.session.add_all([log_single, log_shared])
+        db.session.flush()
+        log_single.owners = [contact]
+        log_shared.owners = [contact]
+        db.session.commit()
+
+        log_single_id = log_single.id
+        log_shared_id = log_shared.id
+
+    with client.session_transaction() as sess:
+        sess['_user_id'] = str(staff_user.id)
+        sess['club_id'] = default_club.id
+        sess['_fresh'] = True
+
+    with patch('app.speech_logs_routes.is_authorized', return_value=True):
+        resp = client.get(f'/speech_log/details/{log_single_id}')
+        data = resp.get_json()
+        assert data['log']['has_single_owner'] is True
+
+        resp = client.get(f'/speech_log/details/{log_shared_id}')
+        data = resp.get_json()
+        assert data['log']['has_single_owner'] is False
+
+
+def test_role_modal_owner_change_via_save(client, app, default_club, staff_user):
+    """Verify that the Edit Details modal save can replace the owner of a
+    role-mode log (the Timer/no-owner case the user reported)."""
+    with app.app_context():
+        old_owner = Contact(Name="Old Timer", Type="Member")
+        new_owner = Contact(Name="New Timer", Type="Member")
+        db.session.add_all([old_owner, new_owner])
+        db.session.commit()
+
+        for c in (old_owner, new_owner):
+            cc = ContactClub(contact_id=c.id, club_id=default_club.id)
+            db.session.add(cc)
+        db.session.commit()
+
+        role = MeetingRole(name="Timer", type="standard", needs_approval=False, has_single_owner=True)
+        db.session.add(role)
+        db.session.commit()
+
+        st = SessionType(Title="Timer", role_id=role.id, club_id=default_club.id)
+        db.session.add(st)
+        db.session.commit()
+
+        from datetime import date
+        meeting = Meeting(Meeting_Number=201, Meeting_Date=date.today(), club_id=default_club.id)
+        db.session.add(meeting)
+        db.session.commit()
+
+        log = SessionLog(meeting_id=meeting.id, Meeting_Seq=1,
+                          Type_ID=st.id, Status="Booked")
+        db.session.add(log)
+        db.session.flush()
+        log.owners = [old_owner]
+        db.session.commit()
+
+        log_id = log.id
+        old_id = old_owner.id
+        new_id = new_owner.id
+
+    with client.session_transaction() as sess:
+        sess['_user_id'] = str(staff_user.id)
+        sess['club_id'] = default_club.id
+        sess['_fresh'] = True
+
+    # Save with the new owner
+    with patch('app.speech_logs_routes.is_authorized', return_value=True):
+        resp = client.post(
+            f'/speech_log/update/{log_id}',
+            json={
+                'owner_ids': [new_id],
+                'owner_targets': {str(new_id): {'pathway': 'Non Pathway', 'level': ''}}
+            }
+        )
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data.get('success') is True
+
+    # Verify the log owner is now new_owner
+    with app.app_context():
+        from app.models import SessionLog as SL
+        updated = db.session.get(SL, log_id)
+        assert [o.id for o in updated.owners] == [new_id]
+
+
+def test_role_modal_clear_owner_via_save(client, app, default_club, staff_user):
+    """Verify that the Edit Details modal save can clear the owner entirely
+    (the screenshot showed the 'No Owner Assigned' case)."""
+    with app.app_context():
+        owner = Contact(Name="To Be Removed", Type="Member")
+        db.session.add(owner)
+        db.session.commit()
+        cc = ContactClub(contact_id=owner.id, club_id=default_club.id)
+        db.session.add(cc)
+        db.session.commit()
+
+        role = MeetingRole(name="Timer", type="standard", needs_approval=False, has_single_owner=True)
+        db.session.add(role)
+        db.session.commit()
+
+        st = SessionType(Title="Timer", role_id=role.id, club_id=default_club.id)
+        db.session.add(st)
+        db.session.commit()
+
+        from datetime import date
+        meeting = Meeting(Meeting_Number=202, Meeting_Date=date.today(), club_id=default_club.id)
+        db.session.add(meeting)
+        db.session.commit()
+
+        log = SessionLog(meeting_id=meeting.id, Meeting_Seq=1,
+                          Type_ID=st.id, Status="Booked")
+        db.session.add(log)
+        db.session.flush()
+        log.owners = [owner]
+        db.session.commit()
+
+        log_id = log.id
+
+    with client.session_transaction() as sess:
+        sess['_user_id'] = str(staff_user.id)
+        sess['club_id'] = default_club.id
+        sess['_fresh'] = True
+
+    # Save with empty owner list
+    with patch('app.speech_logs_routes.is_authorized', return_value=True):
+        resp = client.post(
+            f'/speech_log/update/{log_id}',
+            json={'owner_ids': [], 'owner_targets': {}}
+        )
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data.get('success') is True
+
+    with app.app_context():
+        from app.models import SessionLog as SL
+        updated = db.session.get(SL, log_id)
+        assert list(updated.owners) == []
+
+
+def test_speech_modal_owner_change_via_save(client, app, default_club, staff_user):
+    """Verify that the Edit Details modal save can replace the owner of a
+    speech-mode log (Prepared Speech, project roles, etc.)."""
+    with app.app_context():
+        old_speaker = Contact(Name="Old Speaker", Type="Member")
+        new_speaker = Contact(Name="New Speaker", Type="Member")
+        db.session.add_all([old_speaker, new_speaker])
+        db.session.commit()
+        for c in (old_speaker, new_speaker):
+            cc = ContactClub(contact_id=c.id, club_id=default_club.id)
+            db.session.add(cc)
+        db.session.commit()
+
+        role = MeetingRole(name="Speaker", type="standard", needs_approval=False, has_single_owner=True)
+        db.session.add(role)
+        db.session.commit()
+
+        st = SessionType(Title="Prepared Speech", role_id=role.id, club_id=default_club.id)
+        db.session.add(st)
+        db.session.commit()
+
+        from datetime import date
+        meeting = Meeting(Meeting_Number=203, Meeting_Date=date.today(), club_id=default_club.id)
+        db.session.add(meeting)
+        db.session.commit()
+
+        log = SessionLog(meeting_id=meeting.id, Meeting_Seq=1,
+                          Type_ID=st.id, Status="Booked")
+        db.session.add(log)
+        db.session.flush()
+        log.owners = [old_speaker]
+        db.session.commit()
+
+        log_id = log.id
+        new_id = new_speaker.id
+
+    with client.session_transaction() as sess:
+        sess['_user_id'] = str(staff_user.id)
+        sess['club_id'] = default_club.id
+        sess['_fresh'] = True
+
+    with patch('app.speech_logs_routes.is_authorized', return_value=True):
+        resp = client.post(
+            f'/speech_log/update/{log_id}',
+            json={'owner_id': new_id, 'pathway': 'Non Pathway', 'level': ''}
+        )
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data.get('success') is True
+
+    with app.app_context():
+        from app.models import SessionLog as SL
+        updated = db.session.get(SL, log_id)
+        assert [o.id for o in updated.owners] == [new_id]
 
