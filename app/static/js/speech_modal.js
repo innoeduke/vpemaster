@@ -421,6 +421,9 @@ async function openEditDetailsModal(
       // Toggle wrappers: show role mode, hide speech mode
       modalElements.speechModeFields.style.display = "none";
       modalElements.roleModeFields.style.display = "block";
+      // The speech_title field is hidden in role mode, so the browser's
+      // HTML5 validation can't focus it. Strip `required` so Save works.
+      if (modalElements.speechTitle) modalElements.speechTitle.required = false;
 
       const roleName = data.log.role || (row ? row.dataset.role : "") || "N/A";
       modalElements.roleNameDisplay.textContent = roleName;
@@ -663,6 +666,8 @@ async function openEditDetailsModal(
       // Toggle wrappers: show speech mode, hide role mode
       modalElements.speechModeFields.style.display = "block";
       modalElements.roleModeFields.style.display = "none";
+      // Restore the HTML5 required on the visible title field
+      if (modalElements.speechTitle) modalElements.speechTitle.required = true;
 
       const setupFunctions = {
         // Project roles keyed by session_type_title

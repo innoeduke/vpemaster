@@ -394,20 +394,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const sessionType = allSessionTypes.find((st) => st.id == typeId);
     if (!sessionType) return;
 
-    const hasRole = sessionType.Role && sessionType.Role.trim() !== "";
-    const rolesToHideFor = [
-      allMeetingRoles.PREPARED_SPEAKER
-        ? allMeetingRoles.PREPARED_SPEAKER.name
-        : "Prepared Speaker",
-      "Table Topics",
-    ];
-
-    const shouldShowProjectButton =
-      sessionType.Valid_for_Project || sessionType.Title === "Table Topics";
-    const shouldShowRoleButton =
-      hasRole && !rolesToHideFor.includes(sessionType.Role);
-
-    if (shouldShowProjectButton) {
+    // Project-button branch: pre-populate the pathway/project for prepared
+    // speeches and other project-valid types so the modal opens with the
+    // right defaults.
+    if (sessionType.Valid_for_Project) {
       const ownerId = row.dataset.ownerId;
       const contact = allContacts.find((c) => c.id == ownerId);
       let currentPath = null;
@@ -424,7 +414,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const nextProject = contact ? contact.Next_Project : null;
       const sessionTypeTitle = sessionType.Title || null;
       openEditDetailsModal(logId, currentPath, sessionTypeTitle, nextProject);
-    } else if (shouldShowRoleButton) {
+    } else {
+      // Every other editable session type — functional roles (Timer,
+      // Grammarian, Welcome Officer, …), club-specific types, and types
+      // with no role FK (Networking). The modal's role-mode fallback
+      // handles them all.
       openEditDetailsModal(logId);
     }
   }
