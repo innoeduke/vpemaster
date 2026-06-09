@@ -171,6 +171,58 @@ def test_best_debater_rejected_on_non_debate_meeting(client, app, default_club, 
         assert untouched.best_debater_id is None
 
 
+def test_best_debater_empty_value_allowed_on_non_debate_meeting(client, app, default_club, staff_user):
+    """Saving an empty best_debater_id on a non-Debate meeting must not 400.
+
+    The agenda's Save button always sends best_debater_id (as '' for
+    meetings that don't have the field populated), so a strict gate would
+    block every save on a Keynote Speech meeting. Empty means 'clear',
+    which is always legal.
+    """
+    with app.app_context():
+        from app.models import AuthRole, Permission
+        from app.auth.permissions import Permissions
+        staff_role = AuthRole.query.filter_by(name='Staff').first()
+        perm = Permission.query.filter_by(name=Permissions.MEETING_MANAGE).first()
+        if staff_role and perm and perm not in staff_role.permissions:
+            staff_role.permissions.append(perm)
+            db.session.commit()
+
+        from datetime import date
+        meeting = Meeting(
+            Meeting_Number=1003,
+            Meeting_Date=date.today(),
+            club_id=default_club.id,
+            status='finished',
+            type='Keynote Speech',
+        )
+        db.session.add(meeting)
+        db.session.commit()
+        meeting_id = meeting.id
+
+    client.post('/login', data=dict(username='staff', password='password'))
+    with client.session_transaction() as sess:
+        sess['club_id'] = default_club.id
+        sess['current_club_id'] = default_club.id
+
+    with patch('app.agenda_routes.is_authorized', return_value=True):
+        resp = client.post(
+            '/agenda/update',
+            json={
+                'meeting_id': meeting_id,
+                'agenda_data': [],
+                'best_debater_id': "",
+            },
+        )
+
+    assert resp.status_code == 200
+    assert resp.get_json().get('success') is True
+
+    with app.app_context():
+        m = db.session.get(Meeting, meeting_id)
+        assert m.best_debater_id is None
+
+
 def test_lucky_draw_dropdown_excludes_cancelled(client, app, default_club, staff_user):
     """Lucky Draw dropdown should list rostered contacts but skip cancelled-ticket rows."""
     with app.app_context():

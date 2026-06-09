@@ -1694,15 +1694,18 @@ def update_logs():
         if 'best_role_taker_id' in data:
             meeting.best_role_taker_id = parse_award_id(data.get('best_role_taker_id'))
         if 'best_debater_id' in data:
-            # Best Debater is meaningful only on Debate-type meetings. Mirror
-            # the client-side gate server-side so a stale or crafted request
-            # cannot set a debater on, say, a Keynote Speech meeting.
-            if meeting.type != 'Debate':
+            # Best Debater is meaningful only on Debate-type meetings. A
+            # non-empty value on a non-Debate meeting is rejected so a stale
+            # or crafted request cannot set one. An empty value is always
+            # allowed — it just clears the field, which the client sends for
+            # every meeting type.
+            debater_id = parse_award_id(data.get('best_debater_id'))
+            if debater_id is not None and meeting.type != 'Debate':
                 return jsonify(
                     success=False,
                     message="Best Debater can only be set on Debate-type meetings.",
                 ), 400
-            meeting.best_debater_id = parse_award_id(data.get('best_debater_id'))
+            meeting.best_debater_id = debater_id
         if 'lucky_draw_winner_id' in data:
             meeting.lucky_draw_winner_id = parse_award_id(data.get('lucky_draw_winner_id'))
 

@@ -206,6 +206,7 @@ function createModalOwnerPicker({ initialOwnerId, contacts, onChange, placeholde
       .filter((c) => String(c.id) !== currentOwnerId)
       .slice(0, 10);
 
+    ensureModalScrollListener();
     openDropdown = document.createElement("div");
     openDropdown.setAttribute("class", "autocomplete-items");
     openDropdown.setAttribute("role", "listbox");
@@ -261,6 +262,18 @@ function createModalOwnerPicker({ initialOwnerId, contacts, onChange, placeholde
   const repositionHandler = () => positionDropdown();
   window.addEventListener("scroll", repositionHandler, true);
   window.addEventListener("resize", repositionHandler);
+
+  // The modal body (.sem-body) has overflow-y:auto — its scroll events
+  // don't bubble to window, so we must listen directly to keep the
+  // portaled dropdown anchored to the input on mobile.
+  let modalScrollEl = null;
+  const ensureModalScrollListener = () => {
+    if (modalScrollEl) return;
+    modalScrollEl = searchInput.closest('.sem-body');
+    if (modalScrollEl) {
+      modalScrollEl.addEventListener("scroll", repositionHandler);
+    }
+  };
 
   searchInput.addEventListener("focus", () => open());
   searchInput.addEventListener("input", () => {
@@ -369,6 +382,50 @@ function createModalOwnerPicker({ initialOwnerId, contacts, onChange, placeholde
   return { wrapper, getOwnerId, setOwnerId, focusSearch };
 }
 
+/**
+ * Enable or disable the Save button based on whether every owner card
+ * has its pathway (and level, when applicable) filled in.
+ */
+function validateOwnerCards() {
+  const saveBtn = document.querySelector("#speechEditForm .btn-speech-save");
+  if (!saveBtn) return;
+
+  const isRoleMode = document.getElementById("role-mode-fields")?.style.display === "block";
+  if (!isRoleMode) {
+    saveBtn.disabled = false;
+    return;
+  }
+
+  const cards = document.querySelectorAll("#role-owners-scroll .role-owner-card");
+  let allValid = true;
+
+  cards.forEach((card) => {
+    const ownerId = (card._ownerPicker && card._ownerPicker.getOwnerId())
+      || card.dataset.ownerId
+      || "";
+    if (!ownerId) return; // empty card with no owner — fine
+
+    const pathway = (card._pathHolder && card._pathHolder.el)
+      ? card._pathHolder.el.value
+      : (card.querySelector(".role-card-pathway")?.value || "");
+    if (!pathway) {
+      allValid = false;
+      return;
+    }
+
+    if (pathway !== "Non Pathway") {
+      const level = (card._levelHolder && card._levelHolder.el)
+        ? card._levelHolder.el.value
+        : (card.querySelector(".role-card-level")?.value || "");
+      if (!level) {
+        allValid = false;
+      }
+    }
+  });
+
+  saveBtn.disabled = !allValid;
+}
+
 // --- Main Public Functions ---
 
 /**
@@ -461,13 +518,15 @@ async function openEditDetailsModal(
         sel.className = "role-card-pathway";
         sel.innerHTML = '';
         
-        const contactsList = data.log.owners_data || window.allContacts || [];
+        const contactsList = (window.allContacts && window.allContacts.length)
+          ? window.allContacts
+          : (data.log.owners_data || []);
         const contact = contactsList.find((c) => c.id == ownerId);
         let regPaths = [];
         if (contact && contact.registered_paths) {
           regPaths = contact.registered_paths.map(p => typeof p === 'object' ? p.name : p);
         }
-        
+
         if (regPaths.length > 0) {
           sel.innerHTML = '<option value="">-- Select Pathway --</option>';
           regPaths.forEach((name) => {
@@ -505,7 +564,9 @@ async function openEditDetailsModal(
           level = savedTarget.level || "";
         } else {
           // 2. Fallback to contact data (only if ownerId has no saved target)
-          const contactsList = data.log.owners_data || window.allContacts || [];
+          const contactsList = (window.allContacts && window.allContacts.length)
+            ? window.allContacts
+            : (data.log.owners_data || []);
           const contact = contactsList.find((c) => c.id == ownerId);
           if (contact) {
             if (contact.Type === "Guest" || !contact.Current_Path) {
@@ -573,8 +634,10 @@ async function openEditDetailsModal(
           } else {
             levelHolder.el.disabled = false;
           }
+          validateOwnerCards();
         };
         pathHolder.el.addEventListener("change", syncLevel);
+        levelHolder.el.addEventListener("change", validateOwnerCards);
 
         const refreshPathwayForOwner = (ownerId) => {
           const newPath = buildPathwaySelect(ownerId);
@@ -656,12 +719,14 @@ async function openEditDetailsModal(
           scrollContainer.insertBefore(newCard, addBtn);
           cards.push(newCard);
           newCard._ownerPicker.focusSearch();
+          validateOwnerCards();
         });
         scrollContainer.appendChild(addBtn);
       }
 
       // Stash the cards on the scroll container so save can read them
       scrollContainer._ownerCards = cards;
+      validateOwnerCards();
     } else {
       // Toggle wrappers: show speech mode, hide role mode
       modalElements.speechModeFields.style.display = "block";
@@ -771,8 +836,8 @@ async function saveEditDetailsChanges(event) {
       const ownerId = (card._ownerPicker && card._ownerPicker.getOwnerId())
         || card.dataset.ownerId
         || "";
-      const pathwayName = card._pathHolder ? card._pathHolder.el.value : (card.querySelector(".role-card-pathway")?.value || "");
-      const levelVal = card._levelHolder ? card._levelHolder.el.value : (card.querySelector(".role-card-level")?.value || "");
+      const pathwayName = (card._pathHolder && card._pathHolder.el) ? card._pathHolder.el.value : (card.querySelector(".role-card-pathway")?.value || "");
+      const levelVal = (card._levelHolder && card._levelHolder.el) ? card._levelHolder.el.value : (card.querySelector(".role-card-level")?.value || "");
 
       if (ownerId) {
         ownerIds.push(String(ownerId));
@@ -785,10 +850,20 @@ async function saveEditDetailsChanges(event) {
     });
 
     try {
+      // The modal opened with the full session in scope, so we know the
+      // current title. Send it so the backend preserves it on save (the
+      // role-mode branch of set_owners may otherwise null out the title
+      // for some owner transitions).
+      const sessionTitle = modalElements.speechTitle ? modalElements.speechTitle.value : "";
+
       const response = await fetch(`/speech_log/update/${logId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ owner_ids: ownerIds, owner_targets: ownerTargets })
+        body: JSON.stringify({
+          owner_ids: ownerIds,
+          owner_targets: ownerTargets,
+          session_title: sessionTitle,
+        })
       });
       const data = await response.json();
       if (data.success) {
@@ -813,24 +888,12 @@ async function saveEditDetailsChanges(event) {
           }
         });
 
-        if (!window.location.pathname.includes("/agenda")) {
+        // Always reload after a role-mode save so the agenda row reflects
+        // the new owner's name/credentials and the page cache is fresh.
+        if (window.location.pathname.includes("/agenda")) {
           window.location.reload();
         } else {
-          // Owner names need a full re-render. Reload the agenda so the new
-          // owner's name + credentials appear in the row.
-          const priorOwnerIds = (() => {
-            if (!row) return null;
-            try { return JSON.parse(row.dataset.ownerIds || "[]"); } catch (_) { return null; }
-          })();
-          const ownerChanged =
-            !priorOwnerIds ||
-            priorOwnerIds.length !== ownerIds.length ||
-            priorOwnerIds.some((id, i) => String(id) !== String(ownerIds[i]));
-          if (ownerChanged) {
-            window.location.reload();
-          } else {
-            closeEditDetailsModal();
-          }
+          window.location.reload();
         }
       } else {
         alert("Error saving: " + (data.message || "Unknown error"));
@@ -1882,7 +1945,6 @@ function updateSpeechLogCard(logId, updateResult, payload) {
 
 // --- Event Listeners ---
 document.addEventListener("DOMContentLoaded", () => {
-  modalElements.form.addEventListener("submit", saveEditDetailsChanges);
   modalElements.pathwaySelect.addEventListener("change", updateDynamicOptions);
   modalElements.levelSelect.addEventListener("change", updateDynamicOptions);
   if (modalElements.isProjectCheckbox) {

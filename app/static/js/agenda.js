@@ -513,30 +513,35 @@ document.addEventListener("DOMContentLoaded", () => {
                 button.style.display = "";
 
                 if (newStatus === "not started") {
-                  button.textContent = "Start";
-                  button.classList.add("btn-primary");
+                  button.innerHTML = '<i class="fas fa-fw fa-play"></i> Start';
+                  button.classList.remove("btn-danger", "btn-secondary", "btn-light");
+                  button.classList.add("btn-success");
                   button.title = "Start to let audience vote.";
                 } else if (newStatus === "running") {
-                  button.textContent = "Stop";
-                  button.classList.add("btn-primary");
+                  button.innerHTML = '<i class="fas fa-fw fa-stop"></i> Stop';
+                  button.classList.remove("btn-primary", "btn-success", "btn-secondary", "btn-light");
+                  button.classList.add("btn-danger");
                   button.title = "Stop to end voting and show results.";
                 } else if (newStatus === "finished") {
                   const canDelete = agendaContent && agendaContent.dataset.canDelete === "true";
                   if (canDelete) {
-                    button.textContent = "Delete";
+                    button.innerHTML = '<i class="fas fa-fw fa-check-circle"></i> Delete';
+                    button.classList.remove("btn-success", "btn-danger", "btn-light");
                     button.classList.add("btn-secondary");
                     button.title = "";
                   } else {
                     button.style.display = "none";
                   }
                 } else if (newStatus === "cancelled") {
-                  button.textContent = "Cancelled";
+                  button.innerHTML = '<i class="fas fa-fw fa-ban"></i> Cancelled';
                   button.disabled = true;
+                  button.classList.remove("btn-success", "btn-danger", "btn-light");
                   button.classList.add("btn-secondary");
                   button.title = "";
                 } else if (newStatus === "unpublished") {
-                  button.textContent = "Publish";
-                  button.classList.add("btn-success");
+                  button.innerHTML = 'Publish';
+                  button.classList.remove("btn-danger", "btn-secondary", "btn-success");
+                  button.classList.add("btn-light");
                   button.title = "Publish to allow members to book roles.";
                 }
               }
@@ -1033,38 +1038,42 @@ document.addEventListener("DOMContentLoaded", () => {
               .replace(/\b\w/g, (l) => l.toUpperCase());
 
             if (newStatus === "not started") {
-              button.textContent = "Start";
-              button.classList.remove("btn-success");
-              button.classList.add("btn-primary");
+              button.innerHTML = '<i class="fas fa-fw fa-play"></i> Start';
+              button.classList.remove("btn-danger", "btn-secondary", "btn-light");
+              button.classList.add("btn-success");
               iconClass = "fa-play-circle";
               button.title = "Start to let audience vote.";
             } else if (newStatus === "running") {
-              button.textContent = "Stop";
+              button.innerHTML = '<i class="fas fa-fw fa-stop"></i> Stop';
+              button.classList.remove("btn-primary", "btn-success", "btn-secondary", "btn-light");
+              button.classList.add("btn-danger");
               iconClass = "fa-broadcast-tower";
               button.title = "Stop to end voting and show results.";
             } else if (newStatus === "finished") {
               const canDelete = agendaContent.dataset.canDelete === "true";
               if (canDelete) {
-                button.textContent = "Delete";
+                button.innerHTML = '<i class="fas fa-fw fa-check-circle"></i> Delete';
+                button.classList.remove("btn-success", "btn-danger", "btn-light");
                 button.title = "";
               } else {
                 button.style.display = "none";
               }
               iconClass = "fa-check-circle";
             } else if (newStatus === "cancelled") {
-              button.textContent = "Cancelled";
+              button.innerHTML = '<i class="fas fa-fw fa-ban"></i> Cancelled';
               button.disabled = true;
-              button.classList.remove("btn-info", "btn-primary", "btn-success");
+              button.classList.remove("btn-info", "btn-primary", "btn-success", "btn-danger", "btn-light");
               button.classList.add("btn-secondary");
               iconClass = "fa-ban";
               button.title = "";
             } else if (newStatus === "unpublished") {
-              button.textContent = "Publish";
-              button.classList.add("btn-success");
+              button.innerHTML = 'Publish';
+              button.classList.remove("btn-danger", "btn-secondary", "btn-success");
+              button.classList.add("btn-light");
               iconClass = "fa-eye-slash";
               button.title = "Publish to allow members to book roles.";
             } else {
-              button.textContent = "Start";
+              button.innerHTML = '<i class="fas fa-fw fa-play"></i> Start';
               iconClass = "fa-play-circle";
               button.title = "";
             }

@@ -1138,6 +1138,48 @@ a.owner-link:hover {
 	transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+/* The id selector above is more specific than the bare Bootstrap button
+   classes, so we need these compound selectors to win the cascade:
+   - .btn-success (green)  → "not started" (Start) and "unpublished" (Publish)
+   - .btn-danger  (red)    → "running" (Stop — destructive, meeting is live) */
+#meeting-status-btn.btn-success {
+	background-color: #4caf50;
+	color: #fff;
+	border-color: #43a047;
+	box-shadow: 0 2px 6px rgba(76, 175, 80, 0.25);
+}
+
+#meeting-status-btn.btn-success:hover {
+	background-color: #43a047;
+	border-color: #2e7d32;
+	color: #fff;
+}
+
+#meeting-status-btn.btn-success:active {
+	background-color: #388e3c;
+	border-color: #1b5e20;
+	color: #fff;
+}
+
+#meeting-status-btn.btn-danger {
+	background-color: #dc3545;
+	color: #fff;
+	border-color: #c82333;
+	box-shadow: 0 2px 6px rgba(220, 53, 69, 0.25);
+}
+
+#meeting-status-btn.btn-danger:hover {
+	background-color: #c82333;
+	border-color: #bd2130;
+	color: #fff;
+}
+
+#meeting-status-btn.btn-danger:active {
+	background-color: #bd2130;
+	border-color: #a71d2a;
+	color: #fff;
+}
+
 #meeting-status-btn:hover {
 	transform: scale(1.05) translateY(-1px);
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
