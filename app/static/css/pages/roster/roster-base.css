@@ -331,15 +331,94 @@
 	color: white;
 }
 
-.page-container .trend-btn {
-	background-color: #772432;
-	color: white;
-	box-shadow: 0 4px 6px rgba(119, 36, 50, 0.2);
+/* =========================================
+   Roster header action buttons
+   --------------------------------------
+   Speak the same language as the KPI cards above (light surface, hairline
+   maroon accent, soft shadow). Maroon is reserved for the *active* action
+   (the QR launcher); the trend links sit back as quiet card-buttons so
+   they don't compete with the attendance number.
+
+   Selectors are scoped to .roster-header-grid so the voting page's own
+   .trend-btn (NPS button) is left untouched.
+   ========================================= */
+.roster-header-grid .filter-right {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
 }
 
-.page-container .trend-btn:hover {
-	background-color: #8e2a3d;
-	box-shadow: 0 6px 12px rgba(119, 36, 50, 0.3);
+.roster-header-grid .trend-btn {
+	height: 40px;
+	padding: 0 16px;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	border-radius: 10px;
+	font-size: 0.9rem;
+	font-weight: 600;
+	letter-spacing: 0.01em;
+	white-space: nowrap;
+	line-height: 1;
+	cursor: pointer;
+	text-decoration: none;
+	transition: transform 0.18s ease, box-shadow 0.18s ease,
+	            background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.roster-header-grid .trend-btn i {
+	font-size: 0.95em;
+	line-height: 1;
+}
+
+.roster-header-grid .trend-btn-label {
+	display: inline;
+}
+
+/* Ghost: white card with maroon-tinted hairline + colored icon.
+   Visual sibling of .attendance-kpi / .revenue-kpi above. */
+.roster-header-grid .trend-btn-ghost {
+	background: #ffffff;
+	color: #3a2128;
+	border: 1px solid #ead5d9;
+	box-shadow: 0 1px 2px rgba(43, 11, 22, 0.04);
+}
+.roster-header-grid .trend-btn-ghost i {
+	color: #772432;
+}
+.roster-header-grid .trend-btn-ghost:hover {
+	background: #fbf4f5;
+	border-color: #d6a8b2;
+	color: #5a1a26;
+	box-shadow: 0 6px 14px rgba(119, 36, 50, 0.10);
+	transform: translateY(-1px);
+}
+.roster-header-grid .trend-btn-ghost:active {
+	transform: translateY(0);
+	box-shadow: 0 1px 2px rgba(43, 11, 22, 0.04);
+}
+
+/* Primary: solid maroon. Reserved for the QR launcher — the one button
+   in this row that *does* something rather than navigating away. */
+.roster-header-grid .trend-btn-primary {
+	background: #772432;
+	color: #ffffff;
+	border: 1px solid #772432;
+	box-shadow: 0 2px 4px rgba(119, 36, 50, 0.18);
+}
+.roster-header-grid .trend-btn-primary i {
+	color: rgba(255, 255, 255, 0.92);
+}
+.roster-header-grid .trend-btn-primary:hover {
+	background: #8c2a3c;
+	border-color: #8c2a3c;
+	color: #ffffff;
+	box-shadow: 0 8px 18px rgba(119, 36, 50, 0.28);
+	transform: translateY(-1px);
+}
+.roster-header-grid .trend-btn-primary:active {
+	transform: translateY(0);
+	box-shadow: 0 2px 4px rgba(119, 36, 50, 0.18);
 }
 
 /* Contact Input Group */
@@ -417,8 +496,8 @@
 
 .page-container .header-name {
 	width: 28%;
-	min-width: 150px;
-	max-width: 250px;
+	min-width: 180px;
+	max-width: 320px;
 }
 
 .page-container .header-ticket {
@@ -502,9 +581,8 @@
 
 .page-container .cell-name {
 	font-weight: 700;
-	white-space: normal;
-	word-wrap: break-word;
-	max-width: 200px;
+	white-space: nowrap;
+	max-width: 320px;
 }
 
 .roster-contact-link {
@@ -870,4 +948,236 @@ body .page-container .print-pages-container .print-page .print-table tbody tr:la
 
 .page-container .mobile-only-label {
 	display: none;
+}
+
+/* Self Check-In badge next to each name. Read-only dot for non-edit users,
+   clickable toggle button for ROSTER_EDIT users. */
+.cell-name .checkin-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	margin-right: 6px;
+	padding: 0;
+	border: none;
+	background: transparent;
+	color: #c1c8d0;
+	font-size: 0.95rem;
+	line-height: 1;
+	vertical-align: -3px;
+	cursor: pointer;
+	border-radius: 50%;
+	transition: color 0.15s ease, background 0.15s ease;
+}
+.cell-name .checkin-badge:hover:not([disabled]) {
+	background: #eef5f0;
+	color: #1f7a4d;
+}
+.cell-name .checkin-badge.is-checked {
+	color: #1f7a4d;
+}
+.cell-name .checkin-badge.is-checked:hover:not([disabled]) {
+	background: #f6eaea;
+	color: #b53b3b;
+}
+.cell-name .checkin-badge[disabled] {
+	cursor: default;
+	opacity: 0.85;
+}
+
+/* =========================================
+   Self Check-In QR Modal
+   --------------------------------------
+   Editorial event-pass layout: small uppercase eyebrow, display heading,
+   the QR framed as the hero with parchment surround + corner accents, then
+   a refined link row. Maroon brand accents throughout. Inherits the global
+   .custom-modal-content base (cream gradient surface, 4px top gradient bar,
+   layered shadow) and overrides padding + interior layout.
+   ========================================= */
+.checkin-qr-modal .checkin-qr-card {
+	max-width: 460px;
+	padding: 36px 36px 28px;
+	text-align: left;
+}
+
+.checkin-qr-modal .checkin-qr-close {
+	position: absolute;
+	top: 14px;
+	right: 14px;
+	width: 36px;
+	height: 36px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	background: transparent;
+	color: #b0a8a4;
+	font-size: 22px;
+	font-weight: 300;
+	line-height: 1;
+	border-radius: 50%;
+	cursor: pointer;
+	transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+	z-index: 2;
+}
+.checkin-qr-modal .checkin-qr-close:hover {
+	background: rgba(119, 36, 50, 0.08);
+	color: #772432;
+	transform: rotate(90deg);
+}
+
+.checkin-qr-modal .checkin-qr-head {
+	text-align: center;
+	margin-bottom: 22px;
+}
+.checkin-qr-modal .checkin-qr-eyebrow {
+	font-size: 0.7rem;
+	font-weight: 700;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+	color: #772432;
+	margin-bottom: 6px;
+}
+.checkin-qr-modal .checkin-qr-title {
+	margin: 0 0 6px;
+	font-size: 1.55rem;
+	font-weight: 700;
+	letter-spacing: -0.01em;
+	color: #2a1a1f;
+	line-height: 1.1;
+}
+.checkin-qr-modal .checkin-qr-sub {
+	margin: 0;
+	font-size: 0.9rem;
+	color: #6b5f63;
+	line-height: 1.4;
+}
+
+/* QR pass card — parchment surround + corner ornaments. */
+.checkin-qr-modal .checkin-qr-frame {
+	position: relative;
+	margin: 0 auto 24px;
+	padding: 18px;
+	width: fit-content;
+	background: #ffffff;
+	border-radius: 14px;
+	border: 1px solid rgba(119, 36, 50, 0.12);
+	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+	            0 8px 20px rgba(43, 11, 22, 0.08);
+}
+.checkin-qr-modal .checkin-qr-frame img {
+	display: block;
+	width: 240px;
+	height: 240px;
+	image-rendering: pixelated;
+	image-rendering: -moz-crisp-edges;
+	background: #f5f1ec; /* shows through while QR is loading */
+}
+/* Corner accents — small maroon L-marks like a registration card. */
+.checkin-qr-modal .checkin-qr-corner {
+	position: absolute;
+	width: 12px;
+	height: 12px;
+	border-color: #772432;
+	border-style: solid;
+	border-width: 0;
+}
+.checkin-qr-modal .checkin-qr-corner--tl { top: -1px; left: -1px;  border-top-width: 2px; border-left-width: 2px;  border-top-left-radius: 14px; }
+.checkin-qr-modal .checkin-qr-corner--tr { top: -1px; right: -1px; border-top-width: 2px; border-right-width: 2px; border-top-right-radius: 14px; }
+.checkin-qr-modal .checkin-qr-corner--bl { bottom: -1px; left: -1px;  border-bottom-width: 2px; border-left-width: 2px;  border-bottom-left-radius: 14px; }
+.checkin-qr-modal .checkin-qr-corner--br { bottom: -1px; right: -1px; border-bottom-width: 2px; border-right-width: 2px; border-bottom-right-radius: 14px; }
+
+/* Share-link row. */
+.checkin-qr-modal .checkin-qr-link-label {
+	display: block;
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 0.16em;
+	text-transform: uppercase;
+	color: #6b5f63;
+	margin-bottom: 8px;
+	text-align: center;
+}
+.checkin-qr-modal .checkin-qr-link-row {
+	display: flex;
+	align-items: stretch;
+	gap: 8px;
+}
+.checkin-qr-modal #checkin-qr-url {
+	flex: 1;
+	min-width: 0;
+	height: 40px;
+	padding: 0 12px;
+	border: 1px solid #e6dadd;
+	background: #fbf8f6;
+	border-radius: 10px;
+	font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+	font-size: 0.82rem;
+	color: #3a2128;
+	letter-spacing: -0.01em;
+	outline: none;
+	transition: border-color 0.15s ease, background 0.15s ease;
+}
+.checkin-qr-modal #checkin-qr-url:focus,
+.checkin-qr-modal #checkin-qr-url:hover {
+	background: #ffffff;
+	border-color: #d6a8b2;
+}
+.checkin-qr-modal .checkin-qr-icon-btn {
+	flex: 0 0 40px;
+	width: 40px;
+	height: 40px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid #e6dadd;
+	background: #ffffff;
+	color: #772432;
+	border-radius: 10px;
+	cursor: pointer;
+	text-decoration: none;
+	font-size: 0.95rem;
+	box-shadow: 0 1px 2px rgba(43, 11, 22, 0.04);
+	transition: transform 0.15s ease, background 0.15s ease,
+	            border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.checkin-qr-modal .checkin-qr-icon-btn:hover {
+	background: #772432;
+	border-color: #772432;
+	color: #ffffff;
+	box-shadow: 0 6px 14px rgba(119, 36, 50, 0.22);
+	transform: translateY(-1px);
+}
+.checkin-qr-modal .checkin-qr-icon-btn:active {
+	transform: translateY(0);
+}
+
+.checkin-qr-modal .checkin-qr-foot {
+	margin: 18px 0 0;
+	text-align: center;
+	font-size: 0.78rem;
+	color: #8a7d80;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+}
+.checkin-qr-modal .checkin-qr-foot i {
+	font-size: 0.85em;
+	color: #b8a09f;
+}
+
+/* Mobile: tighter padding, smaller QR. */
+@media (max-width: 480px) {
+	.checkin-qr-modal .checkin-qr-card {
+		padding: 30px 22px 22px;
+	}
+	.checkin-qr-modal .checkin-qr-title {
+		font-size: 1.35rem;
+	}
+	.checkin-qr-modal .checkin-qr-frame img {
+		width: 200px;
+		height: 200px;
+	}
 }

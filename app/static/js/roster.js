@@ -780,6 +780,61 @@ async function handleDirectMobilePDF(btn) {
 }
 
 // Populate the print pages (shared by modal and direct export)
+function createPrintPage(titlePrefix, meetingNum, formattedDate, regionText, clubLogoUrl, rows, headerTitle) {
+  const pageDiv = document.createElement('div');
+  pageDiv.className = 'print-page';
+
+  // Page Header
+  const headerDiv = document.createElement('div');
+  headerDiv.className = 'print-header';
+  headerDiv.style = "display: flex; width: 714px; align-items: center; justify-content: space-between; margin-bottom: 20px;";
+
+  const textDiv = document.createElement('div');
+  textDiv.style = "width: 594px; text-align: left; flex-shrink: 0;";
+
+  textDiv.innerHTML = `
+    <h2 style="margin: 0; padding: 0; font-size: 24px; word-spacing: 0.3em; white-space: nowrap;">
+        ${headerTitle}
+        <span style="font-size: 16px; color: #555; word-spacing: 0.2em; font-weight: normal; margin-left: 10px;">
+            ${meetingNum ? `Meeting&nbsp;#${meetingNum}&nbsp;|&nbsp;` : ''}${formattedDate}
+        </span>
+    </h2>
+    ${regionText ? `<p style="margin: 5px 0 0 0; font-size: 12px; color: #666; white-space: pre; letter-spacing: 0.5px; word-spacing: 1px;">${regionText}</p>` : ''}
+  `;
+
+  const logoDiv = document.createElement('div');
+  logoDiv.style = "width: 120px; text-align: right; flex-shrink: 0;";
+  if (clubLogoUrl) {
+    logoDiv.innerHTML = `<img src="${clubLogoUrl}" style="max-width: 100%; height: auto; max-height: 80px;" alt="Club Logo">`;
+  }
+
+  headerDiv.appendChild(textDiv);
+  headerDiv.appendChild(logoDiv);
+  pageDiv.appendChild(headerDiv);
+
+  // Page Table
+  const table = document.createElement('table');
+  table.className = 'table print-table';
+  table.innerHTML = `
+    <thead>
+        <tr>
+            <th style="width: 40px; text-align: center;">V</th>
+            <th style="width: 60px; white-space: nowrap;">Order</th>
+            <th style="width: 200px;">Name</th>
+            <th style="width: 130px;">Ticket</th>
+            <th style="width: 160px;">Roles</th>
+            <th style="width: 50px; text-align: center; white-space: nowrap;">Qty</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+  const tbody = table.querySelector('tbody');
+  rows.forEach(r => tbody.appendChild(r));
+
+  pageDiv.appendChild(table);
+  return pageDiv;
+}
+
 function populateExportPages() {
   const pagesContainer = document.getElementById("print-pages-container");
   const pageContainerPrimary = document.querySelector(".page-container");
@@ -792,6 +847,7 @@ function populateExportPages() {
   const meetingNum = pageContainerPrimary ? pageContainerPrimary.dataset.meetingNumber || "0" : "0";
   const meetingDateOriginal = pageContainerPrimary ? pageContainerPrimary.dataset.meetingDate || "" : "";
   const clubId = pageContainerPrimary ? pageContainerPrimary.dataset.clubId || "" : "";
+  const clubLogoUrl = pageContainerPrimary ? pageContainerPrimary.dataset.clubLogoUrl || "" : "";
   const clubNo = pageContainerPrimary ? pageContainerPrimary.dataset.clubNo || "" : "";
   const clubName = pageContainerPrimary ? pageContainerPrimary.dataset.clubName || "" : "";
   const clubDistrict = pageContainerPrimary ? pageContainerPrimary.dataset.clubDistrict || "" : "";
@@ -810,6 +866,7 @@ function populateExportPages() {
 
   // Get all valid rows from the original table
   const originalRows = document.querySelectorAll("#rosterTable tbody tr");
+  const officerRows = [];
   const extractedRows = [];
 
   originalRows.forEach(row => {
@@ -820,6 +877,7 @@ function populateExportPages() {
     const nameCell = row.querySelector('.cell-name');
     const ticketCell = row.querySelector('.cell-ticket');
     const rolesCell = row.querySelector('.cell-roles');
+    const contactId = String(row.dataset.contactId || "");
 
     // Create new row for print table
     const tr = document.createElement("tr");
@@ -836,7 +894,12 @@ function populateExportPages() {
     tr.appendChild(tdOrder);
 
     const tdName = document.createElement("td");
-    tdName.innerHTML = nameCell ? nameCell.innerHTML : '';
+    if (nameCell) {
+      // Strip the live check-in badge — it's a screen-only toggle for officers.
+      const nameClone = nameCell.cloneNode(true);
+      nameClone.querySelectorAll('.checkin-badge').forEach(el => el.remove());
+      tdName.innerHTML = nameClone.innerHTML;
+    }
     tr.appendChild(tdName);
 
     const tdTicket = document.createElement("td");
@@ -853,8 +916,24 @@ function populateExportPages() {
     tdQty.innerHTML = qtyCell ? qtyCell.innerHTML : '1';
     tr.appendChild(tdQty);
 
-    extractedRows.push(tr);
+    // Officer-ticket-based detection: row goes to the Officers page
+    // when its ticket has data-type="Officer".
+    const ticketType = ticketCell ? ticketCell.querySelector(".ticket-badge")?.dataset.type : "";
+    if (ticketType === "Officer") {
+      officerRows.push(tr);
+    } else {
+      extractedRows.push(tr);
+    }
   });
+
+  // Build region string for page header
+  const regionParts = [];
+  if (clubDistrict && clubDistrict !== 'None') regionParts.push(`D${clubDistrict}`);
+  if (clubDivision && clubDivision !== 'None') regionParts.push(`Div ${clubDivision}`);
+  if (clubArea && clubArea !== 'None') regionParts.push(`Area ${clubArea}`);
+  if (clubNo && clubNo !== 'None') regionParts.push(`Club ${clubNo}`);
+  if (clubName && clubName !== 'None') regionParts.push(clubName);
+  const regionText = regionParts.length > 0 ? regionParts.join(' / ') : '';
 
   // Paginate rows into multiple A4 DOM containers
   // A4 at 96 DPI: 794×1123px, content area 714×1043px
@@ -865,78 +944,23 @@ function populateExportPages() {
   const numPages = Math.ceil(extractedRows.length / rowsPerPage) || 1; // At least 1 empty page
 
   for (let i = 0; i < numPages; i++) {
-    const pageDiv = document.createElement('div');
-    pageDiv.className = 'print-page';
-
-    // Page Header
-    const headerDiv = document.createElement('div');
-    headerDiv.className = 'print-header';
-    // Use exact integer pixel widths to avoid html2canvas widening layout drift
-    headerDiv.style = "display: flex; width: 714px; align-items: center; justify-content: space-between; margin-bottom: 20px;";
-
-    // Left column: text (594px = 714px - 120px)
-    const textDiv = document.createElement('div');
-    textDiv.style = "width: 594px; text-align: left; flex-shrink: 0;";
-
-    // Build region string
-    const regionParts = [];
-    if (clubDistrict && clubDistrict !== 'None') regionParts.push(`D${clubDistrict}`);
-    if (clubDivision && clubDivision !== 'None') regionParts.push(`Div ${clubDivision}`);
-    if (clubArea && clubArea !== 'None') regionParts.push(`Area ${clubArea}`);
-    if (clubNo && clubNo !== 'None') regionParts.push(`Club ${clubNo}`);
-    if (clubName && clubName !== 'None') regionParts.push(clubName);
-    const regionText = regionParts.length > 0 ? regionParts.join(' / ') : '';
-
-    textDiv.innerHTML = `
-      <h2 style="margin: 0; padding: 0; font-size: 24px; word-spacing: 0.3em; white-space: nowrap;">
-          Meeting&nbsp;Roster
-          <span style="font-size: 16px; color: #555; word-spacing: 0.2em; font-weight: normal; margin-left: 10px;">
-              ${meetingNum ? `Meeting&nbsp;#${meetingNum}&nbsp;|&nbsp;` : ''}${formattedDate}
-          </span>
-      </h2>
-      ${regionText ? `<p style="margin: 5px 0 0 0; font-size: 12px; color: #666; white-space: pre; letter-spacing: 0.5px; word-spacing: 1px;">${regionText}</p>` : ''}
-    `;
-
-    // Right column: logo (120px)
-    const logoDiv = document.createElement('div');
-    logoDiv.style = "width: 120px; text-align: right; flex-shrink: 0;";
-    if (clubId) {
-      logoDiv.innerHTML = `<img src="/static/club_resources/${clubId}/club_logo.webp" style="max-width: 100%; height: auto; max-height: 80px;" alt="Club Logo">`;
-    }
-
-    headerDiv.appendChild(textDiv);
-    headerDiv.appendChild(logoDiv);
-    pageDiv.appendChild(headerDiv);
-
-    // Page Table
-    const table = document.createElement('table');
-    table.className = 'table print-table';
-    // Fixed widths optimized for A4 content area (714px) with balanced visual distribution
-    // Order uses whitespace: nowrap to prevent header wrapping
-    table.innerHTML = `
-      <thead>
-          <tr>
-              <th style="width: 40px; text-align: center;">V</th>
-              <th style="width: 60px; white-space: nowrap;">Order</th>
-              <th style="width: 200px;">Name</th>
-              <th style="width: 130px;">Ticket</th>
-              <th style="width: 160px;">Roles</th>
-              <th style="width: 50px; text-align: center; white-space: nowrap;">Qty</th>
-          </tr>
-      </thead>
-      <tbody></tbody>
-    `;
-    const tbody = table.querySelector('tbody');
-
-    // Append rows for this page
     const startIdx = i * rowsPerPage;
     const endIdx = Math.min(startIdx + rowsPerPage, extractedRows.length);
-    for (let j = startIdx; j < endIdx; j++) {
-      tbody.appendChild(extractedRows[j]);
-    }
-
-    pageDiv.appendChild(table);
+    const pageRows = extractedRows.slice(startIdx, endIdx);
+    const pageDiv = createPrintPage(
+      null, meetingNum, formattedDate, regionText, clubLogoUrl, pageRows,
+      "Meeting&nbsp;Roster"
+    );
     pagesContainer.appendChild(pageDiv);
+  }
+
+  // Officers go on a separate page at the end
+  if (officerRows.length > 0) {
+    const officerPage = createPrintPage(
+      "Officers", meetingNum, formattedDate, regionText, clubLogoUrl, officerRows,
+      "Officers"
+    );
+    pagesContainer.appendChild(officerPage);
   }
 }
 
@@ -1152,3 +1176,138 @@ function openContactModalWithReferer() {
     contactForm.action = actionUrl.toString();
   }
 }
+
+// -------- Self Check-In: QR modal + officer badge toggle ------------------
+(function () {
+  function fmtTime(iso) {
+    if (!iso) return "";
+    var d = new Date(iso.endsWith("Z") ? iso : iso + "Z");
+    if (isNaN(d.getTime())) return "";
+    var h = String(d.getHours()).padStart(2, "0");
+    var m = String(d.getMinutes()).padStart(2, "0");
+    return h + ":" + m;
+  }
+
+  function refreshBadgeTooltip(badge) {
+    var checkedAt = badge.getAttribute("data-checked-at");
+    var via = badge.getAttribute("data-checked-via");
+    var who = badge.getAttribute("data-checked-by");
+    var label;
+    if (checkedAt) {
+      var t = fmtTime(checkedAt);
+      var attribution = who || (via === "self" ? "Self" : "");
+      label = "Checked in " + t + (attribution ? " (" + attribution + ")" : "");
+    } else {
+      label = "Not checked in";
+    }
+    badge.setAttribute("title", label);
+    badge.setAttribute("aria-label", label);
+  }
+
+  document.addEventListener("click", function (ev) {
+    var badge = ev.target.closest(".checkin-badge");
+    if (!badge || badge.disabled) return;
+    ev.preventDefault();
+    if (badge.dataset.busy === "1") return;
+    var id = badge.getAttribute("data-id");
+    if (!id) return;
+
+    badge.dataset.busy = "1";
+    badge.disabled = true;
+    fetch("/roster/api/entry/" + encodeURIComponent(id) + "/checkin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        var checked = !!data.checked_in_at;
+        badge.classList.toggle("is-checked", checked);
+        badge.setAttribute("data-checked-at", data.checked_in_at || "");
+        badge.setAttribute("data-checked-via", data.checked_in_via || "");
+        badge.setAttribute("data-checked-by", data.checked_in_by || "");
+        var icon = badge.querySelector("i");
+        if (icon) {
+          icon.classList.toggle("fa-check-circle", checked);
+          icon.classList.toggle("fa-circle", !checked);
+        }
+        refreshBadgeTooltip(badge);
+      })
+      .catch(function () {
+        alert("Could not update check-in. Try again.");
+      })
+      .finally(function () {
+        badge.dataset.busy = "";
+        badge.disabled = false;
+      });
+  });
+
+  var qrBtn = document.getElementById("show-checkin-qr-btn");
+  var modal = document.getElementById("checkin-qr-modal");
+  var img = document.getElementById("checkin-qr-img");
+  var urlInput = document.getElementById("checkin-qr-url");
+  var openLink = document.getElementById("checkin-qr-open");
+  var copyBtn = document.getElementById("checkin-qr-copy");
+  var closeBtn = document.getElementById("checkin-qr-close");
+
+  function openModal() {
+    if (!modal || !qrBtn) return;
+    var meetingId = qrBtn.getAttribute("data-meeting-id");
+    if (!meetingId) return;
+    // .custom-modal uses flexbox centering — must be 'flex', not 'block'.
+    modal.style.display = "flex";
+    if (img) {
+      img.removeAttribute("src");
+      img.alt = "Loading…";
+    }
+    if (urlInput) urlInput.value = "";
+    if (openLink) openLink.removeAttribute("href");
+
+    fetch("/roster/api/checkin/url/" + encodeURIComponent(meetingId))
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        if (urlInput) urlInput.value = data.url || "";
+        if (openLink && data.url) openLink.setAttribute("href", data.url);
+        if (img) {
+          img.src = "/roster/api/checkin/qr/" + encodeURIComponent(meetingId) + "?t=" + Date.now();
+          img.alt = "Check-In QR";
+        }
+      })
+      .catch(function () {
+        if (img) img.alt = "Could not load QR";
+        alert("Could not load the QR code. Make sure the meeting is active and the Self Check-In module is enabled.");
+      });
+  }
+
+  function closeModal() {
+    if (modal) modal.style.display = "none";
+  }
+
+  if (qrBtn) qrBtn.addEventListener("click", openModal);
+  if (closeBtn) closeBtn.addEventListener("click", closeModal);
+  if (modal) {
+    modal.addEventListener("click", function (ev) {
+      if (ev.target === modal) closeModal();
+    });
+  }
+  if (copyBtn && urlInput) {
+    copyBtn.addEventListener("click", function () {
+      if (!urlInput.value) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(urlInput.value);
+      } else {
+        urlInput.select();
+        try { document.execCommand("copy"); } catch (e) {}
+      }
+      var original = copyBtn.innerHTML;
+      copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+      setTimeout(function () { copyBtn.innerHTML = original; }, 1200);
+    });
+  }
+})();

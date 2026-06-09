@@ -21,6 +21,7 @@
     data-club-district="{{ club.district if club and club.district else '' }}"
     data-club-division="{{ club.division if club and club.division else '' }}"
     data-club-area="{{ club.area if club and club.area else '' }}"
+    data-club-logo-url="{{ url_for('static', filename=club.effective_logo_url) if club else '' }}"
     data-server-now="{{ now.strftime('%Y-%m-%d %H:%M:%S') if now else '' }}"
 >
     <div class="roster-header-grid">
@@ -42,11 +43,18 @@
             <div class="filter-row-premium">
                 {{ render_meeting_filter(all_meetings, selected_meeting_id, label='', data_format='tuple', render_outer_container=False) }}
                 <div class="filter-right">
-                    <a href="{{ url_for('roster_bp.roster_participation_trend') }}" class="btn btn-secondary trend-btn" title="{{ _('View Attendance Trend') }}">
-                        <i class="fas fa-chart-line"></i> {{ _('Attendance') }} 
+                    {% if selected_meeting and is_authorized(Permissions.ROSTER_EDIT) and selected_meeting.status in ('not started', 'running') and is_module_enabled('Self Check-In') %}
+                    <button type="button" class="btn trend-btn trend-btn-primary" id="show-checkin-qr-btn"
+                            data-meeting-id="{{ selected_meeting.id }}"
+                            title="{{ _('Show a QR code guests can scan to check themselves in') }}">
+                        <i class="fas fa-qrcode"></i><span class="trend-btn-label">{{ _('Check-In QR') }}</span>
+                    </button>
+                    {% endif %}
+                    <a href="{{ url_for('roster_bp.roster_participation_trend') }}" class="btn trend-btn trend-btn-ghost" title="{{ _('View Attendance Trend') }}">
+                        <i class="fas fa-chart-line"></i><span class="trend-btn-label">{{ _('Attendance') }}</span>
                     </a>
-                    <a href="{{ url_for('roster_bp.roster_amount_trend') }}" class="btn btn-secondary trend-btn" title="{{ _('View Amount Trend') }}" style="margin-left: 10px;">
-                        <i class="fas fa-coins"></i> {{ _('Ticket Sales') }}
+                    <a href="{{ url_for('roster_bp.roster_amount_trend') }}" class="btn trend-btn trend-btn-ghost" title="{{ _('View Amount Trend') }}">
+                        <i class="fas fa-coins"></i><span class="trend-btn-label">{{ _('Ticket Sales') }}</span>
                     </a>
                 </div>
             </div>
@@ -135,11 +143,28 @@
                 </thead>
                 <tbody>
                     {% for entry in roster_entries %}
+                    {% set _can_edit = is_authorized(Permissions.ROSTER_EDIT) %}
+                    {% set _checked = entry.checked_in_at %}
+                    {% set _checkin_label = _('Checked in') if _checked else _('Not checked in') %}
+                    {% set _checkin_who = (entry.checked_in_by.display_name if entry.checked_in_by else _('Self')) if _checked else '' %}
+                    {% set _checkin_time = entry.checked_in_at.strftime('%H:%M') if _checked else '' %}
+                    {% set _checkin_title = (_checkin_label ~ ' ' ~ _checkin_time ~ (' (' ~ _checkin_who ~ ')' if _checkin_who else '')) if _checked else _checkin_label %}
                     <tr data-entry-id="{{ entry.id }}" data-order="{{ entry.order_number }}"
                         data-contact-id="{{ entry.contact_id or '' }}" data-ticket-id="{{ entry.ticket.id if entry.ticket else '' }}">
                         <td class="cell-order">{{ entry.order_number if entry.order_number is not none else '' }}</td>
                         <td class="cell-name">
-                            {% if is_authorized(Permissions.ROSTER_EDIT) and entry.contact_id %}
+                            <button type="button"
+                                    class="checkin-badge {% if _checked %}is-checked{% endif %}"
+                                    data-id="{{ entry.id }}"
+                                    data-checked-at="{{ entry.checked_in_at.isoformat() if _checked else '' }}"
+                                    data-checked-via="{{ entry.checked_in_via or '' }}"
+                                    data-checked-by="{{ entry.checked_in_by.display_name if entry.checked_in_by else '' }}"
+                                    title="{{ _checkin_title }}"
+                                    aria-label="{{ _checkin_title }}"
+                                    {% if not _can_edit %}disabled{% endif %}>
+                                <i class="fas {% if _checked %}fa-check-circle{% else %}fa-circle{% endif %}"></i>
+                            </button>
+                            {% if _can_edit and entry.contact_id %}
                             <a href="#" class="roster-contact-link" data-contact-id="{{ entry.contact_id }}">{{ entry.contact.Name if entry.contact else _('N/A') }}</a>
                             {% else %}
                             {{ entry.contact.Name if entry.contact else _('N/A') }}
@@ -169,7 +194,8 @@
                                 {% set icon_class = 'fa-ticket-alt' %}
                             {% endif %}
 
-                            <span class="ticket-badge {% if entry.order_number is none and entry.ticket and entry.ticket.expired_at and now > datetime.combine(selected_meeting.Meeting_Date, entry.ticket.expired_at) %}ticket-expired{% endif %}">
+                            <span class="ticket-badge {% if entry.order_number is none and entry.ticket and entry.ticket.expired_at and now > datetime.combine(selected_meeting.Meeting_Date, entry.ticket.expired_at) %}ticket-expired{% endif %}"
+                                  data-type="{{ entry.ticket.type if entry.ticket else '' }}">
                                 <i class="fas {{ icon_class }}" style="color: {{ icon_color }};" title="{{ entry.ticket.name if entry.ticket else '' }}"></i>
                                 {{ _(entry.ticket.name.split('(')[0].strip()) if entry.ticket else '' }}
                             </span>
@@ -266,6 +292,47 @@
  
     {% include '_contact_modal.html' %}
     {% include '_duplicate_modal.html' %}
+
+    {% if is_authorized(Permissions.ROSTER_EDIT) and is_module_enabled('Self Check-In') %}
+    <!-- Self Check-In QR Modal -->
+    <div id="checkin-qr-modal" class="custom-modal checkin-qr-modal" style="display:none;">
+        <div class="custom-modal-content checkin-qr-card">
+            <button type="button" class="checkin-qr-close" id="checkin-qr-close" aria-label="{{ _('Close') }}">&times;</button>
+
+            <header class="checkin-qr-head">
+                <div class="checkin-qr-eyebrow">{{ _('Self Check-In') }}</div>
+                <h2 class="checkin-qr-title">{{ _('Scan to join') }}</h2>
+                <p class="checkin-qr-sub">{{ _('Guests scan to mark themselves present.') }}</p>
+            </header>
+
+            <figure class="checkin-qr-frame" id="checkin-qr-image-wrap">
+                <span class="checkin-qr-corner checkin-qr-corner--tl" aria-hidden="true"></span>
+                <span class="checkin-qr-corner checkin-qr-corner--tr" aria-hidden="true"></span>
+                <span class="checkin-qr-corner checkin-qr-corner--bl" aria-hidden="true"></span>
+                <span class="checkin-qr-corner checkin-qr-corner--br" aria-hidden="true"></span>
+                <img id="checkin-qr-img" alt="{{ _('Check-In QR') }}">
+            </figure>
+
+            <div class="checkin-qr-link">
+                <span class="checkin-qr-link-label">{{ _('Share link') }}</span>
+                <div class="checkin-qr-link-row">
+                    <input type="text" id="checkin-qr-url" readonly>
+                    <button type="button" class="checkin-qr-icon-btn" id="checkin-qr-copy" title="{{ _('Copy link') }}" aria-label="{{ _('Copy link') }}">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                    <a href="#" id="checkin-qr-open" target="_blank" rel="noopener" class="checkin-qr-icon-btn" title="{{ _('Open in new tab') }}" aria-label="{{ _('Open in new tab') }}">
+                        <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </div>
+            </div>
+
+            <p class="checkin-qr-foot">
+                <i class="far fa-clock" aria-hidden="true"></i>
+                {{ _('Link expires in 24 hours.') }}
+            </p>
+        </div>
+    </div>
+    {% endif %}
     {% else %}
     <p class="text-center mt-5" style="color: #6c757d; font-size: 1.2rem;">{{ _('Please select a meeting to view or manage roster entries.') }}</p>
     {% endif %}

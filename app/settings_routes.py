@@ -1624,8 +1624,9 @@ def get_modules():
     from app.models.club_module import ClubModule
     
     defined_modules = [
-        "Core", "Booking", "Voting", "Roster", "Calendar", 
-        "Chatbot", "Journal", "Club Directory", "Planner", "Lucky Draw", "Upload", "Data/Slides Export"
+        "Core", "Booking", "Voting", "Roster", "Calendar",
+        "Chatbot", "Journal", "Club Directory", "Planner", "Lucky Draw", "Upload", "Data/Slides Export",
+        "Self Check-In"
     ]
     
     # Query database for existing settings
@@ -1665,8 +1666,9 @@ def toggle_module():
         return jsonify(success=False, message="Core module cannot be toggled"), 400
 
     defined_switchable = [
-        "Booking", "Voting", "Roster", "Calendar", 
-        "Chatbot", "Journal", "Club Directory", "Planner", "Lucky Draw", "Upload", "Data/Slides Export"
+        "Booking", "Voting", "Roster", "Calendar",
+        "Chatbot", "Journal", "Club Directory", "Planner", "Lucky Draw", "Upload", "Data/Slides Export",
+        "Self Check-In"
     ]
 
     if module_name not in defined_switchable:

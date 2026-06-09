@@ -24,8 +24,9 @@ class ClubModule(db.Model):
     def initialize_club_modules(cls, club_id):
         """Initializes all switchable modules as disabled (False) for a newly created club."""
         switchable_modules = [
-            "Booking", "Voting", "Roster", "Calendar", 
-            "Chatbot", "Journal", "Club Directory", "Planner", "Lucky Draw", "Upload", "Data/Slides Export"
+            "Booking", "Voting", "Roster", "Calendar",
+            "Chatbot", "Journal", "Club Directory", "Planner", "Lucky Draw", "Upload", "Data/Slides Export",
+            "Self Check-In"
         ]
         for name in switchable_modules:
             mod = cls(club_id=club_id, module_name=name, is_enabled=False)

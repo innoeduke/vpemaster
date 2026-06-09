@@ -99,6 +99,11 @@ class Roster(db.Model):
     contact = db.relationship('Contact', back_populates='roster_entries')
     roles = db.relationship('app.models.roster.MeetingRole', secondary='roster_roles', backref='roster_entries')
 
+    checked_in_at = db.Column(db.DateTime, nullable=True)
+    checked_in_via = db.Column(db.String(20), nullable=True)  # 'self' or 'officer'
+    checked_in_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    checked_in_by = db.relationship('User', foreign_keys=[checked_in_by_user_id])
+
     def add_role(self, role):
         """Add a role to this roster entry if not already assigned"""
         if not self.has_role(role):

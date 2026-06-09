@@ -380,7 +380,10 @@ def get_roster_entry(entry_id):
         'contact_id': entry.contact_id,
         'contact_name': contact_name,
         'contact_type': contact_type,
-        'quantity': entry.quantity
+        'quantity': entry.quantity,
+        'checked_in_at': entry.checked_in_at.isoformat() if entry.checked_in_at else None,
+        'checked_in_via': entry.checked_in_via,
+        'checked_in_by': entry.checked_in_by.display_name if entry.checked_in_by else None,
     })
 
 
@@ -499,3 +502,110 @@ def delete_roster_entry(entry_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+
+# ---------------------------------------------------------------------------
+# Self Check-In: officer-side endpoints (QR generation + manual toggle).
+# The public check-in surface lives in app/checkin_routes.py.
+# ---------------------------------------------------------------------------
+
+def _checkin_meeting_in_club(meeting_id):
+    """Helper: load the meeting only if it belongs to the current club."""
+    meeting = db.session.get(Meeting, meeting_id)
+    club_id = get_current_club_id()
+    if not meeting or (club_id and meeting.club_id != club_id):
+        return None
+    return meeting
+
+
+@roster_bp.route('/api/checkin/url/<int:meeting_id>', methods=['GET'])
+@login_required
+@authorized_club_required
+def get_checkin_url(meeting_id):
+    """Returns a freshly-signed check-in URL + token for officers to embed in
+    the QR modal (so the modal can show both the QR and a copy-paste link)."""
+    from app.club_context import is_module_enabled
+    from .services.checkin_service import generate_checkin_token
+
+    meeting = _checkin_meeting_in_club(meeting_id)
+    if not meeting:
+        return jsonify({'error': 'Meeting not found'}), 404
+    if not is_authorized(Permissions.ROSTER_EDIT, meeting=meeting):
+        return jsonify({'error': 'Unauthorized'}), 403
+    if not is_module_enabled('Self Check-In', meeting.club_id):
+        return jsonify({'error': 'Self Check-In module is disabled'}), 404
+    if meeting.status not in ('not started', 'running'):
+        return jsonify({'error': 'Meeting is not active'}), 400
+
+    token = generate_checkin_token(meeting.id)
+    url = url_for('checkin_bp.checkin_page', token=token, _external=True)
+    return jsonify({'url': url, 'token': token, 'expires_in': 24 * 60 * 60})
+
+
+@roster_bp.route('/api/checkin/qr/<int:meeting_id>', methods=['GET'])
+@login_required
+@authorized_club_required
+def get_checkin_qr(meeting_id):
+    """Returns a PNG QR code that encodes the check-in URL for this meeting."""
+    from io import BytesIO
+
+    import qrcode
+    from flask import send_file
+
+    from app.club_context import is_module_enabled
+    from .services.checkin_service import generate_checkin_token
+
+    meeting = _checkin_meeting_in_club(meeting_id)
+    if not meeting:
+        return jsonify({'error': 'Meeting not found'}), 404
+    if not is_authorized(Permissions.ROSTER_EDIT, meeting=meeting):
+        return jsonify({'error': 'Unauthorized'}), 403
+    if not is_module_enabled('Self Check-In', meeting.club_id):
+        return jsonify({'error': 'Self Check-In module is disabled'}), 404
+    if meeting.status not in ('not started', 'running'):
+        return jsonify({'error': 'Meeting is not active'}), 400
+
+    token = generate_checkin_token(meeting.id)
+    url = url_for('checkin_bp.checkin_page', token=token, _external=True)
+
+    img = qrcode.make(url)
+    buf = BytesIO()
+    img.save(buf, format='PNG')
+    buf.seek(0)
+    response = send_file(buf, mimetype='image/png')
+    response.headers['Cache-Control'] = 'private, max-age=60'
+    return response
+
+
+@roster_bp.route('/api/entry/<int:entry_id>/checkin', methods=['POST'])
+@login_required
+@authorized_club_required
+def toggle_roster_checkin(entry_id):
+    """Officer-side check-in toggle. Flips checked_in_at between now and None;
+    records the officer who did it so the badge tooltip can show attribution."""
+    entry = db.session.get(Roster, entry_id)
+    if not entry:
+        return jsonify({'error': 'Entry not found'}), 404
+
+    if not is_authorized(Permissions.ROSTER_EDIT, meeting=entry.meeting):
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    if entry.checked_in_at:
+        entry.checked_in_at = None
+        entry.checked_in_via = None
+        entry.checked_in_by_user_id = None
+    else:
+        entry.checked_in_at = datetime.utcnow()
+        entry.checked_in_via = 'officer'
+        entry.checked_in_by_user_id = current_user.id
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+    return jsonify({
+        'checked_in_at': entry.checked_in_at.isoformat() if entry.checked_in_at else None,
+        'checked_in_via': entry.checked_in_via,
+        'checked_in_by': entry.checked_in_by.display_name if entry.checked_in_by else None,
+    })

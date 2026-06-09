@@ -1,0 +1,161 @@
+/* Self Check-In: mobile-first standalone page.
+   Tap targets >= 44px; light/dark via prefers-color-scheme. */
+:root {
+  --ci-bg: #f6f7f9;
+  --ci-card: #ffffff;
+  --ci-text: #1f2328;
+  --ci-muted: #5e6c77;
+  --ci-border: #e5e7eb;
+  --ci-accent: #1f7a4d;
+  --ci-accent-fg: #ffffff;
+  --ci-checked: #1f7a4d;
+  --ci-checked-bg: #e9f6ef;
+  --ci-pill-bg: #eef2f5;
+  --ci-pill-fg: #36424e;
+  --ci-toast-bg: #1f2328;
+  --ci-toast-fg: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ci-bg: #0f1216;
+    --ci-card: #1a1f25;
+    --ci-text: #e6eaef;
+    --ci-muted: #93a0ad;
+    --ci-border: #2a313a;
+    --ci-accent: #4ec38a;
+    --ci-accent-fg: #0b1410;
+    --ci-checked: #4ec38a;
+    --ci-checked-bg: #14241c;
+    --ci-pill-bg: #232a32;
+    --ci-pill-fg: #c6ced6;
+    --ci-toast-bg: #e6eaef;
+    --ci-toast-fg: #0f1216;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--ci-bg);
+  color: var(--ci-text);
+  font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  min-height: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+.ci-header {
+  padding: 24px 16px 16px;
+  text-align: center;
+  background: var(--ci-card);
+  border-bottom: 1px solid var(--ci-border);
+}
+.ci-club { color: var(--ci-muted); font-size: 0.85rem; letter-spacing: 0.04em; text-transform: uppercase; }
+.ci-title { margin: 6px 0 4px; font-size: 1.35rem; font-weight: 700; line-height: 1.2; }
+.ci-subtitle { color: var(--ci-muted); font-size: 0.95rem; }
+.ci-meta { color: var(--ci-muted); font-size: 0.85rem; margin-top: 6px; }
+
+.ci-search-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 12px 16px;
+  background: var(--ci-bg);
+  border-bottom: 1px solid var(--ci-border);
+}
+.ci-search {
+  width: 100%;
+  height: 48px;
+  padding: 0 16px;
+  border: 1px solid var(--ci-border);
+  border-radius: 12px;
+  background: var(--ci-card);
+  color: var(--ci-text);
+  font-size: 1rem;
+  outline: none;
+}
+.ci-search:focus { border-color: var(--ci-accent); box-shadow: 0 0 0 3px rgba(31, 122, 77, 0.15); }
+
+.ci-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.ci-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--ci-card);
+  border-bottom: 1px solid var(--ci-border);
+}
+.ci-row-main { flex: 1; min-width: 0; }
+.ci-name { font-size: 1.05rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ci-roles { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px; }
+.ci-role-pill {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--ci-pill-bg);
+  color: var(--ci-pill-fg);
+  line-height: 1.2;
+}
+.ci-pill-muted { opacity: 0.85; }
+
+.ci-btn {
+  flex: 0 0 auto;
+  min-width: 92px;
+  height: 44px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 999px;
+  background: var(--ci-accent);
+  color: var(--ci-accent-fg);
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.05s ease, background 0.15s ease;
+}
+.ci-btn:active { transform: scale(0.97); }
+.ci-btn[disabled] {
+  background: var(--ci-checked-bg);
+  color: var(--ci-checked);
+  cursor: default;
+}
+.ci-btn[disabled] .ci-btn-label::before { content: "✓ "; }
+
+.ci-row.is-checked { background: var(--ci-checked-bg); }
+.ci-row.is-hidden { display: none; }
+
+.ci-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--ci-muted);
+}
+
+.ci-footer {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--ci-muted);
+  font-size: 0.85rem;
+}
+
+.ci-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  background: var(--ci-toast-bg);
+  color: var(--ci-toast-fg);
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  max-width: calc(100% - 32px);
+  text-align: center;
+  z-index: 50;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}

@@ -1,0 +1,78 @@
+{# Public, unauthenticated Self Check-In page.
+   Intentionally standalone (no base.html) — guests should not see auth
+   navigation, locale switchers, or any officer-only chrome. Keep this file
+   focused, mobile-first, and small.
+#}
+<!doctype html>
+<html lang="{{ get_locale() }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <title>{{ _('Check In') }} — {{ meeting.Meeting_Title or meeting.Meeting_Number }}</title>
+  <link rel="stylesheet"
+        href="{{ url_for('static', filename='css/checkin-mobile.css') }}?v={{ 'css/checkin-mobile.css'|static_version }}">
+</head>
+<body data-token="{{ token }}">
+  <header class="ci-header">
+    {% if club_name %}<div class="ci-club">{{ club_name }}</div>{% endif %}
+    <h1 class="ci-title">{{ meeting.Meeting_Title or (_('Meeting') ~ ' #' ~ meeting.Meeting_Number) }}</h1>
+    {% if meeting.Subtitle %}<div class="ci-subtitle">{{ meeting.Subtitle }}</div>{% endif %}
+    <div class="ci-meta">
+      {% if meeting.Meeting_Date %}<span>{{ meeting.Meeting_Date.strftime('%Y-%m-%d') }}</span>{% endif %}
+      {% if meeting.Start_Time %}<span> · {{ meeting.Start_Time.strftime('%H:%M') }}</span>{% endif %}
+    </div>
+  </header>
+
+  <div class="ci-search-wrap">
+    <input type="search"
+           id="ci-search"
+           class="ci-search"
+           placeholder="{{ _('Search your name…') }}"
+           autocomplete="off"
+           autocapitalize="off"
+           autocorrect="off"
+           spellcheck="false"
+           inputmode="search"
+           aria-label="{{ _('Search your name') }}">
+  </div>
+
+  {% if entries %}
+    <ul class="ci-list" id="ci-list">
+      {% for entry in entries %}
+        <li class="ci-row{% if entry.checked_in_at %} is-checked{% endif %}"
+            data-id="{{ entry.id }}"
+            data-name="{{ entry.name|lower }}">
+          <div class="ci-row-main">
+            <div class="ci-name">{{ entry.name }}</div>
+            {% if entry.roles %}
+              <div class="ci-roles">
+                {% for role in entry.roles %}<span class="ci-role-pill">{{ role }}</span>{% endfor %}
+              </div>
+            {% elif entry.contact_type %}
+              <div class="ci-roles"><span class="ci-role-pill ci-pill-muted">{{ _(entry.contact_type) }}</span></div>
+            {% endif %}
+          </div>
+          <button type="button"
+                  class="ci-btn"
+                  data-action="checkin"
+                  {% if entry.checked_in_at %}disabled aria-label="{{ _('Already checked in') }}"{% endif %}>
+            <span class="ci-btn-label">{% if entry.checked_in_at %}{{ _('Checked in') }}{% else %}{{ _('Check In') }}{% endif %}</span>
+          </button>
+        </li>
+      {% endfor %}
+    </ul>
+    <div class="ci-empty" id="ci-empty" hidden>{{ _('No match. Try a different name.') }}</div>
+  {% else %}
+    <div class="ci-empty">{{ _('The roster is empty. Please see an officer.') }}</div>
+  {% endif %}
+
+  <footer class="ci-footer">
+    <div>{{ _('Need help? Ask an officer.') }}</div>
+  </footer>
+
+  <div class="ci-toast" id="ci-toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="{{ url_for('static', filename='js/checkin.js') }}?v={{ 'js/checkin.js'|static_version }}" defer></script>
+</body>
+</html>

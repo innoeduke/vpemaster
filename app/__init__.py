@@ -202,6 +202,7 @@ def create_app(config_class='config.Config'):
         from .uploads_routes import uploads_bp
         from .chat_routes import chat_bp
         from .issue_routes import issue_bp
+        from .checkin_routes import checkin_bp
 
         # Import models so SQLAlchemy knows about them
         from . import models
@@ -218,6 +219,7 @@ def create_app(config_class='config.Config'):
         app.register_blueprint(voting_bp)
         app.register_blueprint(tools_bp, url_prefix='/tools')
         app.register_blueprint(roster_bp, url_prefix='/roster')
+        app.register_blueprint(checkin_bp, url_prefix='/checkin')
         app.register_blueprint(lucky_draw_bp, url_prefix='/lucky_draw')
         from .clubs_routes import clubs_bp
         app.register_blueprint(clubs_bp)
