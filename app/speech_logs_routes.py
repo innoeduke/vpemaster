@@ -2302,9 +2302,53 @@ def update_speech_log(log_id):
 
     try:
         db.session.commit()
-        
+
         # 4. Get response data from model
         summary = log.get_summary_data()
+
+        # Build per-owner resolved credentials so the client can refresh the
+        # agenda's owner cell after Save without a full page reload. Mirrors
+        # the agenda render in agenda_routes.py: for shared roles the OMR is
+        # stored with session_log_id=NULL; for single-owner roles it is
+        # stored against the specific log. The lookup must match that
+        # session_log_id key the agenda uses, and fall back to the other
+        # key (per-log vs shared) if the primary lookup misses, so the
+        # displayed credential reflects the just-saved value.
+        from .utils import derive_credentials
+        owners_credential_data = []
+        if log.owners:
+            _role_id = (log.session_type.role.id
+                        if log.session_type and log.session_type.role else 0)
+            _has_single_owner = (
+                log.session_type.role.has_single_owner
+                if log.session_type and log.session_type.role else True
+            )
+            _primary_key_log_id = log.id if _has_single_owner else None
+            _fallback_key_log_id = None if _has_single_owner else log.id
+            _meeting_id = log.meeting_id
+            for o in log.owners:
+                _cred = None
+                if _meeting_id:
+                    _omr = OwnerMeetingRoles.query.filter(
+                        OwnerMeetingRoles.meeting_id == _meeting_id,
+                        OwnerMeetingRoles.role_id == _role_id,
+                        OwnerMeetingRoles.contact_id == o.id,
+                        OwnerMeetingRoles.session_log_id == _primary_key_log_id,
+                    ).first()
+                    if not _omr and _fallback_key_log_id is not None:
+                        _omr = OwnerMeetingRoles.query.filter(
+                            OwnerMeetingRoles.meeting_id == _meeting_id,
+                            OwnerMeetingRoles.role_id == _role_id,
+                            OwnerMeetingRoles.contact_id == o.id,
+                            OwnerMeetingRoles.session_log_id == _fallback_key_log_id,
+                        ).first()
+                    if _omr and _omr.credential:
+                        _cred = _omr.credential
+                owners_credential_data.append({
+                    "id": o.id,
+                    "name": o.Name,
+                    "credentials": _cred or derive_credentials(o),
+                })
 
         return jsonify(
             success=True,
@@ -2323,6 +2367,7 @@ def update_speech_log(log_id):
                 if log.session_type and log.session_type.role
                 else (log.session_type.Title if log.session_type else None)
             ),
+            owners_data=owners_credential_data,
         )
 
     except Exception as e:

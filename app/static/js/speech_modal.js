@@ -1145,12 +1145,12 @@ function buildSavePayload() {
 
 function handleSaveSuccess(updateResult, payload) {
   const logId = modalElements.logId.value;
-  
+
   if (!window.location.pathname.includes("/agenda")) {
     window.location.reload();
     return;
   }
-  
+
   const logsToUpdate = [logId];
   if (updateResult.affected_log_ids && updateResult.affected_log_ids.length > 0) {
     logsToUpdate.push(...updateResult.affected_log_ids);
@@ -1160,7 +1160,61 @@ function handleSaveSuccess(updateResult, payload) {
     updateAgendaRow(id, updateResult, payload);
   });
 
+  // Refresh the main log's owner cell with the new per-owner credentials
+  // returned by the server, so the agenda reflects the change without a
+  // full page reload. Owners of *affected* logs are unchanged.
+  if (Array.isArray(updateResult.owners_data) && updateResult.owners_data.length > 0) {
+    const mainRow = document.querySelector(`tr[data-id="${logId}"]`);
+    if (mainRow) {
+      refreshAgendaOwnerCell(mainRow, updateResult.owners_data);
+    }
+  }
+
   closeEditDetailsModal();
+}
+
+// Update the owner column of an agenda row so each owner's displayed
+// credential matches the freshly-saved value. Mirrors the static template
+// in agenda.html: DTM is rendered as <sup class="dtm-superscript">,
+// everything else as <span class="owner-meta"> - CRED</span>. Award
+// badges and owner-name links are left untouched.
+function refreshAgendaOwnerCell(agendaRow, ownersData) {
+  if (!agendaRow || !Array.isArray(ownersData) || ownersData.length === 0) return;
+
+  const ownerCell = agendaRow.querySelector("td.col-owner");
+  if (!ownerCell) return;
+
+  const ownerRows = ownerCell.querySelectorAll(".owner-row");
+  // Match by position: the server response and the rendered cell both
+  // list owners in the same order (log.owners).
+  ownersData.forEach((owner, idx) => {
+    const ownerRow = ownerRows[idx];
+    if (!ownerRow) return;
+
+    const existingSup = ownerRow.querySelector(".dtm-superscript");
+    if (existingSup) existingSup.remove();
+    const existingMeta = ownerRow.querySelector(".owner-meta");
+    if (existingMeta) existingMeta.remove();
+
+    if (owner.credentials === "DTM") {
+      const sup = document.createElement("sup");
+      sup.className = "dtm-superscript";
+      sup.textContent = "DTM";
+      ownerRow.appendChild(sup);
+    } else if (owner.credentials) {
+      const meta = document.createElement("span");
+      meta.className = "owner-meta";
+      meta.textContent = ` - ${owner.credentials}`;
+      ownerRow.appendChild(meta);
+    }
+  });
+
+  // Keep the row-level data-credentials in sync with the primary owner
+  // so the next save round-trips the new value and the dataset reflects
+  // what is on screen.
+  if (ownersData[0]) {
+    agendaRow.dataset.credentials = ownersData[0].credentials || "";
+  }
 }
 
 // --- UI Update Functions ---
