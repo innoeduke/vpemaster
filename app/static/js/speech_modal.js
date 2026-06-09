@@ -1172,14 +1172,49 @@ const SpeechModalSetupManager = {
     if (speechTitleLabelText) {
       modalElements.speechTitleLabel.textContent = speechTitleLabelText;
     }
-    // Evaluation / Individual Evaluator: title holds the speaker being evaluated
-    // (used by backend's speaker_is_dtm lookup) — keep it locked to that name.
-    const editableTitleTypes = [
-      "Keynote Speech", "Keynote Speaker",
-      "Table Topics", "Topicsmaster",
-      "Panel Discussion", "Moderator",
-    ];
-    modalElements.speechTitle.disabled = !editableTitleTypes.includes(sessionType);
+
+    // Restore original text input if it was previously replaced by a select
+    if (modalElements.speechTitle.tagName === "SELECT") {
+      const input = document.createElement("input");
+      input.type = "text";
+      input.id = "edit-speech-title";
+      input.name = "speech_title";
+      input.required = true;
+      input.placeholder = "";
+      modalElements.speechTitle.replaceWith(input);
+      modalElements.speechTitle = input;
+    }
+
+    // Evaluation: replace disabled text input with a select dropdown of
+    // available speakers so the user can change the evaluation target.
+    if (sessionType === "Evaluation" && logData.available_speakers && logData.available_speakers.length > 0) {
+      const select = document.createElement("select");
+      select.id = "edit-speech-title";
+      select.name = "speech_title";
+      select.required = true;
+      // Match the modal's input styling
+      select.style.cssText = "width:100%;padding:10px 12px;border:1px solid #cbd5e0;border-radius:8px;background:#fff;font-size:14px;font-family:Inter,sans-serif;color:#1e293b;box-sizing:border-box;";
+
+      const emptyOpt = document.createElement("option");
+      emptyOpt.value = "";
+      emptyOpt.textContent = "-- Select Speaker --";
+      select.appendChild(emptyOpt);
+
+      const currentTitle = logData.Session_Title || "";
+      logData.available_speakers.forEach(name => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        if (name === currentTitle) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+      modalElements.speechTitle.replaceWith(select);
+      modalElements.speechTitle = select;
+    } else {
+      modalElements.speechTitle.disabled =
+        sessionType === "Evaluation" || sessionType === "Individual Evaluator";
+    }
     modalElements.speechTitle.placeholder = SpeechModalSetupManager.getTitlePlaceholder(sessionType);
 
     // Mount owner picker in place of the static owner name
@@ -1863,7 +1898,11 @@ function updateAgendaRow(logId, updateResult, payload) {
     let title = updateResult.session_title;
     if (sessionType === "Evaluation" || sessionType === "Individual Evaluator") {
       let cleaned = title ? title.replace(/"/g, "") : "";
-      title = "Evaluator for " + cleaned;
+      if (cleaned) {
+        title = "Evaluator for " + cleaned;
+      } else {
+        title = updateResult.role_display_name || sessionType;
+      }
     } else if ((sessionType === "Pathway Speech" || sessionType === "Prepared Speech" || sessionType === "Presentation") && updateResult.project_id != ProjectID.GENERIC) {
       title = `"${title.replace(/"/g, "")}"`;
     }

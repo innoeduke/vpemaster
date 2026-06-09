@@ -2124,6 +2124,18 @@ def get_speech_log_details(log_id):
         "has_single_owner": role_obj.has_single_owner if role_obj else True,
     }
 
+    # For Evaluation / Individual Evaluator sessions, include the list of
+    # available speakers in the meeting so the frontend can render a select.
+    if role_name in ("Evaluation", "Individual Evaluator") and meeting_id:
+        speaker_names = db.session.query(Contact.Name)\
+            .join(OwnerMeetingRoles, Contact.id == OwnerMeetingRoles.contact_id)\
+            .join(SessionType, OwnerMeetingRoles.role_id == SessionType.role_id)\
+            .filter(
+                OwnerMeetingRoles.meeting_id == meeting_id,
+                SessionType.Valid_for_Project == True
+            ).distinct().all()
+        log_data["available_speakers"] = [name[0] for name in speaker_names]
+
     return jsonify(success=True, log=log_data)
 
 

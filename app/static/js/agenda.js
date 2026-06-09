@@ -1127,6 +1127,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Helper Functions ---
 
+  function syncMeetingFilterStatus(meetingId, newStatus) {
+    const STATUS_MAP = {
+      'unpublished':  { icon: '🔒',  label: 'Unpublished',  cls: 'status-unpublished' },
+      'not started':  { icon: '▶️',  label: 'Not Started',  cls: 'status-not-started' },
+      'running':      { icon: '🔴',  label: 'Running',      cls: 'status-running' },
+      'finished':     { icon: '✅',  label: 'Finished',     cls: 'status-finished' },
+      'cancelled':    { icon: '🚫',  label: 'Cancelled',    cls: 'status-cancelled' },
+    };
+    const info = STATUS_MAP[newStatus];
+    if (!info) return;
+
+    // Update all autocomplete result items that reference this meeting
+    document.querySelectorAll(`.autocomplete-result-item[data-value="${meetingId}"]`).forEach(item => {
+      const iconEl = item.querySelector('.status-icon');
+      if (iconEl) { iconEl.textContent = info.icon; iconEl.title = info.label; }
+
+      const tagEl = item.querySelector('.status-tag');
+      if (tagEl) {
+        tagEl.textContent = info.label;
+        tagEl.className = 'status-tag ' + info.cls;
+      }
+    });
+  }
+
   function handleMeetingStatusChange(button) {
     const meetingId = button.dataset.meetingId;
     let currentStatus = button.dataset.currentStatus;
@@ -1237,6 +1261,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             statusDisplayElement.innerHTML = `<i class="fas fa-fw ${iconClass}"></i>${statusText}`;
+
+            // Sync the meeting-filter dropdown so its status tag stays in sync
+            syncMeetingFilterStatus(meetingId, newStatus);
 
             // --- Clock Management ---
             if (clockEl) {
@@ -1909,13 +1936,65 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const body = stModal.querySelector("#st-modal-body");
     const currentTypeId = String(hiddenSelect.value || "");
+    const genericType = allSessionTypes.find((t) => t.Title === "Generic");
 
-    const candidates = allSessionTypes.filter((t) => !t.Is_Section);
+    // Exclude Generic from the listed candidates — it is selected via the
+    // "Not listed below" checkbox instead.
+    const candidates = allSessionTypes.filter((t) => !t.Is_Section && t.Title !== "Generic");
     const groups = {};
     for (const meta of ST_GROUP_META) groups[meta.key] = [];
     for (const t of candidates) groups[classifySessionType(t)].push(t);
 
     body.innerHTML = "";
+
+    // "Not listed below" checkbox — selects Generic and disables the picker
+    let isGenericSelected = false;
+    let toggleItems = () => {};
+    if (genericType) {
+      const row = document.createElement("div");
+      row.className = "st-generic-row";
+
+      const label = document.createElement("label");
+      label.className = "st-generic-label";
+
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.id = "st-generic-check";
+
+      const span = document.createElement("span");
+      span.textContent = "Not listed below";
+
+      label.appendChild(cb);
+      label.appendChild(span);
+      row.appendChild(label);
+
+      isGenericSelected = currentTypeId === String(genericType.id);
+      cb.checked = isGenericSelected;
+
+      toggleItems = (disabled) => {
+        body.querySelectorAll(".st-item, .st-section-header, .st-section-icon").forEach((el) => {
+          el.style.opacity = disabled ? "0.35" : "";
+          el.style.pointerEvents = disabled ? "none" : "";
+        });
+        body.querySelectorAll(".st-item").forEach((b) => {
+          b.disabled = disabled;
+        });
+      };
+
+      cb.addEventListener("change", () => {
+        if (cb.checked) {
+          toggleItems(true);
+          body.querySelectorAll(".st-item.selected").forEach((b) => b.classList.remove("selected"));
+          stModalCtx.pendingTypeId = String(genericType.id);
+        } else {
+          toggleItems(false);
+          stModalCtx.pendingTypeId = ""; // force user to pick
+        }
+      });
+
+      body.appendChild(row);
+    }
+
     for (const meta of ST_GROUP_META) {
       const items = groups[meta.key];
       if (items.length === 0) continue;
@@ -1970,6 +2049,9 @@ document.addEventListener("DOMContentLoaded", () => {
       section.appendChild(grid);
       body.appendChild(section);
     }
+
+    // Now that sections are built, dim them if Generic is preselected
+    if (genericType && isGenericSelected) toggleItems(true);
 
     stModal.style.display = "flex";
   }
