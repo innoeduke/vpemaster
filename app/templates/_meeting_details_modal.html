@@ -398,7 +398,7 @@
               {% endif %}
             </select>
           </div>
-          <div class="mdm-field mdm-field--full">
+          <div class="mdm-field">
             <label for="edit-best-role-taker">Best Role Taker</label>
             <select id="edit-best-role-taker" class="edit-mode-field" {% if not selected_meeting or selected_meeting.status != 'finished' %}disabled{% endif %}>
               <option value="">-- Select Best Role Taker --</option>
@@ -413,6 +413,44 @@
               <option value="{{ selected_meeting.best_role_taker_id }}" selected>{{ selected_meeting.best_role_taker.Name }}</option>
               {% endif %}
             </select>
+          </div>
+          <div class="mdm-field">
+            <label for="edit-best-debater">Best Debater</label>
+            <select id="edit-best-debater" class="edit-mode-field" {% if not selected_meeting or selected_meeting.status != 'finished' or selected_meeting.type != 'Debate' %}disabled{% endif %}>
+              <option value="">-- Select Best Debater --</option>
+              {% set found_debater = namespace(val=false) %}
+              {% for candidate in (voting_candidates['debater'] if voting_candidates else []) %}
+              {% if selected_meeting and selected_meeting.best_debater_id == candidate.id %}
+                {% set found_debater.val = true %}
+              {% endif %}
+              <option value="{{ candidate.id }}" {% if selected_meeting and selected_meeting.best_debater_id == candidate.id %}selected{% endif %}>{{ candidate.name }}</option>
+              {% endfor %}
+              {% if selected_meeting and selected_meeting.best_debater_id and not found_debater.val and selected_meeting.best_debater %}
+              <option value="{{ selected_meeting.best_debater_id }}" selected>{{ selected_meeting.best_debater.Name }}</option>
+              {% endif %}
+            </select>
+            <small class="mdm-hint">
+              <i class="fas fa-info-circle"></i>Enabled only for Debate-type meetings.
+            </small>
+          </div>
+          <div class="mdm-field">
+            <label for="edit-lucky-draw-winner">Lucky Draw Winner</label>
+            <select id="edit-lucky-draw-winner" class="edit-mode-field" {% if not selected_meeting or selected_meeting.status != 'finished' %}disabled{% endif %}>
+              <option value="">-- Select Lucky Draw Winner --</option>
+              {% set found_lucky = namespace(val=false) %}
+              {% for candidate in (voting_candidates['lucky-draw-winner'] if voting_candidates else []) %}
+              {% if selected_meeting and selected_meeting.lucky_draw_winner_id == candidate.id %}
+                {% set found_lucky.val = true %}
+              {% endif %}
+              <option value="{{ candidate.id }}" {% if selected_meeting and selected_meeting.lucky_draw_winner_id == candidate.id %}selected{% endif %}>{{ candidate.name }}</option>
+              {% endfor %}
+              {% if selected_meeting and selected_meeting.lucky_draw_winner_id and not found_lucky.val and selected_meeting.lucky_draw_winner %}
+              <option value="{{ selected_meeting.lucky_draw_winner_id }}" selected>{{ selected_meeting.lucky_draw_winner.Name }}</option>
+              {% endif %}
+            </select>
+            <small class="mdm-hint">
+              <i class="fas fa-info-circle"></i>Pick from the meeting's roster.
+            </small>
           </div>
         </div>
       </section>

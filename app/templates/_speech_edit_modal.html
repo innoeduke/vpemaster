@@ -304,6 +304,73 @@
             cursor: not-allowed;
         }
 
+        /* --- Modal owner picker (reuse .owner-tag from agenda-base.css, but
+               the .autocomplete-items is portaled to document.body so it can
+               be styled without being scoped to the modal) --- */
+        #speechEditModal .modal-owner-picker {
+            margin-bottom: 12px;
+            position: relative;
+        }
+        #speechEditModal .modal-owner-picker .owners-tags-container {
+            margin-bottom: 6px;
+        }
+        #speechEditModal .modal-owner-picker .owner-tag {
+            font-size: 13px;
+            padding: 4px 10px;
+        }
+        #speechEditModal .modal-owner-picker .owner-search-input {
+            font-size: 13.5px;
+            height: 34px;
+        }
+        /* The dropdown lives on <body> so selectors are unprefixed. Width is
+           set inline to match the search input, but we still need to
+           override the agenda's `.autocomplete-items { min-width: 100%;
+           width: max-content; }` — when portaled to body those would
+           otherwise expand to the full page width. */
+        body > .autocomplete-items {
+            position: fixed;
+            max-height: 220px;
+            overflow-y: auto;
+            background: #fff;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
+            z-index: 10000;
+            min-width: 0;
+        }
+        body > .autocomplete-items div {
+            padding: 8px 10px;
+            cursor: pointer;
+            font-size: 13.5px;
+            color: #1e293b;
+            text-align: left;
+            font-family: "Inter", sans-serif;
+        }
+        body > .autocomplete-items div:hover {
+            background: #f1f5f9;
+        }
+        body > .autocomplete-items div.autocomplete-active,
+        body > .autocomplete-items div[aria-selected="true"] {
+            background: #ede9fe;
+            color: #1e293b;
+        }
+        body > .autocomplete-items div strong {
+            color: #772432;
+            font-weight: 700;
+        }
+        body > .autocomplete-items .autocomplete-empty {
+            color: #94a3b8;
+            font-style: italic;
+            cursor: default;
+        }
+        body > .autocomplete-items .autocomplete-empty:hover {
+            background: transparent;
+        }
+        #speechEditModal .modal-owner-picker .owner-tag .remove-tag i {
+            color: #999;
+            font-size: 11px;
+        }
+
         /* --- Footer --- */
         #speechEditModal .sem-footer {
             display: flex;

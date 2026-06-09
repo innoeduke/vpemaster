@@ -111,6 +111,267 @@ function toggleGeneric(isGeneric) {
 // --- Main Public Functions ---
 
 /**
+ * Build a single-owner picker for use inside a modal card.
+ *
+ * Renders a tag-style display of the current owner plus a search input.
+ * When the user picks a contact, onChange is called with the new ownerId
+ * (or null when the tag is removed).
+ *
+ * Returns { wrapper, getOwnerId, setOwnerId, focusSearch }.
+ */
+function createModalOwnerPicker({ initialOwnerId, contacts, onChange, placeholder = "Search members..." }) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "modal-owner-picker";
+
+  const tagContainer = document.createElement("div");
+  tagContainer.className = "owners-tags-container";
+  wrapper.appendChild(tagContainer);
+
+  const searchContainer = document.createElement("div");
+  searchContainer.className = "autocomplete-container";
+  searchContainer.style.position = "relative";
+
+  const searchInput = document.createElement("input");
+  searchInput.type = "text";
+  searchInput.className = "owner-search-input";
+  searchInput.placeholder = placeholder;
+  searchInput.autocomplete = "off";
+  searchInput.setAttribute("aria-autocomplete", "list");
+  searchInput.setAttribute("aria-expanded", "false");
+  searchContainer.appendChild(searchInput);
+  wrapper.appendChild(searchContainer);
+
+  let currentOwnerId = initialOwnerId ? String(initialOwnerId) : "";
+  let currentContact = currentOwnerId
+    ? (contacts || []).find((c) => String(c.id) === currentOwnerId) || null
+    : null;
+  let activeIndex = -1;
+  let openDropdown = null;
+
+  const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[c]));
+
+  // The dropdown is portaled to document.body and positioned with
+  // position:fixed so it can never be clipped by overflow:auto on any
+  // scrollable ancestor (the modal's sem-body in particular).
+  const positionDropdown = () => {
+    if (!openDropdown) return;
+    const rect = searchInput.getBoundingClientRect();
+    openDropdown.style.position = "fixed";
+    openDropdown.style.left = `${rect.left}px`;
+    openDropdown.style.top = `${rect.bottom}px`;
+    openDropdown.style.width = `${rect.width}px`;
+    openDropdown.style.zIndex = "10000";
+  };
+
+  const buildSuggestionItems = (matches, val) => {
+    matches.forEach((contact, idx) => {
+      const item = document.createElement("div");
+      item.setAttribute("role", "option");
+      item.dataset.contactId = String(contact.id);
+      if (val) {
+        const upper = contact.Name.toUpperCase();
+        const matchIdx = upper.indexOf(val.toUpperCase());
+        if (matchIdx >= 0) {
+          item.innerHTML =
+            `${escapeHtml(contact.Name.slice(0, matchIdx))}` +
+            `<strong>${escapeHtml(contact.Name.slice(matchIdx, matchIdx + val.length))}</strong>` +
+            `${escapeHtml(contact.Name.slice(matchIdx + val.length))}`;
+        } else {
+          item.textContent = contact.Name;
+        }
+      } else {
+        item.textContent = contact.Name;
+      }
+      item.addEventListener("mousedown", (e) => {
+        // mousedown (not click) so we beat the input's blur handler
+        e.preventDefault();
+        choose(contact);
+      });
+      if (idx === 0) item.classList.add("autocomplete-active");
+      openDropdown.appendChild(item);
+    });
+  };
+
+  const open = () => {
+    close();
+    const val = searchInput.value.trim();
+    const source = (contacts && contacts.length)
+      ? contacts
+      : (window.allContacts && window.allContacts.length ? window.allContacts : []);
+    const matches = source
+      .filter((c) => c.Name)
+      .filter((c) => !val || c.Name.toUpperCase().includes(val.toUpperCase()))
+      .filter((c) => String(c.id) !== currentOwnerId)
+      .slice(0, 10);
+
+    openDropdown = document.createElement("div");
+    openDropdown.setAttribute("class", "autocomplete-items");
+    openDropdown.setAttribute("role", "listbox");
+    document.body.appendChild(openDropdown);
+
+    if (matches.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "autocomplete-empty";
+      empty.textContent = val
+        ? `No matches for "${val}"`
+        : (source.length === 0
+            ? "Loading members… (open the Edit Details modal after the agenda has loaded)"
+            : "No matches");
+      openDropdown.appendChild(empty);
+    } else {
+      buildSuggestionItems(matches, val);
+    }
+    positionDropdown();
+    activeIndex = matches.length > 0 ? 0 : -1;
+    searchInput.setAttribute("aria-expanded", "true");
+  };
+
+  const close = () => {
+    if (openDropdown && openDropdown.parentNode) {
+      openDropdown.parentNode.removeChild(openDropdown);
+    }
+    openDropdown = null;
+    activeIndex = -1;
+    searchInput.setAttribute("aria-expanded", "false");
+  };
+
+  const updateActive = () => {
+    if (!openDropdown) return;
+    const items = openDropdown.querySelectorAll("div[role='option']");
+    items.forEach((it, i) => {
+      it.classList.toggle("autocomplete-active", i === activeIndex);
+    });
+    if (activeIndex >= 0 && items[activeIndex]) {
+      items[activeIndex].scrollIntoView({ block: "nearest" });
+    }
+  };
+
+  const choose = (contact) => {
+    setOwnerId(contact.id, { silent: false });
+    searchInput.value = "";
+    close();
+    searchInput.focus();
+  };
+
+  // Reposition the dropdown if the window or the modal scrolls while it's
+  // open (page scroll, modal scroll, or window resize). Listeners stay for
+  // the picker's lifetime — positionDropdown is a no-op when not open.
+  const repositionHandler = () => positionDropdown();
+  window.addEventListener("scroll", repositionHandler, true);
+  window.addEventListener("resize", repositionHandler);
+
+  searchInput.addEventListener("focus", () => open());
+  searchInput.addEventListener("input", () => {
+    if (!openDropdown) open();
+    else {
+      // Re-render with the new query
+      const wasActive = activeIndex;
+      close();
+      open();
+      activeIndex = wasActive;
+      updateActive();
+    }
+  });
+  searchInput.addEventListener("blur", () => {
+    // Defer close so mousedown on a suggestion can fire first
+    setTimeout(() => close(), 120);
+  });
+  searchInput.addEventListener("keydown", (e) => {
+    if (!openDropdown) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        open();
+        return;
+      }
+    }
+    const items = openDropdown
+      ? openDropdown.querySelectorAll("div[role='option']")
+      : [];
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      activeIndex = (activeIndex + 1) % Math.max(items.length, 1);
+      updateActive();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      activeIndex = (activeIndex - 1 + items.length) % Math.max(items.length, 1);
+      updateActive();
+    } else if (e.key === "Enter") {
+      if (activeIndex >= 0 && items[activeIndex]) {
+        e.preventDefault();
+        const id = items[activeIndex].dataset.contactId;
+        const contact = (contacts || []).find((c) => String(c.id) === id);
+        if (contact) choose(contact);
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      close();
+      searchInput.blur();
+    } else if (e.key === "Backspace" && !searchInput.value) {
+      // Empty input + backspace removes the current owner
+      if (currentOwnerId) {
+        e.preventDefault();
+        setOwnerId(null, { silent: false });
+      }
+    }
+  });
+
+  const renderTag = () => {
+    tagContainer.innerHTML = "";
+    tagContainer.style.display = currentContact ? "flex" : "none";
+
+    if (!currentContact) return;
+
+    const tag = document.createElement("div");
+    tag.className = "owner-tag";
+    const label = document.createElement("span");
+    label.textContent = currentContact.Name;
+    tag.appendChild(label);
+
+    const removeBtn = document.createElement("span");
+    removeBtn.className = "remove-tag";
+    removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    removeBtn.title = "Remove owner";
+    removeBtn.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      setOwnerId(null, { silent: false });
+    });
+    tag.appendChild(removeBtn);
+
+    tagContainer.appendChild(tag);
+  };
+
+  function setOwnerId(newId, { silent = false } = {}) {
+    const newIdStr = newId ? String(newId) : "";
+    if (newIdStr === currentOwnerId) return;
+    currentOwnerId = newIdStr;
+    currentContact = newIdStr
+      ? (contacts || []).find((c) => String(c.id) === newIdStr) || null
+      : null;
+    renderTag();
+    if (!silent && typeof onChange === "function") {
+      onChange(currentOwnerId, currentContact);
+    }
+  }
+
+  function getOwnerId() {
+    return currentOwnerId;
+  }
+
+  function focusSearch() {
+    searchInput.focus();
+    open();
+  }
+
+  renderTag();
+
+  return { wrapper, getOwnerId, setOwnerId, focusSearch };
+}
+
+// --- Main Public Functions ---
+
+/**
  * Main entry point to open the speech or role edit details modal.
  */
 async function openEditDetailsModal(
@@ -270,102 +531,134 @@ async function openEditDetailsModal(
 
       // Create one card per owner
       const contactsList = data.log.owners_data || window.allContacts || [];
-      ownerIds.forEach((ownerId) => {
-        const contact = contactsList.find((c) => c.id == ownerId);
-        const ownerName = contact ? contact.Name : `Owner #${ownerId}`;
-        const defaults = getOwnerDefaults(ownerId);
 
+      // Build a single role-owner card with an owner picker. When the owner
+      // changes via the picker, pathway/level dropdowns are rebuilt for the
+      // new owner's registered paths and the saved/default target values.
+      const buildRoleOwnerCard = (initialOwnerId) => {
         const card = document.createElement("div");
         card.className = "role-owner-card";
-        card.dataset.ownerId = ownerId;
+        card.dataset.ownerId = initialOwnerId || "";
 
-        // Owner name header
-        const nameDiv = document.createElement("div");
-        nameDiv.className = "card-owner-name";
-        nameDiv.textContent = ownerName;
-        card.appendChild(nameDiv);
+        // Holder objects so the closures always reference the current
+        // pathway/level <select> elements (they get rebuilt on owner change).
+        const pathHolder = { el: buildPathwaySelect(initialOwnerId) };
+        const levelHolder = { el: buildLevelSelect() };
 
-        // Pathway
+        // Pathway group
         const pathGroup = document.createElement("div");
         pathGroup.className = "form-group";
         const pathLabel = document.createElement("label");
         pathLabel.textContent = "Pathway";
-        const pathSelect = buildPathwaySelect(ownerId);
-        pathSelect.value = defaults.pathway;
         pathGroup.appendChild(pathLabel);
-        pathGroup.appendChild(pathSelect);
+        pathGroup.appendChild(pathHolder.el);
         card.appendChild(pathGroup);
 
-        // Level
+        // Level group
         const levelGroup = document.createElement("div");
         levelGroup.className = "form-group";
         const levelLabel = document.createElement("label");
         levelLabel.textContent = "Level";
-        const levelSelect = buildLevelSelect();
-        levelSelect.value = defaults.level;
         levelGroup.appendChild(levelLabel);
-        levelGroup.appendChild(levelSelect);
+        levelGroup.appendChild(levelHolder.el);
         card.appendChild(levelGroup);
 
         const syncLevel = () => {
-          if (pathSelect.value === "Non Pathway") {
-            levelSelect.value = "";
-            levelSelect.disabled = true;
+          if (!pathHolder.el.value || pathHolder.el.value === "Non Pathway") {
+            levelHolder.el.value = "";
+            levelHolder.el.disabled = true;
           } else {
-            levelSelect.disabled = false;
+            levelHolder.el.disabled = false;
           }
         };
-        pathSelect.addEventListener("change", syncLevel);
+        pathHolder.el.addEventListener("change", syncLevel);
+
+        const refreshPathwayForOwner = (ownerId) => {
+          const newPath = buildPathwaySelect(ownerId);
+          newPath.addEventListener("change", syncLevel);
+          pathHolder.el.replaceWith(newPath);
+          pathHolder.el = newPath;
+        };
+
+        // Owner picker replaces the static name header. It sits at the top of
+        // the card and the pathway/level selects live below it.
+        const ownerPicker = createModalOwnerPicker({
+          initialOwnerId: initialOwnerId || null,
+          contacts: window.allContacts && window.allContacts.length
+            ? window.allContacts
+            : contactsList,
+          onChange: (newOwnerId, newContact) => {
+            card.dataset.ownerId = newOwnerId || "";
+            refreshPathwayForOwner(newOwnerId || null);
+            if (newContact) {
+              const defaults = getOwnerDefaults(newOwnerId);
+              pathHolder.el.value = defaults.pathway;
+              levelHolder.el.value = defaults.level;
+            } else {
+              pathHolder.el.value = "";
+              levelHolder.el.value = "";
+            }
+            syncLevel();
+          },
+          placeholder: initialOwnerId ? "Change owner..." : "Add owner...",
+        });
+
+        // Mount the picker at the top of the card
+        card.insertBefore(ownerPicker.wrapper, card.firstChild);
+
+        // Initial values
+        if (initialOwnerId) {
+          const defaults = getOwnerDefaults(initialOwnerId);
+          pathHolder.el.value = defaults.pathway;
+          levelHolder.el.value = defaults.level;
+        } else {
+          pathHolder.el.value = "";
+          levelHolder.el.value = "";
+        }
         syncLevel();
 
+        // Expose the picker on the card for save-time read
+        card._ownerPicker = ownerPicker;
+        card._pathHolder = pathHolder;
+        card._levelHolder = levelHolder;
+
+        return card;
+      };
+
+      // Build a card for each existing owner
+      const cards = [];
+      ownerIds.forEach((ownerId) => {
+        const card = buildRoleOwnerCard(ownerId);
         scrollContainer.appendChild(card);
+        cards.push(card);
       });
 
-      // If no owners, show a placeholder card
+      // If no owners, show an empty card with the picker
       if (ownerIds.length === 0) {
-        const defaults = getOwnerDefaults(null);
-        const card = document.createElement("div");
-        card.className = "role-owner-card";
-        card.dataset.ownerId = "";
-
-        const nameDiv = document.createElement("div");
-        nameDiv.className = "card-owner-name";
-        nameDiv.textContent = "No Owner Assigned";
-        card.appendChild(nameDiv);
-
-        const pathGroup = document.createElement("div");
-        pathGroup.className = "form-group";
-        const pathLabel = document.createElement("label");
-        pathLabel.textContent = "Pathway";
-        const pathSelect = buildPathwaySelect(null);
-        pathSelect.value = defaults.pathway;
-        pathGroup.appendChild(pathLabel);
-        pathGroup.appendChild(pathSelect);
-        card.appendChild(pathGroup);
-
-        const levelGroup = document.createElement("div");
-        levelGroup.className = "form-group";
-        const levelLabel = document.createElement("label");
-        levelLabel.textContent = "Level";
-        const levelSelect = buildLevelSelect();
-        levelSelect.value = defaults.level;
-        levelGroup.appendChild(levelLabel);
-        levelGroup.appendChild(levelSelect);
-        card.appendChild(levelGroup);
-
-        const syncLevel = () => {
-          if (pathSelect.value === "Non Pathway") {
-            levelSelect.value = "";
-            levelSelect.disabled = true;
-          } else {
-            levelSelect.disabled = false;
-          }
-        };
-        pathSelect.addEventListener("change", syncLevel);
-        syncLevel();
-
+        const card = buildRoleOwnerCard(null);
         scrollContainer.appendChild(card);
+        cards.push(card);
       }
+
+      // Add Owner button (only for roles that allow multiple owners)
+      const isMultiOwnerRole = data.log.has_single_owner === false;
+      if (isMultiOwnerRole) {
+        const addBtn = document.createElement("button");
+        addBtn.type = "button";
+        addBtn.className = "btn btn-sm add-owner-btn";
+        addBtn.innerHTML = '<i class="fas fa-user-plus"></i> Add Owner';
+        addBtn.style.cssText = "margin-top: 10px; background: #f1f5f9; color: #475569; border: 1px dashed #cbd5e0; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;";
+        addBtn.addEventListener("click", () => {
+          const newCard = buildRoleOwnerCard(null);
+          scrollContainer.insertBefore(newCard, addBtn);
+          cards.push(newCard);
+          newCard._ownerPicker.focusSearch();
+        });
+        scrollContainer.appendChild(addBtn);
+      }
+
+      // Stash the cards on the scroll container so save can read them
+      scrollContainer._ownerCards = cards;
     } else {
       // Toggle wrappers: show speech mode, hide role mode
       modalElements.speechModeFields.style.display = "block";
@@ -464,15 +757,21 @@ async function saveEditDetailsChanges(event) {
 
     const cards = document.querySelectorAll("#role-owners-scroll .role-owner-card");
     const ownerTargets = {};
+    const ownerIds = [];
     let primaryPathway = "";
 
     cards.forEach((card, idx) => {
-      const ownerId = card.dataset.ownerId;
-      const pathwayName = card.querySelector(".role-card-pathway")?.value || "";
-      const levelVal = card.querySelector(".role-card-level")?.value || "";
+      // Read the ownerId from the picker first (authoritative), fall back to
+      // the legacy dataset attribute in case the picker is not present.
+      const ownerId = (card._ownerPicker && card._ownerPicker.getOwnerId())
+        || card.dataset.ownerId
+        || "";
+      const pathwayName = card._pathHolder ? card._pathHolder.el.value : (card.querySelector(".role-card-pathway")?.value || "");
+      const levelVal = card._levelHolder ? card._levelHolder.el.value : (card.querySelector(".role-card-level")?.value || "");
 
       if (ownerId) {
-        ownerTargets[ownerId] = { pathway: pathwayName, level: levelVal };
+        ownerIds.push(String(ownerId));
+        ownerTargets[String(ownerId)] = { pathway: pathwayName, level: levelVal };
       }
 
       if (idx === 0) {
@@ -484,13 +783,15 @@ async function saveEditDetailsChanges(event) {
       const response = await fetch(`/speech_log/update/${logId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ owner_targets: ownerTargets })
+        body: JSON.stringify({ owner_ids: ownerIds, owner_targets: ownerTargets })
       });
       const data = await response.json();
       if (data.success) {
         const row = document.querySelector(`tr[data-id="${logId}"]`);
         if (row) {
           row.dataset.ownerTargets = JSON.stringify(ownerTargets);
+          row.dataset.ownerIds = JSON.stringify(ownerIds);
+          row.dataset.ownerId = ownerIds[0] || "";
           row.dataset.pathway = primaryPathway;
         }
 
@@ -510,7 +811,21 @@ async function saveEditDetailsChanges(event) {
         if (!window.location.pathname.includes("/agenda")) {
           window.location.reload();
         } else {
-          closeEditDetailsModal();
+          // Owner names need a full re-render. Reload the agenda so the new
+          // owner's name + credentials appear in the row.
+          const priorOwnerIds = (() => {
+            if (!row) return null;
+            try { return JSON.parse(row.dataset.ownerIds || "[]"); } catch (_) { return null; }
+          })();
+          const ownerChanged =
+            !priorOwnerIds ||
+            priorOwnerIds.length !== ownerIds.length ||
+            priorOwnerIds.some((id, i) => String(id) !== String(ownerIds[i]));
+          if (ownerChanged) {
+            window.location.reload();
+          } else {
+            closeEditDetailsModal();
+          }
         }
       } else {
         alert("Error saving: " + (data.message || "Unknown error"));
@@ -554,6 +869,77 @@ window.saveEditDetailsChanges = saveEditDetailsChanges;
 
 
 // --- Setup Helpers ---
+
+/**
+ * Mount a single-owner picker into a speech-mode card. Replaces the static
+ * owner name element. When the owner changes, the pathway dropdown is
+ * repopulated for the new owner and the level dropdown is reset.
+ *
+ * The returned picker is also stashed on modalElements.ownerPicker so the
+ * save logic can read it.
+ */
+function mountSpeechModeOwnerPicker({
+  ownerNameElement,
+  pathwaySelectEl,
+  levelSelectEl,
+  logData,
+  workingPath,
+  repopulatePathway,
+}) {
+  if (!ownerNameElement) return null;
+
+  // Remove any prior picker that may have been mounted on a previous open
+  const existingWrapper = ownerNameElement.parentNode?.querySelector(".modal-owner-picker");
+  if (existingWrapper) existingWrapper.remove();
+
+  const picker = createModalOwnerPicker({
+    initialOwnerId: logData.owner_id || null,
+    contacts: (window.allContacts && window.allContacts.length)
+      ? window.allContacts
+      : (logData.owners_data || []),
+    onChange: (newOwnerId, newContact) => {
+      const registeredPaths = (newContact && newContact.registered_paths)
+        ? newContact.registered_paths.map((p) => typeof p === 'object' ? p.name : p)
+        : null;
+      repopulatePathway(newOwnerId, registeredPaths);
+
+      // Recompute default pathway & level for the new owner
+      let defaultPath = "Non Pathway";
+      if (newContact) {
+        if (newContact.Type === "Guest" || !newContact.Current_Path) {
+          defaultPath = "Non Pathway";
+        } else {
+          defaultPath = newContact.Current_Path;
+        }
+      }
+      // Preserve a saved target for the new owner if present
+      const savedTarget = logData.owner_targets && logData.owner_targets[String(newOwnerId)];
+      if (savedTarget && savedTarget.pathway) {
+        defaultPath = savedTarget.pathway;
+      }
+      pathwaySelectEl.value = defaultPath;
+
+      if (defaultPath === "Non Pathway") {
+        if (levelSelectEl) {
+          levelSelectEl.value = "";
+          levelSelectEl.disabled = true;
+        }
+      } else if (levelSelectEl) {
+        const levelMatch = (newContact && newContact.Credentials || "").match(/\d+/);
+        const defaultLevel = savedTarget && savedTarget.level
+          ? savedTarget.level
+          : (levelMatch ? Math.min(parseInt(levelMatch[0], 10) + 1, 5).toString() : "1");
+        levelSelectEl.value = defaultLevel;
+        levelSelectEl.disabled = false;
+      }
+    },
+    placeholder: logData.owner_id ? "Change owner..." : "Add owner...",
+  });
+
+  ownerNameElement.replaceWith(picker.wrapper);
+  modalElements.ownerPicker = picker;
+  return picker;
+}
 
 function resetModal(logData, sessionType) {
   toggleGeneric(false);
@@ -646,11 +1032,22 @@ const SpeechModalSetupManager = {
     const speechTitleRow = modalElements.speechTitle.closest('.form-group, .sem-field');
     if (speechTitleRow) speechTitleRow.style.display = 'none';
 
-    // Populate owner name header inside the card
-    const ownerNameElement = document.getElementById("project-role-owner-name");
-    if (ownerNameElement) {
-      ownerNameElement.textContent = logData.owner_name || "No Owner Assigned";
-    }
+    // Mount owner picker in place of the static owner name
+    mountSpeechModeOwnerPicker({
+      ownerNameElement: document.getElementById("project-role-owner-name"),
+      pathwaySelectEl: modalElements.pathwaySelectDropdown,
+      levelSelectEl: modalElements.levelSelectDropdown,
+      logData,
+      workingPath,
+      repopulatePathway: (newOwnerId, registeredPaths) => {
+        SpeechModalSetupManager.populatePathwayDropdown(
+          modalElements.pathwaySelectDropdown,
+          newOwnerId,
+          registeredPaths,
+          logData.owners_data
+        );
+      },
+    });
 
     // Show pathway dropdown for all roles (unified pathway handling)
     modalElements.pathwayGroup.style.display = "flex";
@@ -725,11 +1122,22 @@ const SpeechModalSetupManager = {
     modalElements.speechTitle.disabled = !editableTitleTypes.includes(sessionType);
     modalElements.speechTitle.placeholder = SpeechModalSetupManager.getTitlePlaceholder(sessionType);
 
-    // Populate owner name header inside the card
-    const ownerNameElement = document.getElementById("project-role-owner-name");
-    if (ownerNameElement) {
-      ownerNameElement.textContent = logData.owner_name || "No Owner Assigned";
-    }
+    // Mount owner picker in place of the static owner name
+    mountSpeechModeOwnerPicker({
+      ownerNameElement: document.getElementById("project-role-owner-name"),
+      pathwaySelectEl: modalElements.pathwaySelectDropdown,
+      levelSelectEl: modalElements.levelSelectDropdown,
+      logData,
+      workingPath,
+      repopulatePathway: (newOwnerId, registeredPaths) => {
+        SpeechModalSetupManager.populatePathwayDropdown(
+          modalElements.pathwaySelectDropdown,
+          newOwnerId,
+          registeredPaths,
+          logData.owners_data
+        );
+      },
+    });
 
     modalElements.projectGroup.style.display = "block";
     modalElements.pathwayGroup.style.display = "flex";
@@ -839,11 +1247,22 @@ const SpeechModalSetupManager = {
     modalElements.levelSelectGroup.style.display = "block";
     modalElements.projectSelectGroup.style.display = "block";
 
-    // Populate owner name header inside the card
-    const ownerNameElement = document.getElementById("speech-owner-name");
-    if (ownerNameElement) {
-      ownerNameElement.textContent = logData.owner_name || "No Owner Assigned";
-    }
+    // Mount owner picker in place of the static owner name
+    mountSpeechModeOwnerPicker({
+      ownerNameElement: document.getElementById("speech-owner-name"),
+      pathwaySelectEl: modalElements.pathwaySelect,
+      levelSelectEl: modalElements.levelSelect,
+      logData,
+      workingPath,
+      repopulatePathway: (newOwnerId, registeredPaths) => {
+        SpeechModalSetupManager.populatePathwayDropdown(
+          modalElements.pathwaySelect,
+          newOwnerId,
+          registeredPaths,
+          logData.owners_data
+        );
+      },
+    });
 
     modalElements.labelPathway.textContent = "Pathway:";
     modalElements.labelProject.textContent = "Project:";
@@ -1093,6 +1512,15 @@ function buildSavePayload() {
   };
   const isProject = isProjectChk?.checked || false;
 
+  // If the speech-mode owner picker is mounted, send the chosen owner so
+  // the backend persists the change. (Owner is single per speech-mode log.)
+  if (modalElements.ownerPicker) {
+    const newOwnerId = modalElements.ownerPicker.getOwnerId();
+    if (newOwnerId) {
+      payload.owner_id = newOwnerId;
+    }
+  }
+
   // Helper to read the level dropdown (shared across all session types that use pathwayGroup)
   const levelDropdownValue = modalElements.levelSelectDropdown
     ? modalElements.levelSelectDropdown.value || null
@@ -1145,12 +1573,12 @@ function buildSavePayload() {
 
 function handleSaveSuccess(updateResult, payload) {
   const logId = modalElements.logId.value;
-  
+
   if (!window.location.pathname.includes("/agenda")) {
     window.location.reload();
     return;
   }
-  
+
   const logsToUpdate = [logId];
   if (updateResult.affected_log_ids && updateResult.affected_log_ids.length > 0) {
     logsToUpdate.push(...updateResult.affected_log_ids);
@@ -1160,7 +1588,61 @@ function handleSaveSuccess(updateResult, payload) {
     updateAgendaRow(id, updateResult, payload);
   });
 
+  // Refresh the main log's owner cell with the new per-owner credentials
+  // returned by the server, so the agenda reflects the change without a
+  // full page reload. Owners of *affected* logs are unchanged.
+  if (Array.isArray(updateResult.owners_data) && updateResult.owners_data.length > 0) {
+    const mainRow = document.querySelector(`tr[data-id="${logId}"]`);
+    if (mainRow) {
+      refreshAgendaOwnerCell(mainRow, updateResult.owners_data);
+    }
+  }
+
   closeEditDetailsModal();
+}
+
+// Update the owner column of an agenda row so each owner's displayed
+// credential matches the freshly-saved value. Mirrors the static template
+// in agenda.html: DTM is rendered as <sup class="dtm-superscript">,
+// everything else as <span class="owner-meta"> - CRED</span>. Award
+// badges and owner-name links are left untouched.
+function refreshAgendaOwnerCell(agendaRow, ownersData) {
+  if (!agendaRow || !Array.isArray(ownersData) || ownersData.length === 0) return;
+
+  const ownerCell = agendaRow.querySelector("td.col-owner");
+  if (!ownerCell) return;
+
+  const ownerRows = ownerCell.querySelectorAll(".owner-row");
+  // Match by position: the server response and the rendered cell both
+  // list owners in the same order (log.owners).
+  ownersData.forEach((owner, idx) => {
+    const ownerRow = ownerRows[idx];
+    if (!ownerRow) return;
+
+    const existingSup = ownerRow.querySelector(".dtm-superscript");
+    if (existingSup) existingSup.remove();
+    const existingMeta = ownerRow.querySelector(".owner-meta");
+    if (existingMeta) existingMeta.remove();
+
+    if (owner.credentials === "DTM") {
+      const sup = document.createElement("sup");
+      sup.className = "dtm-superscript";
+      sup.textContent = "DTM";
+      ownerRow.appendChild(sup);
+    } else if (owner.credentials) {
+      const meta = document.createElement("span");
+      meta.className = "owner-meta";
+      meta.textContent = ` - ${owner.credentials}`;
+      ownerRow.appendChild(meta);
+    }
+  });
+
+  // Keep the row-level data-credentials in sync with the primary owner
+  // so the next save round-trips the new value and the dataset reflects
+  // what is on screen.
+  if (ownersData[0]) {
+    agendaRow.dataset.credentials = ownersData[0].credentials || "";
+  }
 }
 
 // --- UI Update Functions ---
