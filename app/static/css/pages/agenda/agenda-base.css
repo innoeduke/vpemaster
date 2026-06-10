@@ -341,7 +341,7 @@ select[multiple].edit-mode-field option:checked {
    widths; the row wraps gracefully when the viewport really can't hold it. */
 .action-bar {
 	display: flex;
-	justify-content: space-between;
+	justify-content: center;
 	align-items: center;
 	margin: 16px auto 14px;
 	max-width: 100%;
@@ -369,8 +369,7 @@ select[multiple].edit-mode-field option:checked {
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	justify-content: flex-end;
-	flex-grow: 1;
+	justify-content: center;
 	flex-wrap: wrap;
 }
 
@@ -1258,9 +1257,9 @@ a.owner-link:hover {
 	padding: 5px 12px;
 	border-radius: 999px;
 	font-family: 'Montserrat', sans-serif;
-	font-size: 0.72rem;
+	font-size: 0.82rem !important;
 	font-weight: 700;
-	letter-spacing: 0.06em;
+	letter-spacing: 0.04em;
 	text-transform: uppercase;
 	align-items: center;
 	gap: 6px;
@@ -1321,32 +1320,37 @@ a.owner-link:hover {
    Same maroon/claret palette used in the voting header so the whole app
    speaks a single brand voice for state-change actions. */
 #meeting-status-btn {
-	height: 34px;
-	padding: 0 14px;
+	min-height: 34px;
+	padding: 6px 14px;
 	border-radius: 999px;
 	font-family: 'Montserrat', sans-serif;
 	font-weight: 600;
-	font-size: 0.82rem;
+	font-size: 0.82rem !important;
 	letter-spacing: 0.02em;
-	background: #ffffff;
-	color: #4a1a26;
-	border: 1px solid rgba(119, 36, 50, 0.20);
-	box-shadow: 0 1px 2px rgba(43, 11, 22, 0.04);
+	line-height: 1.2;
+	background: linear-gradient(180deg, #8c2a3c 0%, #5a1a26 100%);
+	color: #ffffff;
+	border: 1px solid #5a1a26;
+	box-shadow: 0 2px 6px rgba(119, 36, 50, 0.24),
+	            inset 0 1px 0 rgba(255, 255, 255, 0.12);
 	cursor: pointer;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	gap: 6px;
 	min-width: 0;
+	box-sizing: border-box;
 	transition: transform 0.18s ease, box-shadow 0.18s ease,
 	            background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
 }
 
 #meeting-status-btn:hover {
-	background: #fbf4f5;
-	border-color: rgba(119, 36, 50, 0.40);
+	background: linear-gradient(180deg, #9a3145 0%, #6b1f2e 100%) !important;
+	border-color: #6b1f2e;
+	color: #ffffff !important;
 	transform: translateY(-1px);
-	box-shadow: 0 6px 14px rgba(119, 36, 50, 0.10);
+	box-shadow: 0 8px 18px rgba(119, 36, 50, 0.32),
+	            inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 #meeting-status-btn:active {

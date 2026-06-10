@@ -106,7 +106,7 @@
 
                 {% if (selected_meeting.status != 'finished' and can_edit) or (selected_meeting.status == 'finished' and can_delete) %}
                 <button id="meeting-status-btn"
-                    class="btn {% if selected_meeting.status in ['finished','cancelled'] %}btn-secondary{% elif selected_meeting.status == 'not started' %}btn-success{% elif selected_meeting.status == 'running' %}btn-danger{% elif selected_meeting.status == 'unpublished' %}btn-light{% else %}btn-primary{% endif %}"
+                    class="btn"
                     data-meeting-id="{{ selected_meeting.id }}"
                     data-current-status="{{ selected_meeting.status }}"
                     {% if selected_meeting.status == 'unpublished' %}
@@ -125,7 +125,7 @@
                     {% elif selected_meeting.status == 'running' %}
                     <i class="fas fa-fw fa-stop"></i> {{ _('Stop') }}
                     {% elif selected_meeting.status == 'finished' %}
-                    <i class="fas fa-fw fa-check-circle"></i> {{ _('Delete') }}
+                    {{ _('Delete') }}
                     {% elif selected_meeting.status == 'cancelled' %}
                     <i class="fas fa-fw fa-ban"></i> {{ _('Cancelled') }}
                     {% else %}
