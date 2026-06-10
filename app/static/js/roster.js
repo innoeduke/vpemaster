@@ -1275,7 +1275,11 @@ function openContactModalWithReferer() {
         if (urlInput) urlInput.value = data.url || "";
         if (openLink && data.url) openLink.setAttribute("href", data.url);
         if (img) {
-          img.src = "/roster/api/checkin/qr/" + encodeURIComponent(meetingId) + "?t=" + Date.now();
+          if (data.qr_data_uri) {
+            img.src = data.qr_data_uri;
+          } else {
+            img.src = "/roster/api/checkin/qr/" + encodeURIComponent(meetingId) + "?t=" + Date.now();
+          }
           img.alt = "Check-In QR";
         }
       })

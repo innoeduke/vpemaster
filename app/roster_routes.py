@@ -538,7 +538,24 @@ def get_checkin_url(meeting_id):
 
     token = generate_checkin_token(meeting.id)
     url = url_for('checkin_bp.checkin_page', token=token, _external=True)
-    return jsonify({'url': url, 'token': token, 'expires_in': 24 * 60 * 60})
+    
+    # Generate Base64 QR code to avoid mobile WeChat re-fetch auth issues
+    import qrcode
+    from io import BytesIO
+    import base64
+    
+    img = qrcode.make(url, box_size=10, border=4)
+    buf = BytesIO()
+    img.save(buf, format='PNG')
+    qr_b64 = base64.b64encode(buf.getvalue()).decode('utf-8')
+    qr_data_uri = f"data:image/png;base64,{qr_b64}"
+
+    return jsonify({
+        'url': url, 
+        'token': token, 
+        'expires_in': 24 * 60 * 60,
+        'qr_data_uri': qr_data_uri
+    })
 
 
 @roster_bp.route('/api/checkin/qr/<int:meeting_id>', methods=['GET'])

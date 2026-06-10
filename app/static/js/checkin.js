@@ -54,13 +54,47 @@
   }
   if (search) search.addEventListener('input', applyFilter);
 
+  // -------- Success Screen --------
+  function showSuccessScreen(row, iso) {
+    var searchWrap = document.querySelector('.ci-search-wrap');
+    if (searchWrap) searchWrap.hidden = true;
+    if (list) list.hidden = true;
+    if (emptyHint) emptyHint.hidden = true;
+
+    var nameText = row.querySelector('.ci-name').textContent;
+    var rolesHtml = '';
+    var rolesContainer = row.querySelector('.ci-roles');
+    if (rolesContainer) rolesHtml = rolesContainer.innerHTML;
+
+    var successScreen = document.getElementById('ci-success-screen');
+    var successName = document.getElementById('ci-success-name');
+    var successRoles = document.getElementById('ci-success-roles');
+    var successTime = document.getElementById('ci-success-time');
+
+    if (successName) successName.textContent = nameText;
+    if (successRoles) successRoles.innerHTML = rolesHtml;
+    
+    if (successTime && iso) {
+      successTime.textContent = 'Checked in at ' + formatTime(iso);
+    }
+
+    if (successScreen) successScreen.hidden = false;
+  }
+
   // -------- Check in --------
   function onCheckinClick(btn) {
     var row = btn.closest('.ci-row');
     if (!row) return;
     var id = row.getAttribute('data-id');
     if (!id) return;
-    if (btn.disabled) return;
+    
+    // If already checked in (maybe they reloaded and clicked again to show ticket)
+    if (btn.disabled || row.classList.contains('is-checked')) {
+      var iso = row.getAttribute('data-time') || '';
+      showSuccessScreen(row, iso);
+      return;
+    }
+
     btn.disabled = true;
     var label = btn.querySelector('.ci-btn-label');
     var prev = label ? label.textContent : '';
@@ -77,8 +111,9 @@
       })
       .then(function (data) {
         if (!data || !data.success) throw new Error((data && data.message) || 'Failed');
+        row.setAttribute('data-time', data.checked_in_at || '');
         markChecked(row, data.checked_in_at);
-        showToast(data.already ? 'Already checked in' : 'Welcome!');
+        showSuccessScreen(row, data.checked_in_at);
       })
       .catch(function () {
         btn.disabled = false;

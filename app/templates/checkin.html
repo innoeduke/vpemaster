@@ -42,7 +42,8 @@
       {% for entry in entries %}
         <li class="ci-row{% if entry.checked_in_at %} is-checked{% endif %}"
             data-id="{{ entry.id }}"
-            data-name="{{ entry.name|lower }}">
+            data-name="{{ entry.name|lower }}"
+            data-time="{{ entry.checked_in_at or '' }}">
           <div class="ci-row-main">
             <div class="ci-name">{{ entry.name }}</div>
             {% if entry.roles %}
@@ -66,6 +67,16 @@
   {% else %}
     <div class="ci-empty">{{ _('The roster is empty. Please see an officer.') }}</div>
   {% endif %}
+
+  <div class="ci-success-screen" id="ci-success-screen" hidden>
+    <div class="ci-success-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+    </div>
+    <h2 class="ci-success-title">{{ _('Checked In Successfully') }}</h2>
+    <div class="ci-success-name" id="ci-success-name"></div>
+    <div class="ci-success-roles" id="ci-success-roles"></div>
+    <div class="ci-success-time" id="ci-success-time"></div>
+  </div>
 
   <footer class="ci-footer">
     <div>{{ _('Need help? Ask an officer.') }}</div>
