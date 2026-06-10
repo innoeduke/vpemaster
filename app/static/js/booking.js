@@ -38,13 +38,17 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
 
-    // Close results when clicking outside
+    // Close results when clicking outside or on another input
     document.addEventListener("mousedown", function (e) {
-      if (!e.target.closest(".autocomplete-container")) {
-        document.querySelectorAll(".autocomplete-results.active").forEach((res) => {
+      if (e.target.closest('.autocomplete-results')) return; // Allow clicking on results
+      
+      const clickedContainer = e.target.closest(".autocomplete-container");
+      document.querySelectorAll(".autocomplete-results.active").forEach((res) => {
+        const ownerContainer = res._ownerInput ? res._ownerInput.closest('.autocomplete-container') : null;
+        if (ownerContainer !== clickedContainer) {
           res.classList.remove("active");
-        });
-      }
+        }
+      });
     });
   }
 
@@ -130,19 +134,40 @@ function initializeAccordions() {
     // Restore state on page load
     if (category && accordionState[category]) {
       header.classList.add("active");
-      accordionContent.style.maxHeight = accordionContent.scrollHeight + "px";
+      accordionContent.style.maxHeight = "none";
+      accordionContent.style.overflow = "visible";
+    }
+
+    // Also handle default_open items that are already active but not in accordionState
+    if (header.classList.contains("active") && (!category || !accordionState[category])) {
+      accordionContent.style.maxHeight = "none";
+      accordionContent.style.overflow = "visible";
     }
 
     header.addEventListener("click", () => {
       const isActive = header.classList.toggle("active");
 
-      if (accordionContent.style.maxHeight) {
+      if (!isActive) {
+        // Closing
+        accordionContent.style.overflow = "hidden";
+        accordionContent.style.maxHeight = accordionContent.scrollHeight + "px";
+        void accordionContent.offsetHeight; // Force reflow
         accordionContent.style.maxHeight = null;
+        
         if (category) {
           delete accordionState[category];
         }
       } else {
+        // Opening
         accordionContent.style.maxHeight = accordionContent.scrollHeight + "px";
+        
+        setTimeout(() => {
+          if (header.classList.contains("active")) {
+            accordionContent.style.maxHeight = "none";
+            accordionContent.style.overflow = "visible";
+          }
+        }, 300);
+
         if (category) {
           accordionState[category] = true;
         }
@@ -183,6 +208,24 @@ function showResults(query, resultsContainer, sessionId, input, isMemberOnly) {
   });
 
   if (resultsContainer.children.length > 0) {
+    // Position globally to prevent clipping
+    const rect = input.getBoundingClientRect();
+    resultsContainer.style.position = 'absolute';
+    resultsContainer.style.top = (rect.bottom + window.scrollY) + 'px';
+    resultsContainer.style.left = (rect.left + window.scrollX) + 'px';
+    
+    // Override CSS min-width: 100% which would make it 100% of body width
+    resultsContainer.style.minWidth = rect.width + 'px';
+    resultsContainer.style.width = 'max-content';
+    resultsContainer.style.maxWidth = '300px'; // Prevent it from getting too wide
+    
+    resultsContainer.style.zIndex = '999999';
+    resultsContainer._ownerInput = input;
+    
+    if (resultsContainer.parentElement !== document.body) {
+      document.body.appendChild(resultsContainer);
+    }
+    
     resultsContainer.classList.add("active");
   } else {
     resultsContainer.classList.remove("active");

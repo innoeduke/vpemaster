@@ -213,12 +213,23 @@
   /* Row 2: status group spans both columns, right-aligned, content-width.
      No display/sizing overrides — inherits inline-flex from base .button-group.
      justify-self:end prevents grid stretch, so it shrink-wraps to content. */
+  .action-bar-left .status-group,
   .status-group {
     grid-column: 1 / 3;
     grid-row: 2;
     justify-self: end;
+    width: max-content;
     padding-left: 0 !important;
     border-left: none !important;
+  }
+
+  .action-bar-left .status-group #meeting-status-btn,
+  .status-group #meeting-status-btn {
+    width: 100px !important;
+    min-width: 100px !important;
+    flex-grow: 0 !important;
+    flex-shrink: 0 !important;
+    justify-content: center;
   }
 
   .action-group .action-icon-btn,
