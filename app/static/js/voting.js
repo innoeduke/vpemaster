@@ -93,12 +93,15 @@ document.addEventListener("DOMContentLoaded", function () {
 	});
 
 	categories.forEach(category => {
-		const votedButton = document.querySelector(`button.icon-btn-voted[data-award-category="${category}"]`);
-		const winnerId = votedButton ? parseInt(votedButton.dataset.contactId, 10) : null;
-		if (winnerId) {
-			localVotes[category] = winnerId;
-		}
-		updateVoteButtonsUI(category, winnerId);
+		const votedButtons = document.querySelectorAll(`button.icon-btn-voted[data-award-category="${category}"]`);
+		localVotes[category] = [];
+		votedButtons.forEach(votedButton => {
+			const winnerId = parseInt(votedButton.dataset.contactId, 10);
+			if (winnerId) {
+				localVotes[category].push(winnerId);
+			}
+		});
+		updateVoteButtonsUI(category);
 	});
 
 	// Initialize Meeting Rating UI
@@ -158,11 +161,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
 function submitBatchVotes() {
 	const votes = [];
-	for (const [category, contactId] of Object.entries(localVotes)) {
-		votes.push({
-			contact_id: contactId,
-			award_category: category
-		});
+	for (const [category, contactIds] of Object.entries(localVotes)) {
+		if (Array.isArray(contactIds)) {
+			contactIds.forEach(contactId => {
+				votes.push({
+					contact_id: contactId,
+					award_category: category
+				});
+			});
+		}
 	}
 
 	if (localMeetingRating !== null) {
@@ -239,41 +246,30 @@ function handleVoteClick(buttonEl) {
 	const contactId = parseInt(buttonEl.dataset.contactId, 10);
 	const awardCategory = buttonEl.dataset.awardCategory;
 
-	// Toggle logic: if already selected, unselect
-	if (localVotes[awardCategory] === contactId) {
-		delete localVotes[awardCategory];
-		updateVoteButtonsUI(awardCategory, null);
-	} else {
-		localVotes[awardCategory] = contactId;
-		updateVoteButtonsUI(awardCategory, contactId);
-
-		// Auto-collapse accordion
-		const accordionItem = buttonEl.closest('.accordion-item');
-		if (accordionItem) {
-			const header = accordionItem.querySelector('.accordion-header');
-			const content = accordionItem.querySelector('.accordion-content');
-			if (header && header.classList.contains('active')) {
-				// Collapse it
-				header.classList.remove('active');
-				content.style.maxHeight = null;
-				// Update session state
-				const category = accordionItem.dataset.category;
-				const accordionState = JSON.parse(sessionStorage.getItem('accordionState')) || {};
-				if (category) delete accordionState[category];
-				sessionStorage.setItem('accordionState', JSON.stringify(accordionState));
-			}
-		}
+	if (!localVotes[awardCategory]) {
+		localVotes[awardCategory] = [];
 	}
+
+	const idx = localVotes[awardCategory].indexOf(contactId);
+	if (idx > -1) {
+		localVotes[awardCategory].splice(idx, 1);
+	} else {
+		localVotes[awardCategory].push(contactId);
+	}
+
+	updateVoteButtonsUI(awardCategory);
 
 	updateDoneButtonState();
 }
 
 
-function updateVoteButtonsUI(category, newWinnerId) {
+function updateVoteButtonsUI(category) {
 	// Find all buttons in this award category
 	const allButtons = document.querySelectorAll(
 		`button[data-award-category="${category}"]`
 	);
+
+	const winnerIds = localVotes[category] || [];
 
 	allButtons.forEach((button) => {
 		const buttonContactId = parseInt(button.dataset.contactId, 10);
@@ -286,7 +282,7 @@ function updateVoteButtonsUI(category, newWinnerId) {
 		button.title = "Vote";
 
 		// If this button belongs to the winner, show it and apply voted styles
-		if (newWinnerId !== null && buttonContactId === newWinnerId) {
+		if (winnerIds.includes(buttonContactId)) {
 			button.style.display = 'inline-block';
 			button.classList.add('icon-btn-voted');
 			if (row) row.classList.add('voted');
@@ -312,7 +308,7 @@ function updateVoteButtonsUI(category, newWinnerId) {
 				header.appendChild(headerRight);
 			}
 
-			if (newWinnerId !== null) {
+			if (winnerIds.length > 0) {
 				header.classList.add('voted');
 
 				// Find or create status-wrapper
@@ -394,7 +390,7 @@ function updateDoneButtonState() {
 
 		if (!isDisabled) {
 			// If active, user MUST have voted
-			if (!localVotes[category]) {
+			if (!localVotes[category] || localVotes[category].length === 0) {
 				allCategoriesValid = false;
 			}
 		}

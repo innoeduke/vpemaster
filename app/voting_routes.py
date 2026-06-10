@@ -45,7 +45,7 @@ def _enrich_role_data_for_voting(roles_dict, selected_meeting):
     if not selected_meeting:
         return []
 
-    winner_ids = {}
+    winner_set = set()
     if selected_meeting.status == 'running':
         # For a running meeting, the "winner" is who the current user voted for
         voter_identifier = get_session_voter_identifier()
@@ -55,17 +55,17 @@ def _enrich_role_data_for_voting(roles_dict, selected_meeting):
                 meeting_id=selected_meeting.id,
                 voter_identifier=voter_identifier
             ).all()
-            winner_ids = {vote.award_category: vote.contact_id for vote in user_votes}
+            for vote in user_votes:
+                if vote.award_category:
+                    winner_set.add((vote.award_category, vote.contact_id))
 
     elif selected_meeting.status == 'finished':
         # For a finished meeting, the final winners are stored in the meeting object
-        winner_ids = {
-            'speaker': selected_meeting.best_speaker_id,
-            'evaluator': selected_meeting.best_evaluator_id,
-            'table-topic': selected_meeting.best_table_topic_id,
-            'role-taker': selected_meeting.best_role_taker_id,
-            'debater': selected_meeting.best_debater_id,
-        }
+        if selected_meeting.best_speaker_id: winner_set.add(('speaker', selected_meeting.best_speaker_id))
+        if selected_meeting.best_evaluator_id: winner_set.add(('evaluator', selected_meeting.best_evaluator_id))
+        if selected_meeting.best_table_topic_id: winner_set.add(('table-topic', selected_meeting.best_table_topic_id))
+        if selected_meeting.best_role_taker_id: winner_set.add(('role-taker', selected_meeting.best_role_taker_id))
+        if selected_meeting.best_debater_id: winner_set.add(('debater', selected_meeting.best_debater_id))
 
     # Vote counts for officers
     vote_counts = {}
@@ -102,8 +102,9 @@ def _enrich_role_data_for_voting(roles_dict, selected_meeting):
                     award_category = None
 
         role_data['award_category'] = award_category
-        role_data['award_type'] = award_category if owner_id and award_category and owner_id == winner_ids.get(award_category) else None
-        role_data['award_category_open'] = bool(award_category and not winner_ids.get(award_category))
+        category_has_winner = any(cat == award_category for cat, _ in winner_set)
+        role_data['award_type'] = award_category if owner_id and award_category and (award_category, owner_id) in winner_set else None
+        role_data['award_category_open'] = bool(award_category and not category_has_winner)
         
         # Attach vote count if available
         if vote_counts and award_category:
@@ -179,15 +180,16 @@ def _get_roles_for_voting(meeting_id, meeting):
     
     # Determine winner info for role-taker award
     voter_identifier = get_session_voter_identifier()
-    user_vote_id = None
+    user_vote_ids = set()
     if meeting.status == 'running' and voter_identifier:
-        vote = Vote.query.filter_by(
+        votes = Vote.query.filter_by(
             meeting_id=meeting_id,
             voter_identifier=voter_identifier,
             award_category='role-taker'
-        ).first()
-        if vote:
-            user_vote_id = vote.contact_id
+        ).all()
+        for vote in votes:
+            if vote.contact_id:
+                user_vote_ids.add(vote.contact_id)
             
     best_role_taker_id = meeting.best_role_taker_id if meeting.status == 'finished' else None
 
@@ -219,6 +221,9 @@ def _get_roles_for_voting(meeting_id, meeting):
         combined_role_names = ", ".join(role_names)
         
         # Build consolidated role-taker entry
+        is_winner = (contact_id in user_vote_ids) if meeting.status == 'running' else (best_role_taker_id == contact_id)
+        category_has_winner = (len(user_vote_ids) > 0) if meeting.status == 'running' else bool(best_role_taker_id)
+
         role_entry = {
             'role': combined_role_names,
             'icon': 'fa-users', # Generic icon for consolidated roles
@@ -227,8 +232,8 @@ def _get_roles_for_voting(meeting_id, meeting):
             'owner_name': first_role.get('owner_name'),
             'owner_avatar_url': first_role.get('owner_avatar_url'),
             'award_category': 'role-taker',
-            'award_category_open': bool(not (user_vote_id if meeting.status == 'running' else best_role_taker_id)),
-            'award_type': 'role-taker' if (user_vote_id == contact_id if meeting.status == 'running' else best_role_taker_id == contact_id) else None,
+            'award_category_open': not category_has_winner,
+            'award_type': 'role-taker' if is_winner else None,
             'vote_count': vote_counts.get(contact_id, 0)
         }
         consolidated_role_takers.append(role_entry)
@@ -521,25 +526,21 @@ def vote_for_award():
             session['voter_token'] = secrets.token_hex(16)
         voter_identifier = session['voter_token']
     
-    # Check for an existing vote from this identifier for this category
+    # Check for an existing vote from this identifier for this category and contact
     existing_vote = Vote.query.filter_by(
         meeting_id=meeting_id,
         voter_identifier=voter_identifier,
-        award_category=award_category
+        award_category=award_category,
+        contact_id=contact_id
     ).first()
 
     your_vote_id = None
 
     try:
         if existing_vote:
-            if existing_vote.contact_id == contact_id:
-                # User clicked the same person again, so cancel the vote
-                db.session.delete(existing_vote)
-                your_vote_id = None
-            else:
-                # User is changing their vote to a new person
-                existing_vote.contact_id = contact_id
-                your_vote_id = contact_id
+            # User clicked the same person again, so cancel the vote
+            db.session.delete(existing_vote)
+            your_vote_id = None
         else:
             # New vote
             new_vote = Vote(
