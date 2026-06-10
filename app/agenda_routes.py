@@ -477,19 +477,23 @@ def _get_processed_logs_data(meeting_id, show_media=False):
     # Create a simple set of (award_category, contact_id) tuples for quick lookups.
     award_winners = set()
     if selected_meeting:
-        if selected_meeting.best_speaker_id:
-            award_winners.add(('speaker', selected_meeting.best_speaker_id))
-        if selected_meeting.best_evaluator_id:
-            award_winners.add(
-                ('evaluator', selected_meeting.best_evaluator_id))
-        if selected_meeting.best_role_taker_id:
-            award_winners.add(
-                ('role-taker', selected_meeting.best_role_taker_id))
-        if selected_meeting.best_table_topic_id:
-            award_winners.add(
-                ('table-topic', selected_meeting.best_table_topic_id))
-        if selected_meeting.best_debater_id:
-            award_winners.add(('debater', selected_meeting.best_debater_id))
+        for w in selected_meeting.award_winners:
+            award_winners.add((w.award_category, w.contact_id))
+        
+        if not award_winners:
+            if selected_meeting.best_speaker_id:
+                award_winners.add(('speaker', selected_meeting.best_speaker_id))
+            if selected_meeting.best_evaluator_id:
+                award_winners.add(
+                    ('evaluator', selected_meeting.best_evaluator_id))
+            if selected_meeting.best_role_taker_id:
+                award_winners.add(
+                    ('role-taker', selected_meeting.best_role_taker_id))
+            if selected_meeting.best_table_topic_id:
+                award_winners.add(
+                    ('table-topic', selected_meeting.best_table_topic_id))
+            if selected_meeting.best_debater_id:
+                award_winners.add(('debater', selected_meeting.best_debater_id))
 
     # --- Fetch Raw Data ---
     raw_session_logs = _get_agenda_logs(meeting_id)
@@ -671,7 +675,7 @@ def _get_processed_logs_data(meeting_id, show_media=False):
             'owner_name': " & ".join([o.Name for o in owners]) if owners else (primary_owner.Name if primary_owner else ''),
             # Detailed owner info for modals/logic (could return list)
             'owner_ids': [o.id for o in owners],
-            'owners_data': [{'id': o.id, 'name': o.Name, 'dtm': o.DTM, 'club': o.get_primary_club().club_name if o.get_primary_club() else '', 'credentials': get_owner_credential(o)} for o in owners],
+            'owners_data': [{'id': o.id, 'name': o.Name, 'dtm': o.DTM, 'club': o.get_primary_club().club_name if o.get_primary_club() else '', 'credentials': get_owner_credential(o), 'is_winner': (session_type.role.award_category, o.id) in award_winners if (session_type and session_type.role and session_type.role.award_category) else False} for o in owners],
             # Per-owner names/credentials for slide export (multi-owner support)
             'owner_names': [o.Name for o in owners],
             'owner_credentials': [get_owner_credential(o) for o in owners],
@@ -706,16 +710,15 @@ def _get_processed_logs_data(meeting_id, show_media=False):
                 tt_session_index = i
 
         if topics_speaker_sessions and tt_session_index != -1:
-            # Identify the winner among the topics speakers
-            winner_id = selected_meeting.best_table_topic_id
-            if winner_id:
+            # Identify the winners among the topics speakers
+            tt_winner_ids = {contact_id for (cat, contact_id) in award_winners if cat == 'table-topic'}
+            if tt_winner_ids:
                 for session in topics_speaker_sessions:
-                    if session['Owner_ID'] == winner_id:
-                        # Make the winner's session visible and assign the award
+                    if session['Owner_ID'] in tt_winner_ids:
+                        # Make the winner's session visible and assign the title
                         session['is_hidden'] = False
                         session['Session_Title'] = 'Best Table Topics Speaker'
                         session['award_type'] = 'table-topic'
-                        break  # Found the winner, no need to check further
 
             # Remove the speaker sessions from their original positions (in reverse to avoid index shifting)
             for i in sorted(topics_speaker_indices, reverse=True):
@@ -1703,34 +1706,48 @@ def update_logs():
                     pass
             return None
 
-        def update_award(category, contact_id):
-            # For now, this handles single selection from the frontend.
+        def parse_award_ids(val):
+            if not val:
+                return []
+            if not isinstance(val, list):
+                val = [val]
+            parsed = []
+            for v in val:
+                if v and str(v).strip():
+                    try:
+                        parsed.append(int(v))
+                    except (ValueError, TypeError):
+                        pass
+            return parsed
+
+        def update_award(category, contact_ids):
             # Delete existing winners for this category
             MeetingAwardWinner.query.filter_by(meeting_id=meeting.id, award_category=category).delete()
             
-            if contact_id:
-                # Insert the new winner
-                new_winner = MeetingAwardWinner(meeting_id=meeting.id, award_category=category, contact_id=contact_id)
-                db.session.add(new_winner)
+            for contact_id in contact_ids:
+                if contact_id:
+                    # Insert the new winner
+                    new_winner = MeetingAwardWinner(meeting_id=meeting.id, award_category=category, contact_id=contact_id)
+                    db.session.add(new_winner)
 
         if 'best_speaker_id' in data:
-            update_award('speaker', parse_award_id(data.get('best_speaker_id')))
+            update_award('speaker', parse_award_ids(data.get('best_speaker_id')))
         if 'best_evaluator_id' in data:
-            update_award('evaluator', parse_award_id(data.get('best_evaluator_id')))
+            update_award('evaluator', parse_award_ids(data.get('best_evaluator_id')))
         if 'best_table_topic_id' in data:
-            update_award('table-topic', parse_award_id(data.get('best_table_topic_id')))
+            update_award('table-topic', parse_award_ids(data.get('best_table_topic_id')))
         if 'best_role_taker_id' in data:
-            update_award('role-taker', parse_award_id(data.get('best_role_taker_id')))
+            update_award('role-taker', parse_award_ids(data.get('best_role_taker_id')))
         if 'best_debater_id' in data:
-            debater_id = parse_award_id(data.get('best_debater_id'))
-            if debater_id is not None and meeting.type != 'Debate':
+            debater_ids = parse_award_ids(data.get('best_debater_id'))
+            if debater_ids and meeting.type != 'Debate':
                 return jsonify(
                     success=False,
                     message="Best Debater can only be set on Debate-type meetings.",
                 ), 400
-            update_award('debater', debater_id)
+            update_award('debater', debater_ids)
         if 'lucky_draw_winner_id' in data:
-            update_award('lucky_draw', parse_award_id(data.get('lucky_draw_winner_id')))
+            update_award('lucky_draw', parse_award_ids(data.get('lucky_draw_winner_id')))
             
         # Handle Award Configurations
         award_configs_data = data.get('award_configs')
@@ -1944,26 +1961,9 @@ def _tally_votes_and_set_winners(meeting):
             if len(selected_winners) >= max_winners:
                 break
                 
-            slots_left = max_winners - len(selected_winners)
-            
-            if len(group) <= slots_left:
-                selected_winners.extend([c[0] for c in group if c[0] is not None])
-            else:
-                # Tie-breaker: choose the ones who won that award less historically
-                cids = [c[0] for c in group if c[0] is not None]
-                win_counts = {}
-                for cid in cids:
-                    win_count = db.session.query(func.count(MeetingAwardWinner.id)).join(Meeting).filter(
-                        Meeting.club_id == meeting.club_id,
-                        MeetingAwardWinner.award_category == category,
-                        MeetingAwardWinner.contact_id == cid,
-                        MeetingAwardWinner.meeting_id != meeting.id
-                    ).scalar() or 0
-                    win_counts[cid] = win_count
-                
-                # Sort by historical win count ascending
-                cids.sort(key=lambda cid: win_counts[cid])
-                selected_winners.extend(cids[:slots_left])
+            # Since a tie occurred for these slots, we include all members of the group
+            # even if it causes the total number of winners to slightly exceed max_winners.
+            selected_winners.extend([c[0] for c in group if c[0] is not None])
 
         if selected_winners:
             winners[category] = selected_winners

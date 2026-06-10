@@ -352,82 +352,72 @@
         <div class="mdm-grid mdm-grid--three">
           <div class="mdm-field">
             <label for="edit-best-speaker">Best Speaker</label>
-            <select id="edit-best-speaker" class="edit-mode-field" {% if not selected_meeting or selected_meeting.status != 'finished' %}disabled{% endif %}>
-              <option value="">-- Select Best Speaker --</option>
-              {% set found_winner = namespace(val=false) %}
+            <select id="edit-best-speaker" class="edit-mode-field" multiple {% if not selected_meeting or selected_meeting.status != 'finished' %}disabled{% endif %}>
+              {% set found_winners = [] %}
+              {% if selected_meeting %}
+                {% for w in selected_meeting.award_winners if w.award_category == 'speaker' %}
+                  {% set _ = found_winners.append(w.contact_id) %}
+                {% endfor %}
+              {% endif %}
               {% for candidate in (voting_candidates['speaker'] if voting_candidates else []) %}
-              {% if selected_meeting and selected_meeting.best_speaker_id == candidate.id %}
-                {% set found_winner.val = true %}
-              {% endif %}
-              <option value="{{ candidate.id }}" {% if selected_meeting and selected_meeting.best_speaker_id == candidate.id %}selected{% endif %}>{{ candidate.name }}</option>
+              <option value="{{ candidate.id }}" {% if candidate.id in found_winners %}selected{% endif %}>{{ candidate.name }}</option>
               {% endfor %}
-              {% if selected_meeting and selected_meeting.best_speaker_id and not found_winner.val and selected_meeting.best_speaker %}
-              <option value="{{ selected_meeting.best_speaker_id }}" selected>{{ selected_meeting.best_speaker.Name }}</option>
-              {% endif %}
             </select>
           </div>
           <div class="mdm-field">
             <label for="edit-best-evaluator">Best Evaluator</label>
-            <select id="edit-best-evaluator" class="edit-mode-field" {% if not selected_meeting or selected_meeting.status != 'finished' %}disabled{% endif %}>
-              <option value="">-- Select Best Evaluator --</option>
-              {% set found_winner = namespace(val=false) %}
+            <select id="edit-best-evaluator" class="edit-mode-field" multiple {% if not selected_meeting or selected_meeting.status != 'finished' %}disabled{% endif %}>
+              {% set found_winners = [] %}
+              {% if selected_meeting %}
+                {% for w in selected_meeting.award_winners if w.award_category == 'evaluator' %}
+                  {% set _ = found_winners.append(w.contact_id) %}
+                {% endfor %}
+              {% endif %}
               {% for candidate in (voting_candidates['evaluator'] if voting_candidates else []) %}
-              {% if selected_meeting and selected_meeting.best_evaluator_id == candidate.id %}
-                {% set found_winner.val = true %}
-              {% endif %}
-              <option value="{{ candidate.id }}" {% if selected_meeting and selected_meeting.best_evaluator_id == candidate.id %}selected{% endif %}>{{ candidate.name }}</option>
+              <option value="{{ candidate.id }}" {% if candidate.id in found_winners %}selected{% endif %}>{{ candidate.name }}</option>
               {% endfor %}
-              {% if selected_meeting and selected_meeting.best_evaluator_id and not found_winner.val and selected_meeting.best_evaluator %}
-              <option value="{{ selected_meeting.best_evaluator_id }}" selected>{{ selected_meeting.best_evaluator.Name }}</option>
-              {% endif %}
             </select>
           </div>
           <div class="mdm-field">
             <label for="edit-best-table-topic">Best Table Topic</label>
-            <select id="edit-best-table-topic" class="edit-mode-field" {% if not selected_meeting or selected_meeting.status != 'finished' %}disabled{% endif %}>
-              <option value="">-- Select Best Table Topic --</option>
-              {% set found_winner = namespace(val=false) %}
+            <select id="edit-best-table-topic" class="edit-mode-field" multiple {% if not selected_meeting or selected_meeting.status != 'finished' %}disabled{% endif %}>
+              {% set found_winners = [] %}
+              {% if selected_meeting %}
+                {% for w in selected_meeting.award_winners if w.award_category == 'table-topic' %}
+                  {% set _ = found_winners.append(w.contact_id) %}
+                {% endfor %}
+              {% endif %}
               {% for candidate in (voting_candidates['table-topic'] if voting_candidates else []) %}
-              {% if selected_meeting and selected_meeting.best_table_topic_id == candidate.id %}
-                {% set found_winner.val = true %}
-              {% endif %}
-              <option value="{{ candidate.id }}" {% if selected_meeting and selected_meeting.best_table_topic_id == candidate.id %}selected{% endif %}>{{ candidate.name }}</option>
+              <option value="{{ candidate.id }}" {% if candidate.id in found_winners %}selected{% endif %}>{{ candidate.name }}</option>
               {% endfor %}
-              {% if selected_meeting and selected_meeting.best_table_topic_id and not found_winner.val and selected_meeting.best_table_topic_speaker %}
-              <option value="{{ selected_meeting.best_table_topic_id }}" selected>{{ selected_meeting.best_table_topic_speaker.Name }}</option>
-              {% endif %}
             </select>
           </div>
           <div class="mdm-field">
             <label for="edit-best-role-taker">Best Role Taker</label>
-            <select id="edit-best-role-taker" class="edit-mode-field" {% if not selected_meeting or selected_meeting.status != 'finished' %}disabled{% endif %}>
-              <option value="">-- Select Best Role Taker --</option>
-              {% set found_winner = namespace(val=false) %}
+            <select id="edit-best-role-taker" class="edit-mode-field" multiple {% if not selected_meeting or selected_meeting.status != 'finished' %}disabled{% endif %}>
+              {% set found_winners = [] %}
+              {% if selected_meeting %}
+                {% for w in selected_meeting.award_winners if w.award_category == 'role-taker' %}
+                  {% set _ = found_winners.append(w.contact_id) %}
+                {% endfor %}
+              {% endif %}
               {% for candidate in (voting_candidates['role-taker'] if voting_candidates else []) %}
-              {% if selected_meeting and selected_meeting.best_role_taker_id == candidate.id %}
-                {% set found_winner.val = true %}
-              {% endif %}
-              <option value="{{ candidate.id }}" {% if selected_meeting and selected_meeting.best_role_taker_id == candidate.id %}selected{% endif %}>{{ candidate.name }}</option>
+              <option value="{{ candidate.id }}" {% if candidate.id in found_winners %}selected{% endif %}>{{ candidate.name }}</option>
               {% endfor %}
-              {% if selected_meeting and selected_meeting.best_role_taker_id and not found_winner.val and selected_meeting.best_role_taker %}
-              <option value="{{ selected_meeting.best_role_taker_id }}" selected>{{ selected_meeting.best_role_taker.Name }}</option>
-              {% endif %}
             </select>
           </div>
           <div class="mdm-field">
             <label for="edit-best-debater">Best Debater</label>
-            <select id="edit-best-debater" class="edit-mode-field" {% if not selected_meeting or selected_meeting.status != 'finished' or selected_meeting.type != 'Debate' %}disabled{% endif %}>
-              <option value="">-- Select Best Debater --</option>
-              {% set found_debater = namespace(val=false) %}
+            <select id="edit-best-debater" class="edit-mode-field" multiple {% if not selected_meeting or selected_meeting.status != 'finished' or selected_meeting.type != 'Debate' %}disabled{% endif %}>
+              {% set found_winners = [] %}
+              {% if selected_meeting %}
+                {% for w in selected_meeting.award_winners if w.award_category == 'debater' %}
+                  {% set _ = found_winners.append(w.contact_id) %}
+                {% endfor %}
+              {% endif %}
               {% for candidate in (voting_candidates['debater'] if voting_candidates else []) %}
-              {% if selected_meeting and selected_meeting.best_debater_id == candidate.id %}
-                {% set found_debater.val = true %}
-              {% endif %}
-              <option value="{{ candidate.id }}" {% if selected_meeting and selected_meeting.best_debater_id == candidate.id %}selected{% endif %}>{{ candidate.name }}</option>
+              <option value="{{ candidate.id }}" {% if candidate.id in found_winners %}selected{% endif %}>{{ candidate.name }}</option>
               {% endfor %}
-              {% if selected_meeting and selected_meeting.best_debater_id and not found_debater.val and selected_meeting.best_debater %}
-              <option value="{{ selected_meeting.best_debater_id }}" selected>{{ selected_meeting.best_debater.Name }}</option>
-              {% endif %}
             </select>
             <small class="mdm-hint">
               <i class="fas fa-info-circle"></i>Enabled only for Debate-type meetings.
@@ -435,18 +425,16 @@
           </div>
           <div class="mdm-field">
             <label for="edit-lucky-draw-winner">Lucky Draw Winner</label>
-            <select id="edit-lucky-draw-winner" class="edit-mode-field" {% if not selected_meeting or selected_meeting.status != 'finished' %}disabled{% endif %}>
-              <option value="">-- Select Lucky Draw Winner --</option>
-              {% set found_lucky = namespace(val=false) %}
+            <select id="edit-lucky-draw-winner" class="edit-mode-field" multiple {% if not selected_meeting or selected_meeting.status != 'finished' %}disabled{% endif %}>
+              {% set found_winners = [] %}
+              {% if selected_meeting %}
+                {% for w in selected_meeting.award_winners if w.award_category == 'lucky_draw' %}
+                  {% set _ = found_winners.append(w.contact_id) %}
+                {% endfor %}
+              {% endif %}
               {% for candidate in (voting_candidates['lucky-draw-winner'] if voting_candidates else []) %}
-              {% if selected_meeting and selected_meeting.lucky_draw_winner_id == candidate.id %}
-                {% set found_lucky.val = true %}
-              {% endif %}
-              <option value="{{ candidate.id }}" {% if selected_meeting and selected_meeting.lucky_draw_winner_id == candidate.id %}selected{% endif %}>{{ candidate.name }}</option>
+              <option value="{{ candidate.id }}" {% if candidate.id in found_winners %}selected{% endif %}>{{ candidate.name }}</option>
               {% endfor %}
-              {% if selected_meeting and selected_meeting.lucky_draw_winner_id and not found_lucky.val and selected_meeting.lucky_draw_winner %}
-              <option value="{{ selected_meeting.lucky_draw_winner_id }}" selected>{{ selected_meeting.lucky_draw_winner.Name }}</option>
-              {% endif %}
             </select>
             <small class="mdm-hint">
               <i class="fas fa-info-circle"></i>Pick from the meeting's roster.

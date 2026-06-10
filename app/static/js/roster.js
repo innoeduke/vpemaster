@@ -369,6 +369,12 @@ function initializeContactTypeHandler(elements) {
 function updateOrderNumber(elements) {
   if (!elements.ticketSelect || !elements.orderNumberInput) return;
 
+  const isEditing = elements.entryIdInput && elements.entryIdInput.value.trim() !== "";
+  // If editing an existing entry that already has an order number, do not overwrite it.
+  if (isEditing && elements.orderNumberInput.value.trim() !== "") {
+    return;
+  }
+
   const ticketResultsContainer = document.getElementById("ticket-results");
   const ticketOptions = ticketResultsContainer ? Array.from(ticketResultsContainer.querySelectorAll(".autocomplete-result-item")) : [];
   const selectedTicketOpt = ticketOptions.find(o => o.dataset.value === elements.ticketSelect.value);
@@ -452,6 +458,11 @@ function populateRosterEditForm(rosterId, elements) {
             }
         } finally {
             elements.isPopulating = false;
+        }
+
+        // Auto-assign order number if it is missing for this existing entry
+        if (!elements.orderNumberInput.value.trim()) {
+            updateOrderNumber(elements);
         }
       }
 
@@ -818,8 +829,7 @@ function createPrintPage(titlePrefix, meetingNum, formattedDate, regionText, clu
   table.innerHTML = `
     <thead>
         <tr>
-            <th style="width: 40px; text-align: center;">V</th>
-            <th style="width: 60px; white-space: nowrap;">Order</th>
+            <th style="width: 60px; white-space: nowrap;">#</th>
             <th style="width: 200px;">Name</th>
             <th style="width: 130px;">Ticket</th>
             <th style="width: 160px;">Roles</th>
@@ -882,11 +892,7 @@ function populateExportPages() {
     // Create new row for print table
     const tr = document.createElement("tr");
 
-    // Column order: V | Order | Name | Ticket | Roles | Qty
-    const tdV = document.createElement("td");
-    tdV.className = "print-cell-v";
-    tdV.innerHTML = '<div style="width: 18px; height: 18px; border: 2px solid #ccc; border-radius: 4px; display: inline-block; margin-top: 5px;"></div>';
-    tr.appendChild(tdV);
+    // Column order: Order | Name | Ticket | Roles | Qty
 
     const tdOrder = document.createElement("td");
     tdOrder.className = "print-cell-order";

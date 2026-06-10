@@ -182,23 +182,18 @@
                             {% endif %}
                         </td>
                         <td class="cell-ticket">
+                            {% if entry.ticket %}
                             {% set ticket_info = entry.ticket %}
-                            
-                            {# Determine dynamic color: Priority to Ticket Color #}
-                            {% if ticket_info %}
-                                {% set icon_color = ticket_info.color or '#6c757d' %}
-                                {% set icon_class = ticket_info.icon or 'fa-ticket-alt' %}
-                            {% else %}
-                                {# Fallback if ticket name doesn't match DB (shouldn't happen with strict sync) #}
-                                {% set icon_color = '#6c757d' %} 
-                                {% set icon_class = 'fa-ticket-alt' %}
-                            {% endif %}
-
+                            {% set icon_color = ticket_info.color or '#6c757d' %}
+                            {% set icon_class = ticket_info.icon or 'fa-ticket-alt' %}
                             <span class="ticket-badge {% if entry.order_number is none and entry.ticket and entry.ticket.expired_at and now > datetime.combine(selected_meeting.Meeting_Date, entry.ticket.expired_at) %}ticket-expired{% endif %}"
                                   data-type="{{ entry.ticket.type if entry.ticket else '' }}">
                                 <i class="fas {{ icon_class }}" style="color: {{ icon_color }};" title="{{ entry.ticket.name if entry.ticket else '' }}"></i>
                                 {{ _(entry.ticket.name.split('(')[0].strip()) if entry.ticket else '' }}
                             </span>
+                            {% else %}
+                            &mdash;
+                            {% endif %}
                         </td>
                         <td class="cell-roles desktop-only">
                             {% set contact_key = entry.contact_id | string %}

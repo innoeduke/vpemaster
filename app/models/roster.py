@@ -209,42 +209,19 @@ class Roster(db.Model):
         if not roster_entry:
             if action == 'assign':
                 # Determine initial ticket name and type
-                # PRIORITY 1: Role-specific dynamic mapping
-                if role_obj.ticket_type:
-                    ticket_name = role_obj.ticket_type
-                    ticket_type = None # Usually Neutral for specific assignments
-                # PRIORITY 2: Standard Behavioral logic
-                elif is_officer:
+                ticket_obj = None
+                if is_officer:
                     ticket_name = "Officer"
                     ticket_type = "Officer"
-                elif contact.Type == 'Member':
-                    ticket_name = "Early-bird"
-                    ticket_type = "Member"
-                elif contact.Type == 'Guest':
-                    ticket_name = "Role-taker"
-                    ticket_type = "Guest"
-                else:
-                    ticket_name = "Walk-in"
-                    ticket_type = "Guest"
-
-                # Fetch ticket using robust lookup
-                ticket_obj = Ticket.get_by_name(name=ticket_name, type=ticket_type, club_id=club_id)
-                
-                # Expiration check: if Early-bird is expired, fallback to Walk-in
-                if ticket_name == "Early-bird" and ticket_obj and ticket_obj.is_expired(meeting.Meeting_Date):
-                    ticket_name = "Walk-in"
+                    
+                    # Fetch ticket using robust lookup
                     ticket_obj = Ticket.get_by_name(name=ticket_name, type=ticket_type, club_id=club_id)
-
-                # Fallback Sequence (Type-Aware):
-                if not ticket_obj:
-                    alt_name = "Walk-in" if ticket_name != "Walk-in" else "Early-bird"
-                    ticket_obj = Ticket.get_by_name(name=alt_name, type=ticket_type, club_id=club_id)
-                
-                if not ticket_obj:
-                    ticket_obj = Ticket.query.filter_by(club_id=club_id, type=ticket_type).first()
-                
-                if not ticket_obj:
-                    ticket_obj = Ticket.query.filter_by(club_id=club_id).first()
+                    
+                    if not ticket_obj:
+                        ticket_obj = Ticket.query.filter_by(club_id=club_id, type=ticket_type).first()
+                    
+                    if not ticket_obj:
+                        ticket_obj = Ticket.query.filter_by(club_id=club_id).first()
 
                 roster_entry = Roster(
                     meeting_id=meeting_id,

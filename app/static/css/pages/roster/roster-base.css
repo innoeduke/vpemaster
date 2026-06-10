@@ -938,9 +938,7 @@ body .page-container .print-pages-container .print-page .print-table tbody tr:la
 	text-align: center;
 }
 
-.print-table td.print-cell-v {
-	text-align: center;
-}
+
 
 .print-table td.print-cell-qty {
 	text-align: center;

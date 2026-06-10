@@ -846,12 +846,12 @@ document.addEventListener("DOMContentLoaded", () => {
           const n = parseInt(el.value, 10);
           return Number.isFinite(n) ? n : null;
         })(),
-        best_speaker_id: document.getElementById("edit-best-speaker") ? document.getElementById("edit-best-speaker").value : null,
-        best_evaluator_id: document.getElementById("edit-best-evaluator") ? document.getElementById("edit-best-evaluator").value : null,
-        best_table_topic_id: document.getElementById("edit-best-table-topic") ? document.getElementById("edit-best-table-topic").value : null,
-        best_role_taker_id: document.getElementById("edit-best-role-taker") ? document.getElementById("edit-best-role-taker").value : null,
-        best_debater_id: document.getElementById("edit-best-debater") ? document.getElementById("edit-best-debater").value : null,
-        lucky_draw_winner_id: document.getElementById("edit-lucky-draw-winner") ? document.getElementById("edit-lucky-draw-winner").value : null,
+        best_speaker_id: document.getElementById("edit-best-speaker") ? Array.from(document.getElementById("edit-best-speaker").selectedOptions).map(opt => opt.value) : [],
+        best_evaluator_id: document.getElementById("edit-best-evaluator") ? Array.from(document.getElementById("edit-best-evaluator").selectedOptions).map(opt => opt.value) : [],
+        best_table_topic_id: document.getElementById("edit-best-table-topic") ? Array.from(document.getElementById("edit-best-table-topic").selectedOptions).map(opt => opt.value) : [],
+        best_role_taker_id: document.getElementById("edit-best-role-taker") ? Array.from(document.getElementById("edit-best-role-taker").selectedOptions).map(opt => opt.value) : [],
+        best_debater_id: document.getElementById("edit-best-debater") ? Array.from(document.getElementById("edit-best-debater").selectedOptions).map(opt => opt.value) : [],
+        lucky_draw_winner_id: document.getElementById("edit-lucky-draw-winner") ? Array.from(document.getElementById("edit-lucky-draw-winner").selectedOptions).map(opt => opt.value) : [],
         award_configs: awardConfigs,
       }),
     })
