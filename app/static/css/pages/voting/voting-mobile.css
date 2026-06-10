@@ -19,13 +19,26 @@
 
   .accordion-list .accordion-content {
     background-color: transparent;
+    padding: 0;
+  }
+
+  .accordion-list .accordion-content .booking-table {
+    background: rgba(255, 255, 255, 0.55);
+    border-radius: 0 0 10px 10px;
+    padding: 8px 8px 12px;
   }
 
   /* Remove border from accordion container */
   .accordion-list .accordion-item {
     border: none;
-    padding: 0 !important;
-    margin-top: 15px;
+    padding: 0;
+    margin-top: 12px;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .accordion-list .accordion-item:first-child {
+    margin-top: 8px;
   }
 
   .booking-table .icon-cell .winner-label {
@@ -93,13 +106,22 @@
 
   .accordion-list .accordion-header .question-text,
   .section-title {
-    font-size: 0.95em !important;
-    line-height: 1.2;
-    padding: 6px 12px;
+    font-size: 0.78em !important;
+    line-height: 1.25;
+    letter-spacing: 0.2px;
+    padding: 6px 10px;
+    min-width: 0;
+  }
+
+  /* Allow the middle text column to shrink so the right-side candidate
+     count pill doesn't get pushed off-screen on narrow viewports. */
+  .accordion-list .accordion-header {
+    gap: 10px;
+    margin: 10px 0;
+    padding: 16px 16px;
   }
 
   /* Remove card styling on mobile */
-  .accordion-list .accordion-item,
   .voting-section {
     background-color: transparent;
     box-shadow: none;
@@ -115,10 +137,19 @@
 
   /* Rating labels */
   .rating-labels {
-    font-size: 0.8em;
+    font-size: 0.65em;
   }
 
 
+
+  .page-header .header-title {
+    display: none !important;
+  }
+
+  .filters-control.premium {
+    position: relative;
+    z-index: 10;
+  }
 
   /* Feedback input */
   .feedback-input {

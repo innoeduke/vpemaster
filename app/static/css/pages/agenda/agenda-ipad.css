@@ -31,11 +31,15 @@
 	/* Action bar for iPad */
 	.action-bar {
 		flex-direction: row;
-		gap: 15px;
+		gap: 12px;
+		flex-wrap: wrap;
 	}
 
 	.action-bar-left {
 		flex-direction: row;
+		flex-wrap: nowrap;
+		align-items: center;
+		gap: 8px;
 	}
 
 	.action-bar-right #view-mode-buttons {
@@ -45,11 +49,11 @@
 		gap: 8px;
 		align-items: center;
 		justify-content: flex-end;
-		width: 100%;
+		width: auto;
 	}
 
-	/* Status group and action group inline */
-	.action-bar-right .status-group,
+	/* Status cluster + action cluster — inline, compact, no flex-grow. */
+	.action-bar-left .status-group,
 	.action-bar-right .action-group {
 		display: flex;
 		flex-wrap: nowrap;
@@ -57,31 +61,44 @@
 		align-items: center;
 	}
 
+	/* iPad keeps the vertical separator from desktop but tighter. */
+	.action-bar-left .status-group {
+		margin-left: 2px;
+		padding-left: 10px;
+		border-left: 1px solid rgba(119, 36, 50, 0.14);
+	}
+
+	.action-bar-left .button-group,
 	.action-bar-right .button-group {
 		flex-wrap: nowrap;
 		gap: 6px;
 	}
 
-	.action-bar-right .btn {
-		font-size: 11px;
-		padding: 0 8px;
-		min-width: 55px;
-		height: 28px;
-		line-height: 28px;
+	/* Tighter pill button sizing across the row — matches the desktop
+	   34 px language but shrunk slightly to fit a narrower iPad viewport. */
+	.action-bar-left .status-group #meeting-status-btn,
+	.action-bar-right .action-group #edit-btn,
+	.action-bar-right .action-group #create-btn {
+		font-size: 0.78rem;
+		padding: 0 12px;
+		height: 32px;
+		min-width: 0;
 	}
 
-	.action-bar-right .meeting-status-display {
-		min-width: 100px;
-		font-size: 0.75em;
-		height: var(--mobile-control-height, 30px);
-		padding: 3px 6px;
+	.action-bar-left .status-group .meeting-status-display {
+		font-size: 0.72rem;
+		padding: 5px 12px;
+		min-height: 32px;
+		white-space: nowrap;
 	}
 
-	/* Make icon buttons compact */
+	/* Icon buttons compact, still 32 px ghost pills. */
 	.action-bar-right .action-icon-btn {
-		min-width: 32px !important;
-		width: auto;
-		padding: 0 4px !important;
+		width: 32px;
+		height: 32px;
+		min-width: 32px;
+		padding: 0;
+		border-radius: 999px;
 	}
 
 	/* WOD display for iPad */

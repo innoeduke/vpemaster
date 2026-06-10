@@ -29,6 +29,46 @@ document.addEventListener("DOMContentLoaded", () => {
   const clockEl = document.getElementById("meeting-clock");
   const clockDisplayEl = document.getElementById("meeting-clock-display");
 
+  // -----------------------------------------------------------------------
+  // Status group placement
+  // -----------------------------------------------------------------------
+  // Desktop layout: the .status-group lives inside .action-bar-left, paired
+  // visually with the meeting picker (both describe the *selected meeting*).
+  // Mobile layout: that placement forces the status cluster onto its own row
+  // because .action-bar stacks vertically; users see two empty-ish rows.
+  // Solution: move the .status-group node into .action-bar-right > #view-mode-buttons
+  // when the viewport is mobile-width, so it sits inline with .action-group.
+  // Reverse on widening. Uses matchMedia for cheap reactive updates.
+  // Status group stays in its natural DOM position inside .action-bar-left.
+  // On mobile the CSS grid (display:contents on wrappers + explicit grid-column/row)
+  // handles placement — no DOM relocation needed.
+  (function relocateStatusGroup() {
+    const statusGroup = document.querySelector(".action-bar-left > .status-group");
+    if (!statusGroup) return;
+    const desktopHome = document.querySelector(".action-bar-left");
+    const mobileHome = document.querySelector(".action-bar-right #view-mode-buttons");
+    if (!desktopHome || !mobileHome) return;
+    const mobileMQ = window.matchMedia("(max-width: 768px)");
+    const apply = (e) => {
+      if (e.matches) {
+        // Mobile: CSS grid handles layout via display:contents — leave statusGroup in place.
+        // Ensure it's back in desktopHome if a legacy move happened.
+        if (statusGroup.parentElement !== desktopHome) {
+          desktopHome.appendChild(statusGroup);
+        }
+      } else {
+        // Desktop: ensure it's in action-bar-left after the picker wrapper.
+        if (statusGroup.parentElement !== desktopHome) {
+          desktopHome.appendChild(statusGroup);
+        }
+      }
+    };
+    apply(mobileMQ);
+    mobileMQ.addEventListener
+      ? mobileMQ.addEventListener("change", apply)
+      : mobileMQ.addListener(apply); // legacy Safari
+  })();
+
   // Global identifier for classification
   let GLOBAL_CLUB_ID = 1; // Default fallback, will be updated from API
 
