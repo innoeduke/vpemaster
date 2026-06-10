@@ -813,6 +813,20 @@ document.addEventListener("DOMContentLoaded", () => {
       window.location.reload();
       return;
     }
+
+    const awardConfigs = {};
+    const categories = ['speaker', 'evaluator', 'table-topic', 'role-taker', 'debater', 'lucky_draw'];
+    categories.forEach(cat => {
+      const votesEl = document.getElementById(`edit-votes-${cat}`);
+      const winnersEl = document.getElementById(`edit-winners-${cat}`);
+      if (votesEl && winnersEl) {
+        awardConfigs[cat] = {
+          max_votes_per_user: parseInt(votesEl.value) || 1,
+          max_winners: parseInt(winnersEl.value) || 1
+        };
+      }
+    });
+
     fetch("/agenda/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -838,6 +852,7 @@ document.addEventListener("DOMContentLoaded", () => {
         best_role_taker_id: document.getElementById("edit-best-role-taker") ? document.getElementById("edit-best-role-taker").value : null,
         best_debater_id: document.getElementById("edit-best-debater") ? document.getElementById("edit-best-debater").value : null,
         lucky_draw_winner_id: document.getElementById("edit-lucky-draw-winner") ? document.getElementById("edit-lucky-draw-winner").value : null,
+        award_configs: awardConfigs,
       }),
     })
       .then((response) => response.json())

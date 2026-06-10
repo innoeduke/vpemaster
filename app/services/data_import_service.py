@@ -584,10 +584,6 @@ class DataImportService:
                 Meeting_Date=meeting_date,
                 Meeting_Template=row[3],
                 WOD=row[4],
-                best_table_topic_id=self._map_contact(row[5]),
-                best_evaluator_id=self._map_contact(row[6]),
-                best_speaker_id=self._map_contact(row[7]),
-                best_role_taker_id=self._map_contact(row[8]),
                 Start_Time=self._parse_time(row[9]),
                 media_id=self.media_map.get(row[10]) if row[10] else None,
                 Meeting_Title=row[11],
@@ -601,6 +597,18 @@ class DataImportService:
             db.session.add(new_meeting)
             new_meeting.sync_excomm()
             db.session.flush()
+            
+            # Add Awards
+            from app.models.voting import MeetingAwardWinner
+            def add_award(cat, cid):
+                if cid:
+                    db.session.add(MeetingAwardWinner(meeting_id=new_meeting.id, award_category=cat, contact_id=cid))
+            
+            add_award('table-topic', self._map_contact(row[5]))
+            add_award('evaluator', self._map_contact(row[6]))
+            add_award('speaker', self._map_contact(row[7]))
+            add_award('role-taker', self._map_contact(row[8]))
+
             self.meeting_map[meeting_no] = new_meeting
             count += 1
             

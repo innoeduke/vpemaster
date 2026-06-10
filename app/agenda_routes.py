@@ -464,12 +464,9 @@ def _get_processed_logs_data(meeting_id, show_media=False):
     """
     club_id = get_current_club_id()
     if meeting_id:
+        from app.models.voting import MeetingAwardWinner
         query = Meeting.query.options(
-            orm.joinedload(Meeting.best_table_topic_speaker),
-            orm.joinedload(Meeting.best_evaluator),
-            orm.joinedload(Meeting.best_speaker),
-            orm.joinedload(Meeting.best_role_taker),
-            orm.joinedload(Meeting.best_debater),
+            orm.joinedload(Meeting.award_winners).joinedload(MeetingAwardWinner.contact),
             orm.joinedload(Meeting.media),
             orm.joinedload(Meeting.sharing_master)
         ).filter(Meeting.id == meeting_id)
@@ -939,6 +936,17 @@ def agenda():
             voting_candidates['lucky-draw-winner'].append(
                 {'id': r.contact_id, 'name': name})
     
+    # --- Award Configs ---
+    award_configs = {}
+    if selected_meeting:
+        from .models.voting import MeetingAwardConfig
+        configs = MeetingAwardConfig.query.filter_by(meeting_id=selected_meeting.id).all()
+        for c in configs:
+            award_configs[c.award_category] = {
+                'max_votes_per_user': c.max_votes_per_user,
+                'max_winners': c.max_winners
+            }
+
     # --- Render Template ---
     # Serialize ProjectID as a dictionary for safe JSON conversion in template
     project_id_dict = {
@@ -961,10 +969,10 @@ def agenda():
                            project_speakers=project_speakers,  # For JS
                            meeting_types=meeting_types,
                            default_start_time=default_start_time,
-                           next_meeting_num=next_meeting_num,
                            next_meeting_date=next_meeting_date,
                            ProjectID=project_id_dict,
-                           voting_candidates=voting_candidates)
+                           voting_candidates=voting_candidates,
+                           award_configs=award_configs)
 
 
 # --- API Endpoints for Asynchronous Data Loading ---
@@ -1683,6 +1691,8 @@ def update_logs():
             meeting.WOD = new_wod
 
         # Update Awards
+        from .models.voting import MeetingAwardWinner
+        
         def parse_award_id(val):
             if val == "":
                 return None
@@ -1693,29 +1703,55 @@ def update_logs():
                     pass
             return None
 
+        def update_award(category, contact_id):
+            # For now, this handles single selection from the frontend.
+            # Delete existing winners for this category
+            MeetingAwardWinner.query.filter_by(meeting_id=meeting.id, award_category=category).delete()
+            
+            if contact_id:
+                # Insert the new winner
+                new_winner = MeetingAwardWinner(meeting_id=meeting.id, award_category=category, contact_id=contact_id)
+                db.session.add(new_winner)
+
         if 'best_speaker_id' in data:
-            meeting.best_speaker_id = parse_award_id(data.get('best_speaker_id'))
+            update_award('speaker', parse_award_id(data.get('best_speaker_id')))
         if 'best_evaluator_id' in data:
-            meeting.best_evaluator_id = parse_award_id(data.get('best_evaluator_id'))
+            update_award('evaluator', parse_award_id(data.get('best_evaluator_id')))
         if 'best_table_topic_id' in data:
-            meeting.best_table_topic_id = parse_award_id(data.get('best_table_topic_id'))
+            update_award('table-topic', parse_award_id(data.get('best_table_topic_id')))
         if 'best_role_taker_id' in data:
-            meeting.best_role_taker_id = parse_award_id(data.get('best_role_taker_id'))
+            update_award('role-taker', parse_award_id(data.get('best_role_taker_id')))
         if 'best_debater_id' in data:
-            # Best Debater is meaningful only on Debate-type meetings. A
-            # non-empty value on a non-Debate meeting is rejected so a stale
-            # or crafted request cannot set one. An empty value is always
-            # allowed — it just clears the field, which the client sends for
-            # every meeting type.
             debater_id = parse_award_id(data.get('best_debater_id'))
             if debater_id is not None and meeting.type != 'Debate':
                 return jsonify(
                     success=False,
                     message="Best Debater can only be set on Debate-type meetings.",
                 ), 400
-            meeting.best_debater_id = debater_id
+            update_award('debater', debater_id)
         if 'lucky_draw_winner_id' in data:
-            meeting.lucky_draw_winner_id = parse_award_id(data.get('lucky_draw_winner_id'))
+            update_award('lucky_draw', parse_award_id(data.get('lucky_draw_winner_id')))
+            
+        # Handle Award Configurations
+        award_configs_data = data.get('award_configs')
+        if award_configs_data:
+            from .models.voting import MeetingAwardConfig
+            for category, conf in award_configs_data.items():
+                max_votes = conf.get('max_votes_per_user', 1)
+                max_winners = conf.get('max_winners', 1)
+                
+                existing_config = MeetingAwardConfig.query.filter_by(meeting_id=meeting.id, award_category=category).first()
+                if existing_config:
+                    existing_config.max_votes_per_user = max_votes
+                    existing_config.max_winners = max_winners
+                else:
+                    new_config = MeetingAwardConfig(
+                        meeting_id=meeting.id,
+                        award_category=category,
+                        max_votes_per_user=max_votes,
+                        max_winners=max_winners
+                    )
+                    db.session.add(new_config)
 
         new_media_id = None
         if new_media_url:
@@ -1883,42 +1919,60 @@ def _tally_votes_and_set_winners(meeting):
             category_votes[category] = []
         category_votes[category].append((contact_id, count))
 
-    winners = {}  # {'speaker': winner_contact_id}
+    winners = {}  # {'speaker': [winner_contact_id, ...]}
+    from .models.voting import MeetingAwardConfig, MeetingAwardWinner
+    configs = MeetingAwardConfig.query.filter_by(meeting_id=meeting.id).all()
+    config_map = {c.award_category: c.max_winners for c in configs}
+
     for category, candidate_votes in category_votes.items():
         if not candidate_votes:
             continue
-        # Find maximum vote count for this category
-        max_votes = max(count for _, count in candidate_votes)
-        # Find all candidates with the maximum vote count
-        candidates = [contact_id for contact_id, count in candidate_votes if count == max_votes and contact_id is not None]
-        if not candidates:
-            continue
+            
+        max_winners = config_map.get(category, 1)
 
-        if len(candidates) == 1:
-            winners[category] = candidates[0]
-        else:
-            # Tie-breaker: choose the one who wins that award less historically in this club
-            award_attr = f"best_{category.replace('-', '_')}_id"
-            if hasattr(Meeting, award_attr):
+        # Sort candidates by vote count descending
+        sorted_candidates = sorted(candidate_votes, key=lambda x: x[1], reverse=True)
+        
+        # Group candidates by vote count
+        from itertools import groupby
+        groups = []
+        for k, g in groupby(sorted_candidates, key=lambda x: x[1]):
+            groups.append(list(g))
+            
+        selected_winners = []
+        for group in groups:
+            if len(selected_winners) >= max_winners:
+                break
+                
+            slots_left = max_winners - len(selected_winners)
+            
+            if len(group) <= slots_left:
+                selected_winners.extend([c[0] for c in group if c[0] is not None])
+            else:
+                # Tie-breaker: choose the ones who won that award less historically
+                cids = [c[0] for c in group if c[0] is not None]
                 win_counts = {}
-                for cid in candidates:
-                    win_count = db.session.query(func.count(Meeting.id)).filter(
+                for cid in cids:
+                    win_count = db.session.query(func.count(MeetingAwardWinner.id)).join(Meeting).filter(
                         Meeting.club_id == meeting.club_id,
-                        getattr(Meeting, award_attr) == cid,
-                        Meeting.id != meeting.id
+                        MeetingAwardWinner.award_category == category,
+                        MeetingAwardWinner.contact_id == cid,
+                        MeetingAwardWinner.meeting_id != meeting.id
                     ).scalar() or 0
                     win_counts[cid] = win_count
                 
-                # Choose the candidate with the minimum win count (stable fallback if there's a tie in win count)
-                winners[category] = min(candidates, key=lambda cid: win_counts[cid])
-            else:
-                winners[category] = candidates[0]
+                # Sort by historical win count ascending
+                cids.sort(key=lambda cid: win_counts[cid])
+                selected_winners.extend(cids[:slots_left])
+
+        if selected_winners:
+            winners[category] = selected_winners
 
     # Update meeting object with winners
-    for category, winner_id in winners.items():
-        award_attr = f"best_{category.replace('-', '_')}_id"
-        if hasattr(meeting, award_attr):
-            setattr(meeting, award_attr, winner_id)
+    MeetingAwardWinner.query.filter_by(meeting_id=meeting.id).delete()
+    for category, winner_ids in winners.items():
+        for winner_id in winner_ids:
+            db.session.add(MeetingAwardWinner(meeting_id=meeting.id, award_category=category, contact_id=winner_id))
 
     # Calculate Standard NPS: (Promoters - Detractors) / Total * 100
     # Promoters: 9-10, Detractors: 1-6, Passives: 7-8 (0s are excluded)

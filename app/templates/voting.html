@@ -404,7 +404,8 @@
 	"initialMeetingRating": {{ meeting_rating_score|tojson }},
 	"initialMeetingFeedback": {{ meeting_feedback_comment|tojson }},
 	"meetingStatus": {{ selected_meeting.status|tojson if selected_meeting else None }},
-	"dbStatus": {{ db_status|tojson if db_status else None }}
+	"dbStatus": {{ db_status|tojson if db_status else None }},
+	"awardConfigs": {{ award_configs|tojson if award_configs else '{}'|safe }}
 }
 </script>
 <script src="{{ url_for('static', filename='js/voting.js') }}"></script>

@@ -76,12 +76,7 @@ class Meeting(db.Model):
     Start_Time = db.Column(db.Time)
     Meeting_Template = db.Column(db.String(100))
     WOD = db.Column(db.String(100))
-    best_table_topic_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
-    best_evaluator_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
-    best_speaker_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
-    best_role_taker_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
-    best_debater_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
-    lucky_draw_winner_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
+
     media_id = db.Column(db.Integer, db.ForeignKey('Media.id', use_alter=True))
     ge_mode = db.Column(db.Integer, default=0)
     status = db.Column(db.Enum('unpublished', 'not started', 'running', 'finished', 'cancelled', name='meeting_status'),
@@ -113,17 +108,6 @@ class Meeting(db.Model):
                 
         self.sharing_master_id = new_master_id
 
-    best_table_topic_speaker = db.relationship(
-        'Contact', foreign_keys=[best_table_topic_id])
-    best_evaluator = db.relationship(
-        'Contact', foreign_keys=[best_evaluator_id])
-    best_speaker = db.relationship('Contact', foreign_keys=[best_speaker_id])
-    best_role_taker = db.relationship(
-        'Contact', foreign_keys=[best_role_taker_id])
-    best_debater = db.relationship(
-        'Contact', foreign_keys=[best_debater_id])
-    lucky_draw_winner = db.relationship(
-        'Contact', foreign_keys=[lucky_draw_winner_id])
     media = db.relationship('Media', foreign_keys=[media_id])
     
     def sync_excomm(self, force=False):
@@ -161,6 +145,66 @@ class Meeting(db.Model):
         # Final fallback: most recent
         return ExComm.query.filter_by(club_id=self.club_id).order_by(ExComm.start_date.desc()).first()
 
+    def _get_first_winner_id(self, category):
+        for w in self.award_winners:
+            if w.award_category == category:
+                return w.contact_id
+        return None
+
+    def _get_first_winner_contact(self, category):
+        for w in self.award_winners:
+            if w.award_category == category:
+                return w.contact
+        return None
+
+    @property
+    def best_speaker_id(self):
+        return self._get_first_winner_id('speaker')
+
+    @property
+    def best_speaker(self):
+        return self._get_first_winner_contact('speaker')
+
+    @property
+    def best_evaluator_id(self):
+        return self._get_first_winner_id('evaluator')
+
+    @property
+    def best_evaluator(self):
+        return self._get_first_winner_contact('evaluator')
+
+    @property
+    def best_table_topic_id(self):
+        return self._get_first_winner_id('table-topic')
+
+    @property
+    def best_table_topic_speaker(self):
+        return self._get_first_winner_contact('table-topic')
+
+    @property
+    def best_role_taker_id(self):
+        return self._get_first_winner_id('role-taker')
+
+    @property
+    def best_role_taker(self):
+        return self._get_first_winner_contact('role-taker')
+
+    @property
+    def best_debater_id(self):
+        return self._get_first_winner_id('debater')
+
+    @property
+    def best_debater(self):
+        return self._get_first_winner_contact('debater')
+
+    @property
+    def lucky_draw_winner_id(self):
+        return self._get_first_winner_id('lucky_draw')
+
+    @property
+    def lucky_draw_winner(self):
+        return self._get_first_winner_contact('lucky_draw')
+
     def get_best_award_ids(self):
         """
         Gets the set of best award IDs for this meeting.
@@ -168,15 +212,7 @@ class Meeting(db.Model):
         Returns:
             set: Set of award IDs
         """
-        return {
-            award_id for award_id in [
-                self.best_table_topic_id,
-                self.best_evaluator_id,
-                self.best_speaker_id,
-                self.best_role_taker_id,
-                self.best_debater_id
-            ] if award_id
-        }
+        return {w.contact_id for w in self.award_winners}
 
     def delete_full(self):
         """

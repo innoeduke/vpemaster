@@ -554,10 +554,8 @@ def delete_contact(contact_id):
     # Nullify references that don't have cascades
     
     # 1. Meeting awards and managers
-    Meeting.query.filter(Meeting.best_table_topic_id == contact_id).update({"best_table_topic_id": None})
-    Meeting.query.filter(Meeting.best_evaluator_id == contact_id).update({"best_evaluator_id": None})
-    Meeting.query.filter(Meeting.best_speaker_id == contact_id).update({"best_speaker_id": None})
-    Meeting.query.filter(Meeting.best_role_taker_id == contact_id).update({"best_role_taker_id": None})
+    from .models.voting import MeetingAwardWinner
+    MeetingAwardWinner.query.filter_by(contact_id=contact_id).delete(synchronize_session=False)
     Meeting.query.filter(Meeting.sharing_master_id == contact_id).update({"sharing_master_id": None})
     
     # 2. UserClub mentors
@@ -836,13 +834,14 @@ def _build_contacts_data(per_page=None, offset=0):
 
     # 3. Lifetime Awards (for Qualification)
     lifetime_best_tt_map = {}
+    from .models.voting import MeetingAwardWinner
     q = db.session.query(
-        Meeting.best_table_topic_id, func.count(Meeting.id)
-    ).filter(
-        Meeting.best_table_topic_id.isnot(None),
+        MeetingAwardWinner.contact_id, func.count(MeetingAwardWinner.id)
+    ).join(Meeting, MeetingAwardWinner.meeting_id == Meeting.id).filter(
+        MeetingAwardWinner.award_category == 'table-topic',
         Meeting.club_id == club_id
     )
-    counts = q.group_by(Meeting.best_table_topic_id).all()
+    counts = q.group_by(MeetingAwardWinner.contact_id).all()
     for c_id, count in counts:
         lifetime_best_tt_map[c_id] = count
 
@@ -883,17 +882,17 @@ def _build_contacts_data(per_page=None, offset=0):
     # 3. Awards
     award_map = {}
 
-    for field in ['best_speaker_id', 'best_evaluator_id', 'best_table_topic_id', 'best_role_taker_id']:
-        q = db.session.query(
-            getattr(Meeting, field), func.count(Meeting.id)
-        ).filter(
-            getattr(Meeting, field).isnot(None),
-            Meeting.club_id == club_id
-        )
-        q = apply_date_filter(q, Meeting.Meeting_Date)
-        counts = q.group_by(getattr(Meeting, field)).all()
-        for c_id, count in counts:
-            award_map[c_id] = award_map.get(c_id, 0) + count
+    from .models.voting import MeetingAwardWinner
+    q = db.session.query(
+        MeetingAwardWinner.contact_id, func.count(MeetingAwardWinner.id)
+    ).join(Meeting, MeetingAwardWinner.meeting_id == Meeting.id).filter(
+        MeetingAwardWinner.award_category.in_(['speaker', 'evaluator', 'table-topic', 'role-taker']),
+        Meeting.club_id == club_id
+    )
+    q = apply_date_filter(q, Meeting.Meeting_Date)
+    counts = q.group_by(MeetingAwardWinner.contact_id).all()
+    for c_id, count in counts:
+        award_map[c_id] = count
 
     def check_membership_qualification(contact_type, tt_count, best_tt_count, other_role_count):
         if contact_type != 'Guest':

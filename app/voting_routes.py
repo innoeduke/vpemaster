@@ -60,12 +60,17 @@ def _enrich_role_data_for_voting(roles_dict, selected_meeting):
                     winner_set.add((vote.award_category, vote.contact_id))
 
     elif selected_meeting.status == 'finished':
-        # For a finished meeting, the final winners are stored in the meeting object
-        if selected_meeting.best_speaker_id: winner_set.add(('speaker', selected_meeting.best_speaker_id))
-        if selected_meeting.best_evaluator_id: winner_set.add(('evaluator', selected_meeting.best_evaluator_id))
-        if selected_meeting.best_table_topic_id: winner_set.add(('table-topic', selected_meeting.best_table_topic_id))
-        if selected_meeting.best_role_taker_id: winner_set.add(('role-taker', selected_meeting.best_role_taker_id))
-        if selected_meeting.best_debater_id: winner_set.add(('debater', selected_meeting.best_debater_id))
+        from .models.voting import MeetingAwardWinner
+        winners = MeetingAwardWinner.query.filter_by(meeting_id=selected_meeting.id).all()
+        if winners:
+            for w in winners:
+                winner_set.add((w.award_category, w.contact_id))
+        else:
+            if selected_meeting.best_speaker_id: winner_set.add(('speaker', selected_meeting.best_speaker_id))
+            if selected_meeting.best_evaluator_id: winner_set.add(('evaluator', selected_meeting.best_evaluator_id))
+            if selected_meeting.best_table_topic_id: winner_set.add(('table-topic', selected_meeting.best_table_topic_id))
+            if selected_meeting.best_role_taker_id: winner_set.add(('role-taker', selected_meeting.best_role_taker_id))
+            if selected_meeting.best_debater_id: winner_set.add(('debater', selected_meeting.best_debater_id))
 
     # Vote counts for officers
     vote_counts = {}
@@ -191,7 +196,14 @@ def _get_roles_for_voting(meeting_id, meeting):
             if vote.contact_id:
                 user_vote_ids.add(vote.contact_id)
             
-    best_role_taker_id = meeting.best_role_taker_id if meeting.status == 'finished' else None
+    role_taker_winner_ids = set()
+    if meeting.status == 'finished':
+        from .models.voting import MeetingAwardWinner
+        winners = MeetingAwardWinner.query.filter_by(meeting_id=meeting.id, award_category='role-taker').all()
+        if winners:
+            role_taker_winner_ids = {w.contact_id for w in winners}
+        elif meeting.best_role_taker_id:
+            role_taker_winner_ids.add(meeting.best_role_taker_id)
 
     # Vote counts for role-takers (admins only)
     vote_counts = {}
@@ -221,8 +233,8 @@ def _get_roles_for_voting(meeting_id, meeting):
         combined_role_names = ", ".join(role_names)
         
         # Build consolidated role-taker entry
-        is_winner = (contact_id in user_vote_ids) if meeting.status == 'running' else (best_role_taker_id == contact_id)
-        category_has_winner = (len(user_vote_ids) > 0) if meeting.status == 'running' else bool(best_role_taker_id)
+        is_winner = (contact_id in user_vote_ids) if meeting.status == 'running' else (contact_id in role_taker_winner_ids)
+        category_has_winner = (len(user_vote_ids) > 0) if meeting.status == 'running' else bool(role_taker_winner_ids)
 
         role_entry = {
             'role': combined_role_names,
@@ -377,6 +389,17 @@ def _get_voting_page_context(meeting_id):
     context['roles'] = roles
     context['sorted_role_groups'] = group_roles_by_category(roles)
     context['best_award_ids'] = selected_meeting.get_best_award_ids() if selected_meeting else set()
+
+    # Fetch award configs
+    context['award_configs'] = {}
+    if selected_meeting:
+        from app.models.voting import MeetingAwardConfig
+        configs = MeetingAwardConfig.query.filter_by(meeting_id=meeting_id).all()
+        for config in configs:
+            context['award_configs'][config.award_category] = {
+                'max_votes': config.max_votes_per_user,
+                'max_winners': config.max_winners
+            }
 
     # Fetch existing meeting rating
     context['meeting_rating_score'] = None
@@ -555,16 +578,11 @@ def vote_for_award():
         db.session.commit()
 
         if meeting.status == 'finished' and is_admin:
-            if award_category == 'speaker':
-                meeting.best_speaker_id = your_vote_id
-            elif award_category == 'evaluator':
-                meeting.best_evaluator_id = your_vote_id
-            elif award_category == 'table-topic':
-                meeting.best_table_topic_id = your_vote_id
-            elif award_category == 'role-taker':
-                meeting.best_role_taker_id = your_vote_id
-            elif award_category == 'debater':
-                meeting.best_debater_id = your_vote_id
+            from .models.voting import MeetingAwardWinner
+            MeetingAwardWinner.query.filter_by(meeting_id=meeting.id, award_category=award_category).delete()
+            if your_vote_id:
+                new_winner = MeetingAwardWinner(meeting_id=meeting.id, award_category=award_category, contact_id=your_vote_id)
+                db.session.add(new_winner)
             db.session.commit()
 
         return jsonify(success=True, your_vote_id=your_vote_id, award_category=award_category)

@@ -455,6 +455,31 @@
         </div>
       </section>
 
+      <!-- Section 2.5: Award Configurations -->
+      <section class="mdm-section">
+        <header class="mdm-section-header">
+          <span class="mdm-section-icon mdm-section-icon--awards"><i class="fas fa-cog"></i></span>
+          <div>
+            <h3 class="mdm-section-title">Award Configurations</h3>
+            <p class="mdm-section-desc">Set max votes per user and max winners allowed per category.</p>
+          </div>
+        </header>
+        <div class="mdm-grid mdm-grid--three">
+          {% for award in ['speaker', 'evaluator', 'table-topic', 'role-taker', 'debater', 'lucky_draw'] %}
+          <div class="mdm-field">
+            <label>{{ award | replace('-', ' ') | replace('_', ' ') | title }} Limits</label>
+            <div style="display: flex; gap: 8px;">
+               <input type="number" id="edit-votes-{{ award }}" class="edit-mode-field" title="Max Votes Per User" placeholder="Votes" min="1" value="{{ award_configs.get(award, {}).get('max_votes_per_user', 1) }}">
+               <input type="number" id="edit-winners-{{ award }}" class="edit-mode-field" title="Max Winners" placeholder="Winners" min="1" value="{{ award_configs.get(award, {}).get('max_winners', 1) }}">
+            </div>
+            <small class="mdm-hint">
+              Votes / Winners
+            </small>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
       <!-- Section 3: Media -->
       <section class="mdm-section">
         <header class="mdm-section-header">

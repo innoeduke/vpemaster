@@ -11,6 +11,7 @@ let localMeetingFeedback = "";
 let clubId = null;
 let meetingStatus = null;
 let dbStatus = null;
+let awardConfigs = {};
 
 // Function to initialize configuration
 function initVotingConfig() {
@@ -25,6 +26,7 @@ function initVotingConfig() {
 			clubId = votingConfig.clubId;
 			meetingStatus = votingConfig.meetingStatus;
 			dbStatus = votingConfig.dbStatus;
+			awardConfigs = votingConfig.awardConfigs || {};
 
 			// Initialize rating if provided
 			if (votingConfig.initialMeetingRating !== undefined && votingConfig.initialMeetingRating !== null) {
@@ -250,18 +252,63 @@ function handleVoteClick(buttonEl) {
 		localVotes[awardCategory] = [];
 	}
 
+	const maxVotes = (awardConfigs[awardCategory] && awardConfigs[awardCategory].max_votes) || 1;
 	const idx = localVotes[awardCategory].indexOf(contactId);
+	
 	if (idx > -1) {
+		// If already selected, remove it
 		localVotes[awardCategory].splice(idx, 1);
 	} else {
-		localVotes[awardCategory].push(contactId);
+		// If not selected, add it
+		if (maxVotes === 1) {
+			// Single vote mode: replace existing selection
+			localVotes[awardCategory] = [contactId];
+		} else {
+			// Multi vote mode: check limit
+			if (localVotes[awardCategory].length >= maxVotes) {
+				showVotingToast(`You can only vote for up to ${maxVotes} candidates for ${awardCategory.replace('-', ' ')}.`);
+				return;
+			}
+			localVotes[awardCategory].push(contactId);
+		}
 	}
 
 	updateVoteButtonsUI(awardCategory);
-
 	updateDoneButtonState();
 }
 
+function showVotingToast(msg) {
+	let toast = document.getElementById('voting-toast');
+	if (!toast) {
+		toast = document.createElement('div');
+		toast.id = 'voting-toast';
+		toast.style.position = 'fixed';
+		toast.style.bottom = '20px';
+		toast.style.left = '50%';
+		toast.style.transform = 'translateX(-50%) translateY(100px)';
+		toast.style.backgroundColor = '#dc3545';
+		toast.style.color = '#fff';
+		toast.style.padding = '12px 24px';
+		toast.style.borderRadius = '8px';
+		toast.style.fontSize = '14px';
+		toast.style.fontWeight = '500';
+		toast.style.zIndex = '10000';
+		toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+		toast.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+		document.body.appendChild(toast);
+	}
+	toast.textContent = msg;
+	// Show
+	setTimeout(() => {
+		toast.style.transform = 'translateX(-50%) translateY(0)';
+	}, 10);
+	
+	// Hide after 3s
+	if (toast.hideTimeout) clearTimeout(toast.hideTimeout);
+	toast.hideTimeout = setTimeout(() => {
+		toast.style.transform = 'translateX(-50%) translateY(100px)';
+	}, 3000);
+}
 
 function updateVoteButtonsUI(category) {
 	// Find all buttons in this award category

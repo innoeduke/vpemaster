@@ -17,11 +17,9 @@ class MeetingExportContext:
     @property
     def meeting(self):
         if self._meeting is None:
+            from app.models.voting import MeetingAwardWinner
             self._meeting = Meeting.query.options(
-                orm.joinedload(Meeting.best_table_topic_speaker),
-                orm.joinedload(Meeting.best_evaluator),
-                orm.joinedload(Meeting.best_speaker),
-                orm.joinedload(Meeting.best_role_taker),
+                orm.joinedload(Meeting.award_winners).joinedload(MeetingAwardWinner.contact),
                 orm.joinedload(Meeting.media)
             ).get(self.meeting_id)
         return self._meeting

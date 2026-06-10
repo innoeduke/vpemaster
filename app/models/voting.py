@@ -44,3 +44,31 @@ class Vote(db.Model):
     def delete_for_meeting(cls, meeting_id):
         """Deletes all votes for a meeting."""
         cls.query.filter_by(meeting_id=meeting_id).delete(synchronize_session=False)
+
+class MeetingAwardConfig(db.Model):
+    __tablename__ = 'meeting_award_configs'
+    id = db.Column(db.Integer, primary_key=True)
+    meeting_id = db.Column(db.Integer, db.ForeignKey('Meetings.id', ondelete='CASCADE'), nullable=False, index=True)
+    award_category = db.Column(db.String(50), nullable=False)
+    max_votes_per_user = db.Column(db.Integer, default=1, nullable=False)
+    max_winners = db.Column(db.Integer, default=1, nullable=False)
+
+    meeting = db.relationship('Meeting', backref=db.backref('award_configs', cascade='all, delete-orphan'))
+
+    __table_args__ = (
+        db.UniqueConstraint('meeting_id', 'award_category', name='uq_meeting_award_config'),
+    )
+
+class MeetingAwardWinner(db.Model):
+    __tablename__ = 'meeting_award_winners'
+    id = db.Column(db.Integer, primary_key=True)
+    meeting_id = db.Column(db.Integer, db.ForeignKey('Meetings.id', ondelete='CASCADE'), nullable=False, index=True)
+    award_category = db.Column(db.String(50), nullable=False)
+    contact_id = db.Column(db.Integer, db.ForeignKey('Contacts.id', ondelete='CASCADE'), nullable=False, index=True)
+
+    meeting = db.relationship('Meeting', backref=db.backref('award_winners', cascade='all, delete-orphan'))
+    contact = db.relationship('Contact')
+
+    __table_args__ = (
+        db.UniqueConstraint('meeting_id', 'award_category', 'contact_id', name='uq_meeting_award_winner'),
+    )
