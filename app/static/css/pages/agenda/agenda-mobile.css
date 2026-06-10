@@ -416,6 +416,7 @@
     grid-column: 1 !important;
     width: 100%;
     padding: 12px 12px !important;
+    border: 1px solid #d0d0d0 !important;
   }
 
   .owner-row {
@@ -593,6 +594,13 @@
     background-color: #e9ecef;
     color: #495057;
     order: 1;
+  }
+
+  /* Section collapse: match the specificity of the non-section grid rule above
+     so this !important wins. Both rules have id + two :not classes, so the
+     later rule in the cascade takes effect. */
+  #logs-table tbody tr.section-collapsed-child:not(.section-row):not(.hidden-row) {
+    display: none !important;
   }
 
 

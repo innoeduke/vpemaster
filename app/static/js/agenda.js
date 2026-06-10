@@ -217,9 +217,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (status === 'running') {
       startClock();
-    } else if (status === 'finished' && meetingStartTime) {
-      clockEl.classList.remove('hidden');
-      // Show frozen time — clock display already set above
+    } else if (status === 'finished') {
+      // Don't show the clock for finished meetings.
       stopClock();
     }
   }
@@ -906,6 +905,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // --- Set Data Attributes ---
       row.dataset.id = log.id;
+      row.dataset.sectionId = log.section_id != null ? log.section_id : '';
       row.dataset.projectId = log.Project_ID !== null ? log.Project_ID : '';
       row.dataset.meetingId = log.meeting_id;
       row.dataset.meetingNumber = log.Meeting_Number;
@@ -938,8 +938,28 @@ document.addEventListener("DOMContentLoaded", () => {
       if (log.is_section) {
         const td = document.createElement('td');
         td.colSpan = 4;
-        td.className = 'non-edit-mode-cell';
-        td.textContent = log.Session_Title || log.session_type_title;
+        td.className = 'non-edit-mode-cell section-header-cell';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'section-header-content';
+
+        const micIcon = document.createElement('i');
+        micIcon.className = 'fas fa-microphone section-icon';
+        wrapper.appendChild(micIcon);
+
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'section-title';
+        titleSpan.textContent = log.Session_Title || log.session_type_title;
+        wrapper.appendChild(titleSpan);
+
+        const toggle = document.createElement('i');
+        toggle.className = 'fas fa-caret-down section-toggle';
+        toggle.dataset.toggleSection = log.id;
+        toggle.setAttribute('role', 'button');
+        toggle.setAttribute('aria-label', 'Toggle section');
+        wrapper.appendChild(toggle);
+
+        td.appendChild(wrapper);
         row.appendChild(td);
       } else {
         // 1. Start Time
@@ -2797,6 +2817,39 @@ document.addEventListener("DOMContentLoaded", () => {
     return cell;
   }
 
+
+  // --- Section collapse/expand ---
+  // Walk every subsequent row until the next section header; rows whose
+  // data-section-id matches the toggled section are hidden (or restored).
+  // Rows belonging to other sections are left untouched.
+  function toggleSection(sectionRow) {
+    const sectionId = String(sectionRow.dataset.id);
+    if (!sectionId) return;
+    const collapsed = sectionRow.classList.toggle('collapsed');
+    const toggleIcon = sectionRow.querySelector('.section-toggle');
+    if (toggleIcon) {
+      toggleIcon.classList.toggle('fa-caret-down', !collapsed);
+      toggleIcon.classList.toggle('fa-caret-up', collapsed);
+    }
+    let cursor = sectionRow.nextElementSibling;
+    while (cursor) {
+      if (cursor.classList.contains('section-row')) break;
+      if (String(cursor.dataset.sectionId) === sectionId) {
+        cursor.classList.toggle('section-collapsed-child', collapsed);
+      }
+      cursor = cursor.nextElementSibling;
+    }
+  }
+
+  document.addEventListener('click', (e) => {
+    const toggleEl = e.target.closest('.section-toggle');
+    if (!toggleEl) return;
+    const sectionRow = toggleEl.closest('tr.section-row');
+    if (!sectionRow) return;
+    e.preventDefault();
+    e.stopPropagation();
+    toggleSection(sectionRow);
+  });
 
   // --- Test Hooks ---
   if (typeof window !== 'undefined') {

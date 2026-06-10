@@ -235,6 +235,7 @@
             <tbody>
                 {% for log_dict in logs_data %}
                 <tr data-id="{{ log_dict.id }}"
+                    data-section-id="{{ log_dict.section_id if log_dict.section_id is not none else '' }}"
                     data-project-id="{{ log_dict.Project_ID if log_dict.Project_ID is not none else '' }}"
                     data-meeting-id="{{ log_dict.meeting_id }}"
                     data-meeting-number="{{ log_dict.Meeting_Number }}"
@@ -256,8 +257,12 @@
 
                     {# --- Row Content using log_dict --- #}
                     {% if log_dict.is_section %}
-                    <td colspan="4" class="non-edit-mode-cell">
-                        {{ log_dict.Session_Title or log_dict.session_type_title }}
+                    <td colspan="4" class="non-edit-mode-cell section-header-cell">
+                        <div class="section-header-content">
+                            <i class="fas fa-microphone section-icon"></i>
+                            <span class="section-title">{{ log_dict.Session_Title or log_dict.session_type_title }}</span>
+                            <i class="fas fa-caret-down section-toggle" data-toggle-section="{{ log_dict.id }}" role="button" aria-label="{{ _('Toggle section') }}"></i>
+                        </div>
                     </td>
                     {% else %}
                     <td class="non-edit-mode-cell">{{ log_dict.Start_Time_str }}</td>

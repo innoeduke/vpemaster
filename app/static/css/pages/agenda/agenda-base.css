@@ -513,7 +513,7 @@ select[multiple].edit-mode-field option:checked {
 	padding: 10px 16px;
 	font-weight: 700;
 	font-size: 0.85rem;
-	border: 0;
+	border: 1px solid #d0d0d0;
 	color: #ffffff !important;
 	/* Force white for section headers to override generic cell styles */
 }
@@ -555,6 +555,53 @@ td.actions-column {
 .section-row .icon-btn:hover {
 	transform: scale(1.2);
 	opacity: 0.8;
+}
+
+/* Section header layout: mic icon | title | toggle */
+.section-header-cell {
+	position: relative;
+}
+
+.section-header-cell .section-header-content {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+}
+
+.section-header-cell .section-icon {
+	color: #fff;
+	flex-shrink: 0;
+}
+
+.section-header-cell .section-title {
+	flex: 1 1 auto;
+	text-align: center;
+	color: #ffffff;
+}
+
+.section-header-cell .section-toggle {
+	color: #fff;
+	cursor: pointer;
+	flex-shrink: 0;
+	font-size: 0.95em;
+	margin-left: auto;
+	opacity: 0.9;
+	padding: 4px 6px;
+	transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.section-header-cell .section-toggle:hover {
+	opacity: 1;
+	transform: scale(1.15);
+}
+
+.section-row.collapsed .section-toggle {
+	transform: none;
+}
+
+#logs-table tbody tr.section-collapsed-child {
+	display: none !important;
 }
 
 .hidden-row {
@@ -757,6 +804,10 @@ td.actions-column {
 	outline: none;
 	pointer-events: none;
 	text-align: center;
+}
+
+.edit-mode-active tr.section-row td[data-field="Meeting_Seq"] input {
+	color: #ffffff;
 }
 
 /* Duration inputs: clearly editable with distinct visual treatment */
@@ -1666,6 +1717,7 @@ a.owner-link:hover {
 #agenda-content.jpg-export-mode .action-bar,
 #agenda-content.jpg-export-mode #edit-mode-buttons,
 #agenda-content.jpg-export-mode .orientation-warning,
+#agenda-content.jpg-export-mode #meeting-clock,
 #agenda-content.jpg-export-mode .wod-display:not(.action-bar-wod),
 #agenda-content.jpg-export-mode .dismissible-info,
 #agenda-content.jpg-export-mode .modal,
