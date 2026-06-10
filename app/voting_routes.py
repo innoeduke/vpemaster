@@ -334,6 +334,8 @@ def _get_voting_page_context(meeting_id):
     has_voting_view_results = is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=selected_meeting)
     
     if is_meeting_date and has_voting_view_results:
+        # Eager load the relation to avoid DetachedInstanceError
+        _ = selected_meeting.award_winners
         # Expunge from session so in-memory changes are never committed
         db.session.expunge(selected_meeting)
         # Override status to 'running' if it's not already 'running' or 'finished'
