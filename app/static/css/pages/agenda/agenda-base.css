@@ -1627,13 +1627,13 @@ a.owner-link:hover {
 }
 
 .custom-modal-message {
-	font-size: 0.95em;
+	font-size: 0.875em;
 	color: #4a1e0e;
 	font-weight: 500;
 	line-height: 1.55;
 	text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
 	margin: 0 32px 28px;
-	text-align: center;
+	text-align: left;
 	padding: 14px 18px;
 	background: linear-gradient(135deg, rgba(180, 120, 20, 0.08) 0%, rgba(180, 120, 20, 0.03) 100%);
 	border-radius: 12px;

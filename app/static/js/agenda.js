@@ -1240,13 +1240,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (currentStatus === "unpublished") {
       confirmTitle = "Publish Meeting";
-      confirmMessage = "Please make sure the meeting theme and structure are finalized before publishing.<br><br>Publishing opens booking roles and speeches to all members. Do you want to proceed?";
+      confirmMessage = "<strong>Publishing opens booking roles and speeches to all members.</strong> Please make sure the meeting theme and structure are finalized before publishing. Do you want to proceed?";
     } else if (currentStatus === "not started") {
       confirmTitle = "Start Meeting";
-      confirmMessage = "Please only click this when the meeting has already started.<br><br>Starting will open voting to the audience. Do you want to proceed?";
+      confirmMessage = "<strong>Starting will open voting to the audience.</strong> Please only click this when the meeting has already started. Do you want to proceed?";
     } else if (currentStatus === "running") {
       confirmTitle = "Stop Meeting";
-      confirmMessage = "Stopping the meeting ends voting and shows the final vote results.<br><br>Do you want to proceed?";
+      confirmMessage = "<strong>Stopping the meeting ends voting and shows the final vote results.</strong> Do you want to proceed?";
     } else if (currentStatus === "finished") {
       confirmTitle = "Delete Meeting";
       confirmMessage = "Are you sure you want to <strong>PERMANENTLY DELETE</strong> this meeting and all its records (logs, votes, media)? This action <strong>cannot be undone</strong>.";
