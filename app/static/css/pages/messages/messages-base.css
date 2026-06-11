@@ -896,17 +896,17 @@
 	color: var(--msg-text-primary);
 }
 
-/* Delete confirm modal */
-#deleteConfirmModal .custom-modal-content {
+/* Message confirmation modals */
+.msg-confirm-modal .custom-modal-content {
 	max-width: 380px;
 }
 
-#deleteConfirmModal .custom-modal-body {
+.msg-confirm-modal .custom-modal-body {
 	padding: 28px 28px 8px 28px;
 	text-align: center;
 }
 
-#deleteConfirmModal .confirm-icon {
+.msg-confirm-modal .confirm-icon {
 	width: 48px;
 	height: 48px;
 	margin: 0 auto 14px auto;
@@ -919,7 +919,12 @@
 	font-size: 1.25rem;
 }
 
-#deleteConfirmModal .confirm-title {
+.msg-confirm-modal .confirm-icon.confirm-icon--danger {
+	background: #fef5f5;
+	color: var(--msg-warn);
+}
+
+.msg-confirm-modal .confirm-title {
 	font-family: 'Inter', sans-serif;
 	font-size: 1.05rem;
 	font-weight: 600;
@@ -927,14 +932,14 @@
 	margin: 0 0 6px 0;
 }
 
-#deleteConfirmModal .confirm-sub {
+.msg-confirm-modal .confirm-sub {
 	font-family: 'Inter', sans-serif;
 	font-size: 0.85rem;
 	color: var(--msg-text-secondary);
 	margin: 0 0 18px 0;
 }
 
-#deleteConfirmModal .confirm-actions {
+.msg-confirm-modal .confirm-actions {
 	display: flex;
 	gap: 8px;
 	justify-content: center;
@@ -944,7 +949,7 @@
 	padding-top: 14px;
 }
 
-#deleteConfirmModal .confirm-actions .btn {
+.msg-confirm-modal .confirm-actions .btn {
 	font-family: 'Inter', sans-serif;
 	font-size: 0.8125rem;
 	font-weight: 600;
@@ -956,23 +961,23 @@
 	min-width: 90px;
 }
 
-#deleteConfirmModal .btn-secondary {
+.msg-confirm-modal .btn-secondary {
 	background: #fff;
 	color: var(--msg-text-secondary);
 	border: 1px solid var(--msg-border) !important;
 }
 
-#deleteConfirmModal .btn-secondary:hover {
+.msg-confirm-modal .btn-secondary:hover {
 	color: var(--msg-text-primary);
 	border-color: #b8c2cc !important;
 }
 
-#deleteConfirmModal .btn-danger {
+.msg-confirm-modal .btn-danger {
 	background: var(--msg-warn);
 	color: #fff;
 }
 
-#deleteConfirmModal .btn-danger:hover {
+.msg-confirm-modal .btn-danger:hover {
 	background: #a02e22;
 }
 
