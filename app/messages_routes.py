@@ -94,6 +94,39 @@ def get_sent():
         'current_page': page
     })
 
+@messages_bp.route('/api/messages/trash')
+@login_required
+def get_trash():
+    """Get trash messages."""
+    page = request.args.get('page', 1, type=int)
+    from sqlalchemy import or_
+    messages = Message.query.filter(
+        or_(
+            (Message.recipient_id == current_user.id) & (Message.deleted_by_recipient == True) & (Message.permanently_deleted_by_recipient == False),
+            (Message.sender_id == current_user.id) & (Message.deleted_by_sender == True) & (Message.permanently_deleted_by_sender == False)
+        )
+    ).order_by(Message.timestamp.desc()).paginate(
+        page=page, per_page=10, error_out=False)
+    
+    return jsonify({
+        'messages': [{
+            'id': m.id,
+            'sender': m.sender.display_name if m.sender else 'System',
+            'sender_id': m.sender_id,
+            'recipient': m.recipient.display_name,
+            'recipient_id': m.recipient_id,
+            'subject': m.subject,
+            'body': m.body,
+            'timestamp': m.timestamp.strftime('%Y-%m-%d %H:%M'),
+            'read': m.read,
+            'avatar_url': (m.sender.full_avatar_url if m.sender else None) if m.recipient_id == current_user.id else (m.recipient.full_avatar_url if m.recipient else None),
+            'type': 'inbox' if m.recipient_id == current_user.id else 'sent'
+        } for m in messages.items],
+        'total': messages.total,
+        'pages': messages.pages,
+        'current_page': page
+    })
+
 @messages_bp.route('/messages/send', methods=['POST'])
 @login_required
 def send_message():
@@ -168,13 +201,12 @@ def mark_read(id):
 @messages_bp.route('/messages/<int:id>/delete', methods=['POST'])
 @login_required
 def delete_message(id):
-    """Soft delete a message."""
+    """Soft delete or permanently delete a message."""
     msg = db.session.get(Message, id)
     if not msg:
         return jsonify({'success': False, 'error': 'Message not found'}), 404
     
     # Optional context param to handle self-messages correctly
-    # If not provided, fallback to default behavior (prioritize recipient)
     context = request.args.get('context') or request.form.get('context')
     
     deleted = False
@@ -187,13 +219,26 @@ def delete_message(id):
         if msg.sender_id == current_user.id:
             msg.deleted_by_sender = True
             deleted = True
+    elif context == 'trash':
+        if msg.recipient_id == current_user.id:
+            msg.permanently_deleted_by_recipient = True
+            deleted = True
+        elif msg.sender_id == current_user.id:
+            msg.permanently_deleted_by_sender = True
+            deleted = True
     else:
         # Default behavior (legacy/fallback)
         if msg.recipient_id == current_user.id:
-            msg.deleted_by_recipient = True
+            if msg.deleted_by_recipient:
+                msg.permanently_deleted_by_recipient = True
+            else:
+                msg.deleted_by_recipient = True
             deleted = True
         elif msg.sender_id == current_user.id:
-            msg.deleted_by_sender = True
+            if msg.deleted_by_sender:
+                msg.permanently_deleted_by_sender = True
+            else:
+                msg.deleted_by_sender = True
             deleted = True
             
     if not deleted:
@@ -201,6 +246,31 @@ def delete_message(id):
         
     db.session.commit()
     return jsonify({'success': True})
+
+@messages_bp.route('/messages/empty-trash', methods=['POST'])
+@login_required
+def empty_trash():
+    """Permanently delete all trash messages for the current user."""
+    # Received trash
+    received_trash = Message.query.filter(
+        Message.recipient_id == current_user.id,
+        Message.deleted_by_recipient == True,
+        Message.permanently_deleted_by_recipient == False
+    ).all()
+    for m in received_trash:
+        m.permanently_deleted_by_recipient = True
+
+    # Sent trash
+    sent_trash = Message.query.filter(
+        Message.sender_id == current_user.id,
+        Message.deleted_by_sender == True,
+        Message.permanently_deleted_by_sender == False
+    ).all()
+    for m in sent_trash:
+        m.permanently_deleted_by_sender = True
+
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Trash emptied successfully'})
 
 @messages_bp.route('/api/messages/recipients')
 @login_required

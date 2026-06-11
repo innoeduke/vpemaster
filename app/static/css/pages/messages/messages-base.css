@@ -449,6 +449,29 @@
 	border-color: var(--msg-accent);
 }
 
+.msg-empty-trash-btn {
+	background-color: #fff;
+	color: var(--msg-text-secondary);
+	border: 1px solid var(--msg-border);
+	border-radius: 6px;
+	padding: 0 12px;
+	height: 32px;
+	font-family: 'Inter', sans-serif;
+	font-weight: 600;
+	font-size: 0.75rem;
+	cursor: pointer;
+	display: none;
+	align-items: center;
+	gap: 6px;
+	transition: all 0.15s ease;
+}
+
+.msg-empty-trash-btn:hover {
+	color: var(--msg-warn);
+	border-color: var(--msg-warn);
+	background-color: #fef5f5;
+}
+
 .msg-list-container {
 	flex: 1;
 	overflow-y: auto;

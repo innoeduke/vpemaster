@@ -172,6 +172,71 @@ class MultiRecipientSendTestCase(unittest.TestCase):
         second_chunk = next(iterator)
         self.assertEqual(second_chunk.decode('utf-8'), "data: new_message\n\n")
 
+    def test_message_trash_and_empty_trash_flow(self):
+        """Test moving messages to trash, permanently deleting individually, and emptying trash."""
+        # 1. alice sends a message to bob
+        self.login(self.sender, self.club)
+        res = self.client.post('/messages/send', data=json.dumps({
+            'recipient_id': self.recv1.id,
+            'subject': 'Hello Bob',
+            'body': 'Hi bob, this is alice.',
+        }), content_type='application/json')
+        self.assertEqual(res.status_code, 200)
+        msg_id = Message.query.first().id
+        
+        # 2. bob logs in, checks inbox, and deletes the message (soft delete -> goes to Trash)
+        self.login(self.recv1, self.club)
+        
+        # Verify it is in Bob's inbox
+        inbox_res = self.client.get('/api/messages/inbox')
+        self.assertEqual(len(inbox_res.get_json()['messages']), 1)
+        
+        # Soft delete from inbox
+        del_res = self.client.post(f'/messages/{msg_id}/delete?context=inbox')
+        self.assertEqual(del_res.status_code, 200)
+        
+        # Verify it is no longer in Bob's inbox
+        inbox_res2 = self.client.get('/api/messages/inbox')
+        self.assertEqual(len(inbox_res2.get_json()['messages']), 0)
+        
+        # Verify it IS in Bob's trash
+        trash_res = self.client.get('/api/messages/trash')
+        self.assertEqual(len(trash_res.get_json()['messages']), 1)
+        self.assertEqual(trash_res.get_json()['messages'][0]['type'], 'inbox')
+        
+        # 3. permanently delete the message from Bob's trash
+        perm_del_res = self.client.post(f'/messages/{msg_id}/delete?context=trash')
+        self.assertEqual(perm_del_res.status_code, 200)
+        
+        # Verify it is no longer in Bob's trash
+        trash_res2 = self.client.get('/api/messages/trash')
+        self.assertEqual(len(trash_res2.get_json()['messages']), 0)
+        
+        # 4. alice soft deletes from Sent (goes to Alice's Trash)
+        self.login(self.sender, self.club)
+        sent_res = self.client.get('/api/messages/sent')
+        self.assertEqual(len(sent_res.get_json()['messages']), 1)
+        
+        del_sent_res = self.client.post(f'/messages/{msg_id}/delete?context=sent')
+        self.assertEqual(del_sent_res.status_code, 200)
+        
+        # Verify no longer in Sent
+        sent_res2 = self.client.get('/api/messages/sent')
+        self.assertEqual(len(sent_res2.get_json()['messages']), 0)
+        
+        # Verify in Alice's Trash
+        alice_trash = self.client.get('/api/messages/trash')
+        self.assertEqual(len(alice_trash.get_json()['messages']), 1)
+        self.assertEqual(alice_trash.get_json()['messages'][0]['type'], 'sent')
+        
+        # 5. Alice empties her Trash
+        empty_res = self.client.post('/messages/empty-trash')
+        self.assertEqual(empty_res.status_code, 200)
+        
+        # Verify Alice's Trash is empty
+        alice_trash2 = self.client.get('/api/messages/trash')
+        self.assertEqual(len(alice_trash2.get_json()['messages']), 0)
+
 
 if __name__ == '__main__':
     unittest.main()

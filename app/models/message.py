@@ -16,5 +16,9 @@ class Message(db.Model):
     deleted_by_sender = db.Column(db.Boolean, default=False)
     deleted_by_recipient = db.Column(db.Boolean, default=False)
 
+    # Permanent delete flags
+    permanently_deleted_by_sender = db.Column(db.Boolean, default=False, nullable=False)
+    permanently_deleted_by_recipient = db.Column(db.Boolean, default=False, nullable=False)
+
     def __repr__(self):
         return f'<Message {self.id} from {self.sender_id} to {self.recipient_id}>'

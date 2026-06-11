@@ -22,6 +22,9 @@
             <div class="msg-nav-item" onclick="switchTab('sent')" id="tab-sent">
                 <i class="fas fa-paper-plane"></i> <span>Sent</span>
             </div>
+            <div class="msg-nav-item" onclick="switchTab('trash')" id="tab-trash">
+                <i class="fas fa-trash-alt"></i> <span>Trash</span>
+            </div>
         </div>
     </div>
     
@@ -29,9 +32,14 @@
     <div class="msg-main">
         <div class="msg-header">
             <h2 class="msg-header-title" id="current-view-title">Inbox</h2>
-            <button class="msg-refresh-btn" onclick="loadMessages(currentTab)" title="Refresh" aria-label="Refresh">
-                <i class="fas fa-sync-alt"></i>
-            </button>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <button class="msg-empty-trash-btn" id="empty-trash-btn" onclick="openEmptyTrashModal()" title="Empty Trash">
+                    <i class="fas fa-dumpster"></i> <span>Empty Trash</span>
+                </button>
+                <button class="msg-refresh-btn" onclick="loadMessages(currentTab)" title="Refresh" aria-label="Refresh">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
         </div>
         
         <div class="msg-list-container custom-scrollbar" id="messages-list">
@@ -99,6 +107,23 @@
         <div class="confirm-actions">
             <button class="btn btn-secondary" onclick="closeDeleteConfirmModal()">Cancel</button>
             <button class="btn btn-danger" onclick="confirmDeleteMessage()">Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Empty Trash Confirmation Modal -->
+<div class="custom-modal" id="emptyTrashConfirmModal">
+    <div class="custom-modal-content">
+        <div class="custom-modal-body">
+            <div class="confirm-icon" style="background: var(--msg-warn); color: #fff;">
+                <i class="fas fa-trash-alt"></i>
+            </div>
+            <h3 class="confirm-title">Empty Trash?</h3>
+            <p class="confirm-sub">This will permanently delete all messages in your trash. This action cannot be undone.</p>
+        </div>
+        <div class="confirm-actions">
+            <button class="btn btn-secondary" onclick="closeEmptyTrashConfirmModal()">Cancel</button>
+            <button class="btn btn-danger" onclick="confirmEmptyTrash()">Empty Trash</button>
         </div>
     </div>
 </div>

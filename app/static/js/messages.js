@@ -4,6 +4,7 @@ let currentMessageId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     loadMessages(currentTab);
+    setInterval(() => loadMessages(currentTab, true), 60000);
 
     // Server-Sent Events to refresh message list in real-time
     if (typeof messageEventSource !== 'undefined') {
@@ -30,6 +31,13 @@ function switchTab(tab) {
     document.querySelectorAll('.msg-nav-item').forEach(t => t.classList.remove('active'));
     document.getElementById(`tab-${tab}`).classList.add('active');
     document.getElementById('current-view-title').textContent = tab.charAt(0).toUpperCase() + tab.slice(1);
+    
+    // Toggle Empty Trash button visibility
+    const emptyTrashBtn = document.getElementById('empty-trash-btn');
+    if (emptyTrashBtn) {
+        emptyTrashBtn.style.display = tab === 'trash' ? 'inline-flex' : 'none';
+    }
+
     loadMessages(tab);
 }
 
@@ -51,7 +59,7 @@ function loadMessages(tab, silent=false) {
             if (data.messages.length === 0) {
                 list.innerHTML = `
                     <div class="empty-state">
-                        <i class="fas fa-${tab === 'inbox' ? 'inbox' : 'paper-plane'}"></i>
+                        <i class="fas fa-${tab === 'inbox' ? 'inbox' : (tab === 'sent' ? 'paper-plane' : 'trash-alt')}"></i>
                         <p>No messages in ${tab}</p>
                     </div>
                 `;
@@ -64,9 +72,10 @@ function loadMessages(tab, silent=false) {
                     const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'avatars';
                     avatarSrc = `/static/${root}/${avatarSrc}`;
                 }
-                const party = tab === 'inbox' ? msg.sender : msg.recipient;
+                const isReceived = tab === 'inbox' || (tab === 'trash' && msg.type === 'inbox');
+                const party = isReceived ? msg.sender : msg.recipient;
                 return `
-                <div class="msg-item ${!msg.read && tab === 'inbox' ? 'unread' : ''}" onclick="showDetail(${msg.id})">
+                <div class="msg-item ${!msg.read && isReceived ? 'unread' : ''}" onclick="showDetail(${msg.id})">
                     <div class="msg-avatar-wrap">
                         ${avatarSrc
                             ? `<img src="${avatarSrc}" class="msg-avatar" alt="" onerror="this.outerHTML='<div class=\\'msg-avatar-placeholder\\'>${getInitials(party).replace(/'/g, "\\'")}</div>'">`
@@ -75,7 +84,7 @@ function loadMessages(tab, silent=false) {
                     </div>
                     <div class="msg-content">
                         <div class="msg-row-top">
-                            <span class="msg-sender">${tab === 'inbox' ? msg.sender : 'To: ' + msg.recipient}</span>
+                            <span class="msg-sender">${isReceived ? msg.sender : 'To: ' + msg.recipient}</span>
                             <span class="msg-time">${msg.timestamp.split(' ')[0]}</span>
                         </div>
                         <div class="msg-subject">${formatSubjectWithBadge(msg.subject)}</div>
@@ -103,26 +112,12 @@ function showDetail(id) {
 
     currentMessageId = id;
     const modal = document.getElementById('messageDetailModal');
-    const isInbox = currentTab === 'inbox';
-    const otherParty = isInbox ? msg.sender : msg.recipient;
+    const isReceived = currentTab === 'inbox' || (currentTab === 'trash' && msg.type === 'inbox');
+    const otherParty = isReceived ? msg.sender : msg.recipient;
 
-    // Extract trailing " from {name}" from the subject so the club name
-    // stays in the title and the sender is shown above the recipient row.
-    const fromMatch = msg.subject.match(/\s+from\s+(.+?)\s*$/i);
-    const fromName = fromMatch ? fromMatch[1].trim() : null;
-    const cleanSubject = fromMatch ? msg.subject.replace(fromMatch[0], '').trim() : msg.subject;
-
-    document.getElementById('detail-subject').innerHTML = formatSubjectWithBadge(cleanSubject);
-    document.getElementById('detail-sender').textContent = (isInbox ? 'From ' : 'To ') + otherParty;
+    document.getElementById('detail-subject').innerHTML = formatSubjectWithBadge(msg.subject);
+    document.getElementById('detail-sender').textContent = (isReceived ? 'From ' : 'To ') + otherParty;
     document.getElementById('detail-time').textContent = msg.timestamp;
-    const fromEl = document.getElementById('detail-from');
-    if (isInbox && fromName) {
-        fromEl.textContent = `From ${fromName}`;
-        fromEl.style.display = '';
-    } else {
-        fromEl.textContent = '';
-        fromEl.style.display = 'none';
-    }
     const avatarContainer = document.getElementById('detail-avatar');
     let detailAvatarSrc = msg.avatar_url;
     if (detailAvatarSrc && detailAvatarSrc.indexOf('/') === -1) {
@@ -143,7 +138,7 @@ function showDetail(id) {
     // Handle User Join Requests (User requesting Admin)
     const joinRequestMatch = msg.body.match(/\[JOIN_REQUEST:(\d+):(\d+)\]/);
     // Handle responded state (post-action marker)
-    const respondedMatch = msg.body.match(/\[Responded:\s*(JOIN(?:ED)?|REJECT(?:ED)?|APPROVE(?:D)?|ACCEPT(?:ED)?)(?::\s*([^\]]+))?\]/i);
+    const respondedMatch = msg.body.match(/\[Responded:\s*(JOIN|REJECT|APPROVE|ACCEPT)(?::\s*([^\]]+))?\]/i);
 
     let displayBody = msg.body;
     if (requestMatch) {
@@ -203,7 +198,7 @@ function showDetail(id) {
 
     // Render "responded" status card when the request has already been handled
     if (respondedMatch) {
-        const verb = respondedMatch[1].toUpperCase().replace(/ED$/, '');
+        const verb = respondedMatch[1].toUpperCase();
         const note = respondedMatch[2] ? respondedMatch[2].trim() : '';
         const statusVerb = (verb === 'JOIN' || verb === 'ACCEPT' || verb === 'APPROVE') ? 'Accepted' : 'Declined';
         const statusClass = statusVerb === 'Accepted' ? 'message-status-card accepted' : 'message-status-card declined';
@@ -212,12 +207,14 @@ function showDetail(id) {
         const statusHtml = `
             <div class="${statusClass}">
                 <i class="fas ${statusIcon} status-icon"></i>
-                <span class="status-title">This request has been ${statusVerb.toLowerCase()}.</span>
+                <span class="status-title">You ${statusVerb} this request</span>
                 ${noteHtml}
             </div>
         `;
         bodyEl.insertAdjacentHTML('beforeend', statusHtml);
     }
+
+    const isInbox = currentTab === 'inbox';
 
     if (requestMatch && isInbox) {
          const actionsHtml = `
@@ -322,9 +319,9 @@ function replyToMessage() {
     const msg = currentMessages.find(m => m.id === currentMessageId);
     if (!msg) return;
 
-    const isInbox = currentTab === 'inbox';
-    const recipientId = isInbox ? msg.sender_id : msg.recipient_id;
-    const recipientName = isInbox ? msg.sender : msg.recipient;
+    const isReceived = currentTab === 'inbox' || (currentTab === 'trash' && msg.type === 'inbox');
+    const recipientId = isReceived ? msg.sender_id : msg.recipient_id;
+    const recipientName = isReceived ? msg.sender : msg.recipient;
     
     let subject = msg.subject || '';
     if (subject && !subject.toLowerCase().startsWith('re:')) {
@@ -340,6 +337,18 @@ function replyToMessage() {
 // Prompt for deletion (opens 2nd modal)
 function deleteCurrentMessage() {
     if (!currentMessageId) return;
+
+    const confirmTitle = document.querySelector('#deleteConfirmModal .confirm-title');
+    const confirmSub = document.querySelector('#deleteConfirmModal .confirm-sub');
+    
+    if (currentTab === 'trash') {
+        if (confirmTitle) confirmTitle.textContent = 'Permanently delete this message?';
+        if (confirmSub) confirmSub.textContent = 'This action cannot be undone.';
+    } else {
+        if (confirmTitle) confirmTitle.textContent = 'Delete this message?';
+        if (confirmSub) confirmSub.textContent = 'This will move it to the Trash folder.';
+    }
+
     document.getElementById('deleteConfirmModal').classList.add('flex');
 }
 
@@ -351,7 +360,7 @@ function closeDeleteConfirmModal() {
 function confirmDeleteMessage() {
     if (!currentMessageId) return;
     
-    // Pass context to ensure correct soft-delete flag is set, especially for self-messages
+    // Pass context to ensure correct soft/permanent deletion flags are set
     const context = currentTab; 
     const btn = document.querySelector('#deleteConfirmModal .btn-danger');
     const originalText = btn.textContent;
@@ -380,15 +389,54 @@ function confirmDeleteMessage() {
         });
 }
 
+function openEmptyTrashModal() {
+    document.getElementById('emptyTrashConfirmModal').classList.add('flex');
+}
+
+function closeEmptyTrashConfirmModal() {
+    document.getElementById('emptyTrashConfirmModal').classList.remove('flex');
+}
+
+function confirmEmptyTrash() {
+    const btn = document.querySelector('#emptyTrashConfirmModal .btn-danger');
+    const originalText = btn.textContent;
+    btn.textContent = 'Emptying...';
+    btn.disabled = true;
+
+    fetch('/messages/empty-trash', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            btn.textContent = originalText;
+            btn.disabled = false;
+            closeEmptyTrashConfirmModal();
+            
+            if (data.success) {
+                showToast('Trash emptied successfully', 'success');
+                loadMessages(currentTab);
+            } else {
+                showToast('Error emptying trash', 'error');
+            }
+        })
+        .catch(err => {
+            btn.textContent = originalText;
+            btn.disabled = false;
+            closeEmptyTrashConfirmModal();
+            showToast('Error emptying trash', 'error');
+        });
+}
+
 // Close modal on outside click
 window.onclick = function(event) {
     const detailModal = document.getElementById('messageDetailModal');
     const deleteModal = document.getElementById('deleteConfirmModal');
+    const emptyTrashModal = document.getElementById('emptyTrashConfirmModal');
     
     if (event.target == deleteModal) {
         closeDeleteConfirmModal();
     } else if (event.target == detailModal) {
         closeMessageDetailModal();
+    } else if (event.target == emptyTrashModal) {
+        closeEmptyTrashConfirmModal();
     }
 }
 
@@ -446,23 +494,16 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// Helper to extract initials
 function getInitials(name) {
-    if (!name) return '??';
-    const parts = name.trim().split(/\s+/);
-    const first = parts[0] ? parts[0][0] : '';
-    const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
-    return (first + last).toUpperCase() || '??';
+    return name ? name.substring(0, 2).toUpperCase() : '??';
 }
 
 function respondToJoinRequest(messageId, action) {
-    // Direct action without confirmation dialog
     const btn = event.target.closest('button');
-    
-    // Disable both buttons to prevent double clicks
     const container = btn.closest('.message-actions');
     if (container) {
-        const buttons = container.querySelectorAll('button');
-        buttons.forEach(b => b.disabled = true);
+        container.querySelectorAll('button').forEach(b => b.disabled = true);
     } else {
          btn.disabled = true;
     }
@@ -481,9 +522,7 @@ function respondToJoinRequest(messageId, action) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Show toast instead of alert
             showToast(action === 'join' ? 'You have joined the club!' : 'Request rejected.', 'success');
-            
             closeMessageDetailModal();
             loadMessages(currentTab);
         } else {
@@ -652,7 +691,6 @@ function respondToUserJoinRequest(messageId, action) {
 function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
-    // Basic styles if not in CSS
     toast.style.cssText = `
         position: fixed;
         bottom: 20px;
@@ -672,13 +710,11 @@ function showToast(message, type = 'info') {
     
     document.body.appendChild(toast);
     
-    // Trigger animation
     setTimeout(() => {
         toast.style.opacity = '1';
         toast.style.transform = 'translateY(0)';
     }, 10);
     
-    // Auto remove
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateY(20px)';
