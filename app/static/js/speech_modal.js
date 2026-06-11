@@ -1015,6 +1015,18 @@ function mountSpeechModeOwnerPicker({
 }
 
 function resetModal(logData, sessionType) {
+  // Restore original text input if it was previously replaced by a select
+  if (modalElements.speechTitle && modalElements.speechTitle.tagName === "SELECT") {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.id = "edit-speech-title";
+    input.name = "speech_title";
+    input.required = true;
+    input.placeholder = "";
+    modalElements.speechTitle.replaceWith(input);
+    modalElements.speechTitle = input;
+  }
+
   toggleGeneric(false);
   modalElements.form.reset();
   modalElements.logId.value = logData.id;

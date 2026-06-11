@@ -220,14 +220,7 @@ class TablePaginator {
 
     this.tbody = this.table.querySelector('tbody');
     this.infoDisplay = this.container.querySelector('.pagination-info');
-    this.currentPageDisplay = this.container.querySelector('.current-page-display');
-    this.totalPagesDisplay = this.container.querySelector('.total-pages-display');
     this.pageSizeSelect = this.container.querySelector('.page-size-select');
-
-    this.firstBtn = this.container.querySelector('.first-page-btn');
-    this.prevBtn = this.container.querySelector('.prev-page-btn');
-    this.nextBtn = this.container.querySelector('.next-page-btn');
-    this.lastBtn = this.container.querySelector('.last-page-btn');
 
     this.init();
   }
@@ -254,11 +247,12 @@ class TablePaginator {
       });
     }
 
-    if (this.firstBtn) this.firstBtn.addEventListener('click', () => { this.currentPage = 1; this.update(); });
-    if (this.prevBtn) this.prevBtn.addEventListener('click', () => { this.currentPage = Math.max(1, this.currentPage - 1); this.update(); });
-    if (this.nextBtn) this.nextBtn.addEventListener('click', () => { this.currentPage++; this.update(); });
-    if (this.lastBtn) this.lastBtn.addEventListener('click', () => { this.currentPage = this.getTotalPages(); this.update(); });
+    this.update();
+  }
 
+  goToPage(page) {
+    const totalPages = this.getTotalPages();
+    this.currentPage = Math.max(1, Math.min(page, totalPages));
     this.update();
   }
 
@@ -313,24 +307,21 @@ class TablePaginator {
 
     // Update displays
     const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+    const totalForInfo = filteredRows.length;
     if (this.infoDisplay) {
-      if (rows.length === 0) {
+      if (totalForInfo === 0) {
         this.infoDisplay.textContent = isChinese ? '没有找到记录' : 'No records found';
       } else {
         this.infoDisplay.textContent = isChinese
-          ? `显示第 ${startIndex + 1} - ${Math.min(endIndex, rows.length)} 条记录，共 ${rows.length} 条`
-          : `Showing ${startIndex + 1} - ${Math.min(endIndex, rows.length)} of ${rows.length}`;
+          ? `显示第 ${startIndex + 1} - ${Math.min(endIndex, totalForInfo)} 条记录，共 ${totalForInfo} 条`
+          : `Showing ${startIndex + 1} - ${Math.min(endIndex, totalForInfo)} of ${totalForInfo}`;
       }
     }
 
-    if (this.currentPageDisplay) this.currentPageDisplay.textContent = this.currentPage;
-    if (this.totalPagesDisplay) this.totalPagesDisplay.textContent = totalPages;
-
-    // Update buttons
-    if (this.firstBtn) this.firstBtn.disabled = this.currentPage === 1;
-    if (this.prevBtn) this.prevBtn.disabled = this.currentPage === 1;
-    if (this.nextBtn) this.nextBtn.disabled = this.currentPage >= totalPages;
-    if (this.lastBtn) this.lastBtn.disabled = this.currentPage >= totalPages;
+    const controlsContainer = this.container.querySelector('.pagination-controls');
+    if (controlsContainer && typeof window.renderNumberedPagination === 'function') {
+      window.renderNumberedPagination(controlsContainer, this.currentPage, totalPages, (page) => this.goToPage(page));
+    }
   }
 }
 

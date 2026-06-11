@@ -41,15 +41,37 @@
 }
 
 .pagination-btn:hover:not(:disabled) {
+	background-color: rgba(119, 36, 50, 0.08);
+	color: #772432;
+	border-color: #772432;
+}
+
+.pagination-btn.active {
 	background-color: #772432;
 	color: #fff;
 	border-color: #772432;
+}
+
+.pagination-btn.active:hover {
+	background-color: #772432;
+	color: #fff;
 }
 
 .pagination-btn:disabled {
 	opacity: 0.5;
 	cursor: not-allowed;
 	background-color: #e9ecef;
+}
+
+.pagination-info-dot {
+	font-size: 0.9rem;
+	color: #6c757d;
+	margin: 0 0.25rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 30px;
+	height: 40px;
 }
 
 .page-indicator {

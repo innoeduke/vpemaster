@@ -345,7 +345,7 @@ async function toggleConnection(contactId) {
 }
 
 /**
- * Updates pagination control states and info display
+ * Updates pagination control states and info display using dynamic numbered buttons
  */
 function updatePaginationControls(startIndex, endIndex, totalContacts, totalPages) {
   // Update info text
@@ -362,22 +362,10 @@ function updatePaginationControls(startIndex, endIndex, totalContacts, totalPage
     }
   }
 
-  // Update page indicator
-  const currentPageSpan = document.getElementById('currentPage');
-  const totalPagesSpan = document.getElementById('totalPages');
-  if (currentPageSpan) currentPageSpan.textContent = currentPage;
-  if (totalPagesSpan) totalPagesSpan.textContent = totalPages || 1;
-
-  // Update button states
-  const firstBtn = document.getElementById('firstPageBtn');
-  const prevBtn = document.getElementById('prevPageBtn');
-  const nextBtn = document.getElementById('nextPageBtn');
-  const lastBtn = document.getElementById('lastPageBtn');
-
-  if (firstBtn) firstBtn.disabled = currentPage === 1;
-  if (prevBtn) prevBtn.disabled = currentPage === 1;
-  if (nextBtn) nextBtn.disabled = currentPage >= totalPages || totalPages === 0;
-  if (lastBtn) lastBtn.disabled = currentPage >= totalPages || totalPages === 0;
+  const controlsContainer = document.querySelector('#paginationContainer .pagination-controls');
+  if (controlsContainer && typeof window.renderNumberedPagination === 'function') {
+    window.renderNumberedPagination(controlsContainer, currentPage, totalPages, goToPage);
+  }
 }
 
 /**
@@ -546,33 +534,8 @@ document.addEventListener("DOMContentLoaded", function () {
     currentPage = 1;
     applyFiltersAndPaginate();
   });
-
-  // Pagination button handlers
-  const firstPageBtn = document.getElementById('firstPageBtn');
-  const prevPageBtn = document.getElementById('prevPageBtn');
-  const nextPageBtn = document.getElementById('nextPageBtn');
-  const lastPageBtn = document.getElementById('lastPageBtn');
+  // Pagination size selector handler
   const pageSizeSelect = document.getElementById('pageSizeSelect');
-
-  if (firstPageBtn) {
-    firstPageBtn.addEventListener('click', () => goToPage(1));
-  }
-
-  if (prevPageBtn) {
-    prevPageBtn.addEventListener('click', () => goToPage(currentPage - 1));
-  }
-
-  if (nextPageBtn) {
-    nextPageBtn.addEventListener('click', () => goToPage(currentPage + 1));
-  }
-
-  if (lastPageBtn) {
-    lastPageBtn.addEventListener('click', () => {
-      const totalPages = Math.ceil(filteredContacts.length / pageSize);
-      goToPage(totalPages);
-    });
-  }
-
   if (pageSizeSelect) {
     pageSizeSelect.addEventListener('change', (e) => {
       changePageSize(e.target.value);

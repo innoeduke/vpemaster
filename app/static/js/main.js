@@ -813,4 +813,83 @@ function selectClub(event, clubId) {
 }
 window.selectClub = selectClub;
 
+/**
+ * Helper to dynamically render a mailroom-style numbered pagination bar.
+ * @param {HTMLElement} controlsContainer - The container element for the page buttons.
+ * @param {number} currentPage - The current active page (1-based).
+ * @param {number} totalPages - The total number of pages.
+ * @param {function(number)} onPageClick - Callback when a page button is clicked.
+ */
+function renderNumberedPagination(controlsContainer, currentPage, totalPages, onPageClick) {
+  if (!controlsContainer) return;
+
+  const displayPages = Math.max(1, totalPages);
+  const displayCurrentPage = currentPage || 1;
+  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+  const prevText = isChinese ? '上一页' : 'Prev';
+  const nextText = isChinese ? '下一页' : 'Next';
+
+  let html = '';
+
+  // Previous button
+  html += `
+    <button class="pagination-btn" ${displayCurrentPage === 1 ? 'disabled' : ''} data-page="${displayCurrentPage - 1}" title="${isChinese ? '上一页' : 'Previous Page'}">
+      <i class="fas fa-chevron-left"></i> ${prevText}
+    </button>
+  `;
+
+  const maxVisible = 5;
+  let startPage = Math.max(1, displayCurrentPage - Math.floor(maxVisible / 2));
+  let endPage = Math.min(displayPages, startPage + maxVisible - 1);
+
+  if (endPage - startPage + 1 < maxVisible) {
+    startPage = Math.max(1, endPage - maxVisible + 1);
+  }
+
+  if (startPage > 1) {
+    html += `<button class="pagination-btn" data-page="1">1</button>`;
+    if (startPage > 2) {
+      html += `<span class="pagination-info-dot">...</span>`;
+    }
+  }
+
+  for (let p = startPage; p <= endPage; p++) {
+    html += `
+      <button class="pagination-btn ${p === displayCurrentPage ? 'active' : ''}" data-page="${p}">
+        ${p}
+      </button>
+    `;
+  }
+
+  if (endPage < displayPages) {
+    if (endPage < displayPages - 1) {
+      html += `<span class="pagination-info-dot">...</span>`;
+    }
+    html += `<button class="pagination-btn" data-page="${displayPages}">${displayPages}</button>`;
+  }
+
+  // Next button
+  html += `
+    <button class="pagination-btn" ${displayCurrentPage === displayPages ? 'disabled' : ''} data-page="${displayCurrentPage + 1}" title="${isChinese ? '下一页' : 'Next Page'}">
+      ${nextText} <i class="fas fa-chevron-right"></i>
+    </button>
+  `;
+
+  controlsContainer.innerHTML = html;
+
+  if (!controlsContainer.dataset.paginatorBound) {
+    controlsContainer.dataset.paginatorBound = "true";
+    controlsContainer.addEventListener('click', (e) => {
+      const btn = e.target.closest('.pagination-btn');
+      if (!btn || btn.disabled) return;
+      const page = parseInt(btn.dataset.page, 10);
+      if (!isNaN(page) && typeof controlsContainer.onPageClickCallback === 'function') {
+        controlsContainer.onPageClickCallback(page);
+      }
+    });
+  }
+  controlsContainer.onPageClickCallback = onPageClick;
+}
+window.renderNumberedPagination = renderNumberedPagination;
+
 
