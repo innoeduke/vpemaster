@@ -138,8 +138,8 @@ def login():
             elif home_club:
                 set_current_club_id(home_club.id)
 
-            # Helper to redirect to 'next' page if present
-            next_page = request.args.get('next')
+            # Helper to redirect to 'next' page if present (check form first, then URL)
+            next_page = request.form.get('next') or request.args.get('next')
             if not next_page or not next_page.startswith('/') or next_page == '/':
                 if club_id or home_club:
                     next_page = url_for('main_bp.index')
@@ -179,15 +179,18 @@ def profile(contact_id=None):
     """
     Displays a user's profile page and handles password reset.
     """
-    # Guest Check: Block visitors (authenticated non-members and anonymous)
-    # of the active club from accessing profiles.
-    from ..club_context import get_current_club_id
-    if current_user.is_guest_of_club(get_current_club_id()):
-        flash('Guests do not have access to user profiles.', 'error')
-        return redirect(url_for('main_bp.index'))
-
     is_own_profile = True
     if contact_id and contact_id != current_user.contact_id:
+        is_own_profile = False
+
+    # Guest Check: Block visitors (authenticated non-members and anonymous)
+    # of the active club from accessing other user's profiles.
+    if not is_own_profile:
+        from ..club_context import get_current_club_id
+        if current_user.is_guest_of_club(get_current_club_id()):
+            flash('Guests do not have access to user profiles.', 'error')
+            return redirect(url_for('main_bp.index'))
+
         from ..models import Contact
         contact = Contact.query.get_or_404(contact_id)
         # Handle cases where contact might not have a user account
@@ -207,8 +210,6 @@ def profile(contact_id=None):
                 def primary_role(self):
                     return None
             user = MockUser(contact)
-            
-        is_own_profile = False
 
         # Permission Check for Viewing Other Profiles
         # Users (Members) can view other profiles, but guests cannot (handled above)

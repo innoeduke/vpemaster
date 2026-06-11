@@ -4,9 +4,16 @@
    ======================================== */
 
 @media (min-width: 1025px) {
-
 	/* Larger max-width for modals on desktop */
 	.custom-modal-content {
-		max-width: 800px;
+		max-width: 680px;
+	}
+
+	.msg-header-title {
+		font-size: 1.25rem;
+	}
+
+	.msg-list-container {
+		padding: 1rem 1.5rem 1.5rem 1.5rem;
 	}
 }

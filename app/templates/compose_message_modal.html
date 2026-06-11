@@ -1,183 +1,444 @@
-<!-- Compose Modal (Custom Styles) -->
+<!-- Compose Modal (Brand-aligned: navy #004165, Inter, refined) -->
 <style>
-    /* Scoped styles for this modal to ensure consistency with custom theme */
+    /* ===================================================
+       Compose Modal — brand-aligned redesign
+       Navy #004165 primary, Inter throughout, restrained
+       type scale, gentle paper background.
+       =================================================== */
     .compose-modal {
+        --brand: #004165;
+        --brand-deep: #002d47;
+        --brand-light: #0066a4;
+        --brand-soft: #e6f0f7;
+        --paper: #ffffff;
+        --ink: #1a2a3a;
+        --mute: #6b7785;
+        --rule: #e2e8f0;
+        --hair: #eef2f6;
+        --warn: #c0392b;
+
         display: none;
         position: fixed;
         z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0,0,0,0.5);
+        inset: 0;
+        background: rgba(15, 30, 45, 0.45);
         align-items: center;
         justify-content: center;
+        padding: 24px;
+        backdrop-filter: blur(3px);
     }
-    
+
     .compose-modal.flex {
         display: flex;
+        animation: composeBackdropIn 0.2s ease-out;
     }
-    
+
+    @keyframes composeBackdropIn {
+        from { background: rgba(15, 30, 45, 0); }
+        to   { background: rgba(15, 30, 45, 0.45); }
+    }
+
     .compose-modal-content {
-        background-color: #fff;
+        position: relative;
+        background-color: var(--paper);
         width: 100%;
-        max-width: 600px;
-        border-radius: 12px;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        max-width: 560px;
+        border-radius: 8px;
+        box-shadow:
+            0 20px 50px -12px rgba(0, 30, 50, 0.25),
+            0 0 0 1px rgba(0, 65, 101, 0.06);
         display: flex;
         flex-direction: column;
-        animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        max-height: 92vh;
+        overflow: hidden;
+        animation: composePaperIn 0.32s cubic-bezier(0.2, 0.9, 0.3, 1);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        color: var(--ink);
     }
-    
-    @keyframes modalSlideUp {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
+
+    @keyframes composePaperIn {
+        from { opacity: 0; transform: translateY(16px) scale(0.98); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
     }
-    
+
+    .compose-modal-content::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--brand);
+    }
+
     .compose-header {
-        background-color: #4a6fa5;
-        color: white;
-        padding: 1.25rem 1.5rem;
-        border-top-left-radius: 12px;
-        border-top-right-radius: 12px;
         display: flex;
-        justify-content: space-between;
         align-items: center;
+        justify-content: space-between;
+        padding: 22px 28px 14px 28px;
+        border-bottom: 1px solid var(--hair);
     }
-    
-    .compose-title {
-        margin: 0;
-        font-size: 1.25rem;
+
+    .compose-eyebrow {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.6875rem;
         font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--brand);
+        margin-bottom: 2px;
     }
-    
+
+    .compose-title {
+        font-family: 'Inter', sans-serif;
+        font-size: 1.25rem;
+        line-height: 1.3;
+        font-weight: 600;
+        letter-spacing: -0.005em;
+        color: var(--ink);
+        margin: 0;
+    }
+
     .compose-close {
-        background: none;
-        border: none;
-        color: rgba(255,255,255,0.8);
-        font-size: 1.5rem;
+        background: transparent;
+        border: 1px solid transparent;
+        color: var(--mute);
+        font-size: 0.95rem;
         cursor: pointer;
-        padding: 0;
-        line-height: 1;
-        transition: color 0.2s;
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s ease;
+        flex-shrink: 0;
     }
-    
+
     .compose-close:hover {
-        color: white;
+        color: var(--brand);
+        background: var(--brand-soft);
     }
-    
+
     .compose-body {
-        padding: 1.5rem;
+        padding: 20px 28px 8px 28px;
+        overflow-y: auto;
+        flex: 1;
     }
-    
+
     .compose-form-group {
-        margin-bottom: 1.25rem;
+        margin-bottom: 18px;
+        position: relative;
     }
-    
+
     .compose-label {
         display: block;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.75rem;
         font-weight: 600;
-        margin-bottom: 0.5rem;
-        color: #4a5568;
-        font-size: 0.95rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--mute);
+        margin-bottom: 6px;
     }
-    
-    .compose-input, .compose-textarea, .compose-select {
+
+    .compose-input,
+    .compose-textarea {
         width: 100%;
-        padding: 0.75rem;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 1rem;
-        transition: border-color 0.2s, box-shadow 0.2s;
-        box-sizing: border-box; /* Critical for grid/flex layouts */
-    }
-    
-    .compose-input:focus, .compose-textarea:focus, .compose-select:focus {
-        outline: none;
-        border-color: #4a6fa5;
-        box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.2);
-    }
-    
-    .compose-footer {
-        padding: 1rem 1.5rem;
-        background-color: #f7fafc;
-        border-top: 1px solid #e2e8f0;
-        border-bottom-left-radius: 12px;
-        border-bottom-right-radius: 12px;
-        display: flex;
-        justify-content: flex-end;
-        gap: 1rem;
-    }
-    
-    .btn-cancel {
-        background: white;
-        border: 1px solid #e2e8f0;
-        color: #4a5568;
-        padding: 0.6rem 1.25rem;
+        padding: 9px 12px;
+        border: 1px solid var(--rule);
         border-radius: 6px;
+        background: #fafbfc;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.9375rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: var(--ink);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        box-sizing: border-box;
+    }
+
+    .compose-textarea {
+        min-height: 130px;
+        resize: vertical;
+        line-height: 1.6;
+    }
+
+    .compose-input::placeholder,
+    .compose-textarea::placeholder {
+        color: #a8b0ba;
+    }
+
+    .compose-input:hover,
+    .compose-textarea:hover {
+        border-color: #b8c2cc;
+        background: #fff;
+    }
+
+    .compose-input:focus,
+    .compose-textarea:focus {
+        outline: none;
+        border-color: var(--brand);
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(0, 65, 101, 0.12);
+    }
+
+    .compose-char-count {
+        position: absolute;
+        bottom: 6px;
+        right: 8px;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.6875rem;
+        font-weight: 500;
+        color: #a8b0ba;
+        font-variant-numeric: tabular-nums;
+        pointer-events: none;
+    }
+
+    /* Recipient chip when a recipient is locked in */
+    .compose-recipient-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 6px 6px 12px;
+        background: var(--brand-soft);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        font-size: 0.9375rem;
+        color: var(--ink);
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .compose-recipient-chip .chip-avatar {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--brand);
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.65rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .compose-recipient-chip .chip-clear {
+        margin-left: auto;
+        background: transparent;
+        border: none;
+        color: var(--mute);
+        cursor: pointer;
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        transition: all 0.15s ease;
+    }
+
+    .compose-recipient-chip .chip-clear:hover {
+        background: var(--brand);
+        color: #fff;
+    }
+
+    /* Autocomplete dropdown */
+    #recipient_results {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        background: #fff;
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        box-shadow: 0 10px 24px -8px rgba(0, 30, 50, 0.18);
+        z-index: 10;
+        max-height: 220px;
+        overflow-y: auto;
+        display: none;
+    }
+
+    #recipient_results .recipient-option {
+        padding: 9px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--hair);
+        transition: background 0.1s ease;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    #recipient_results .recipient-option:last-child { border-bottom: none; }
+
+    #recipient_results .recipient-option:hover,
+    #recipient_results .recipient-option.is-active {
+        background: var(--brand-soft);
+    }
+
+    #recipient_results .recipient-option .option-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--brand);
+        color: white;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    #recipient_results .recipient-option .option-main {
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        font-size: 0.9rem;
+        color: var(--ink);
+    }
+
+    #recipient_results .recipient-option .option-sub {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.75rem;
+        color: var(--mute);
+        margin-top: 1px;
+    }
+
+    #recipient_results .recipient-empty {
+        padding: 14px;
+        text-align: center;
+        color: var(--mute);
+        font-size: 0.85rem;
+    }
+
+    /* Footer */
+    .compose-footer {
+        padding: 14px 28px 18px 28px;
+        border-top: 1px solid var(--hair);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background: #fafbfc;
+    }
+
+    .compose-footer-hint {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.75rem;
+        color: var(--mute);
+    }
+
+    .compose-footer-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Cancel — ghost */
+    .btn-cancel {
+        background: transparent;
+        border: 1px solid var(--rule);
+        color: var(--mute);
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.8125rem;
         font-weight: 500;
         cursor: pointer;
+        transition: all 0.15s ease;
     }
-    
+
+    .btn-cancel:hover {
+        color: var(--ink);
+        border-color: #b8c2cc;
+        background: #fff;
+    }
+
+    /* Send — solid brand button */
     .btn-send {
-        background-color: #4a6fa5;
-        color: white;
+        background: var(--brand);
+        color: #fff;
         border: none;
-        padding: 0.6rem 2rem;
+        padding: 9px 18px;
         border-radius: 6px;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.8125rem;
         font-weight: 600;
         cursor: pointer;
-        box-shadow: 0 4px 6px rgba(74, 111, 165, 0.2);
-        transition: transform 0.1s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.15s ease;
     }
-    
+
     .btn-send:hover {
-        background-color: #3b5a84;
-        transform: translateY(-1px);
+        background: var(--brand-deep);
     }
-    
+
+    .btn-send:hover .send-arrow {
+        transform: translateX(2px);
+    }
+
+    .btn-send:active {
+        transform: translateY(1px);
+    }
+
     .btn-send:disabled {
-        opacity: 0.7;
+        opacity: 0.55;
         cursor: not-allowed;
-        transform: none;
     }
 
-    /* Mobile Refinements */
+    .send-arrow {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        transition: transform 0.15s ease;
+    }
+
+    /* Mobile refinements */
     @media (max-width: 768px) {
+        .compose-modal {
+            padding: 12px;
+            align-items: flex-start;
+            padding-top: 24px;
+        }
+
         .compose-modal-content {
-            width: 95%;
-            margin: 10px;
+            max-height: 95vh;
         }
 
-        .compose-header {
-            padding: 1rem 1.25rem;
-            position: relative;
+        .compose-header,
+        .compose-body,
+        .compose-footer {
+            padding-left: 20px;
+            padding-right: 20px;
         }
 
-        .compose-close {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
+        .compose-title {
+            font-size: 1.125rem;
+        }
+
+        .compose-footer {
+            flex-direction: column-reverse;
+            align-items: stretch;
+            gap: 8px;
+        }
+
+        .compose-footer-hint {
+            text-align: center;
+        }
+
+        .compose-footer-actions {
+            justify-content: space-between;
+        }
+
+        .btn-send,
+        .btn-cancel {
+            flex: 1;
             justify-content: center;
-            font-size: 1.5rem;
-            color: white;
-            opacity: 0.9;
-            background: rgba(255,255,255,0.15);
-            border-radius: 50%;
-            padding: 0;
-        }
-
-        .compose-body {
-            padding: 1.25rem;
-        }
-
-        .compose-input, .compose-textarea {
-            width: 100% !important;
-            display: block;
         }
     }
 </style>
@@ -185,45 +446,46 @@
 <div class="compose-modal" id="composeModal">
     <div class="compose-modal-content">
         <div class="compose-header">
-            <h3 class="compose-title"><i class="fas fa-pen"></i> New Message</h3>
-            <button class="compose-close" onclick="closeComposeModal()"><i class="fas fa-times"></i></button>
+            <div>
+                <div class="compose-eyebrow">Mailroom</div>
+                <h3 class="compose-title">New Message</h3>
+            </div>
+            <button class="compose-close" onclick="closeComposeModal()" aria-label="Close">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
-        <form id="composeForm" onsubmit="sendMessage(event)">
+
+        <form id="composeForm" onsubmit="sendMessage(event)" autocomplete="off">
             <div class="compose-body">
                 <div class="compose-form-group" style="position: relative;">
-                    <label for="recipient_search" class="compose-label">Recipient</label>
-                    <input type="text" id="recipient_search" class="compose-input" placeholder="Search for recipient..." autocomplete="off">
+                    <label for="recipient_search" class="compose-label">To</label>
+                    <input type="text" id="recipient_search" class="compose-input" placeholder="Search for a recipient…" autocomplete="off">
                     <input type="hidden" id="recipient_id" name="recipient_id" required>
-                    
-                    <!-- Autocomplete Dropdown -->
-                    <div id="recipient_results" style="
-                        position: absolute;
-                        top: 100%;
-                        left: 0;
-                        right: 0;
-                        background: white;
-                        border: 1px solid #e2e8f0;
-                        border-radius: 8px;
-                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                        z-index: 10;
-                        max-height: 200px;
-                        overflow-y: auto;
-                        display: none;
-                        margin-top: 4px;
-                    "></div>
+
+                    <div id="recipient_results"></div>
                 </div>
+
                 <div class="compose-form-group">
                     <label for="subject" class="compose-label">Subject</label>
-                    <input type="text" id="subject" name="subject" class="compose-input" placeholder="Enter subject..." required>
+                    <input type="text" id="subject" name="subject" class="compose-input" placeholder="Subject" required>
                 </div>
-                <div class="compose-form-group">
+
+                <div class="compose-form-group" style="margin-bottom: 0;">
                     <label for="body" class="compose-label">Message</label>
-                    <textarea id="body" name="body" class="compose-textarea" rows="6" placeholder="Type your message here..." required></textarea>
+                    <textarea id="body" name="body" class="compose-textarea" rows="6" placeholder="Write your message…" required></textarea>
+                    <span class="compose-char-count" id="char_count">0</span>
                 </div>
             </div>
+
             <div class="compose-footer">
-                <button type="button" class="btn-cancel" onclick="closeComposeModal()">Cancel</button>
-                <button type="submit" class="btn-send">Send Message</button>
+                <span class="compose-footer-hint">Delivered to one recipient.</span>
+                <div class="compose-footer-actions">
+                    <button type="button" class="btn-cancel" onclick="closeComposeModal()">Cancel</button>
+                    <button type="submit" class="btn-send">
+                        <span>Send</span>
+                        <span class="send-arrow"><i class="fas fa-arrow-right"></i></span>
+                    </button>
+                </div>
             </div>
         </form>
     </div>
@@ -235,27 +497,22 @@
     function openComposeModal(recipientId = null, recipientName = null, subject = null, mode = null) {
         const modal = document.getElementById('composeModal');
         const modalTitle = modal.querySelector('.compose-title');
-        
+
         if (recipientId && recipientName) {
             document.getElementById('recipient_id').value = recipientId;
             document.getElementById('recipient_search').value = recipientName;
-            
-            // Set title based on mode or default to Reply
-            if (mode === 'new') {
-                modalTitle.innerHTML = '<i class="fas fa-pen"></i> New Message';
-            } else {
-                modalTitle.innerHTML = '<i class="fas fa-reply"></i> Reply Message';
-            }
+            modalTitle.textContent = (mode === 'new') ? 'New Message' : 'Reply';
         } else {
-            modalTitle.innerHTML = '<i class="fas fa-pen"></i> New Message';
+            modalTitle.textContent = 'New Message';
         }
 
         if (subject) {
             document.getElementById('subject').value = subject;
         }
 
+        refreshRecipientChip();
         modal.classList.add('flex');
-        
+
         if (!recipientId) {
             document.getElementById('recipient_search').focus();
         } else if (!subject) {
@@ -263,8 +520,13 @@
         } else {
             document.getElementById('body').focus();
         }
+
+        const content = modal.querySelector('.compose-modal-content');
+        content.style.animation = 'none';
+        content.offsetHeight;
+        content.style.animation = '';
     }
-    
+
     function closeComposeModal() {
         const modal = document.getElementById('composeModal');
         modal.classList.remove('flex');
@@ -272,86 +534,121 @@
             document.getElementById('composeForm').reset();
             document.getElementById('recipient_id').value = '';
             document.getElementById('recipient_results').style.display = 'none';
-            // Reset modal title
-            modal.querySelector('.compose-title').innerHTML = '<i class="fas fa-pen"></i> New Message';
+            document.getElementById('char_count').textContent = '0';
+            modal.querySelector('.compose-title').textContent = 'New Message';
+            refreshRecipientChip();
         }, 300);
     }
-    
-    // Autocomplete Logic
+
+    function refreshRecipientChip() {
+        const search = document.getElementById('recipient_search');
+        const hidden = document.getElementById('recipient_id');
+        const existing = document.getElementById('recipient_chip');
+        if (existing) existing.remove();
+
+        if (hidden.value && search.value) {
+            const chip = document.createElement('div');
+            chip.id = 'recipient_chip';
+            chip.className = 'compose-recipient-chip';
+            const initials = (search.value || '?').trim().substring(0, 2).toUpperCase();
+            chip.innerHTML = `
+                <span class="chip-avatar">${escapeAttr(initials)}</span>
+                <span class="chip-name">${escapeAttr(search.value)}</span>
+                <button type="button" class="chip-clear" aria-label="Change recipient" onclick="clearRecipient()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            search.style.display = 'none';
+            search.parentNode.insertBefore(chip, search);
+        } else {
+            search.style.display = '';
+        }
+    }
+
+    function clearRecipient() {
+        const search = document.getElementById('recipient_search');
+        const hidden = document.getElementById('recipient_id');
+        search.value = '';
+        hidden.value = '';
+        refreshRecipientChip();
+        search.focus();
+    }
+
+    function escapeAttr(s) {
+        return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
     const searchInput = document.getElementById('recipient_search');
     const resultsDiv = document.getElementById('recipient_results');
     const hiddenInput = document.getElementById('recipient_id');
-    
+
     searchInput.addEventListener('input', function() {
         const query = this.value.trim();
-        
-        // Clear previous timeout
         if (searchTimeout) clearTimeout(searchTimeout);
-        
-        // Reset ID if user changes text
-        hiddenInput.value = ''; 
-        
+        hiddenInput.value = '';
+        refreshRecipientChip();
+
         if (query.length < 1) {
             resultsDiv.style.display = 'none';
             return;
         }
-        
-        // Debounce search
+
         searchTimeout = setTimeout(() => {
             fetch(`/api/messages/recipients?q=${encodeURIComponent(query)}`)
                 .then(res => res.json())
                 .then(users => {
-                    if (users.length === 0) {
-                        resultsDiv.innerHTML = '<div style="padding: 10px; color: #718096; text-align: center;">No results found</div>';
+                    if (!Array.isArray(users) || users.length === 0) {
+                        resultsDiv.innerHTML = '<div class="recipient-empty">No recipients found</div>';
                     } else {
-                        resultsDiv.innerHTML = users.map(u => `
-                            <div class="recipient-option" onclick="selectRecipient(${u.id}, '${u.name.replace(/'/g, "\\'")}')" style="
-                                padding: 10px 15px;
-                                cursor: pointer;
-                                border-bottom: 1px solid #f7fafc;
-                                transition: background 0.1s;
-                            " onmouseover="this.style.backgroundColor='#f7fafc'" onmouseout="this.style.backgroundColor='white'">
-                                <div style="font-weight: 600; color: #2d3748;">${u.name}</div>
-                                <div style="font-size: 0.8rem; color: #a0aec0;">${u.home_club || 'No Club'}</div>
-                            </div>
-                        `).join('');
+                        resultsDiv.innerHTML = users.map(u => {
+                            const initials = (u.name || '?').trim().substring(0, 2).toUpperCase();
+                            return `
+                                <div class="recipient-option" onclick="selectRecipient(${u.id}, '${escapeAttr(u.name).replace(/'/g, "\\'")}')">
+                                    <span class="option-avatar">${escapeAttr(initials)}</span>
+                                    <div>
+                                        <div class="option-main">${escapeAttr(u.name)}</div>
+                                        <div class="option-sub">${escapeAttr(u.home_club || 'No Club')}</div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
                     }
                     resultsDiv.style.display = 'block';
                 })
                 .catch(err => console.error('Error fetching recipients:', err));
         }, 300);
     });
-    
+
     function selectRecipient(id, name) {
         document.getElementById('recipient_search').value = name;
         document.getElementById('recipient_id').value = id;
         document.getElementById('recipient_results').style.display = 'none';
+        refreshRecipientChip();
     }
-    
-    // Close dropdown when clicking outside
+
     document.addEventListener('click', function(e) {
-        if (e.target !== searchInput && e.target.parentElement !== resultsDiv) {
+        if (e.target !== searchInput && !resultsDiv.contains(e.target)) {
             resultsDiv.style.display = 'none';
         }
     });
 
-    // Prevent form submission if no recipient selected (though 'required' on hidden input handles this partially, custom check is safer)
-    /* Note: Hidden inputs with required attribute might not trigger browser validation UI correctly in all browsers, 
-       but we can rely on standard form handling or add a check in sendMessage */
-    
+    document.getElementById('body').addEventListener('input', function() {
+        document.getElementById('char_count').textContent = this.value.length.toLocaleString();
+    });
+
     function sendMessage(e) {
         e.preventDefault();
         const btn = e.target.querySelector('button[type="submit"]');
         const originalText = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = 'Sending...';
-        
+        btn.innerHTML = '<span>Sending…</span><span class="send-arrow"><i class="fas fa-spinner fa-spin"></i></span>';
+
         const data = {
             recipient_id: document.getElementById('recipient_id').value,
             subject: document.getElementById('subject').value,
             body: document.getElementById('body').value
         };
-        
+
         fetch('/messages/send', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -361,11 +658,9 @@
         .then(data => {
             btn.disabled = false;
             btn.innerHTML = originalText;
-            
             if (data.success) {
                 closeComposeModal();
                 if (typeof switchTab === 'function') switchTab('sent');
-                // Optional: Show toast
             } else {
                 alert('Error: ' + data.error);
             }
@@ -376,12 +671,9 @@
             alert('Failed to send message');
         });
     }
-    
-    // Close on outside click
+
     window.addEventListener('click', function(event) {
         const modal = document.getElementById('composeModal');
-        if (event.target == modal) {
-            closeComposeModal();
-        }
+        if (event.target == modal) closeComposeModal();
     });
 </script>

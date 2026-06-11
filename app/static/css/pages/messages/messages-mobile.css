@@ -1,131 +1,218 @@
 /* ========================================
    Messages Mobile Styles
    For screens <= 768px
+   Brand-aligned refinements
    ======================================== */
 
 @media (max-width: 768px) {
 	:root {
 		--msg-sidebar-width: 100%;
+		--msg-header-height: 56px;
 	}
 
 	.btn-join {
-		padding: 8px 16px !important;
-		font-size: 0.9rem !important;
+		padding: 7px 14px !important;
+		font-size: 0.75rem !important;
 		min-width: 100px !important;
 	}
 
 	.join-request-card {
-		padding: 10px;
+		padding: 14px 12px;
+	}
+
+	.join-request-title {
+		font-size: 0.9rem;
 	}
 
 	.msg-layout {
 		flex-direction: column;
 		height: auto;
-		margin: 10px;
+		margin: 8px;
 		width: auto;
 		min-height: calc(100vh - 80px);
 		box-sizing: border-box;
+		border-radius: 6px;
 	}
 
 	.msg-sidebar {
 		width: 100%;
 		display: flex;
-		flex-direction: row-reverse;
-		justify-content: space-between;
-		align-items: center;
+		flex-direction: column;
+		justify-content: flex-start;
+		align-items: stretch;
 		border-right: none;
 		border-bottom: 1px solid var(--msg-border);
-		padding: 1rem;
+		padding: 0.75rem 0.75rem 0.5rem 0.75rem;
 		flex-shrink: 0;
 		overflow-x: hidden;
 		background-color: #fff;
 		box-sizing: border-box;
+		gap: 0.25rem;
+	}
+
+	.msg-sidebar-eyebrow {
+		display: none;
 	}
 
 	.msg-nav-container {
 		display: flex;
 		flex-direction: row;
-		gap: 8px;
+		gap: 6px;
 		background-color: transparent;
 		padding: 0;
 		border: none;
 		border-radius: 0;
+		margin-top: 2px;
 	}
 
 	.msg-nav-item {
-		width: 40px;
-		height: 40px;
-		display: flex;
-		align-items: center;
+		flex: 1;
+		padding: 8px 10px;
 		justify-content: center;
-		padding: 0;
-		border-radius: 50%;
-		background-color: #f8fafc;
-		border: 1px solid #e2e8f0;
-		color: #64748b;
-		transition: all 0.2s ease;
+		border-radius: 6px;
+		background-color: var(--msg-hair);
+		border: 1px solid transparent;
+		color: var(--msg-text-secondary);
+		transition: all 0.15s ease;
 		margin-bottom: 0;
+		font-size: 0.8125rem;
 	}
 
 	.msg-nav-item span {
-		display: none;
+		display: inline;
 	}
 
 	.msg-nav-item i {
-		font-size: 1.1rem;
+		font-size: 0.85rem;
 		margin: 0;
+		width: auto;
 	}
 
 	.msg-nav-item.active {
-		background-color: #fff;
-		color: var(--msg-accent);
+		background-color: var(--msg-accent);
+		color: #fff;
 		border-color: var(--msg-accent);
-		box-shadow: 0 2px 4px rgba(49, 130, 206, 0.1);
 	}
 
 	.msg-compose-btn {
-		width: auto;
+		width: 100%;
 		min-width: 0;
-		padding: 10px 16px;
-		font-size: 0.9rem;
+		padding: 10px 14px;
+		font-size: 0.8125rem;
 		border-radius: 6px;
-		margin-bottom: 0;
-		box-shadow: 0 4px 10px rgba(74, 111, 165, 0.15);
-	}
-
-	.msg-compose-btn span {
-		display: inline;
-		/* Keep text for compose unless space is an issue */
+		margin-bottom: 0.5rem;
+		justify-content: space-between;
 	}
 
 	.msg-main {
 		flex: 1;
 		overflow-y: visible;
-		/* Let the body scroll if needed, or container */
+	}
+
+	.msg-header {
+		padding: 0 0.875rem;
+	}
+
+	.msg-header-title {
+		font-size: 1rem;
 	}
 
 	.msg-list-container {
-		padding: 1rem;
+		padding: 0.75rem 0.875rem 1.25rem 0.875rem;
 		max-height: 60vh;
-		/* Scrollable list area */
 		overflow-y: auto;
 	}
 
+	.msg-item {
+		padding: 0.75rem 0.875rem;
+		gap: 0.75rem;
+	}
+
+	.msg-avatar,
+	.msg-avatar-placeholder {
+		width: 36px;
+		height: 36px;
+	}
+
+	.msg-avatar-placeholder {
+		font-size: 0.75rem;
+	}
+
+	.msg-subject {
+		font-size: 0.875rem;
+	}
+
+	.msg-preview {
+		font-size: 0.8rem;
+	}
+
+	.custom-modal {
+		padding: 12px;
+		align-items: flex-start;
+	}
+
 	.custom-modal-header {
-		padding: 1rem;
+		padding: 16px 20px 12px 20px;
 		align-items: flex-start;
 	}
 
 	.custom-modal-title {
-		margin-right: 20px;
-		font-size: 1.1rem;
-		line-height: 1.4;
+		font-size: 1rem;
+		line-height: 1.35;
+	}
+
+	.custom-modal-eyebrow {
+		font-size: 0.625rem;
 	}
 
 	.custom-modal-close {
-		margin-left: 10px;
-		padding: 0 5px;
-		margin-right: -5px;
-		margin-top: 2px;
+		width: 28px;
+		height: 28px;
+		font-size: 0.9rem;
+	}
+
+	.custom-modal-body {
+		padding: 12px 20px 16px 20px;
+	}
+
+	.message-detail-meta {
+		margin: 0 0 14px 0;
+		padding: 10px 0;
+	}
+
+	.custom-modal-footer {
+		padding: 12px 20px 16px 20px;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+
+	.custom-modal-footer .btn {
+		font-size: 0.75rem;
+		padding: 7px 12px;
+	}
+
+	#deleteConfirmModal .custom-modal-body {
+		padding: 22px 20px 6px 20px;
+	}
+
+	#deleteConfirmModal .confirm-title {
+		font-size: 0.95rem;
+	}
+
+	#deleteConfirmModal .confirm-icon {
+		width: 42px;
+		height: 42px;
+		font-size: 1.1rem;
+		margin-bottom: 10px;
+	}
+
+	#deleteConfirmModal .confirm-actions {
+		padding: 12px 20px 18px 20px;
+	}
+
+	#deleteConfirmModal .confirm-actions .btn {
+		font-size: 0.75rem;
+		padding: 7px 14px;
+		min-width: 80px;
 	}
 }

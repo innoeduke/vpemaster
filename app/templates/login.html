@@ -30,7 +30,8 @@
         {% endfor %}
       </div>
       {% endif %} {% endwith %}
-      <form action="{{ url_for('auth_bp.login') }}" method="post" class="login-form">
+      <form action="{{ url_for('auth_bp.login') }}{% if request.args.get('next') %}?next={{ request.args.get('next') }}{% endif %}" method="post" class="login-form">
+        <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
         <div>
           <label for="username">Username:</label>
           <input type="text" id="username" name="username" autocomplete="username"
