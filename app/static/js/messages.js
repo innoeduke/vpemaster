@@ -1,16 +1,17 @@
 let currentTab = 'inbox';
 let currentMessages = [];
 let currentMessageId = null;
+let currentPage = 1;
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadMessages(currentTab);
-    setInterval(() => loadMessages(currentTab, true), 60000);
+    loadMessages(currentTab, false, 1);
+    setInterval(() => loadMessages(currentTab, true, currentPage), 60000);
 
     // Server-Sent Events to refresh message list in real-time
     if (typeof messageEventSource !== 'undefined') {
         messageEventSource.addEventListener('message', (event) => {
             if (event.data === 'new_message') {
-                loadMessages(currentTab, true);
+                loadMessages(currentTab, true, currentPage);
             }
         });
     }
@@ -28,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function switchTab(tab) {
     currentTab = tab;
+    currentPage = 1;
     document.querySelectorAll('.msg-nav-item').forEach(t => t.classList.remove('active'));
     document.getElementById(`tab-${tab}`).classList.add('active');
     document.getElementById('current-view-title').textContent = tab.charAt(0).toUpperCase() + tab.slice(1);
@@ -38,10 +40,11 @@ function switchTab(tab) {
         emptyTrashBtn.style.display = tab === 'trash' ? 'inline-flex' : 'none';
     }
 
-    loadMessages(tab);
+    loadMessages(tab, false, 1);
 }
 
-function loadMessages(tab, silent=false) {
+function loadMessages(tab, silent=false, page=1) {
+    currentPage = page;
     const list = document.getElementById('messages-list');
     if (!silent) {
         list.innerHTML = `
@@ -52,7 +55,7 @@ function loadMessages(tab, silent=false) {
         `;
     }
 
-    fetch(`/api/messages/${tab}`)
+    fetch(`/api/messages/${tab}?page=${page}`)
         .then(response => response.json())
         .then(data => {
             currentMessages = data.messages;
@@ -63,6 +66,11 @@ function loadMessages(tab, silent=false) {
                         <p>No messages in ${tab}</p>
                     </div>
                 `;
+                const pagContainer = document.getElementById('messages-pagination');
+                if (pagContainer) {
+                    pagContainer.style.display = 'none';
+                    pagContainer.innerHTML = '';
+                }
                 return;
             }
 
@@ -101,6 +109,8 @@ function loadMessages(tab, silent=false) {
                     </button>
                 </div>
             `;}).join('');
+
+            renderPagination(data.total, data.pages, data.current_page);
         })
         .catch(error => {
             console.error('Error loading messages:', error);
@@ -330,7 +340,7 @@ function showDetail(id) {
                 updateUnreadCount(); // Global function
                 msg.read = true;
                 // Optimistically update list item style
-                loadMessages(currentTab, true);
+                loadMessages(currentTab, true, currentPage);
             });
     }
 }
@@ -392,7 +402,7 @@ function restoreMessage(msgId) {
                 if (currentMessageId === msgId) {
                     closeMessageDetailModal();
                 }
-                loadMessages(currentTab);
+                loadMessages(currentTab, false, currentPage);
             } else {
                 showToast(data.error || 'Error restoring message', 'error');
             }
@@ -426,7 +436,7 @@ function confirmDeleteMessage() {
             
             if (data.success) {
                 closeMessageDetailModal();
-                loadMessages(currentTab);
+                loadMessages(currentTab, false, currentPage);
             } else {
                 alert('Error deleting message');
             }
@@ -462,7 +472,7 @@ function confirmEmptyTrash() {
             
             if (data.success) {
                 showToast('Trash emptied successfully', 'success');
-                loadMessages(currentTab);
+                loadMessages(currentTab, false, 1);
             } else {
                 showToast('Error emptying trash', 'error');
             }
@@ -574,7 +584,7 @@ function respondToJoinRequest(messageId, action) {
         if (data.success) {
             showToast(action === 'join' ? 'You have joined the club!' : 'Request rejected.', 'success');
             closeMessageDetailModal();
-            loadMessages(currentTab);
+            loadMessages(currentTab, false, currentPage);
         } else {
             showToast(data.error || 'Action failed', 'error');
             btn.innerHTML = originalText;
@@ -621,7 +631,7 @@ function respondToHomeRequest(messageId, action) {
         if (data.success) {
             showToast(action === 'approve' ? 'Request Approved.' : 'Request Rejected.', 'success');
             closeMessageDetailModal();
-            loadMessages(currentTab);
+            loadMessages(currentTab, false, currentPage);
         } else {
             showToast(data.error || 'Action failed', 'error');
             btn.innerHTML = originalText;
@@ -668,7 +678,7 @@ function respondToHomeProposal(messageId, action) {
         if (data.success) {
             showToast(action === 'approve' ? 'Proposal Accepted.' : 'Proposal Rejected.', 'success');
             closeMessageDetailModal();
-            loadMessages(currentTab);
+            loadMessages(currentTab, false, currentPage);
         } else {
             showToast(data.error || 'Action failed', 'error');
             btn.innerHTML = originalText;
@@ -715,7 +725,7 @@ function respondToUserJoinRequest(messageId, action) {
         if (data.success) {
             showToast(action === 'approve' ? 'Request Approved.' : 'Request Rejected.', 'success');
             closeMessageDetailModal();
-            loadMessages(currentTab);
+            loadMessages(currentTab, false, currentPage);
         } else {
             showToast(data.error || 'Action failed', 'error');
             btn.innerHTML = originalText;
@@ -771,3 +781,65 @@ function showToast(message, type = 'info') {
         toast.addEventListener('transitionend', () => toast.remove());
     }, 3000);
 }
+
+function renderPagination(total, pages, currentPage) {
+    const container = document.getElementById('messages-pagination');
+    if (!container) return;
+
+    if (pages <= 1) {
+        container.style.display = 'none';
+        container.innerHTML = '';
+        return;
+    }
+
+    container.style.display = 'flex';
+    
+    let html = '';
+    
+    // Previous button
+    html += `
+        <button class="msg-pagination-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="loadMessages(currentTab, false, ${currentPage - 1})" title="Previous Page">
+            <i class="fas fa-chevron-left"></i> Prev
+        </button>
+    `;
+    
+    const maxVisible = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(pages, startPage + maxVisible - 1);
+    
+    if (endPage - startPage + 1 < maxVisible) {
+        startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+    
+    if (startPage > 1) {
+        html += `<button class="msg-pagination-btn" onclick="loadMessages(currentTab, false, 1)">1</button>`;
+        if (startPage > 2) {
+            html += `<span class="msg-pagination-info">...</span>`;
+        }
+    }
+    
+    for (let p = startPage; p <= endPage; p++) {
+        html += `
+            <button class="msg-pagination-btn ${p === currentPage ? 'active' : ''}" onclick="loadMessages(currentTab, false, ${p})">
+                ${p}
+            </button>
+        `;
+    }
+    
+    if (endPage < pages) {
+        if (endPage < pages - 1) {
+            html += `<span class="msg-pagination-info">...</span>`;
+        }
+        html += `<button class="msg-pagination-btn" onclick="loadMessages(currentTab, false, ${pages})">${pages}</button>`;
+    }
+    
+    // Next button
+    html += `
+        <button class="msg-pagination-btn" ${currentPage === pages ? 'disabled' : ''} onclick="loadMessages(currentTab, false, ${currentPage + 1})" title="Next Page">
+            Next <i class="fas fa-chevron-right"></i>
+        </button>
+    `;
+    
+    container.innerHTML = html;
+}
+

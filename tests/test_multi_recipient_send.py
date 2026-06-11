@@ -291,7 +291,39 @@ class MultiRecipientSendTestCase(unittest.TestCase):
         sent_res = self.client.get('/api/messages/sent')
         self.assertEqual(len(sent_res.get_json()['messages']), 1)
 
+    def test_message_pagination(self):
+        """Test pagination query parameters and metadata in the Inbox and Sent APIs."""
+        # 1. Alice sends 15 messages to Bob
+        self.login(self.sender, self.club)
+        for i in range(15):
+            res = self.client.post('/messages/send', data=json.dumps({
+                'recipient_id': self.recv1.id,
+                'subject': f'Subject {i}',
+                'body': f'Body {i}',
+            }), content_type='application/json')
+            self.assertEqual(res.status_code, 200)
+            
+        # 2. Bob logs in, checks page 1 of Inbox
+        self.login(self.recv1, self.club)
+        inbox_p1 = self.client.get('/api/messages/inbox?page=1')
+        self.assertEqual(inbox_p1.status_code, 200)
+        data_p1 = inbox_p1.get_json()
+        self.assertEqual(len(data_p1['messages']), 10)
+        self.assertEqual(data_p1['total'], 15)
+        self.assertEqual(data_p1['pages'], 2)
+        self.assertEqual(data_p1['current_page'], 1)
+        
+        # 3. Bob checks page 2 of Inbox
+        inbox_p2 = self.client.get('/api/messages/inbox?page=2')
+        self.assertEqual(inbox_p2.status_code, 200)
+        data_p2 = inbox_p2.get_json()
+        self.assertEqual(len(data_p2['messages']), 5)
+        self.assertEqual(data_p2['total'], 15)
+        self.assertEqual(data_p2['pages'], 2)
+        self.assertEqual(data_p2['current_page'], 2)
+
 
 if __name__ == '__main__':
+
 
     unittest.main()
