@@ -6,18 +6,24 @@ from app.users_routes import _save_user_data
 from app import db
 from flask_login import current_user
 
+
 def process_member_file(file_bytes, ext, club_id):
     """
     Processes a CSV or XLSX byte content to import members or invite existing users.
-    Returns (success_count, failed_users)
+
+    Returns a report dict:
+        {
+            'added':    [{'fullname': ..., 'username': ..., 'email': ...}, ...],
+            'invited':  [{'fullname': ..., 'username': ..., 'email': ...}, ...],
+            'failed':   [string, ...]   # one human-readable error per row
+        }
     """
-    success_count = 0
-    failed_users = []
-    
+    report = {'added': [], 'invited': [], 'failed': []}
+
     club = db.session.get(Club, club_id)
     if not club:
-        failed_users.append("Invalid club ID.")
-        return success_count, failed_users
+        report['failed'].append("Invalid club ID.")
+        return report
 
     rows = []
     if ext == 'csv':
@@ -26,24 +32,24 @@ def process_member_file(file_bytes, ext, club_id):
             csv_reader = csv.reader(stream)
             rows = list(csv_reader)[1:] # Skip header row
         except Exception as e:
-            failed_users.append(f"Failed to parse CSV: {str(e)}")
-            return success_count, failed_users
+            report['failed'].append(f"Failed to parse CSV: {str(e)}")
+            return report
     elif ext == 'xlsx':
         try:
             stream = io.BytesIO(file_bytes)
             wb = openpyxl.load_workbook(stream, data_only=True)
             sheet = wb.active
             for i, row in enumerate(sheet.iter_rows(values_only=True)):
-                if i == 0: 
+                if i == 0:
                     continue # Skip header
                 # Convert tuple to list
                 rows.append(list(row))
         except Exception as e:
-             failed_users.append(f"Failed to parse XLSX: {str(e)}")
-             return success_count, failed_users
+             report['failed'].append(f"Failed to parse XLSX: {str(e)}")
+             return report
     else:
-        failed_users.append(f"Unsupported file extension: {ext}")
-        return success_count, failed_users
+        report['failed'].append(f"Unsupported file extension: {ext}")
+        return report
 
     for row in rows:
         # Check if row is completely empty
@@ -55,13 +61,13 @@ def process_member_file(file_bytes, ext, club_id):
         fullname, username, member_id, email, mentor_name = (row_str + [""]*5)[:5]
 
         if not fullname or not username:
-            failed_users.append(
+            report['failed'].append(
                 f"Skipping row: Fullname and Username are mandatory. Row: {row_str}")
             continue
 
         # Duplicate detection (users data)
         email = email if email else None
-        
+
         # Try to find existing user globally by email first, then username
         existing_user = None
         if email:
@@ -73,9 +79,10 @@ def process_member_file(file_bytes, ext, club_id):
             # Check if they are already in the current club
             is_in_club = UserClub.query.filter_by(user_id=existing_user.id, club_id=club_id).first()
             if is_in_club:
-                failed_users.append(f"Skipping user '{username}': Already a member of this club.")
+                report['failed'].append(
+                    f"Skipping '{fullname}' ({username}): Already a member of this club.")
                 continue
-                
+
             # If not in club, send invitation. Do not modify info.
             sender_id = None
             sender_name = "A Club Admin"
@@ -95,11 +102,16 @@ def process_member_file(file_bytes, ext, club_id):
                     body=f"Hello {existing_user.first_name},\n\n{sender_name} has invited you to join **{club.club_name}**.\n\nPlease respond using the buttons below.\n[CLUB_ID:{club_id}]"
                 )
                 db.session.add(msg)
-                success_count += 1
+                report['invited'].append({
+                    'fullname': fullname,
+                    'username': username,
+                    'email': email or existing_user.email or '',
+                })
             else:
-                failed_users.append(f"Skipping user '{username}': No sender available to invite existing user.")
+                report['failed'].append(
+                    f"Skipping '{fullname}' ({username}): No sender available to invite existing user.")
             continue
-            
+
         # If new user, create them
         from app.models import AuthRole
         user_role = AuthRole.query.filter_by(name='Member').first()
@@ -118,7 +130,7 @@ def process_member_file(file_bytes, ext, club_id):
                 club_id=club_id,
                 password='toastmasters'
             )
-            
+
             # Update contact record with additional fields (mentor, member_id, home_club)
             if user:
                 uc = UserClub.query.filter_by(user_id=user.id, club_id=club_id).first()
@@ -135,9 +147,14 @@ def process_member_file(file_bytes, ext, club_id):
                         if not contact_record.display_club_name:
                             contact_record.display_club_name = club.club_name
 
-            success_count += 1
+            report['added'].append({
+                'fullname': fullname,
+                'username': username,
+                'email': email or '',
+            })
         except Exception as e:
-            failed_users.append(f"Failed to create user '{username}': {str(e)}")
+            report['failed'].append(
+                f"Failed to create '{fullname}' ({username}): {str(e)}")
 
     db.session.commit()
-    return success_count, failed_users
+    return report
