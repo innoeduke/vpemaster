@@ -90,6 +90,12 @@ function loadMessages(tab, silent=false) {
                         <div class="msg-subject">${formatSubjectWithBadge(msg.subject)}</div>
                         <div class="msg-preview">${escapeHtml(msg.body)}</div>
                     </div>
+                    ${tab === 'trash'
+                        ? `<button class="msg-row-restore-btn" onclick="event.stopPropagation(); restoreMessage(${msg.id})" title="Restore Message">
+                               <i class="fas fa-trash-restore"></i>
+                           </button>`
+                        : ''
+                    }
                     <button class="msg-row-delete-btn" onclick="event.stopPropagation(); deleteMessageFromRow(${msg.id})" title="Delete Message">
                         <i class="fas fa-trash-alt"></i>
                     </button>
@@ -298,6 +304,23 @@ function showDetail(id) {
         `;
         bodyEl.insertAdjacentHTML('beforeend', actionsHtml);
     }
+    const replyBtn = document.getElementById('detail-reply-btn');
+    const restoreBtn = document.getElementById('detail-restore-btn');
+    const deleteBtn = document.getElementById('detail-delete-btn');
+    
+    if (currentTab === 'trash') {
+        if (replyBtn) replyBtn.style.display = 'none';
+        if (restoreBtn) restoreBtn.style.display = 'inline-flex';
+        if (deleteBtn) {
+            deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Delete Permanently';
+        }
+    } else {
+        if (replyBtn) replyBtn.style.display = 'inline-flex';
+        if (restoreBtn) restoreBtn.style.display = 'none';
+        if (deleteBtn) {
+            deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Delete';
+        }
+    }
     
     modal.classList.add('flex'); // Custom class to show flex
     
@@ -358,6 +381,25 @@ function deleteCurrentMessage() {
 function deleteMessageFromRow(msgId) {
     currentMessageId = msgId;
     deleteCurrentMessage();
+}
+
+function restoreMessage(msgId) {
+    fetch(`/messages/${msgId}/restore`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Message restored successfully', 'success');
+                if (currentMessageId === msgId) {
+                    closeMessageDetailModal();
+                }
+                loadMessages(currentTab);
+            } else {
+                showToast(data.error || 'Error restoring message', 'error');
+            }
+        })
+        .catch(err => {
+            showToast('Error restoring message', 'error');
+        });
 }
 
 function closeDeleteConfirmModal() {

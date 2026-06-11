@@ -237,6 +237,61 @@ class MultiRecipientSendTestCase(unittest.TestCase):
         alice_trash2 = self.client.get('/api/messages/trash')
         self.assertEqual(len(alice_trash2.get_json()['messages']), 0)
 
+    def test_message_restore_flow(self):
+        """Test restoring messages from trash back to Inbox or Sent."""
+        # 1. Alice sends a message to Bob
+        self.login(self.sender, self.club)
+        res = self.client.post('/messages/send', data=json.dumps({
+            'recipient_id': self.recv1.id,
+            'subject': 'Hello Bob',
+            'body': 'Hi bob, this is alice.',
+        }), content_type='application/json')
+        self.assertEqual(res.status_code, 200)
+        msg_id = Message.query.first().id
+        
+        # 2. Bob soft deletes the message (Inbox -> Trash)
+        self.login(self.recv1, self.club)
+        del_res = self.client.post(f'/messages/{msg_id}/delete?context=inbox')
+        self.assertEqual(del_res.status_code, 200)
+        
+        # Verify it is in Bob's trash
+        trash_res = self.client.get('/api/messages/trash')
+        self.assertEqual(len(trash_res.get_json()['messages']), 1)
+        
+        # 3. Bob restores the message from Trash
+        restore_res = self.client.post(f'/messages/{msg_id}/restore')
+        self.assertEqual(restore_res.status_code, 200)
+        
+        # Verify it is no longer in Bob's trash
+        trash_res2 = self.client.get('/api/messages/trash')
+        self.assertEqual(len(trash_res2.get_json()['messages']), 0)
+        
+        # Verify it is back in Bob's inbox
+        inbox_res = self.client.get('/api/messages/inbox')
+        self.assertEqual(len(inbox_res.get_json()['messages']), 1)
+        
+        # 4. Alice soft deletes the message (Sent -> Trash)
+        self.login(self.sender, self.club)
+        del_sent_res = self.client.post(f'/messages/{msg_id}/delete?context=sent')
+        self.assertEqual(del_sent_res.status_code, 200)
+        
+        # Verify in Alice's Trash
+        trash_res_alice = self.client.get('/api/messages/trash')
+        self.assertEqual(len(trash_res_alice.get_json()['messages']), 1)
+        
+        # 5. Alice restores the message from Trash
+        restore_sent_res = self.client.post(f'/messages/{msg_id}/restore')
+        self.assertEqual(restore_sent_res.status_code, 200)
+        
+        # Verify it is no longer in Alice's trash
+        trash_res_alice2 = self.client.get('/api/messages/trash')
+        self.assertEqual(len(trash_res_alice2.get_json()['messages']), 0)
+        
+        # Verify it is back in Alice's sent
+        sent_res = self.client.get('/api/messages/sent')
+        self.assertEqual(len(sent_res.get_json()['messages']), 1)
+
 
 if __name__ == '__main__':
+
     unittest.main()

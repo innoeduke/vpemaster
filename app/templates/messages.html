@@ -82,10 +82,13 @@
         </div>
         <div class="custom-modal-footer">
             <div class="footer-actions">
-                <button class="btn btn-success" onclick="replyToMessage()">
+                <button class="btn btn-success" id="detail-reply-btn" onclick="replyToMessage()">
                     <i class="fas fa-reply"></i> Reply
                 </button>
-                <button class="btn btn-danger" onclick="deleteCurrentMessage()">
+                <button class="btn btn-success" id="detail-restore-btn" onclick="restoreMessage(currentMessageId)" style="display: none;">
+                    <i class="fas fa-trash-restore"></i> Restore
+                </button>
+                <button class="btn btn-danger" id="detail-delete-btn" onclick="deleteCurrentMessage()">
                     <i class="fas fa-trash-alt"></i> Delete
                 </button>
             </div>

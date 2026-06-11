@@ -247,6 +247,29 @@ def delete_message(id):
     db.session.commit()
     return jsonify({'success': True})
 
+@messages_bp.route('/messages/<int:id>/restore', methods=['POST'])
+@login_required
+def restore_message(id):
+    """Restore a message from trash (undo soft delete)."""
+    msg = db.session.get(Message, id)
+    if not msg:
+        return jsonify({'success': False, 'error': 'Message not found'}), 404
+        
+    restored = False
+    if msg.recipient_id == current_user.id and msg.deleted_by_recipient:
+        msg.deleted_by_recipient = False
+        restored = True
+    if msg.sender_id == current_user.id and msg.deleted_by_sender:
+        msg.deleted_by_sender = False
+        restored = True
+        
+    if not restored:
+        return jsonify({'success': False, 'error': 'Unauthorized or not in trash'}), 403
+        
+    db.session.commit()
+    return jsonify({'success': True})
+
+
 @messages_bp.route('/messages/empty-trash', methods=['POST'])
 @login_required
 def empty_trash():
