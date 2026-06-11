@@ -168,3 +168,62 @@ def test_contact_search_includes_phone(client, app, default_club):
                 found = True
                 break
         assert found
+
+def test_contact_creation_duplicate_name_prevention(client, app, default_club, user1):
+    """Verify that creating a contact with a duplicate name is blocked and returns JSON error."""
+    with app.app_context():
+        c = Contact(Name="Duplicate Contact Name", Type="Guest")
+        db.session.add(c)
+        db.session.commit()
+
+    with client.session_transaction() as sess:
+        sess['_user_id'] = str(user1.id)
+        sess['current_club_id'] = default_club.id
+        sess['_fresh'] = True
+
+    with patch('app.contacts_routes.is_authorized', return_value=True):
+        resp = client.post(
+            '/contact/form',
+            data={
+                'first_name': 'Duplicate',
+                'last_name': 'Contact Name',
+                'type': 'Guest'
+            },
+            headers={'X-Requested-With': 'XMLHttpRequest'}
+        )
+        assert resp.status_code == 400
+        json_data = resp.get_json()
+        assert json_data is not None
+        assert json_data['success'] is False
+        assert "already exists" in json_data['message']
+        assert 'duplicate_contact' in json_data
+        assert json_data['duplicate_contact']['name'] == 'Duplicate Contact Name'
+
+def test_contact_creation_duplicate_name_bypass(client, app, default_club, user1):
+    """Verify that using the ignore_duplicate_name flag allows duplicate contact names."""
+    with app.app_context():
+        c = Contact(Name="Duplicate Contact Name", Type="Guest")
+        db.session.add(c)
+        db.session.commit()
+
+    with client.session_transaction() as sess:
+        sess['_user_id'] = str(user1.id)
+        sess['current_club_id'] = default_club.id
+        sess['_fresh'] = True
+
+    with patch('app.contacts_routes.is_authorized', return_value=True):
+        resp = client.post(
+            '/contact/form',
+            data={
+                'first_name': 'Duplicate',
+                'last_name': 'Contact Name',
+                'type': 'Guest',
+                'ignore_duplicate_name': 'true'
+            },
+            headers={'X-Requested-With': 'XMLHttpRequest'}
+        )
+        assert resp.status_code == 200
+        json_data = resp.get_json()
+        assert json_data is not None
+        assert json_data['success'] is True
+        assert json_data['contact']['Name'] == 'Duplicate Contact Name'

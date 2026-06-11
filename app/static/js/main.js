@@ -139,6 +139,10 @@ function openContactModal(contactId) {
   const contactModalTitle = document.getElementById("contactModalTitle");
 
   contactForm.reset();
+  const ignoreInput = document.getElementById('ignore_duplicate_name');
+  if (ignoreInput) {
+    ignoreInput.value = 'false';
+  }
   if (contactId) {
     contactModalTitle.textContent = (typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN') ? "编辑联系人" : "Edit Contact";
     const actionUrl = new URL(`/contact/form/${contactId}`, window.location.origin);
@@ -398,13 +402,24 @@ function showDuplicateModal(message, duplicateData) {
   if (emailEl) emailEl.textContent = duplicateData.email || '-';
   if (phoneEl) phoneEl.textContent = duplicateData.phone || '-';
 
-  // Configure "View Existing" button
-  const viewBtn = document.getElementById('viewDupBtn');
-  if (viewBtn) {
-    viewBtn.onclick = function () {
+  // Configure "Continue to Create" button
+  const continueBtn = document.getElementById('continueCreateBtn');
+  if (continueBtn) {
+    continueBtn.onclick = function () {
       closeDuplicateModal();
-      if (typeof closeContactModal === 'function') closeContactModal();
-      if (typeof openContactModal === 'function') openContactModal(duplicateData.id);
+      const contactForm = document.getElementById('contactForm');
+      if (contactForm) {
+        let ignoreInput = document.getElementById('ignore_duplicate_name');
+        if (!ignoreInput) {
+          ignoreInput = document.createElement('input');
+          ignoreInput.type = 'hidden';
+          ignoreInput.name = 'ignore_duplicate_name';
+          ignoreInput.id = 'ignore_duplicate_name';
+          contactForm.appendChild(ignoreInput);
+        }
+        ignoreInput.value = 'true';
+        contactForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      }
     };
   }
 

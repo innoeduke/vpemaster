@@ -1,44 +1,67 @@
 <div id="mergeContactModal" class="modal" style="z-index: 1005;">
-  <div class="modal-content" style="max-width: 600px; border-radius: 12px; overflow: hidden; padding: 0;">
-    <div style="background: #f39c12; color: white; padding: 20px; position: relative;">
-        <h2 style="margin: 0; font-size: 1.5rem;"><i class="fas fa-random"></i> Confirm Contact Merge</h2>
-        <span class="close" onclick="closeMergeModal()" style="color: white; position: absolute; right: 20px; top: 15px; font-size: 1.8rem;">&times;</span>
+  <style>
+    #secondaryContactsList {
+      list-style: none;
+      padding: 0 !important;
+      margin: 0;
+    }
+    #secondaryContactsList li {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+      color: #334155;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #secondaryContactsList li strong {
+      color: #0f172a;
+    }
+  </style>
+
+  <div class="modal-content" style="max-width: 480px; border-radius: 12px; overflow: hidden; padding: 0; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);">
+    <div style="background: #004165; color: #ffffff; padding: 16px 20px; position: relative; display: flex; align-items: center; justify-content: center;">
+        <h2 style="margin: 0; font-size: 1.25rem; color: #ffffff !important; font-weight: 700; display: flex; align-items: center; gap: 8px; line-height: 1.2;"><i class="fas fa-random"></i> Confirm Contact Merge</h2>
+        <span class="close" onclick="closeMergeModal()" style="color: #ffffff; position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 1.6rem; font-weight: bold; cursor: pointer; opacity: 0.85; transition: opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.85">&times;</span>
     </div>
     
-    <div style="padding: 25px;">
-        <div id="mergeSummary" style="font-size: 1.1rem; color: #444; margin-bottom: 20px; line-height: 1.4;">
-            <p>You are about to merge <span id="mergeCount" style="font-weight: bold;"></span> contacts.</p>
-        </div>
+    <div style="padding: 20px 24px;">
+        <p id="mergeSummary" style="font-size: 0.95rem; color: #444; margin-bottom: 16px; line-height: 1.4; text-align: center;">
+            You are about to merge <span id="mergeCount" style="font-weight: bold; color: #004165;"></span> contacts.
+        </p>
         
-        <div class="merge-primary" style="background: #fff8eb; padding: 20px; border-radius: 10px; border: 1px solid #ffeeba; margin-bottom: 20px;">
-            <div style="display: flex; align-items: flex-start; gap: 15px;">
-                <div style="background: #f39c12; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;">
+        <div class="merge-primary" style="background: #f8fafc; padding: 14px 16px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="background: #004165; color: #ffffff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;">
                     <i class="fas fa-id-card"></i>
                 </div>
-                <div>
-                    <h3 style="margin: 0 0 5px 0; color: #856404; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.5px;">Primary Contact (Keep)</h3>
-                    <div id="primaryContactDetails" style="color: #444; font-size: 1.3rem; font-weight: bold; margin-bottom: 5px;"></div>
-                    <div id="primaryContactMeta" style="color: #666; font-size: 0.9rem;"></div>
+                <div style="text-align: left;">
+                    <h3 style="margin: 0 0 3px 0; color: #004165; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Primary Contact (Keep)</h3>
+                    <div id="primaryContactDetails" style="color: #334155; font-size: 1.1rem; font-weight: 700; margin-bottom: 2px;"></div>
+                    <div id="primaryContactMeta" style="color: #64748b; font-size: 0.85rem;"></div>
                 </div>
             </div>
         </div>
 
-        <div class="merge-secondary" style="margin-bottom: 25px;">
-            <h3 style="margin: 0 0 10px 0; color: #666; font-size: 1rem;">Secondary Contacts (Will be merged and deleted)</h3>
-            <ul id="secondaryContactsList" style="margin: 0; padding-left: 20px; color: #777; font-size: 0.95rem; max-height: 150px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; padding: 10px 10px 10px 25px;">
+        <div class="merge-secondary" style="margin-bottom: 16px; text-align: left;">
+            <h3 style="margin: 0 0 8px 0; color: #475569; font-size: 0.9rem; font-weight: 600;">Secondary Contacts (Will be merged and deleted)</h3>
+            <ul id="secondaryContactsList" style="max-height: 120px; overflow-y: auto; padding: 0;">
             </ul>
         </div>
         
-        <div style="background: #fff3f3; color: #721c24; padding: 15px; border-radius: 8px; border: 1px solid #f5c6cb; margin-bottom: 25px; font-size: 0.9rem; display: flex; align-items: flex-start; gap: 10px;">
-            <i class="fas fa-exclamation-triangle" style="margin-top: 3px;"></i> 
+        <div style="background: #fff5f5; color: #e11d48; padding: 10px 14px; border-radius: 6px; border: 1px solid #fecdd3; margin-bottom: 20px; font-size: 0.8rem; line-height: 1.4; display: flex; align-items: flex-start; gap: 10px; text-align: left;">
+            <i class="fas fa-exclamation-triangle" style="margin-top: 3px; flex-shrink: 0;"></i> 
             <div>
                 <strong>Warning:</strong> All related data (roster records, workshop roles, achievements, etc.) will be moved to the primary contact. This action <strong>cannot be undone</strong>.
             </div>
         </div>
         
-        <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 12px;">
-            <button type="button" class="btn btn-secondary" onclick="closeMergeModal()" style="padding: 10px 20px; display: flex; align-items: center; justify-content: center;">Cancel</button>
-            <button type="button" id="confirmMergeBtn" class="btn btn-warning" style="padding: 10px 25px; font-weight: bold; background: #f39c12; border-color: #f39c12; color: white; display: flex; align-items: center; gap: 8px;">
+        <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" class="btn btn-secondary" onclick="closeMergeModal()" style="padding: 8px 16px; font-size: 0.85rem; min-height: 34px;">Cancel</button>
+            <button type="button" id="confirmMergeBtn" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.85rem; min-height: 34px; background: #772432; border-color: #772432; font-weight: 600; display: flex; align-items: center; gap: 6px;">
                  <i class="fas fa-check-circle"></i> Confirm Merge
             </button>
         </div>

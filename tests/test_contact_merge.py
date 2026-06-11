@@ -24,9 +24,14 @@ def test_merge_contacts_logic(app, client, default_club):
         db.session.commit()
         
         # Meeting Award
-        m1 = Meeting(club_id=default_club.id, Meeting_Number=101, best_table_topic_id=c2_id)
+        m1 = Meeting(club_id=default_club.id, Meeting_Number=101)
         db.session.add(m1)
         db.session.flush() # Get m1.id
+
+        from app.models.voting import MeetingAwardWinner
+        w = MeetingAwardWinner(meeting_id=m1.id, award_category='table-topic', contact_id=c2_id)
+        db.session.add(w)
+        db.session.commit()
 
         # Roster
         r1 = Roster(contact_id=c2_id, meeting_id=m1.id)

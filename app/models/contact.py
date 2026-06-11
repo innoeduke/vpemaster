@@ -587,17 +587,9 @@ class Contact(db.Model):
                 )
         
         # Update Meeting awards and sharing master
-        Meeting.query.filter(Meeting.best_table_topic_id.in_(secondary_ids)).update(
-            {Meeting.best_table_topic_id: primary_id}, synchronize_session='fetch'
-        )
-        Meeting.query.filter(Meeting.best_evaluator_id.in_(secondary_ids)).update(
-            {Meeting.best_evaluator_id: primary_id}, synchronize_session='fetch'
-        )
-        Meeting.query.filter(Meeting.best_speaker_id.in_(secondary_ids)).update(
-            {Meeting.best_speaker_id: primary_id}, synchronize_session='fetch'
-        )
-        Meeting.query.filter(Meeting.best_role_taker_id.in_(secondary_ids)).update(
-            {Meeting.best_role_taker_id: primary_id}, synchronize_session='fetch'
+        from .voting import MeetingAwardWinner
+        MeetingAwardWinner.query.filter(MeetingAwardWinner.contact_id.in_(secondary_ids)).update(
+            {MeetingAwardWinner.contact_id: primary_id}, synchronize_session='fetch'
         )
         Meeting.query.filter(Meeting.sharing_master_id.in_(secondary_ids)).update(
             {Meeting.sharing_master_id: primary_id}, synchronize_session='fetch'
