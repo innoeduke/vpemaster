@@ -149,32 +149,32 @@
 		font-size: 0.8rem;
 	}
 
-	.custom-modal {
+	.msg-modal.custom-modal {
 		padding: 12px;
 		align-items: center;
 	}
 
-	.custom-modal-header {
+	.msg-modal .custom-modal-header {
 		padding: 16px 20px 12px 20px;
 		align-items: flex-start;
 	}
 
-	.custom-modal-title {
+	.msg-modal .custom-modal-title {
 		font-size: 0.7rem;
 		line-height: 1.35;
 	}
 
-	.custom-modal-eyebrow {
+	.msg-modal .custom-modal-eyebrow {
 		font-size: 0.625rem;
 	}
 
-	.custom-modal-close {
+	.msg-modal .custom-modal-close {
 		width: 28px;
 		height: 28px;
 		font-size: 0.9rem;
 	}
 
-	.custom-modal-body {
+	.msg-modal .custom-modal-body {
 		padding: 12px 20px 16px 20px;
 	}
 
@@ -183,18 +183,18 @@
 		padding: 10px 0;
 	}
 
-	.custom-modal-footer {
+	.msg-modal .custom-modal-footer {
 		padding: 12px 20px 16px 20px;
 		flex-wrap: wrap;
 		gap: 8px;
 	}
 
-	.custom-modal-footer .btn {
+	.msg-modal .custom-modal-footer .btn {
 		font-size: 0.75rem;
 		padding: 7px 12px;
 	}
 
-	.msg-confirm-modal .custom-modal-body {
+	.msg-modal.msg-confirm-modal .custom-modal-body {
 		padding: 22px 20px 6px 20px;
 	}
 

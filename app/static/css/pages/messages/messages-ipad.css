@@ -34,23 +34,23 @@
 		gap: 0.75rem;
 	}
 
-	.custom-modal-content {
+	.msg-modal .custom-modal-content {
 		max-width: 560px;
 	}
 
-	.custom-modal-header {
+	.msg-modal .custom-modal-header {
 		padding: 18px 24px 12px 24px;
 	}
 
-	.custom-modal-body {
+	.msg-modal .custom-modal-body {
 		padding: 14px 24px 18px 24px;
 	}
 
-	.custom-modal-footer {
+	.msg-modal .custom-modal-footer {
 		padding: 12px 24px 16px 24px;
 	}
 
-	.custom-modal-title {
+	.msg-modal .custom-modal-title {
 		font-size: 0.7rem;
 	}
 }

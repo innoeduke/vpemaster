@@ -265,7 +265,11 @@
 	margin-left: 8px;
 	background: #772432; /* Toastmasters Maroon */
 	color: white;
+<<<<<<< Updated upstream
 	padding: 1px 7px;
+=======
+	padding: 2px 6px;
+>>>>>>> Stashed changes
 	border-radius: 10px;
 	font-size: 0.6875rem;
 	font-weight: 700;
@@ -273,6 +277,7 @@
 	min-width: 18px;
 	text-align: center;
 	line-height: 1.3;
+<<<<<<< Updated upstream
 	margin-top: 0; /* Override forms.css .badge margin-top cleanly via specificity */
 }
 
@@ -284,6 +289,8 @@
 		height: 100vh;
 		overflow: hidden;
 	}
+=======
+>>>>>>> Stashed changes
 }
 
 /* Layout Container */
@@ -707,7 +714,7 @@
 }
 
 /* Modal Styling — Detail & Delete */
-.custom-modal {
+.msg-modal.custom-modal {
 	display: none;
 	position: fixed;
 	z-index: 1100;
@@ -722,7 +729,7 @@
 	backdrop-filter: blur(3px);
 }
 
-.custom-modal.flex {
+.msg-modal.custom-modal.flex {
 	display: flex;
 	animation: modalBackdropIn 0.2s ease-out;
 }
@@ -732,7 +739,7 @@
 	to   { background: rgba(15, 30, 45, 0.45); }
 }
 
-.custom-modal-content {
+.msg-modal .custom-modal-content {
 	position: relative;
 	background-color: var(--msg-paper);
 	width: 90%;
@@ -761,7 +768,7 @@
 	}
 }
 
-.custom-modal-header {
+.msg-modal .custom-modal-header {
 	padding: 16px 20px 14px 20px;
 	display: flex;
 	justify-content: space-between;
@@ -770,11 +777,11 @@
 	border-bottom: 1px solid var(--msg-rule);
 }
 
-.custom-modal-eyebrow {
+.msg-modal .custom-modal-eyebrow {
 	display: none;
 }
 
-.custom-modal-title {
+.msg-modal .custom-modal-title {
 	font-family: 'Inter', sans-serif;
 	font-size: 0.7rem;
 	font-weight: 600;
@@ -787,7 +794,7 @@
 	text-transform: uppercase;
 }
 
-.custom-modal-content::before {
+.msg-modal .custom-modal-content::before {
 	content: "";
 	position: absolute;
 	top: 0;
@@ -798,7 +805,7 @@
 	z-index: 1;
 }
 
-.custom-modal-close {
+.msg-modal .custom-modal-close {
 	background: transparent;
 	border: 1px solid transparent;
 	color: var(--msg-text-muted);
@@ -815,12 +822,12 @@
 	flex-shrink: 0;
 }
 
-.custom-modal-close:hover {
+.msg-modal .custom-modal-close:hover {
 	color: var(--msg-accent);
 	background: var(--msg-accent-soft);
 }
 
-.custom-modal-body {
+.msg-modal .custom-modal-body {
 	padding: 16px 20px 18px 20px;
 	overflow-y: auto;
 	flex: 1;
@@ -913,7 +920,7 @@
 	margin-bottom: 0;
 }
 
-.custom-modal-footer {
+.msg-modal .custom-modal-footer {
 	padding: 12px 20px 14px 20px;
 	background: #fafbfc;
 	border-top: 1px solid var(--msg-border);
@@ -923,14 +930,14 @@
 	gap: 8px;
 }
 
-.custom-modal-footer .footer-actions {
+.msg-modal .custom-modal-footer .footer-actions {
 	display: flex;
 	gap: 8px;
 	margin-right: auto;
 }
 
 /* Modal action buttons */
-.custom-modal-footer .btn {
+.msg-modal .custom-modal-footer .btn {
 	font-family: 'Inter', sans-serif;
 	font-size: 0.75rem;
 	font-weight: 600;
@@ -944,43 +951,43 @@
 	transition: all 0.15s ease;
 }
 
-.custom-modal-footer .btn-success {
+.msg-modal .custom-modal-footer .btn-success {
 	background: var(--msg-accent);
 	color: #fff;
 }
 
-.custom-modal-footer .btn-success:hover {
+.msg-modal .custom-modal-footer .btn-success:hover {
 	background: var(--msg-accent-deep);
 }
 
-.custom-modal-footer .btn-danger {
+.msg-modal .custom-modal-footer .btn-danger {
 	background: #fff;
 	color: var(--msg-text-secondary);
 	border: 1px solid var(--msg-border);
 }
 
-.custom-modal-footer .btn-danger:hover {
+.msg-modal .custom-modal-footer .btn-danger:hover {
 	color: var(--msg-warn);
 	border-color: var(--msg-warn);
 }
 
-.custom-modal-footer .btn-secondary {
+.msg-modal .custom-modal-footer .btn-secondary {
 	background: transparent;
 	color: var(--msg-text-secondary);
 	border: none;
 	padding: 8px 12px;
 }
 
-.custom-modal-footer .btn-secondary:hover {
+.msg-modal .custom-modal-footer .btn-secondary:hover {
 	color: var(--msg-text-primary);
 }
 
 /* Message confirmation modals */
-.msg-confirm-modal .custom-modal-content {
+.msg-modal.msg-confirm-modal .custom-modal-content {
 	max-width: 380px;
 }
 
-.msg-confirm-modal .custom-modal-body {
+.msg-modal.msg-confirm-modal .custom-modal-body {
 	padding: 28px 28px 8px 28px;
 	text-align: center;
 }
