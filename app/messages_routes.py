@@ -68,29 +68,54 @@ def get_sent():
 @messages_bp.route('/messages/send', methods=['POST'])
 @login_required
 def send_message():
-    """Send a new message."""
+    """Send a new message to one or more recipients."""
     data = request.get_json() or request.form
-    recipient_id = data.get('recipient_id')
+
+    # Accept either recipient_id (legacy single) or recipient_ids (list)
+    recipient_ids = data.get('recipient_ids')
+    if recipient_ids is None:
+        single = data.get('recipient_id')
+        recipient_ids = [single] if single else []
+    elif not isinstance(recipient_ids, list):
+        recipient_ids = [recipient_ids]
+
+    # Coerce to ints and dedupe
+    try:
+        recipient_ids = list({int(rid) for rid in recipient_ids if rid is not None})
+    except (TypeError, ValueError):
+        return jsonify({'success': False, 'error': 'Invalid recipient id'}), 400
+
     subject = data.get('subject')
     body = data.get('body')
-    
-    if not recipient_id or not body:
+
+    if not recipient_ids or not body:
         return jsonify({'success': False, 'error': 'Recipient and message body are required'}), 400
-        
-    recipient = db.session.get(User, recipient_id)
-    if not recipient:
-        return jsonify({'success': False, 'error': 'Recipient not found'}), 404
-        
-    msg = Message(
-        sender=current_user,
-        recipient=recipient,
-        subject=subject,
-        body=body
-    )
-    db.session.add(msg)
+
+    # Verify all recipients exist
+    recipients = db.session.query(User).filter(User.id.in_(recipient_ids)).all()
+    found_ids = {r.id for r in recipients}
+    missing = set(recipient_ids) - found_ids
+    if missing:
+        return jsonify({'success': False, 'error': f'Recipient not found: {sorted(missing)}'}), 404
+
+    sent_count = 0
+    for recipient in recipients:
+        msg = Message(
+            sender=current_user,
+            recipient=recipient,
+            subject=subject,
+            body=body
+        )
+        db.session.add(msg)
+        sent_count += 1
+
     db.session.commit()
-    
-    return jsonify({'success': True, 'message': 'Message sent successfully'})
+
+    return jsonify({
+        'success': True,
+        'message': f'Message sent to {sent_count} recipient(s)' if sent_count != 1 else 'Message sent successfully',
+        'sent_count': sent_count
+    })
 
 @messages_bp.route('/messages/<int:id>/read', methods=['POST'])
 @login_required

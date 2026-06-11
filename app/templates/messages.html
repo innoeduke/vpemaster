@@ -61,16 +61,16 @@
         </div>
         <div class="custom-modal-body">
             <div class="message-detail-meta">
-                <div id="detail-avatar"></div>
+                <div class="meta-avatar" id="detail-avatar"></div>
                 <div class="meta-info">
                     <div class="meta-name" id="detail-sender"></div>
                     <div class="meta-time" id="detail-time"></div>
                 </div>
             </div>
-            <div id="detail-body"></div>
+            <div id="detail-body" class="message-body-content"></div>
         </div>
         <div class="custom-modal-footer">
-            <div>
+            <div class="footer-actions">
                 <button class="btn btn-success" onclick="replyToMessage()">
                     <i class="fas fa-reply"></i> Reply
                 </button>
@@ -162,12 +162,15 @@
                         const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'avatars';
                         avatarSrc = `/static/${root}/${avatarSrc}`;
                     }
+                    const party = tab === 'inbox' ? msg.sender : msg.recipient;
                     return `
                     <div class="msg-item ${!msg.read && tab === 'inbox' ? 'unread' : ''}" onclick="showDetail(${msg.id})">
-                        ${avatarSrc 
-                            ? `<img src="${avatarSrc}" class="msg-avatar" alt="Avatar">`
-                            : `<div class="msg-avatar-placeholder">${getInitials(tab === 'inbox' ? msg.sender : msg.recipient)}</div>`
-                        }
+                        <div class="msg-avatar-wrap">
+                            ${avatarSrc
+                                ? `<img src="${avatarSrc}" class="msg-avatar" alt="" onerror="this.outerHTML='<div class=\\'msg-avatar-placeholder\\'>${getInitials(party).replace(/'/g, "\\'")}</div>'">`
+                                : `<div class="msg-avatar-placeholder">${getInitials(party)}</div>`
+                            }
+                        </div>
                         <div class="msg-content">
                             <div class="msg-row-top">
                                 <span class="msg-sender">${tab === 'inbox' ? msg.sender : 'To: ' + msg.recipient}</span>
@@ -210,8 +213,8 @@
             const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'avatars';
             detailAvatarSrc = `/static/${root}/${detailAvatarSrc}`;
         }
-        avatarContainer.innerHTML = detailAvatarSrc 
-            ? `<img src="${detailAvatarSrc}" class="msg-avatar" alt="Avatar">`
+        avatarContainer.innerHTML = detailAvatarSrc
+            ? `<img src="${detailAvatarSrc}" class="msg-avatar" alt="" onerror="this.outerHTML='<div class=\\'msg-avatar-placeholder\\'>${getInitials(otherParty).replace(/'/g, "\\'")}</div>'">`
             : `<div class="msg-avatar-placeholder">${getInitials(otherParty)}</div>`;
         
 
@@ -223,9 +226,9 @@
         const homeProposalMatch = msg.body.match(/\[HOME_CLUB_PROPOSAL:(\d+):(\d+)\]/);
         // Handle User Join Requests (User requesting Admin)
         const joinRequestMatch = msg.body.match(/\[JOIN_REQUEST:(\d+):(\d+)\]/);
-        
-        // Clear previous actions if any (though we reset textContent below so simpler)
-        
+        // Handle responded state (post-action marker)
+        const respondedMatch = msg.body.match(/\[Responded:\s*(JOIN|REJECT|APPROVE|ACCEPT)(?::\s*([^\]]+))?\]/i);
+
         let displayBody = msg.body;
         if (requestMatch) {
             displayBody = displayBody.replace(requestMatch[0], '');
@@ -239,6 +242,9 @@
         if (joinRequestMatch) {
             displayBody = displayBody.replace(joinRequestMatch[0], '');
         }
+        if (respondedMatch) {
+            displayBody = displayBody.replace(respondedMatch[0], '');
+        }
 
         const bodyEl = document.getElementById('detail-body');
         
@@ -251,22 +257,59 @@
         
         // 1. Escape content
         let safeBody = escapeHtml(displayBody);
-        
-        // 2. Convert newlines to <br>
-        safeBody = safeBody.replace(/\n/g, '<br>');
-        
+
+        // 2. Wrap each paragraph in <p> for proper spacing
+        safeBody = safeBody
+            .split(/\n\s*\n/)
+            .map(p => p.trim())
+            .filter(p => p.length > 0)
+            .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+            .join('');
+
         // 3. Convert **bold** to <strong>bold</strong>
         safeBody = safeBody.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
 
         bodyEl.innerHTML = safeBody;
-        
+
         // Ensure body text is left-aligned (user request), overriding any centering
         bodyEl.style.textAlign = 'left';
-        
+
+        // Suppress the "Please respond using the buttons below" boilerplate
+        // when the request has already been responded to (no buttons will follow).
+        if (respondedMatch) {
+            const paras = bodyEl.querySelectorAll('p');
+            paras.forEach(p => {
+                if (/please respond using the buttons below/i.test(p.textContent)) {
+                    p.remove();
+                }
+            });
+        }
+
+        // Render "responded" status card when the request has already been handled
+        if (respondedMatch) {
+            const verb = respondedMatch[1].toUpperCase();
+            const note = respondedMatch[2] ? respondedMatch[2].trim() : '';
+            const statusVerb = (verb === 'JOIN' || verb === 'ACCEPT' || verb === 'APPROVE') ? 'Accepted' : 'Declined';
+            const statusClass = statusVerb === 'Accepted' ? 'message-status-card accepted' : 'message-status-card declined';
+            const statusIcon = statusVerb === 'Accepted' ? 'fa-check-circle' : 'fa-times-circle';
+            const noteHtml = note ? `<span class="status-note">${escapeHtml(note)}</span>` : '';
+            const statusHtml = `
+                <div class="${statusClass}">
+                    <i class="fas ${statusIcon} status-icon"></i>
+                    <span class="status-title">You ${statusVerb} this request</span>
+                    ${noteHtml}
+                </div>
+            `;
+            bodyEl.insertAdjacentHTML('beforeend', statusHtml);
+        }
+
         if (requestMatch && isInbox) {
              const actionsHtml = `
-                <div class="message-actions join-request-card">
-                    <h3 class="join-request-title">Club Join Request</h3>
+                <div class="message-actions join-request-card join-request-card--primary">
+                    <div class="join-request-header">
+                        <span class="join-request-icon"><i class="fas fa-user-plus"></i></span>
+                        <h3 class="join-request-title">Club Join Request</h3>
+                    </div>
                     <div class="join-request-actions">
                         <button onclick="respondToJoinRequest(${msg.id}, 'join')" class="btn btn-join btn-join-accept">
                             <i class="fas fa-check"></i> Accept
@@ -282,8 +325,11 @@
         
         if (homeRequestMatch && isInbox) {
              const actionsHtml = `
-                <div class="message-actions join-request-card">
-                    <h3 class="join-request-title" style="color: #2c5282; border-left: 4px solid #4299e1;">Home Club Request</h3>
+                <div class="message-actions join-request-card join-request-card--info">
+                    <div class="join-request-header">
+                        <span class="join-request-icon"><i class="fas fa-house-chimney"></i></span>
+                        <h3 class="join-request-title">Home Club Request</h3>
+                    </div>
                     <div class="join-request-actions">
                         <button onclick="respondToHomeRequest(${msg.id}, 'approve')" class="btn btn-join btn-join-accept">
                             <i class="fas fa-check"></i> Approve
@@ -299,10 +345,13 @@
 
         if (homeProposalMatch && isInbox) {
              const actionsHtml = `
-                <div class="message-actions join-request-card" style="background-color: #fffaf0; border-color: #fbd38d;">
-                    <h3 class="join-request-title" style="color: #744210; border-left: 4px solid #ed8936;">Home Club Change Proposal</h3>
+                <div class="message-actions join-request-card join-request-card--warning">
+                    <div class="join-request-header">
+                        <span class="join-request-icon"><i class="fas fa-arrow-right-arrow-left"></i></span>
+                        <h3 class="join-request-title">Home Club Change Proposal</h3>
+                    </div>
                     <div class="join-request-actions">
-                        <button onclick="respondToHomeProposal(${msg.id}, 'approve')" class="btn btn-join btn-join-accept" style="background-color: #48bb78;">
+                        <button onclick="respondToHomeProposal(${msg.id}, 'approve')" class="btn btn-join btn-join-accept">
                             <i class="fas fa-check"></i> Approve
                         </button>
                         <button onclick="respondToHomeProposal(${msg.id}, 'reject')" class="btn btn-join btn-join-reject">
@@ -316,8 +365,11 @@
 
         if (joinRequestMatch && isInbox) {
              const actionsHtml = `
-                <div class="message-actions join-request-card">
-                    <h3 class="join-request-title" style="color: #2b6cb0; border-left: 4px solid #3182ce;">Club Join Request</h3>
+                <div class="message-actions join-request-card join-request-card--primary">
+                    <div class="join-request-header">
+                        <span class="join-request-icon"><i class="fas fa-user-plus"></i></span>
+                        <h3 class="join-request-title">Club Join Request</h3>
+                    </div>
                     <div class="join-request-actions">
                         <button onclick="respondToUserJoinRequest(${msg.id}, 'approve')" class="btn btn-join btn-join-accept">
                             <i class="fas fa-check"></i> Approve

@@ -145,8 +145,222 @@
     .compose-input,
     .compose-textarea {
         width: 100%;
+<<<<<<< HEAD
         padding: 9px 12px;
         border: 1px solid var(--rule);
+=======
+        padding: 0.75rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        box-sizing: border-box; /* Critical for grid/flex layouts */
+    }
+    
+    .compose-input:focus, .compose-textarea:focus, .compose-select:focus {
+        outline: none;
+        border-color: #4a6fa5;
+        box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.2);
+    }
+
+    .compose-char-count {
+        position: absolute;
+        bottom: 6px;
+        right: 8px;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.6875rem;
+        font-weight: 500;
+        color: #a8b0ba;
+        font-variant-numeric: tabular-nums;
+        pointer-events: none;
+    }
+
+    /* Recipient chips (multi-select) */
+    .compose-recipient-field {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+        min-height: 38px;
+        padding: 5px 8px;
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        background: #fafbfc;
+        box-sizing: border-box;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        cursor: text;
+        position: relative;
+    }
+
+    .compose-recipient-field:hover {
+        border-color: #b8c2cc;
+        background: #fff;
+    }
+
+    .compose-recipient-field.is-focused {
+        border-color: var(--brand);
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(0, 65, 101, 0.12);
+    }
+
+    .recipient-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 2px 4px 2px 6px;
+        background: var(--brand-soft);
+        border: 1px solid rgba(0, 65, 101, 0.18);
+        border-radius: 4px;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--ink);
+        line-height: 1.2;
+    }
+
+    .recipient-chip .chip-avatar {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--brand);
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.6rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .recipient-chip .chip-remove {
+        background: transparent;
+        border: none;
+        color: var(--mute);
+        cursor: pointer;
+        width: 16px;
+        height: 16px;
+        border-radius: 3px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.65rem;
+        padding: 0;
+        margin-left: 2px;
+        transition: all 0.15s ease;
+    }
+
+    .recipient-chip .chip-remove:hover {
+        background: var(--brand);
+        color: #fff;
+    }
+
+    .recipient-chip-input {
+        flex: 1;
+        min-width: 120px;
+        border: none;
+        outline: none;
+        background: transparent;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.875rem;
+        color: var(--ink);
+        padding: 4px 2px;
+    }
+
+    .recipient-chip-input::placeholder {
+        color: #a8b0ba;
+    }
+
+    /* Autocomplete dropdown */
+    #recipient_results {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        background: #fff;
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        box-shadow: 0 10px 24px -8px rgba(0, 30, 50, 0.18);
+        z-index: 10;
+        max-height: 220px;
+        overflow-y: auto;
+        display: none;
+    }
+
+    #recipient_results.is-empty {
+        padding: 0;
+    }
+
+    #recipient_results .recipient-option {
+        padding: 9px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--hair);
+        transition: background 0.1s ease;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    #recipient_results .recipient-option:last-child { border-bottom: none; }
+
+    #recipient_results .recipient-option:hover,
+    #recipient_results .recipient-option.is-active {
+        background: var(--brand-soft);
+    }
+
+    #recipient_results .recipient-option .option-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--brand);
+        color: white;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    #recipient_results .recipient-option .option-main {
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        font-size: 0.9rem;
+        color: var(--ink);
+    }
+
+    #recipient_results .recipient-option .option-sub {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.75rem;
+        color: var(--mute);
+        margin-top: 1px;
+    }
+
+    #recipient_results .recipient-empty {
+        padding: 14px;
+        text-align: center;
+        color: var(--mute);
+        font-size: 0.85rem;
+    }
+
+    /* Footer */
+    .compose-footer {
+        padding: 1rem 1.5rem;
+        background-color: #f7fafc;
+        border-top: 1px solid #e2e8f0;
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+    }
+    
+    .btn-cancel {
+        background: white;
+        border: 1px solid #e2e8f0;
+        color: #4a5568;
+        padding: 0.6rem 1.25rem;
+>>>>>>> cc07e7e (refine the message modal)
         border-radius: 6px;
         background: #fafbfc;
         font-family: 'Inter', sans-serif;
@@ -458,10 +672,10 @@
         <form id="composeForm" onsubmit="sendMessage(event)" autocomplete="off">
             <div class="compose-body">
                 <div class="compose-form-group" style="position: relative;">
-                    <label for="recipient_search" class="compose-label">To</label>
-                    <input type="text" id="recipient_search" class="compose-input" placeholder="Search for a recipient…" autocomplete="off">
-                    <input type="hidden" id="recipient_id" name="recipient_id" required>
-
+                    <label class="compose-label">To</label>
+                    <div class="compose-recipient-field" id="recipient_field">
+                        <input type="text" id="recipient_search" class="recipient-chip-input" placeholder="Search for a recipient…" autocomplete="off">
+                    </div>
                     <div id="recipient_results"></div>
                 </div>
 
@@ -478,7 +692,7 @@
             </div>
 
             <div class="compose-footer">
-                <span class="compose-footer-hint">Delivered to one recipient.</span>
+                <span class="compose-footer-hint" id="compose_footer_hint">Add at least one recipient.</span>
                 <div class="compose-footer-actions">
                     <button type="button" class="btn-cancel" onclick="closeComposeModal()">Cancel</button>
                     <button type="submit" class="btn-send">
@@ -493,14 +707,20 @@
 
 <script>
     let searchTimeout = null;
+    const selectedRecipients = []; // {id, name, home_club}
 
     function openComposeModal(recipientId = null, recipientName = null, subject = null, mode = null) {
         const modal = document.getElementById('composeModal');
         const modalTitle = modal.querySelector('.compose-title');
 
+        // Reset selection
+        selectedRecipients.length = 0;
+        renderRecipientChips();
+        updateFooterHint();
+
         if (recipientId && recipientName) {
-            document.getElementById('recipient_id').value = recipientId;
-            document.getElementById('recipient_search').value = recipientName;
+            selectedRecipients.push({ id: recipientId, name: recipientName, home_club: '' });
+            renderRecipientChips();
             modalTitle.textContent = (mode === 'new') ? 'New Message' : 'Reply';
         } else {
             modalTitle.textContent = 'New Message';
@@ -510,10 +730,9 @@
             document.getElementById('subject').value = subject;
         }
 
-        refreshRecipientChip();
         modal.classList.add('flex');
 
-        if (!recipientId) {
+        if (selectedRecipients.length === 0) {
             document.getElementById('recipient_search').focus();
         } else if (!subject) {
             document.getElementById('subject').focus();
@@ -532,46 +751,59 @@
         modal.classList.remove('flex');
         setTimeout(() => {
             document.getElementById('composeForm').reset();
-            document.getElementById('recipient_id').value = '';
+            selectedRecipients.length = 0;
+            renderRecipientChips();
+            updateFooterHint();
             document.getElementById('recipient_results').style.display = 'none';
             document.getElementById('char_count').textContent = '0';
             modal.querySelector('.compose-title').textContent = 'New Message';
-            refreshRecipientChip();
         }, 300);
     }
 
-    function refreshRecipientChip() {
+    function renderRecipientChips() {
+        const field = document.getElementById('recipient_field');
         const search = document.getElementById('recipient_search');
-        const hidden = document.getElementById('recipient_id');
-        const existing = document.getElementById('recipient_chip');
-        if (existing) existing.remove();
-
-        if (hidden.value && search.value) {
-            const chip = document.createElement('div');
-            chip.id = 'recipient_chip';
-            chip.className = 'compose-recipient-chip';
-            const initials = (search.value || '?').trim().substring(0, 2).toUpperCase();
+        // Remove existing chips
+        field.querySelectorAll('.recipient-chip').forEach(c => c.remove());
+        // Insert chips before the search input
+        selectedRecipients.forEach((r, idx) => {
+            const chip = document.createElement('span');
+            chip.className = 'recipient-chip';
+            const initials = (r.name || '?').trim().substring(0, 2).toUpperCase();
             chip.innerHTML = `
                 <span class="chip-avatar">${escapeAttr(initials)}</span>
-                <span class="chip-name">${escapeAttr(search.value)}</span>
-                <button type="button" class="chip-clear" aria-label="Change recipient" onclick="clearRecipient()">
+                <span>${escapeAttr(r.name)}</span>
+                <button type="button" class="chip-remove" aria-label="Remove ${escapeAttr(r.name)}" data-idx="${idx}">
                     <i class="fas fa-times"></i>
                 </button>
             `;
-            search.style.display = 'none';
-            search.parentNode.insertBefore(chip, search);
+            field.insertBefore(chip, search);
+        });
+        // Toggle placeholder visibility
+        search.placeholder = selectedRecipients.length === 0
+            ? 'Search for a recipient…'
+            : (selectedRecipients.length === 1 ? 'Add another recipient…' : 'Add more…');
+        updateFooterHint();
+    }
+
+    function updateFooterHint() {
+        const hint = document.getElementById('compose_footer_hint');
+        if (!hint) return;
+        const n = selectedRecipients.length;
+        if (n === 0) {
+            hint.textContent = 'Add at least one recipient.';
+        } else if (n === 1) {
+            hint.textContent = 'Delivered to one recipient.';
         } else {
-            search.style.display = '';
+            hint.textContent = `Delivered to ${n} recipients.`;
         }
     }
 
-    function clearRecipient() {
-        const search = document.getElementById('recipient_search');
-        const hidden = document.getElementById('recipient_id');
-        search.value = '';
-        hidden.value = '';
-        refreshRecipientChip();
-        search.focus();
+    function removeRecipient(idx) {
+        selectedRecipients.splice(idx, 1);
+        renderRecipientChips();
+        document.getElementById('recipient_search').focus();
+>>>>>>> cc07e7e (refine the message modal)
     }
 
     function escapeAttr(s) {
@@ -580,13 +812,36 @@
 
     const searchInput = document.getElementById('recipient_search');
     const resultsDiv = document.getElementById('recipient_results');
-    const hiddenInput = document.getElementById('recipient_id');
+    const recipientField = document.getElementById('recipient_field');
+
+    // Click on the field focuses the input
+    recipientField.addEventListener('click', function(e) {
+        if (e.target === recipientField || e.target.classList.contains('recipient-chip-input') === false) {
+            // Only focus if click is not on the remove button
+            if (!e.target.closest('.chip-remove')) {
+                searchInput.focus();
+            }
+        }
+    });
+
+    searchInput.addEventListener('focus', function() {
+        recipientField.classList.add('is-focused');
+    });
+
+    searchInput.addEventListener('blur', function() {
+        // Delay removing focus style to allow clicks on results to register
+        setTimeout(() => {
+            if (document.activeElement !== searchInput) {
+                recipientField.classList.remove('is-focused');
+            }
+        }, 150);
+    });
 
     searchInput.addEventListener('input', function() {
         const query = this.value.trim();
+
+        // Clear previous timeout
         if (searchTimeout) clearTimeout(searchTimeout);
-        hiddenInput.value = '';
-        refreshRecipientChip();
 
         if (query.length < 1) {
             resultsDiv.style.display = 'none';
@@ -600,18 +855,20 @@
                     if (!Array.isArray(users) || users.length === 0) {
                         resultsDiv.innerHTML = '<div class="recipient-empty">No recipients found</div>';
                     } else {
-                        resultsDiv.innerHTML = users.map(u => {
-                            const initials = (u.name || '?').trim().substring(0, 2).toUpperCase();
-                            return `
-                                <div class="recipient-option" onclick="selectRecipient(${u.id}, '${escapeAttr(u.name).replace(/'/g, "\\'")}')">
-                                    <span class="option-avatar">${escapeAttr(initials)}</span>
-                                    <div>
-                                        <div class="option-main">${escapeAttr(u.name)}</div>
-                                        <div class="option-sub">${escapeAttr(u.home_club || 'No Club')}</div>
+                        resultsDiv.innerHTML = users
+                            .filter(u => !selectedRecipients.some(r => r.id === u.id))
+                            .map(u => {
+                                const initials = (u.name || '?').trim().substring(0, 2).toUpperCase();
+                                return `
+                                    <div class="recipient-option" data-id="${u.id}" data-name="${escapeAttr(u.name)}" data-club="${escapeAttr(u.home_club || '')}">
+                                        <span class="option-avatar">${escapeAttr(initials)}</span>
+                                        <div>
+                                            <div class="option-main">${escapeAttr(u.name)}</div>
+                                            <div class="option-sub">${escapeAttr(u.home_club || 'No Club')}</div>
+                                        </div>
                                     </div>
-                                </div>
-                            `;
-                        }).join('');
+                                `;
+                            }).join('');
                     }
                     resultsDiv.style.display = 'block';
                 })
@@ -619,15 +876,49 @@
         }, 300);
     });
 
-    function selectRecipient(id, name) {
-        document.getElementById('recipient_search').value = name;
-        document.getElementById('recipient_id').value = id;
-        document.getElementById('recipient_results').style.display = 'none';
-        refreshRecipientChip();
+    // Delegate clicks on result options
+    resultsDiv.addEventListener('click', function(e) {
+        const opt = e.target.closest('.recipient-option');
+        if (!opt) return;
+        const id = opt.getAttribute('data-id');
+        const name = opt.getAttribute('data-name');
+        const home_club = opt.getAttribute('data-club');
+        if (id && name) addRecipient({ id: parseInt(id, 10), name, home_club });
+    });
+
+    // Delegate clicks on chip remove buttons
+    recipientField.addEventListener('click', function(e) {
+        const btn = e.target.closest('.chip-remove');
+        if (!btn) return;
+        e.preventDefault();
+        const idx = parseInt(btn.getAttribute('data-idx'), 10);
+        if (!isNaN(idx)) removeRecipient(idx);
+    });
+
+    function addRecipient(user) {
+        if (selectedRecipients.some(r => r.id === user.id)) return;
+        selectedRecipients.push(user);
+        searchInput.value = '';
+        resultsDiv.style.display = 'none';
+        renderRecipientChips();
+        searchInput.focus();
     }
 
+    // Keyboard support: Enter to add first result
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && resultsDiv.style.display === 'block') {
+            e.preventDefault();
+            const first = resultsDiv.querySelector('.recipient-option');
+            if (first) first.click();
+        } else if (e.key === 'Backspace' && searchInput.value === '' && selectedRecipients.length > 0) {
+            // Remove last chip on backspace when input is empty
+            e.preventDefault();
+            removeRecipient(selectedRecipients.length - 1);
+        }
+    });
+
     document.addEventListener('click', function(e) {
-        if (e.target !== searchInput && !resultsDiv.contains(e.target)) {
+        if (!recipientField.contains(e.target) && !resultsDiv.contains(e.target)) {
             resultsDiv.style.display = 'none';
         }
     });
@@ -638,13 +929,18 @@
 
     function sendMessage(e) {
         e.preventDefault();
+        if (selectedRecipients.length === 0) {
+            alert('Please add at least one recipient.');
+            searchInput.focus();
+            return;
+        }
         const btn = e.target.querySelector('button[type="submit"]');
         const originalText = btn.innerHTML;
         btn.disabled = true;
         btn.innerHTML = '<span>Sending…</span><span class="send-arrow"><i class="fas fa-spinner fa-spin"></i></span>';
 
         const data = {
-            recipient_id: document.getElementById('recipient_id').value,
+            recipient_ids: selectedRecipients.map(r => r.id),
             subject: document.getElementById('subject').value,
             body: document.getElementById('body').value
         };
