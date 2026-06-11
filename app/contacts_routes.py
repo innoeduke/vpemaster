@@ -48,7 +48,7 @@ def search_contacts_by_name():
         "Phone_Number": c.Phone_Number,
         "UserRole": c.user.primary_role_name if c.user else None,
         "is_officer": c.id in officer_ids,
-        "Home_Club": c.home_club
+        "display_club_name": c.display_club_name
     } for c in contacts]
     return jsonify(contacts_data)
 
@@ -180,7 +180,7 @@ def contact_form(contact_id=None):
     if request.method == 'GET' and contact:
         # User-level Home Club selector (drives User.home_club). Only
         # relevant when contact is linked to a user. Reads from
-        # UserClub.is_home, NOT from contact.home_club (those are
+        # UserClub.is_home, NOT from contact.display_club_name (those are
         # independent fields — see docs/CONTACT_USER_CLUB_MODEL.md).
         user_clubs_data = []
         home_club_id = None
@@ -227,7 +227,7 @@ def contact_form(contact_id=None):
                 'mentor_id': contact.Mentor_ID,
                 # Contact-level home club (the new field). Independent
                 # from user_clubs/home_club_id above.
-                'home_club': contact.home_club
+                'display_club_name': contact.display_club_name
             },
             'user_clubs': user_clubs_data,
             'home_club_id': home_club_id,
@@ -273,11 +273,11 @@ def contact_form(contact_id=None):
             contact.Member_ID = member_id
             contact.Mentor_ID = mentor_id
 
-            # Contact-level home club (independent from User.home_club —
+            # Contact-level display club name (independent from User.home_club —
             # see docs/CONTACT_USER_CLUB_MODEL.md). Plain text input on
             # the form. Trim, treat empty as null.
-            contact_home_club_val = request.form.get('contact_home_club', '').strip() or None
-            contact.home_club = contact_home_club_val[:200] if contact_home_club_val else None
+            contact_display_club_name_val = request.form.get('contact_display_club_name', '').strip() or None
+            contact.display_club_name = contact_display_club_name_val[:200] if contact_display_club_name_val else None
 
             # Manual overrides for completed paths and DTM if present in form
             if 'completed_paths' in request.form:
@@ -950,7 +950,7 @@ def _build_contacts_data(per_page=None, offset=0):
             'Type': c.Type,
             'Phone_Number': c.Phone_Number if c.Phone_Number else '-',
             'Club': primary_club.club_name if primary_club else '-',
-            'Home_Club': c.home_club if c.home_club else '-',
+            'display_club_name': c.display_club_name if c.display_club_name else '-',
             'Completed_Paths': c.Completed_Paths if c.Completed_Paths else '-',
             'credentials': c.credentials if c.credentials else '-',
             'Next_Project': c.Next_Project if c.Next_Project else '-',

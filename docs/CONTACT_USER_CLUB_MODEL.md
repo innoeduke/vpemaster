@@ -20,8 +20,8 @@
 - **`users`** is the system identity. A user account always exists before any
   club-specific state.
 - **`Contacts`** is the global contact card. It carries personal info
-  (name, email, phone, bio, pathway, etc.) and its own home club
-  (`Contact.home_club`) that follows the person across clubs.
+  (name, email, phone, bio, pathway, etc.) and its own display club name
+  (`Contact.display_club_name`) that follows the person across clubs.
 - **`user_clubs`** is a junction: which clubs a user belongs to, plus
   per-club state: `auth_role_id`, `is_home` (the user's *system-level*
   home club), `mentor_id`, `current_path_id`. This is also where the
@@ -38,13 +38,13 @@
 | Concept               | Where it lives                                | Who sets it                    | What it drives                                                     |
 |-----------------------|-----------------------------------------------|--------------------------------|--------------------------------------------------------------------|
 | **User.home_club**    | `UserClub.is_home = True` for that `user_id`  | the user (or admin approval)   | auth (`is_home_club_admin`), login, current club context, profile, about-club member directory |
-| **Contact.home_club** | `Contact.home_club` (text column)             | a clubadmin on the contact card | contacts page display, clubadmin-curated "where this person is from" |
+| **Contact.display_club_name** | `Contact.display_club_name` (text column)             | a clubadmin on the contact card | contacts page display, clubadmin-curated "where this person is from" |
 
 They are **independent attributes**. They CAN have the same value, but they
 do not have to. They drift independently and that's by design. A user can
-move clubs (changing `User.home_club`); the contact's home club stays put
+move clubs (changing `User.home_club`); the contact's display club stays put
 unless a clubadmin explicitly edits it. A guest contact has
-`Contact.home_club` set by a clubadmin and no `User.home_club` at all.
+`Contact.display_club_name` set by a clubadmin and no `User.home_club` at all.
 
 **Don't sync them automatically.** If a feature wants to align them, it
 must do so as an explicit, user-initiated "copy from user" action — never
@@ -59,11 +59,11 @@ User
   → Club
 
 # Contact-level (contacts page, clubadmin curation):
-Contact.home_club                    (a text column on Contacts)
+Contact.display_club_name                    (a text column on Contacts)
 ```
 
-`Contact.get_home_club()` (the property the contacts page consumes)
-reads from `Contact.home_club` directly — it does NOT route through the
+`Contact.get_display_club_name()` (the property the contacts page consumes)
+reads from `Contact.display_club_name` directly — it does NOT route through the
 user. This is what makes the empty-state contract work for guest
 contacts (see rule 4).
 
@@ -75,7 +75,7 @@ For the `User.home_club` chain:
   **This is the only sanctioned way to set the user-level flag.** Never
   set `is_home=True` on multiple rows for the same user.
 
-For the `Contact.home_club` chain:
+For the `Contact.display_club_name` chain:
 - It's a direct column on `Contacts`. No joins, no derivation, no user
   lookup.
 - The form offers a picker sourced from `clubs` (active only) and a
@@ -86,7 +86,7 @@ For the `Contact.home_club` chain:
 | Concept            | Source                                          | Meaning                                                                  |
 |--------------------|-------------------------------------------------|--------------------------------------------------------------------------|
 | **User.home_club** | `User.home_club` (via `user_clubs.is_home`)     | The user's designated system-level home club. Auth-relevant.             |
-| **Contact.home_club** | `Contact.home_club` (text column)            | The contact card's home club, as edited by a clubadmin. Display-level.   |
+| **Contact.display_club_name** | `Contact.display_club_name` (text column)            | The contact card's display club name, as edited by a clubadmin. Display-level.   |
 | **Primary club**   | `Contact.get_primary_club()`                    | The **first** `ContactClub` row for the contact — not authoritative      |
 
 The third one (`get_primary_club`) is a separate imperfect concept — it
@@ -94,7 +94,7 @@ returns the first `ContactClub` row, with no preference logic. Do not
 treat it as a substitute for either home club. See "Open questions".
 
 ### 4. Empty-state contract
-- A contact with no `Contact.home_club` value renders "—" in the UI.
+- A contact with no `Contact.display_club_name` value renders "—" in the UI.
   Do NOT default to the current club, do NOT fall back to
   `User.home_club` (that's a different concept), do NOT guess.
 - A user with no `UserClub(is_home=True)` row returns `None` from
@@ -106,7 +106,7 @@ by always going through `User.set_home_club()`. If a pre-existing data
 anomaly shows up (multiple `True` rows for one user), `User.home_club`
 returns the first one found — fix the data, don't special-case the code.
 
-### 6. `Contact.home_club` is plain text, intentionally
+### 6. `Contact.display_club_name` is plain text, intentionally
 It's a text column, not an FK to `clubs`, by design:
 - It supports inactive clubs that don't have a row in our `clubs` table
   (Toastmasters has thousands of clubs; we don't pre-populate them).
@@ -160,8 +160,8 @@ ability to show different photos per club.
 | `User.set_home_club`                     | `app/models/user.py:401-418`         |
 | `User.contact_id` (back-compat)          | `app/models/user.py:133-139`         |
 | `Contact.user_id` / `Contact.user`       | `app/models/contact.py:132-169`      |
-| `Contact.get_home_club`                  | `app/models/contact.py:392-407` — reads from `Contact.home_club` directly, returns the text value (or None). Does NOT route through the user. |
-| `Contact.home_club` (column)             | `app/models/contact.py` (column definition); migration `migrations/versions/c1d2e3f4a5b6_add_contact_home_club.py` (schema + backfill). |
+| `Contact.get_display_club_name`                  | `app/models/contact.py:392-407` — reads from `Contact.display_club_name` directly, returns the text value (or None). Does NOT route through the user. |
+| `Contact.display_club_name` (column)             | `app/models/contact.py` (column definition); migration `migrations/versions/c1d2e3f4a5b6_add_contact_home_club.py` (schema + backfill). |
 | `Contact.get_primary_club`               | `app/models/contact.py:381-390`      |
 | `UserClub.is_home` column                | `app/models/user_club.py:50`         |
 | `Contact.populate_users` (batch pattern) | `app/models/contact.py:413-435`      |
@@ -177,30 +177,30 @@ ability to show different photos per club.
 
 When implementing or reviewing a feature in this area, confirm:
 
-- [ ] **Two home clubs exist and you know which one you want.** If the
+- [ ] **Two home/display clubs exist and you know which one you want.** If the
       feature is contact-display (contacts page, contact card, roster
-      table), use `Contact.home_club`. If it's user-display (profile,
+      table), use `Contact.display_club_name`. If it's user-display (profile,
       auth, login, current club context), use `User.home_club`. Do not
       mix them.
 - [ ] **No automatic sync between the two home clubs.** If a form
       offers a "use user's home club" button, the action is a one-shot
       copy, not a live link. The fields stay independent afterward.
-- [ ] **Empty states are explicit.** A null `Contact.home_club` renders
+- [ ] **Empty states are explicit.** A null `Contact.display_club_name` renders
       "—". A null `User.home_club` returns `None` cleanly. Never default
       to a plausible value.
 - [ ] **`is_home` writes go through `set_home_club`.** Never set
       `is_home=True` on a single row directly.
-- [ ] **Authorization uses `User.home_club`, not `Contact.home_club`.**
+- [ ] **Authorization uses `User.home_club`, not `Contact.display_club_name`.**
       The `is_home_club_admin` gate must read the user-level attribute;
       it is not safe to derive it from a contact-card value that a
       clubadmin can edit.
-- [ ] **No N+1 on contact home club in list views.** `Contact.home_club`
+- [ ] **No N+1 on contact display club in list views.** `Contact.display_club_name`
       is a column on the row, so a normal `Contact.query` already
       carries it. No populate helper needed for v1. (If we later add
       a `home_club_id` FK with joins, add a populate helper at that
       point.)
 - [ ] **No pre-population of inactive clubs in `clubs`.** Don't add
-      thousands of placeholder club rows. The `Contact.home_club`
+      thousands of placeholder club rows. The `Contact.display_club_name`
       text field is how we represent inactive clubs.
 
 ## Open questions / known gaps
@@ -212,7 +212,7 @@ When implementing or reviewing a feature in this area, confirm:
    `contact_clubs`).
 2. **No "sync from user.home_club" workflow on contact creation.** When
    a user-linked contact is created, do we copy `User.home_club` to
-   `Contact.home_club` automatically? Currently no — they're independent.
+   `Contact.display_club_name` automatically? Currently no — they're independent.
    If a UX case emerges where this is annoying, add an explicit "sync"
    action, not a default copy.
 3. **Free-text home club = no district/area rollups.** If we ever need
@@ -222,6 +222,6 @@ When implementing or reviewing a feature in this area, confirm:
    `home_clubs` lookup table. Decide when the need arises, not now.
 4. **Legacy data migration**: implemented. The
    `c1d2e3f4a5b6_add_contact_home_club` migration backfills
-   `Contact.home_club` from `User.home_club.club_name` for any contact
+   `Contact.display_club_name` from `User.home_club.club_name` for any contact
    with a `UserClub(is_home=True)` row. Pure-guest contacts stay null.
    After migration, the two fields drift independently per design.

@@ -116,7 +116,7 @@ function applyFilters() {
         contact.Phone_Number,
         contact.Email,
         contact.Member_ID,
-        contact.Home_Club,
+        contact.display_club_name,
         typeLabel
       ].join(' ').toUpperCase();
 
@@ -151,7 +151,7 @@ function getContactSortValue(contact, index) {
   switch (index) {
     case 0: return (contact.Name || '').toLowerCase();
     case 1: return getContactTypeLabel(contact).toLowerCase();
-    case 2: return (contact.Home_Club || '').toLowerCase();
+    case 2: return (contact.display_club_name || '').toLowerCase();
     case 3:
       // Participation: [Attendance]_[Role Count]_[Qualified]_[TT Count]_[Awards]
       return `${String(contact.attendance_count || 0).padStart(3, '0')}_${String(contact.role_count || 0).padStart(3, '0')}_${contact.is_qualified ? '1' : '0'}_${String(contact.tt_count || 0).padStart(3, '0')}_${String(contact.award_count || 0).padStart(3, '0')}`;
@@ -253,7 +253,7 @@ function createContactRow(contact) {
         return `<span class="contact-type-badge type-${typeClass}">${label}</span>`;
       })()}
     </td>
-    <td class="col-home-club">${contact.Home_Club || '-'}</td>
+    <td class="col-home-club">${contact.display_club_name || '-'}</td>
     <td class="col-part" data-sort="${sortValue}">
       <div class="participation-container">
         ${contact.is_qualified ? '<i class="fas fa-star" title="Qualified Guest" style="color: #ffc107; font-size: 1.1em;"></i>' : ''}

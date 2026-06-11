@@ -683,6 +683,7 @@ class User(UserMixin, db.Model):
              # Use prototype data if available, otherwise defaults
              source = prototype_contact if prototype_contact else None
              
+             club_record = db.session.get(Club, club_id)
              contact = Contact(
                  Name=full_name or (source.Name if source else final_name),
                  first_name=first_name or (source.first_name if source else None),
@@ -691,6 +692,7 @@ class User(UserMixin, db.Model):
                  Phone_Number=phone or self.phone or (source.Phone_Number if source else None),
                  Type='Member',
                  Date_Created=date.today(),
+                 display_club_name=club_record.club_name if club_record else None,
                  # Copy additional fields from prototype
                  Member_ID=source.Member_ID if source else None,
                  DTM=source.DTM if source else False,

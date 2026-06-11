@@ -25,13 +25,13 @@ class Contact(db.Model):
     Avatar_URL = db.Column(db.String(255), nullable=True)
     is_connected = db.Column(db.Boolean, default=True)
 
-    # Contact-level home club. Plain text by design — see
+    # Contact-level display club name. Plain text by design — see
     # docs/CONTACT_USER_CLUB_MODEL.md rule 6. Independent from
     # User.home_club (which drives auth/login/profile). For user-linked
     # contacts, this is backfilled from User.home_club on migration and
     # then drifts independently; for guest contacts, this is the only
-    # home club they have.
-    home_club = db.Column(db.String(200), nullable=True)
+    # display club they have.
+    display_club_name = db.Column(db.String(200), nullable=True)
 
     mentor = db.relationship('Contact', remote_side=[id], foreign_keys=[Mentor_ID], backref='mentees')
     
@@ -397,18 +397,18 @@ class Contact(db.Model):
         cc = ContactClub.query.filter_by(contact_id=self.id).first()
         return cc.club if cc else None
 
-    def get_home_club(self):
+    def get_display_club_name(self):
         """
-        Get the home club for this contact.
-        Reads from the contact's own `home_club` column directly. This is
-        the contact-level home club (display on the contacts page) — it is
+        Get the display club name for this contact.
+        Reads from the contact's own `display_club_name` column directly. This is
+        the contact-level display club (display on the contacts page) — it is
         a separate concept from `User.home_club` (which drives auth,
         login, profile, and the current club context). For user-linked
         contacts, both can be set; they drift independently. For guest
-        contacts, this is the only home club they have.
-        Returns the home club name as a string, or None.
+        contacts, this is the only display club they have.
+        Returns the display club name as a string, or None.
         """
-        return self.home_club
+        return self.display_club_name
 
     # Removed duplicate user_id and user definitions that were tied strictly to club_context.
     # The properties above handle global identification with club preference.

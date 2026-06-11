@@ -119,8 +119,8 @@ def process_member_file(file_bytes, ext, club_id):
                 password='toastmasters'
             )
             
-            # Update contact record with additional fields (mentor, member_id)
-            if (mentor_name or member_id) and user:
+            # Update contact record with additional fields (mentor, member_id, home_club)
+            if user:
                 uc = UserClub.query.filter_by(user_id=user.id, club_id=club_id).first()
                 if uc and uc.contact_id:
                     contact_record = Contact.query.get(uc.contact_id)
@@ -131,6 +131,9 @@ def process_member_file(file_bytes, ext, club_id):
                                 contact_record.Mentor_ID = mentor_contact.id
                         if member_id:
                             contact_record.Member_ID = member_id.strip()
+                        # Set display club to this club
+                        if not contact_record.display_club_name:
+                            contact_record.display_club_name = club.club_name
 
             success_count += 1
         except Exception as e:

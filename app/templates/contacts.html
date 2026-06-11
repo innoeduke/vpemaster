@@ -168,7 +168,7 @@ head_extra %}
             <span class="contact-type-badge type-{% if is_member %}member{% else %}guest{% endif %}">{% if is_member %}Member{% else %}Guest{% endif %}</span>
             {%- endif -%}
           </td>
-          <td class="col-home-club">{{ contact.Home_Club or '-' }}</td>
+          <td class="col-home-club">{{ contact.display_club_name or '-' }}</td>
           <td class="col-part" data-sort="{{ '%03d_%03d_%d_%03d_%03d' % (contact.attendance_count or 0, contact.role_count or 0, 1 if contact.is_qualified else 0, contact.tt_count or 0, contact.award_count or 0) }}">
             <div class="participation-container">
               {%- if contact.is_qualified %}<i class="fas fa-star" title="Qualified Guest" style="color: #ffc107; font-size: 1.1em;"></i>{% endif -%}
