@@ -383,7 +383,9 @@ def contact_form(contact_id=None):
             # Sync metadata (this will also aggregate paths if we just added/removed some manually)
             from .utils import sync_contact_metadata
             has_new_avatar = file and file.filename != '' and avatar_url
-            sync_contact_metadata(contact.id, sync_avatar=bool(has_new_avatar))
+            user_set_dtm = 'dtm' in request.form
+            sync_contact_metadata(contact.id, sync_avatar=bool(has_new_avatar),
+                                  dtm_override=user_set_dtm)
             
             if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
                 flash('Contact updated successfully!', 'success')
@@ -596,6 +598,7 @@ def merge_contacts_route():
         
     data = request.get_json()
     contact_ids = data.get('contact_ids', [])
+    requested_primary_id = data.get('primary_id')
     
     if len(contact_ids) < 2:
         return jsonify(success=False, message="At least two contacts are required for merging."), 400
@@ -605,19 +608,25 @@ def merge_contacts_route():
         return jsonify(success=False, message="One or more contacts not found."), 404
         
     # Primary Selection Logic: 
-    # 1. If any contact is a Member (or non-Guest), the oldest one is primary.
-    # 2. If all contacts are Guests, the oldest Guest is primary.
+    # 1. If the frontend sent a primary_id, use that contact as primary.
+    # 2. Otherwise, auto-select: oldest Member > oldest Guest.
     
-    def get_sort_key(c):
-        # Type priority: 0 for anything non-Guest, 1 for Guest
-        type_priority = 0 if c.Type != 'Guest' else 1
-        # Older dates (smaller) should come first
-        created_date = c.Date_Created or date.max
-        return (type_priority, created_date, c.id)
-        
-    sorted_contacts = sorted(contacts, key=get_sort_key)
-    primary = sorted_contacts[0]
-    secondary_ids = [c.id for c in sorted_contacts[1:]]
+    if requested_primary_id and requested_primary_id in contact_ids:
+        primary = next((c for c in contacts if c.id == requested_primary_id), None)
+        if not primary:
+            return jsonify(success=False, message="Requested primary contact not found."), 404
+    else:
+        def get_sort_key(c):
+            # Type priority: 0 for anything non-Guest, 1 for Guest
+            type_priority = 0 if c.Type != 'Guest' else 1
+            # Older dates (smaller) should come first
+            created_date = c.Date_Created or date.max
+            return (type_priority, created_date, c.id)
+            
+        sorted_contacts = sorted(contacts, key=get_sort_key)
+        primary = sorted_contacts[0]
+
+    secondary_ids = [c.id for c in contacts if c.id != primary.id]
     
     try:
         Contact.merge_contacts(primary.id, secondary_ids)

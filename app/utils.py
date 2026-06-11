@@ -394,12 +394,17 @@ def update_next_project(contact):
     contact.Next_Project = None
 
 
-def recalculate_contact_metadata(contact, avatar_url=None):
+def recalculate_contact_metadata(contact, avatar_url=None, dtm_override=None):
     """
     Update Contact metadata (DTM, Completed_Paths, credentials, Next_Project, Avatar_URL) 
     strictly based on the Achievements table and SessionLogs for this contact 
     AND all related contact records (same email or same user).
     Does NOT commit to DB.
+
+    Args:
+        dtm_override: If not None, forces DTM to this boolean value instead of
+                      deriving it from achievements. Used when the user has
+                      explicitly toggled the DTM checkbox on the contact form.
     """
     if not contact:
         return
@@ -440,17 +445,21 @@ def recalculate_contact_metadata(contact, avatar_url=None):
     ).order_by(Achievement.award_date.desc()).all() if user_ids else []
     
     # 1. DTM
-    is_dtm = False
-    for a in achievements:
-        if a.achievement_type == 'program-completion' and a.path_name == 'Distinguished Toastmasters':
-            is_dtm = True
-            break
-    
-    # Preserve existing DTM=True if not found above
-    if contact.DTM:
-        contact.DTM = True
+    if dtm_override is not None:
+        # User explicitly set DTM via the form — honour their choice.
+        contact.DTM = dtm_override
     else:
-        contact.DTM = is_dtm
+        is_dtm = False
+        for a in achievements:
+            if a.achievement_type == 'program-completion' and a.path_name == 'Distinguished Toastmasters':
+                is_dtm = True
+                break
+
+        # Preserve existing DTM=True if not found above
+        if contact.DTM:
+            contact.DTM = True
+        else:
+            contact.DTM = is_dtm
 
     # 2. Completed_Paths
     completed_set = set()
@@ -529,7 +538,7 @@ def recalculate_contact_metadata(contact, avatar_url=None):
         contact.Avatar_URL = avatar_url
 
 
-def sync_contact_metadata(contact_id, commit=True, sync_avatar=False):
+def sync_contact_metadata(contact_id, commit=True, sync_avatar=False, dtm_override=None):
     """
     Update Contact metadata for a specific contact and all related contacts 
     (same person in different clubs).
@@ -539,8 +548,11 @@ def sync_contact_metadata(contact_id, commit=True, sync_avatar=False):
         commit: If True (default), commits after updating. If False, only flushes
                 so the caller can commit as part of a larger transaction.
         sync_avatar: If True, propagates the primary contact's Avatar_URL to all
-                     related contacts. Defaults to False to prevent accidental
-                     avatar overwrites during non-avatar metadata syncs.
+                      related contacts. Defaults to False to prevent accidental
+                      avatar overwrites during non-avatar metadata syncs.
+        dtm_override: If not None, forces the DTM flag to this boolean value
+                      instead of deriving it from achievements. Propagated to
+                      all related contacts.
     """
     primary_contact = db.session.get(Contact, contact_id)
     if not primary_contact:
@@ -563,7 +575,7 @@ def sync_contact_metadata(contact_id, commit=True, sync_avatar=False):
     for contact in contacts_to_update:
         # Only propagate Avatar_URL when explicitly requested (during avatar upload)
         avatar_to_sync = primary_contact.Avatar_URL if sync_avatar else None
-        recalculate_contact_metadata(contact, avatar_url=avatar_to_sync)
+        recalculate_contact_metadata(contact, avatar_url=avatar_to_sync, dtm_override=dtm_override)
         db.session.add(contact)
     
     if commit:

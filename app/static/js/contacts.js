@@ -746,10 +746,6 @@ function handleMergeClick() {
 
   if (contactIds.length < 2) return;
 
-  // Find contact names for confirmation (might be in cache even if not on page)
-  // Logic: We might need to fetch if not in cache, but simplified: assume cache has needed
-  // In a real paginated API scenario without full cache, we'd fetch details.
-  // Here allContactsCache has everything.
   const selectedContacts = allContactsCache.filter(c => selectedContactIds.has(c.id));
 
   // Logic to identify primary (Oldest Member > Oldest Guest)
@@ -760,19 +756,10 @@ function handleMergeClick() {
   }
 
   const sortedSelected = [...selectedContacts].sort((a, b) => getSortKey(a).localeCompare(getSortKey(b)));
-  const primary = sortedSelected[0];
-  const others = sortedSelected.slice(1);
 
-  // Populate Custom Modal
-  const modal = document.getElementById('mergeContactModal');
-  const countSpan = document.getElementById('mergeCount');
-  const primaryDetails = document.getElementById('primaryContactDetails');
-  const primaryMeta = document.getElementById('primaryContactMeta');
-  const secondaryList = document.getElementById('secondaryContactsList');
-  const confirmBtn = document.getElementById('confirmMergeBtn');
-
-  if (countSpan) countSpan.textContent = selectedContacts.length;
-  if (primaryDetails) primaryDetails.textContent = primary.Name;
+  // Mutable state for primary/secondary
+  let currentPrimary = sortedSelected[0];
+  let currentOthers = sortedSelected.slice(1);
 
   const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
   const translateType = (type) => {
@@ -787,15 +774,48 @@ function handleMergeClick() {
     return type;
   };
 
-  if (primaryMeta) {
-    const translatedType = translateType(primary.Type);
-    const createdLabel = isChinese ? '创建日期' : 'Created';
-    primaryMeta.textContent = `${translatedType} • ${createdLabel}: ${primary.Date_Created}`;
+  // Helper to render modal contents with current primary/secondary state
+  function renderMergeModal() {
+    const primaryDetails = document.getElementById('primaryContactDetails');
+    const primaryMeta = document.getElementById('primaryContactMeta');
+    const secondaryList = document.getElementById('secondaryContactsList');
+
+    if (primaryDetails) primaryDetails.textContent = currentPrimary.Name;
+
+    if (primaryMeta) {
+      const translatedType = translateType(currentPrimary.Type);
+      const createdLabel = isChinese ? '创建日期' : 'Created';
+      primaryMeta.textContent = `${translatedType} • ${createdLabel}: ${currentPrimary.Date_Created}`;
+    }
+
+    if (secondaryList) {
+      secondaryList.innerHTML = currentOthers.map(c =>
+        `<li data-contact-id="${c.id}" title="${isChinese ? '点击设为主要联系人' : 'Click to promote to primary'}"><i class="fas fa-arrow-up" style="font-size: 0.7rem; color: #94a3b8;"></i> <strong>${c.Name}</strong> (${translateType(c.Type)})</li>`
+      ).join('');
+
+      // Attach click handlers for promotion
+      secondaryList.querySelectorAll('li[data-contact-id]').forEach(li => {
+        li.addEventListener('click', () => {
+          const clickedId = parseInt(li.dataset.contactId, 10);
+          const clickedContact = currentOthers.find(c => c.id === clickedId);
+          if (!clickedContact) return;
+
+          // Swap: clicked becomes primary, old primary goes to others
+          currentOthers = [currentPrimary, ...currentOthers.filter(c => c.id !== clickedId)];
+          currentPrimary = clickedContact;
+          renderMergeModal();
+        });
+      });
+    }
   }
 
-  if (secondaryList) {
-    secondaryList.innerHTML = others.map(c => `<li><strong>${c.Name}</strong> (${translateType(c.Type)})</li>`).join('');
-  }
+  // Populate Custom Modal
+  const modal = document.getElementById('mergeContactModal');
+  const countSpan = document.getElementById('mergeCount');
+  const confirmBtn = document.getElementById('confirmMergeBtn');
+
+  if (countSpan) countSpan.textContent = selectedContacts.length;
+  renderMergeModal();
 
   // Setup Confirm Button with once listener
   confirmBtn.onclick = async () => {
@@ -809,7 +829,7 @@ function handleMergeClick() {
           'Content-Type': 'application/json',
           'X-Requested-With': 'XMLHttpRequest'
         },
-        body: JSON.stringify({ contact_ids: contactIds })
+        body: JSON.stringify({ contact_ids: contactIds, primary_id: currentPrimary.id })
       });
 
       const data = await response.json();
