@@ -18,6 +18,9 @@
 
 	.join-request-card {
 		padding: 14px 12px;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 12px;
 	}
 
 	.join-request-title {
