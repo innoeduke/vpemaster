@@ -90,6 +90,9 @@ function loadMessages(tab, silent=false) {
                         <div class="msg-subject">${formatSubjectWithBadge(msg.subject)}</div>
                         <div class="msg-preview">${escapeHtml(msg.body)}</div>
                     </div>
+                    <button class="msg-row-delete-btn" onclick="event.stopPropagation(); deleteMessageFromRow(${msg.id})" title="Delete Message">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
                 </div>
             `;}).join('');
         })
@@ -350,6 +353,11 @@ function deleteCurrentMessage() {
     }
 
     document.getElementById('deleteConfirmModal').classList.add('flex');
+}
+
+function deleteMessageFromRow(msgId) {
+    currentMessageId = msgId;
+    deleteCurrentMessage();
 }
 
 function closeDeleteConfirmModal() {
