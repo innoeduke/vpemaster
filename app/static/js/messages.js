@@ -66,11 +66,7 @@ function loadMessages(tab, silent=false, page=1) {
                         <p>No messages in ${tab}</p>
                     </div>
                 `;
-                const pagContainer = document.getElementById('messages-pagination');
-                if (pagContainer) {
-                    pagContainer.style.display = 'none';
-                    pagContainer.innerHTML = '';
-                }
+                renderPagination(0, 0, 1);
                 return;
             }
 
@@ -786,11 +782,8 @@ function renderPagination(total, pages, currentPage) {
     const container = document.getElementById('messages-pagination');
     if (!container) return;
 
-    if (pages <= 1) {
-        container.style.display = 'none';
-        container.innerHTML = '';
-        return;
-    }
+    const displayPages = Math.max(1, pages);
+    const displayCurrentPage = currentPage || 1;
 
     container.style.display = 'flex';
     
@@ -798,14 +791,14 @@ function renderPagination(total, pages, currentPage) {
     
     // Previous button
     html += `
-        <button class="msg-pagination-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="loadMessages(currentTab, false, ${currentPage - 1})" title="Previous Page">
+        <button class="msg-pagination-btn" ${displayCurrentPage === 1 ? 'disabled' : ''} onclick="loadMessages(currentTab, false, ${displayCurrentPage - 1})" title="Previous Page">
             <i class="fas fa-chevron-left"></i> Prev
         </button>
     `;
     
     const maxVisible = 5;
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
-    let endPage = Math.min(pages, startPage + maxVisible - 1);
+    let startPage = Math.max(1, displayCurrentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(displayPages, startPage + maxVisible - 1);
     
     if (endPage - startPage + 1 < maxVisible) {
         startPage = Math.max(1, endPage - maxVisible + 1);
@@ -820,22 +813,22 @@ function renderPagination(total, pages, currentPage) {
     
     for (let p = startPage; p <= endPage; p++) {
         html += `
-            <button class="msg-pagination-btn ${p === currentPage ? 'active' : ''}" onclick="loadMessages(currentTab, false, ${p})">
+            <button class="msg-pagination-btn ${p === displayCurrentPage ? 'active' : ''}" onclick="loadMessages(currentTab, false, ${p})">
                 ${p}
             </button>
         `;
     }
     
-    if (endPage < pages) {
-        if (endPage < pages - 1) {
+    if (endPage < displayPages) {
+        if (endPage < displayPages - 1) {
             html += `<span class="msg-pagination-info">...</span>`;
         }
-        html += `<button class="msg-pagination-btn" onclick="loadMessages(currentTab, false, ${pages})">${pages}</button>`;
+        html += `<button class="msg-pagination-btn" onclick="loadMessages(currentTab, false, ${displayPages})">${displayPages}</button>`;
     }
     
     // Next button
     html += `
-        <button class="msg-pagination-btn" ${currentPage === pages ? 'disabled' : ''} onclick="loadMessages(currentTab, false, ${currentPage + 1})" title="Next Page">
+        <button class="msg-pagination-btn" ${displayCurrentPage === displayPages ? 'disabled' : ''} onclick="loadMessages(currentTab, false, ${displayCurrentPage + 1})" title="Next Page">
             Next <i class="fas fa-chevron-right"></i>
         </button>
     `;
