@@ -406,7 +406,7 @@ def contact_form(contact_id=None):
                 Mentor_ID=mentor_id,
                 DTM='dtm' in request.form,
                 Current_Path=request.form.get('current_path') if contact_type in ['Member', 'Officer'] else None,
-                home_club=new_contact_home_club
+                display_club_name=new_contact_home_club
             )
             
             # Auto-populate Name from parts if they exist
