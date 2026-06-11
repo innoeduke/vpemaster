@@ -973,6 +973,7 @@ def agenda():
                            meeting_types=meeting_types,
                            default_start_time=default_start_time,
                            next_meeting_date=next_meeting_date,
+                           next_meeting_num=next_meeting_num,
                            ProjectID=project_id_dict,
                            voting_candidates=voting_candidates,
                            award_configs=award_configs)

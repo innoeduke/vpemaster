@@ -1,46 +1,40 @@
 Type,Title,Role,Owner,Duration_Min,Duration_Max,Hidden
 Section,OPENING,,,0,
-SAA Introduction,SAA Introduction,SAA,,0,1
-President's Address,President's Address,President,,0,2
-Toastmaster of the Evening's Address,Toastmaster of the Evening's Address,Toastmaster,,0,2
-Ah-Counter Introduction,Ah-Counter Introduction,Ah-Counter,,0,1
-Grammarian Introduction,Grammarian Introduction,Grammarian,,0,2
-Timer Introduction,Timer Introduction,Timer,,0,1
+SAA Session,SAA Introduction,SAA,,0,1
+President Session,President's Address,President,,0,2
+Toastmaster Session,Toastmaster's Address,Toastmaster,,0,2
+Ah-Counter Session,Ah-Counter Introduction,Ah-Counter,,0,1
+Grammarian Session,Grammarian Introduction,Grammarian,,0,2
+Timer Session,Timer Introduction,Timer,,0,1
 Section,FEATURED SESSION,,,0,
-Panel Discussion,Panel Discussion,Panelist,,0,45
-Table Topics,Table Topics,Topicsmaster,,0,20
+Keynote Speech,Keynote Speech,Keynote Speaker,,0,23
+Table Topics,,Topicsmaster,,0,25
+Member Roadmap,How to Become a Member,VPM,,1,3
 Guest Talk,New Guest Greetings,,,0,5
-Generic,Networking & Break,,,0,10
+Networking,Networking & Break,,,0,10
 Section,PREPARED SPEECHES,,,0,
-Prepared Speech,Prepared Speech,Prepared Speaker,,,
-Prepared Speech,Prepared Speech,Prepared Speaker,,,
+Prepared Speech,Prepared Speech 1,Prepared Speaker,,,
+Prepared Speech,Prepared Speech 2,Prepared Speaker,,,
+Prepared Speech,Prepared Speech 3,Prepared Speaker,,,
 Section,EVALUATION REPORTS,,,0,
-General Evaluator's Address,General Evaluator's Address,General Evaluator,,0,1
-Evaluation,,Individual Evaluator,,2,3
-Evaluation,,Individual Evaluator,,2,3
-Ah-Counter Report,Ah-Counter Report,Ah-Counter,,0,1
-Grammarian Report,Grammarian Report,Grammarian,,0,2
-Timer Report,Timer Report,Timer,,0,1
-General Evaluation Report,General Evaluation Report,General Evaluator,,0,5
+General Evaluator Session,,General Evaluator,,0,1
+Evaluation,Speaker 1,Individual Evaluator,,2,3
+Evaluation,Speaker 2,Individual Evaluator,,2,3
+Evaluation,Speaker 3,Individual Evaluator,,2,3
+Ah-Counter Session,Ah-Counter Report,Ah-Counter,,0,1
+Grammarian Session,Grammarian Report,Grammarian,,0,2
+Timer Session,Timer Report,Timer,,0,1
+General Evaluator Session,General Evaluator Report,General Evaluator,,0,5
 Section,AWARDS & CLOSING,,,0,
-Voting and Announcements,Voting and Announcements,Toastmaster,,0,3
-Awards / Meeting Closing,Awards / Meeting Closing,President,,0,2
-Hidden Section,ADDITIONAL ROLES,,,0,
-Photography,Photography,Photographer,,0,
-<<<<<<< Updated upstream:app/static/club_resources/0/templates/panel_discussion.csv
-Reception,Welcome Officer,Welcome Officer,,,,
-Topics Speech,Topics Speech,Topics Speaker,,1,2
-Topics Speech,Topics Speech,Topics Speaker,,1,2
-Topics Speech,Topics Speech,Topics Speaker,,1,2
-Topics Speech,Topics Speech,Topics Speaker,,1,2
-Topics Speech,Topics Speech,Topics Speaker,,1,2
-=======
+Toastmaster Session,Voting and Announcements,Toastmaster,,0,3
+President's Address,Awards / Meeting Closing,President,,0,2
+Section,MORE MEETGING ROLES,,,0,
+Photography,Photographer,Photographer,,0,
 Reception,Welcome Officer,Welcome Officer,,0,
-Topics Speech,Topics Speech,Topics Speaker,,1,2,True
-Topics Speech,Topics Speech,Topics Speaker,,1,2,True
-Topics Speech,Topics Speech,Topics Speaker,,1,2,True
-Topics Speech,Topics Speech,Topics Speaker,,1,2,True
-Topics Speech,Topics Speech,Topics Speaker,,1,2,True
-Topics Speech,Topics Speech,Topics Speaker,,1,2,True
-Topics Speech,Topics Speech,Topics Speaker,,1,2,True
->>>>>>> Stashed changes:app/static/mtg_templates/panel_discussion.csv
+Topics Speech,Topics Speech,Topics Speaker,,,0,true
+Topics Speech,Topics Speech,Topics Speaker,,,0,true
+Topics Speech,Topics Speech,Topics Speaker,,,0,true
+Topics Speech,Topics Speech,Topics Speaker,,,0,true
+Topics Speech,Topics Speech,Topics Speaker,,,0,true
+Topics Speech,Topics Speech,Topics Speaker,,,0,true
+Topics Speech,Topics Speech,Topics Speaker,,,0,true
