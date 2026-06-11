@@ -837,3 +837,35 @@
 .panel {
   padding: 0 10px;
 }
+
+/* Landscape contact modal for tablets and desktops */
+@media (min-width: 769px) {
+  #contactModal .modal-content {
+    max-width: 800px;
+    width: 90%;
+  }
+
+  #contactForm {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 30px;
+  }
+
+  #contactModal .profile-avatar-section {
+    flex: 0 0 170px;
+    margin-bottom: 0;
+    margin-top: 15px;
+    padding-right: 25px;
+    border-right: 1px solid #e9ecef;
+  }
+
+  #contactModal .btn-upload {
+    white-space: nowrap;
+  }
+
+  .contact-form-body-wrapper {
+    flex: 1;
+    min-width: 0;
+  }
+}
