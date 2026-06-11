@@ -14,6 +14,7 @@ the doc in the same change.
   (home club, primary club, per-club vs global, `is_home` invariant).
   **Read this for any feature touching contacts, members, or club
   membership.**
+- [docs/MAILBOX_REALTIME_DESIGN.md](file:///Users/wmu/workspace/toastmasters/vpemaster/docs/MAILBOX_REALTIME_DESIGN.md) — real-time message notification design (Server-Sent Events, MessageAnnouncer queue architecture, deployment WSGI guidelines).
 
 When you add new design rules, give them their own file under `docs/`
 and link it here.
