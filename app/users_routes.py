@@ -572,7 +572,7 @@ def delete_user(user_id):
 
 @users_bp.route('/user/bulk_import', methods=['POST'])
 @login_required
-def bulk_import_users():
+def bulk_import_members():
     if not is_authorized(Permissions.MEMBERS_MANAGE):
         flash("You don't have permission to perform this action.", 'error')
         return redirect(url_for('users_bp.show_users'))
@@ -586,69 +586,21 @@ def bulk_import_users():
         flash('No selected file', 'error')
         return redirect(url_for('users_bp.show_users'))
 
-    if file and file.filename.endswith('.csv'):
-        stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
-        csv_reader = csv.reader(stream)
-        # Skip header row
-        next(csv_reader, None)
+    if file and (file.filename.endswith('.csv') or file.filename.endswith('.xlsx')):
+        ext = file.filename.rsplit('.', 1)[1].lower()
+        file_bytes = file.read()
+        
+        from app.services.member_import_service import process_member_file
+        club_id = get_current_club_id()
+        success_count, failed_users = process_member_file(file_bytes, ext, club_id)
 
-        success_count = 0
-        failed_users = []
-
-        for row in csv_reader:
-            if not row or len(row) < 2:
-                continue
-
-            fullname, username, member_id, email, mentor_name = (
-                row + [None]*5)[:5]
-
-            if not fullname or not username:
-                failed_users.append(
-                    f"Skipping row: Fullname and Username are mandatory. Row: {row}")
-                continue
-
-            # Duplication check
-            if User.query.filter_by(username=username).first():
-                failed_users.append(
-                    f"Skipping user '{username}': User already exists.")
-                continue
-
-            if email:
-                email = email.strip()
-                if User.query.filter_by(email=email).first():
-                    failed_users.append(
-                        f"Skipping user '{username}': Email '{email}' is already registered.")
-                    continue
-
-            contact = Contact.query.filter_by(Name=fullname).first()
-            contact_id = contact.id if contact else None
-
-            mentor = Contact.query.filter_by(Name=mentor_name).first()
-            mentor_id = mentor.id if mentor else None
-
-            from .models import AuthRole
-            user_role = AuthRole.query.filter_by(name='Member').first()
-            role_id = user_role.id if user_role else None
-
-            _save_user_data(
-                username=username,
-                email=email,
-                role_id=role_id,
-                password='toastmasters'
-            )
-            success_count += 1
-
-        db.session.commit()
-        flash(f'{success_count} users imported successfully.', 'success')
-        if failed_users:
-            flash('Some users failed to import:', 'error')
-            for failure in failed_users:
-                flash(failure, 'error')
+        show_example = any("Failed to parse" in f or "Unsupported file extension" in f for f in failed_users)
+        return render_template('import_report.html', success_count=success_count, failed_users=failed_users, show_example=show_example)
 
     else:
-        flash('Invalid file type. Please upload a .csv file.', 'error')
-
-    return redirect(url_for('users_bp.show_users'))
+        # If the file doesn't have .csv or .xlsx, or doesn't exist
+        failed_users = ["Invalid file type. Please upload a .csv or .xlsx file."]
+        return render_template('import_report.html', success_count=0, failed_users=failed_users, show_example=True)
 
 
 @users_bp.route('/user/request_join', methods=['POST'])

@@ -235,7 +235,7 @@ def create_app(config_class='config.Config'):
 
     # Register CLI commands
     from app.commands.create_admin import create_admin
-    from app.commands.import_data import import_data, fix_home_club_command
+    from app.commands.import_data import import_group, fix_home_club_command
     from app.commands.manage_metadata import metadata
     from app.commands.cleanup_data import cleanup_data
     from app.commands.create_club import create_club
@@ -247,7 +247,7 @@ def create_app(config_class='config.Config'):
     from app.commands.backfill_sharing_master import backfill_sharing_master
 
     app.cli.add_command(create_admin)
-    app.cli.add_command(import_data)
+    app.cli.add_command(import_group)
     app.cli.add_command(metadata)
     app.cli.add_command(cleanup_data)
     app.cli.add_command(create_club)

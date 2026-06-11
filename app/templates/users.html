@@ -32,9 +32,9 @@
 
           <div class="button-group">
             <button type="button" class="btn btn-success" onclick="openUserModal()">{{ _('Add New') }}</button>
-            <form action="{{ url_for('users_bp.bulk_import_users') }}" method="post" enctype="multipart/form-data"
+            <form action="{{ url_for('users_bp.bulk_import_members') }}" method="post" enctype="multipart/form-data"
               id="bulk-import-form" style="display: none;">
-              <input type="file" name="file" id="bulk-import-file" accept=".csv" />
+              <input type="file" name="file" id="bulk-import-file" accept=".csv,.xlsx" />
             </form>
             <button type="button" class="btn btn-info" id="bulk-import-btn">
               {{ _('Bulk Import') }}

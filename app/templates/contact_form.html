@@ -18,7 +18,7 @@
         <input type="hidden" id="type" name="type" value="{{ contact.Type if contact else 'Guest' }}">
         <input type="hidden" id="name" name="name" value="{{ contact.Name if contact else '' }}">
         <tr id="member_id_row" {% if contact and contact.Type == 'Guest' %}style="display: none;"{% endif %}>
-            <td><label for="member_id">Member ID:</label></td>
+            <td><label for="member_id">Member Number:</label></td>
             <td><input type="text" id="member_id" name="member_id" value="{{ contact.Member_ID if contact else '' }}"></td>
         </tr>
         <tr id="mentor_id_row" {% if contact and contact.Type == 'Guest' %}style="display: none;"{% endif %}>
