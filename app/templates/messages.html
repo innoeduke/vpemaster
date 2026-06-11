@@ -112,6 +112,15 @@
         loadMessages(currentTab);
         setInterval(() => loadMessages(currentTab, true), 60000);
 
+        // Server-Sent Events to refresh message list in real-time
+        if (typeof messageEventSource !== 'undefined') {
+            messageEventSource.addEventListener('message', (event) => {
+                if (event.data === 'new_message') {
+                    loadMessages(currentTab, true);
+                }
+            });
+        }
+
         // Check for recipient in URL
         const urlParams = new URLSearchParams(window.location.search);
         const recipientId = urlParams.get('recipient_id');

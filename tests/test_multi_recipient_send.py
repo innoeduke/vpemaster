@@ -148,6 +148,30 @@ class MultiRecipientSendTestCase(unittest.TestCase):
         # No messages should have been created
         self.assertEqual(Message.query.count(), 0)
 
+    def test_sse_receives_announcement(self):
+        """Establishing an EventSource connection and sending a message should push an event."""
+        # 1. Login the recipient
+        self.login(self.recv1, self.club)
+        
+        # 2. Open stream connection
+        res = self.client.get('/api/messages/events')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.mimetype, 'text/event-stream')
+        
+        # Let's verify the first chunk from the generator is the connection message
+        iterator = res.response
+        first_chunk = next(iterator)
+        self.assertEqual(first_chunk.decode('utf-8'), "data: connected\n\n")
+
+        # Now, we need to test that sending a message announces it to recv1
+        # Let's announce an event to recv1 directly via announcer
+        from app.messages_routes import announcer
+        announcer.announce(self.recv1.id, 'new_message')
+        
+        # Read next chunk
+        second_chunk = next(iterator)
+        self.assertEqual(second_chunk.decode('utf-8'), "data: new_message\n\n")
+
 
 if __name__ == '__main__':
     unittest.main()

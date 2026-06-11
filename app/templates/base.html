@@ -643,9 +643,19 @@
         });
     }
 
-    // Initial load and polling
+    // Initial load and polling (60s fallback)
     document.addEventListener('DOMContentLoaded', updateUnreadCount);
     setInterval(updateUnreadCount, 60000);
+
+    {% if current_user.is_authenticated %}
+    // Server-Sent Events for real-time unread count updates
+    const messageEventSource = new EventSource('/api/messages/events');
+    messageEventSource.addEventListener('message', function(event) {
+        if (event.data === 'new_message') {
+            updateUnreadCount();
+        }
+    });
+    {% endif %}
   </script>
 
   {% if is_module_enabled('Chatbot') and current_user.is_authenticated and (is_authorized(Permissions.CHAT_AI) or is_authorized(Permissions.CHAT_COMMANDS)) %}

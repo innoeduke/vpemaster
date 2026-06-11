@@ -1,11 +1,40 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
+from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, Response, stream_with_context
 from flask_login import login_required, current_user
 from app import db
 from app.models.message import Message
 from app.models.user import User
 from datetime import datetime
+import queue
 
 messages_bp = Blueprint('messages', __name__)
+
+class MessageAnnouncer:
+    def __init__(self):
+        self.listeners = {} # user_id -> list of queues
+
+    def listen(self, user_id):
+        q = queue.Queue(maxsize=5)
+        if user_id not in self.listeners:
+            self.listeners[user_id] = []
+        self.listeners[user_id].append(q)
+        return q
+
+    def announce(self, user_id, message):
+        if user_id in self.listeners:
+            for q in self.listeners[user_id]:
+                try:
+                    q.put_nowait(message)
+                except queue.Full:
+                    pass
+
+    def remove_listener(self, user_id, q):
+        if user_id in self.listeners:
+            if q in self.listeners[user_id]:
+                self.listeners[user_id].remove(q)
+            if not self.listeners[user_id]:
+                del self.listeners[user_id]
+
+announcer = MessageAnnouncer()
 
 @messages_bp.route('/messages')
 @login_required
@@ -110,6 +139,10 @@ def send_message():
         sent_count += 1
 
     db.session.commit()
+
+    # Announce new message event to all active recipient listeners
+    for rid in recipient_ids:
+        announcer.announce(rid, 'new_message')
 
     return jsonify({
         'success': True,
@@ -230,3 +263,26 @@ def unread_count():
         Message.deleted_by_recipient == False
     ).count()
     return jsonify({'count': count})
+
+@messages_bp.route('/api/messages/events')
+@login_required
+def message_events():
+    """Server-Sent Events endpoint for message updates."""
+    def event_generator():
+        user_id = current_user.id
+        q = announcer.listen(user_id)
+        try:
+            # Yield initial connect event
+            yield "data: connected\n\n"
+            while True:
+                try:
+                    # Wait for message update event
+                    event_data = q.get(timeout=25)
+                    yield f"data: {event_data}\n\n"
+                except queue.Empty:
+                    # Send keep-alive ping to prevent connection timeout
+                    yield "data: ping\n\n"
+        finally:
+            announcer.remove_listener(user_id, q)
+
+    return Response(stream_with_context(event_generator()), mimetype='text/event-stream')
