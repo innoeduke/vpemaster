@@ -8,7 +8,7 @@ Group={{SHARED_GROUP}}
 WorkingDirectory={{PROJECT_ROOT}}
 Environment="PATH={{PROJECT_ROOT}}/venv/bin"
 EnvironmentFile={{PROJECT_ROOT}}/.env
-ExecStart={{PROJECT_ROOT}}/venv/bin/gunicorn --workers {{WORKERS}} --bind unix:{{PROJECT_ROOT}}/run/vpemaster.sock -m 007 run:app
+ExecStart={{PROJECT_ROOT}}/venv/bin/gunicorn --workers {{WORKERS}} --worker-class gthread --threads 50 --bind unix:{{PROJECT_ROOT}}/run/vpemaster.sock -m 007 run:app
 
 # Restart on failure
 Restart=always

@@ -47,10 +47,12 @@ def messages():
 def get_inbox():
     """Get inbox messages."""
     page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    per_page = max(1, min(100, per_page))
     messages = current_user.messages_received.filter(
         Message.deleted_by_recipient == False
     ).order_by(Message.timestamp.desc()).paginate(
-        page=page, per_page=10, error_out=False)
+        page=page, per_page=per_page, error_out=False)
     
     return jsonify({
         'messages': [{
@@ -73,10 +75,12 @@ def get_inbox():
 def get_sent():
     """Get sent messages."""
     page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    per_page = max(1, min(100, per_page))
     messages = current_user.messages_sent.filter(
         Message.deleted_by_sender == False
     ).order_by(Message.timestamp.desc()).paginate(
-        page=page, per_page=10, error_out=False)
+        page=page, per_page=per_page, error_out=False)
     
     return jsonify({
         'messages': [{
@@ -99,6 +103,8 @@ def get_sent():
 def get_trash():
     """Get trash messages."""
     page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    per_page = max(1, min(100, per_page))
     from sqlalchemy import or_
     messages = Message.query.filter(
         or_(
@@ -106,7 +112,7 @@ def get_trash():
             (Message.sender_id == current_user.id) & (Message.deleted_by_sender == True) & (Message.permanently_deleted_by_sender == False)
         )
     ).order_by(Message.timestamp.desc()).paginate(
-        page=page, per_page=10, error_out=False)
+        page=page, per_page=per_page, error_out=False)
     
     return jsonify({
         'messages': [{

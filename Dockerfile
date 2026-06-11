@@ -23,4 +23,4 @@ ENV FLASK_APP=run.py
 # Run the application using Gunicorn
 # bind to 0.0.0.0 to allow external connections
 # run:app refers to the 'app' object in the 'run.py' file
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "run:app"]
+CMD ["gunicorn", "--workers", "2", "--worker-class", "gthread", "--threads", "50", "--bind", "0.0.0.0:8000", "run:app"]

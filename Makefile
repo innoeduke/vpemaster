@@ -102,7 +102,7 @@ run:
 
 run-prod:
 	@echo "Starting Gunicorn production server..."
-	@gunicorn -w 4 -b 0.0.0.0:5001 run:app
+	@gunicorn -w 2 --worker-class gthread --threads 50 -b 0.0.0.0:5001 run:app
 
 # Database operations
 db-upgrade:

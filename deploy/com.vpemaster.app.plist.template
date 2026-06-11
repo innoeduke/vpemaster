@@ -9,6 +9,10 @@
         <string>{{PROJECT_ROOT}}/venv/bin/gunicorn</string>
         <string>--workers</string>
         <string>{{WORKERS}}</string>
+        <string>--worker-class</string>
+        <string>gthread</string>
+        <string>--threads</string>
+        <string>50</string>
         <string>--bind</string>
         <string>127.0.0.1:8000</string>
         <string>run:app</string>

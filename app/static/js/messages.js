@@ -2,8 +2,10 @@ let currentTab = 'inbox';
 let currentMessages = [];
 let currentMessageId = null;
 let currentPage = 1;
+let currentPerPage = 10;
 
 document.addEventListener('DOMContentLoaded', () => {
+    currentPerPage = getAdaptivePerPage();
     loadMessages(currentTab, false, 1);
     setInterval(() => loadMessages(currentTab, true, currentPage), 60000);
 
@@ -55,7 +57,10 @@ function loadMessages(tab, silent=false, page=1) {
         `;
     }
 
-    fetch(`/api/messages/${tab}?page=${page}`)
+    const perPage = getAdaptivePerPage();
+    currentPerPage = perPage;
+
+    fetch(`/api/messages/${tab}?page=${page}&per_page=${perPage}`)
         .then(response => response.json())
         .then(data => {
             currentMessages = data.messages;
@@ -835,4 +840,32 @@ function renderPagination(total, pages, currentPage) {
     
     container.innerHTML = html;
 }
+
+function getAdaptivePerPage() {
+    const list = document.getElementById('messages-list');
+    if (!list) return 10;
+
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+        return 10;
+    }
+
+    const containerHeight = list.clientHeight;
+    // Estimate average item height (108px height + 8px margin = 116px)
+    const itemHeight = 116;
+    const perPage = Math.max(1, Math.floor(containerHeight / itemHeight));
+    return perPage;
+}
+
+let resizeTimeout;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        const newPerPage = getAdaptivePerPage();
+        if (newPerPage !== currentPerPage && window.innerWidth > 768) {
+            currentPerPage = newPerPage;
+            loadMessages(currentTab, false, 1);
+        }
+    }, 250);
+});
 
