@@ -12,7 +12,7 @@
 		gap: 15px;
 		align-items: center;
 		justify-content: flex-end;
-		width: 100%;
+		width: auto;
 	}
 
 	.action-bar-right .button-group {
@@ -23,7 +23,6 @@
 	.action-bar-right .btn {
 		font-size: 13px;
 		padding: 0 12px;
-		min-width: 70px;
 	}
 
 	.action-bar-right .action-icon-btn {
@@ -33,7 +32,6 @@
 	}
 
 	.meeting-status-display {
-		min-width: 120px;
 		font-size: 0.85em;
 		padding: 4px 10px;
 	}

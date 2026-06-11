@@ -32,7 +32,7 @@
 	.action-bar {
 		flex-direction: row;
 		gap: 12px;
-		flex-wrap: wrap;
+		flex-wrap: nowrap;
 	}
 
 	.action-bar-left {

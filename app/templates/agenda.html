@@ -84,7 +84,7 @@
     <br />
     <div class="action-bar">
         <div class="action-bar-left">
-            <div class="action-bar-left-content" style="display: flex; flex-direction: column; gap: 5px;">
+            <div class="action-bar-left-content" style="display: flex; flex-direction: column; gap: 5px; min-width: 0;">
                 {% if meeting_ids %}
                 {{ render_meeting_filter(meeting_ids, selected_meeting_id if
                 selected_meeting_id else none, is_disabled=is_editing, data_format='tuple') }}

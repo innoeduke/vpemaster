@@ -459,8 +459,28 @@ class SessionLog(db.Model):
     def update_durations(self, data, updated_project=None):
         """
         Update durations based on structural changes.
-        Priority: Project Defaults > Session Type Defaults > Preserve Manual Edits.
+        Priority: Explicit values > Project Defaults > Session Type Defaults > Preserve Manual Edits.
         """
+        # If explicit duration values are provided, use them directly
+        if 'duration_min' in data or 'duration_max' in data:
+            if 'duration_min' in data:
+                val = data['duration_min']
+                self.Duration_Min = int(val) if val not in [None, '', 'null'] else None
+            if 'duration_max' in data:
+                val = data['duration_max']
+                self.Duration_Max = int(val) if val not in [None, '', 'null'] else None
+            # Still update Project_ID if provided
+            new_project_id = data.get('project_id')
+            if 'project_id' in data:
+                if new_project_id in [None, "", "null"]:
+                    self.Project_ID = None
+                else:
+                    try:
+                        self.Project_ID = int(new_project_id)
+                    except (ValueError, TypeError):
+                        pass
+            return
+
         new_project_id = data.get('project_id')
         if new_project_id in [None, "", "null"]:
             new_project_id = None

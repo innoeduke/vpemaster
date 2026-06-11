@@ -2122,6 +2122,8 @@ def get_speech_log_details(log_id):
         "role": role_name,
         "owners_data": owners_data,
         "has_single_owner": role_obj.has_single_owner if role_obj else True,
+        "Duration_Min": log.Duration_Min,
+        "Duration_Max": log.Duration_Max,
     }
 
     # For Evaluation / Individual Evaluator sessions, include the list of

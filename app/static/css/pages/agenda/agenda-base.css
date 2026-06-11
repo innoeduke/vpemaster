@@ -349,7 +349,7 @@ select[multiple].edit-mode-field option:checked {
 	z-index: 100;
 	overflow: visible;
 	gap: 10px;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 }
 
 .action-bar-left,
@@ -363,6 +363,8 @@ select[multiple].edit-mode-field option:checked {
 	margin: 0;
 	font-family: 'Montserrat', sans-serif;
 	overflow: visible;
+	min-width: 0;
+	flex-shrink: 1;
 }
 
 .action-bar-right {
@@ -370,14 +372,15 @@ select[multiple].edit-mode-field option:checked {
 	align-items: center;
 	gap: 8px;
 	justify-content: center;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
+	flex-shrink: 0;
 }
 
 #view-mode-buttons {
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 	justify-content: flex-end;
 }
 
@@ -385,6 +388,7 @@ select[multiple].edit-mode-field option:checked {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
+	flex-shrink: 0;
 }
 
 /* Status cluster (status pill + Start/Stop button) sits next to the meeting
@@ -487,6 +491,7 @@ select[multiple].edit-mode-field option:checked {
 	display: flex;
 	align-items: center;
 	gap: 8px;
+	min-width: 0;
 }
 
 #meeting-date-display {

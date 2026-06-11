@@ -42,6 +42,13 @@ const modalElements = {
   roleModeFields: document.getElementById("role-mode-fields"),
   roleNameDisplay: document.getElementById("role-name-display"),
   roleOwnersScroll: document.getElementById("role-owners-scroll"),
+  // Duration fields (speech mode)
+  durationMin: document.getElementById("edit-duration-min"),
+  durationMax: document.getElementById("edit-duration-max"),
+  // Role-mode session title & duration
+  roleSessionTitle: document.getElementById("role-session-title"),
+  roleDurationMin: document.getElementById("role-duration-min"),
+  roleDurationMax: document.getElementById("role-duration-max"),
 };
 
 // --- Utility Functions ---
@@ -484,6 +491,17 @@ async function openEditDetailsModal(
       const roleName = data.log.role || (row ? row.dataset.role : "") || "N/A";
       modalElements.roleNameDisplay.textContent = roleName;
 
+      // Populate role-mode session title and duration
+      if (modalElements.roleSessionTitle) {
+        modalElements.roleSessionTitle.value = data.log.Session_Title || "";
+      }
+      if (modalElements.roleDurationMin) {
+        modalElements.roleDurationMin.value = (data.log.Duration_Min != null && data.log.Duration_Min !== "") ? data.log.Duration_Min : "";
+      }
+      if (modalElements.roleDurationMax) {
+        modalElements.roleDurationMax.value = (data.log.Duration_Max != null && data.log.Duration_Max !== "") ? data.log.Duration_Max : "";
+      }
+
       // Get all owner IDs for this log
       let ownerIds = data.log.owner_ids || [];
       if (ownerIds.length === 0 && row) {
@@ -853,7 +871,9 @@ async function saveEditDetailsChanges(event) {
       // current title. Send it so the backend preserves it on save (the
       // role-mode branch of set_owners may otherwise null out the title
       // for some owner transitions).
-      const sessionTitle = modalElements.speechTitle ? modalElements.speechTitle.value : "";
+      const sessionTitle = modalElements.roleSessionTitle ? modalElements.roleSessionTitle.value : "";
+      const roleDurMin = modalElements.roleDurationMin ? modalElements.roleDurationMin.value : "";
+      const roleDurMax = modalElements.roleDurationMax ? modalElements.roleDurationMax.value : "";
 
       const response = await fetch(`/speech_log/update/${logId}`, {
         method: "POST",
@@ -862,6 +882,8 @@ async function saveEditDetailsChanges(event) {
           owner_ids: ownerIds,
           owner_targets: ownerTargets,
           session_title: sessionTitle,
+          duration_min: roleDurMin !== "" ? parseInt(roleDurMin, 10) : null,
+          duration_max: roleDurMax !== "" ? parseInt(roleDurMax, 10) : null,
         })
       });
       const data = await response.json();
@@ -1038,6 +1060,13 @@ function resetModal(logData, sessionType) {
   modalElements.mediaUrl.value = logData.Media_URL || "";
   modalElements.speechTitle.disabled = false;
   modalElements.credential.disabled = false;
+  // Populate duration fields
+  if (modalElements.durationMin) {
+    modalElements.durationMin.value = (logData.Duration_Min != null && logData.Duration_Min !== "") ? logData.Duration_Min : "";
+  }
+  if (modalElements.durationMax) {
+    modalElements.durationMax.value = (logData.Duration_Max != null && logData.Duration_Max !== "") ? logData.Duration_Max : "";
+  }
   
   // Reset visibility of Speech Title form group (might be hidden by role modal)
   const speechTitleRow = modalElements.speechTitle.closest('.form-group, .sem-field');
@@ -1114,8 +1143,6 @@ const SpeechModalSetupManager = {
     modalElements.speechTitle.disabled = true;
     modalElements.standardSelection.style.display = "none";
     modalElements.projectGroup.style.display = "none";
-    const speechTitleRow = modalElements.speechTitle.closest('.form-group, .sem-field');
-    if (speechTitleRow) speechTitleRow.style.display = 'none';
 
     // Mount owner picker in place of the static owner name
     mountSpeechModeOwnerPicker({
@@ -1602,6 +1629,8 @@ function buildSavePayload() {
     media_url: mediaUrl.value || null,
     credential: credential.value || null,
     session_title: speechTitle.value || "",
+    duration_min: modalElements.durationMin && modalElements.durationMin.value !== "" ? parseInt(modalElements.durationMin.value, 10) : null,
+    duration_max: modalElements.durationMax && modalElements.durationMax.value !== "" ? parseInt(modalElements.durationMax.value, 10) : null,
   };
   const isProject = isProjectChk?.checked || false;
 
