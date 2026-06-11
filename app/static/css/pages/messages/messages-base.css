@@ -198,10 +198,10 @@
 }
 
 /* Unread Message Badge */
-.badge-unread {
+.badge.badge-unread {
 	display: none;
 	margin-left: 8px;
-	background: var(--msg-accent);
+	background: #772432; /* Toastmasters Maroon */
 	color: white;
 	padding: 1px 7px;
 	border-radius: 10px;
@@ -211,6 +211,7 @@
 	min-width: 18px;
 	text-align: center;
 	line-height: 1.3;
+	margin-top: 0; /* Override forms.css .badge margin-top cleanly via specificity */
 }
 
 /* Layout Container */
