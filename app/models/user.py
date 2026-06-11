@@ -1,4 +1,5 @@
 """User model for authentication and authorization."""
+import os
 from flask_login import UserMixin, AnonymousUserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer as Serializer
@@ -583,12 +584,22 @@ class User(UserMixin, db.Model):
 
     @property
     def full_avatar_url(self):
-        """Returns correctly prefixed avatar URL for local assets."""
+        """Returns correctly prefixed avatar URL for local assets.
+        Returns None if the file is missing on disk so the frontend
+        can fall back to the initials placeholder without 404ing."""
         if not self.avatar_url:
             return None
-        if self.avatar_url.startswith(('http://', 'https://', '/')):
+        if self.avatar_url.startswith(('http://', 'https://')):
             return self.avatar_url
-        return f"/static/{self.avatar_url}"
+        # Resolve "/static/..." to a filesystem path under the app's static dir.
+        relative = self.avatar_url[1:] if self.avatar_url.startswith('/') else self.avatar_url
+        try:
+            static_root = current_app.static_folder
+        except RuntimeError:
+            return f"/{relative}"
+        if not os.path.isfile(os.path.join(static_root, relative)):
+            return None
+        return f"/{relative}"
 
     @staticmethod
     def populate_contacts(users, club_id=None):

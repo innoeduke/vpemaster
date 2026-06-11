@@ -87,8 +87,8 @@ def new_issue():
     data = request.get_json(silent=True) or request.form
     title = (data.get('title') or '').strip()
     description = (data.get('description') or '').strip()
-    issue_type = data.get('type') or Issue.TYPE_BUG
-    priority = data.get('priority') or Issue.PRIORITY_MEDIUM
+    issue_type = data.get('newIssueType') or data.get('type') or Issue.TYPE_BUG
+    priority = data.get('newIssuePriority') or data.get('priority') or Issue.PRIORITY_MEDIUM
 
     errors = []
     if not title:

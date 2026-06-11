@@ -4,7 +4,6 @@ let currentMessageId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     loadMessages(currentTab);
-    setInterval(() => loadMessages(currentTab, true), 60000);
 
     // Server-Sent Events to refresh message list in real-time
     if (typeof messageEventSource !== 'undefined') {
@@ -107,9 +106,23 @@ function showDetail(id) {
     const isInbox = currentTab === 'inbox';
     const otherParty = isInbox ? msg.sender : msg.recipient;
 
-    document.getElementById('detail-subject').innerHTML = formatSubjectWithBadge(msg.subject);
+    // Extract trailing " from {name}" from the subject so the club name
+    // stays in the title and the sender is shown above the recipient row.
+    const fromMatch = msg.subject.match(/\s+from\s+(.+?)\s*$/i);
+    const fromName = fromMatch ? fromMatch[1].trim() : null;
+    const cleanSubject = fromMatch ? msg.subject.replace(fromMatch[0], '').trim() : msg.subject;
+
+    document.getElementById('detail-subject').innerHTML = formatSubjectWithBadge(cleanSubject);
     document.getElementById('detail-sender').textContent = (isInbox ? 'From ' : 'To ') + otherParty;
     document.getElementById('detail-time').textContent = msg.timestamp;
+    const fromEl = document.getElementById('detail-from');
+    if (isInbox && fromName) {
+        fromEl.textContent = `From ${fromName}`;
+        fromEl.style.display = '';
+    } else {
+        fromEl.textContent = '';
+        fromEl.style.display = 'none';
+    }
     const avatarContainer = document.getElementById('detail-avatar');
     let detailAvatarSrc = msg.avatar_url;
     if (detailAvatarSrc && detailAvatarSrc.indexOf('/') === -1) {
@@ -130,7 +143,7 @@ function showDetail(id) {
     // Handle User Join Requests (User requesting Admin)
     const joinRequestMatch = msg.body.match(/\[JOIN_REQUEST:(\d+):(\d+)\]/);
     // Handle responded state (post-action marker)
-    const respondedMatch = msg.body.match(/\[Responded:\s*(JOIN|REJECT|APPROVE|ACCEPT)(?::\s*([^\]]+))?\]/i);
+    const respondedMatch = msg.body.match(/\[Responded:\s*(JOIN(?:ED)?|REJECT(?:ED)?|APPROVE(?:D)?|ACCEPT(?:ED)?)(?::\s*([^\]]+))?\]/i);
 
     let displayBody = msg.body;
     if (requestMatch) {
@@ -190,7 +203,7 @@ function showDetail(id) {
 
     // Render "responded" status card when the request has already been handled
     if (respondedMatch) {
-        const verb = respondedMatch[1].toUpperCase();
+        const verb = respondedMatch[1].toUpperCase().replace(/ED$/, '');
         const note = respondedMatch[2] ? respondedMatch[2].trim() : '';
         const statusVerb = (verb === 'JOIN' || verb === 'ACCEPT' || verb === 'APPROVE') ? 'Accepted' : 'Declined';
         const statusClass = statusVerb === 'Accepted' ? 'message-status-card accepted' : 'message-status-card declined';
@@ -199,7 +212,7 @@ function showDetail(id) {
         const statusHtml = `
             <div class="${statusClass}">
                 <i class="fas ${statusIcon} status-icon"></i>
-                <span class="status-title">You ${statusVerb} this request</span>
+                <span class="status-title">This request has been ${statusVerb.toLowerCase()}.</span>
                 ${noteHtml}
             </div>
         `;
@@ -434,7 +447,11 @@ function escapeHtml(text) {
 }
 
 function getInitials(name) {
-    return name ? name.substring(0, 2).toUpperCase() : '??';
+    if (!name) return '??';
+    const parts = name.trim().split(/\s+/);
+    const first = parts[0] ? parts[0][0] : '';
+    const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+    return (first + last).toUpperCase() || '??';
 }
 
 function respondToJoinRequest(messageId, action) {

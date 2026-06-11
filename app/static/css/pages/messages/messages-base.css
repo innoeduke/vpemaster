@@ -109,11 +109,13 @@
 
 /* Responded status card */
 .message-status-card {
-	margin-top: 18px;
+	margin: 18px auto 0;
 	padding: 10px 14px;
 	border-radius: 6px;
 	border: 1px solid;
-	display: inline-flex;
+	display: flex;
+	width: fit-content;
+	max-width: 100%;
 	align-items: center;
 	gap: 8px;
 	font-family: 'Inter', sans-serif;
@@ -606,7 +608,7 @@
 .custom-modal {
 	display: none;
 	position: fixed;
-	z-index: 1000;
+	z-index: 1100;
 	left: 0;
 	top: 0;
 	width: 100%;
@@ -672,7 +674,7 @@
 
 .custom-modal-title {
 	font-family: 'Inter', sans-serif;
-	font-size: 1rem;
+	font-size: 0.7rem;
 	font-weight: 600;
 	letter-spacing: -0.005em;
 	color: var(--msg-text-primary);
@@ -680,6 +682,7 @@
 	line-height: 1.4;
 	word-break: break-word;
 	text-align: left;
+	text-transform: uppercase;
 }
 
 .custom-modal-content::before {
@@ -757,10 +760,24 @@
 	flex: 1;
 	min-width: 0;
 	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	line-height: 1.2;
+}
+
+.message-detail-meta .meta-name-row {
+	display: flex;
 	align-items: baseline;
 	justify-content: space-between;
 	gap: 12px;
-	line-height: 1.2;
+}
+
+.message-detail-meta .meta-from {
+	font-size: 0.65rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--msg-text-muted);
 }
 
 .message-detail-meta .meta-name {

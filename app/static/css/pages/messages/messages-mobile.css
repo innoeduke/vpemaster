@@ -151,7 +151,7 @@
 
 	.custom-modal {
 		padding: 12px;
-		align-items: flex-start;
+		align-items: center;
 	}
 
 	.custom-modal-header {
@@ -160,7 +160,7 @@
 	}
 
 	.custom-modal-title {
-		font-size: 1rem;
+		font-size: 0.7rem;
 		line-height: 1.35;
 	}
 
