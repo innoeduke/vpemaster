@@ -135,9 +135,9 @@ format:
 	@echo "Formatting code..."
 	@black app/ tests/ --line-length=120
 
-# Deploy code
+# Pull & run code
 pull:
 	git pull
-	@make install
+	@make install > /dev/null 2>&1
 	@flask db upgrade
 	sudo systemctl restart vpemaster
