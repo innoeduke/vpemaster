@@ -4,7 +4,8 @@ from flask import (
     Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for,
 )
 from flask_login import current_user, login_required
-from sqlalchemy.orm import joinedload
+from sqlalchemy import or_
+from sqlalchemy.orm import joinedload, lazyload
 
 from . import db
 from .auth.permissions import Permissions
@@ -13,7 +14,7 @@ from .club_context import (
     authorized_club_required, filter_by_club, get_current_club_id,
 )
 from .constants import GLOBAL_CLUB_ID
-from .models import Club, Issue, IssueComment, User, UserClub
+from .models import Club, Issue, IssueComment, Permission, RolePermission, User, UserClub
 from .system_messaging import send_system_message
 
 
@@ -38,8 +39,9 @@ def _get_issue_or_404(issue_id):
 @authorized_club_required
 def list_issues():
     query = Issue.query.options(
-        joinedload(Issue.submitter),
-        joinedload(Issue.assignee),
+        joinedload(Issue.submitter).lazyload(User.roles),
+        joinedload(Issue.assignee).lazyload(User.roles),
+        joinedload(Issue.club),
     )
 
     filters = {
@@ -245,16 +247,47 @@ def assignable_users():
 def _list_club_users(club_id, permission=None):
     if not club_id:
         return []
-    user_ids = {
-        uc.user_id
-        for uc in UserClub.query.filter_by(club_id=club_id).all()
-    }
-    if not user_ids:
-        return []
-    users = User.query.filter(User.id.in_(user_ids)).order_by(User.username).all()
     if permission is None:
-        return users
-    return [u for u in users if u.has_club_permission(permission, club_id)]
+        user_ids = {
+            uc.user_id
+            for uc in UserClub.query.filter_by(club_id=club_id).all()
+        }
+        if not user_ids:
+            return []
+        return User.query.filter(User.id.in_(user_ids)).order_by(User.username).all()
+
+    # Eagerly load the user and their auth_role in the club, disabling User.roles eager load
+    user_clubs = UserClub.query.filter_by(club_id=club_id).options(
+        joinedload(UserClub.user).lazyload(User.roles)
+    ).all()
+
+    # Query roles that have this permission for this club or globally
+    perm = Permission.query.filter_by(name=permission).first()
+    if not perm:
+        return []
+
+    allowed_role_ids = {
+        rp.role_id for rp in RolePermission.query.filter(
+            RolePermission.permission_id == perm.id,
+            or_(
+                RolePermission.club_id == club_id,
+                RolePermission.club_id.is_(None)
+            )
+        ).all()
+    }
+
+    users = []
+    for uc in user_clubs:
+        if uc.user:
+            # Set the cached _current_user_club on the user
+            uc.user._current_user_club = uc
+            # Check permission: sysadmin or role is in allowed_role_ids
+            if uc.user.is_sysadmin or uc.auth_role_id in allowed_role_ids:
+                users.append(uc.user)
+
+    # Sort users by username to preserve existing behavior
+    users.sort(key=lambda u: u.username)
+    return users
 
 
 def _can_manage_issues():

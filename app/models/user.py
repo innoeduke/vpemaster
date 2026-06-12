@@ -379,9 +379,8 @@ class User(UserMixin, db.Model):
         if not club_id:
             return None
             
-        # Optimization: Use cached record if available for the current club
-        current_club_id = get_current_club_id()
-        if club_id == current_club_id and hasattr(self, '_current_user_club'):
+        # Optimization: Use cached record if available for the requested club
+        if hasattr(self, '_current_user_club') and self._current_user_club and self._current_user_club.club_id == club_id:
             return self._current_user_club
             
         return UserClub.query.filter_by(user_id=self.id, club_id=club_id).first()
