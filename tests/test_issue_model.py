@@ -115,6 +115,10 @@ class IssueModelTestCase(unittest.TestCase):
             created = created.replace(tzinfo=timezone.utc)
         self.assertGreaterEqual(created, before)
         self.assertLessEqual(created, after)
+    def test_contributors_field(self):
+        issue = self._make_issue(contributors="Alice, Bob")
+        db.session.refresh(issue)
+        self.assertEqual(issue.contributors, "Alice, Bob")
 
 
 if __name__ == '__main__':

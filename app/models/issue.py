@@ -32,6 +32,7 @@ class Issue(db.Model):
     priority = db.Column(db.String(10), nullable=False, default=PRIORITY_MEDIUM)
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=False)
+    contributors = db.Column(db.Text, nullable=True)
 
     submitter_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     assignee_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, index=True)

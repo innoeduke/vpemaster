@@ -93,11 +93,19 @@
 
     /* Buttons in the detail page */
     .issue-detail-page .btn {
-        font-size: 0.9em;
-        padding: 0.5em 1em;
-        line-height: 1.4;
+        font-size: 0.82em;
+        padding: 0.3em 0.9em;
+        line-height: 1.25;
     }
     .issue-detail-page .btn i { font-size: 0.9em; }
+    .btn-close-issue {
+        background-color: #1f883d !important;
+        color: white !important;
+        border: none !important;
+    }
+    .btn-close-issue:hover {
+        background-color: #1a6f30 !important;
+    }
 </style>
 {% endblock %}
 
@@ -124,7 +132,7 @@
             <div class="issue-description">{{ issue.description }}</div>
 
             {% if can_manage %}
-            <form method="POST" action="{{ url_for('issue_bp.update_issue', issue_id=issue.id) }}" class="edit-form">
+            <form id="update-issue-form" method="POST" action="{{ url_for('issue_bp.update_issue', issue_id=issue.id) }}" class="edit-form">
                 <h3>{{ _('Manage Issue') }}</h3>
                 <div class="form-row">
                     {% set status_opts = [] %}
@@ -175,6 +183,11 @@
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save"></i> {{ _('Save') }}
                 </button>
+                {% if issue.status != 'closed' %}
+                <button type="submit" name="close_issue" value="true" class="btn btn-close-issue">
+                    <i class="fas fa-times-circle"></i> {{ _('Close') }}
+                </button>
+                {% endif %}
             </form>
             {% endif %}
 
@@ -216,13 +229,22 @@
             <h3>{{ _('Details') }}</h3>
 
             <div class="field">
-                <div class="field-label">{{ _('Submitter') }}</div>
+                <div class="field-label">{{ _('Submitted by') }}</div>
                 <div class="field-value">{{ issue.submitter.display_name if issue.submitter else '—' }}</div>
             </div>
 
             <div class="field">
                 <div class="field-label">{{ _('Assignee') }}</div>
                 <div class="field-value">{{ issue.assignee.display_name if issue.assignee else '—' }}</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">{{ _('Contributors') }}</div>
+                {% if can_manage %}
+                <textarea name="contributors" form="update-issue-form" style="width: 100%; min-height: 80px; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; box-sizing: border-box; font-family: inherit; font-size: 0.9em; resize: vertical;" placeholder="{{ _('List contributors...') }}">{{ issue.contributors or '' }}</textarea>
+                {% else %}
+                <div class="field-value" style="white-space: pre-wrap;">{{ issue.contributors or '—' }}</div>
+                {% endif %}
             </div>
 
             <hr>

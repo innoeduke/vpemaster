@@ -7,62 +7,6 @@
 {% block head_extra %}
 <style>
     .issue-list-page { padding: 20px 0; width: 100%; max-width: 1400px; margin: 0 auto; }
-    .issue-filters {
-        display: flex; flex-wrap: wrap; gap: 10px;
-        background: #fff; padding: 10px 15px; border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        margin-bottom: 20px; align-items: end;
-        box-sizing: border-box; width: 100%; max-width: 100%;
-    }
-    .issue-filters .form-group { margin-bottom: 0; min-width: 130px; flex: 1 1 auto; max-width: 180px; }
-    .issue-filters .form-group .custom-select-label { margin-bottom: 4px; }
-    .issue-filters .filter-actions { margin-left: auto; display: flex; gap: 8px; align-items: end; flex-shrink: 0; flex: 0 0 auto; max-width: none; min-width: unset; }
-    .issue-filters .custom-select-label { font-family: Arial, sans-serif; font-weight: 600; font-size: 0.8em; color: #555; text-transform: uppercase; letter-spacing: 0.03em; }
-    .issue-filters .custom-select-trigger {
-        font-family: 'Gotham', 'Montserrat', 'Inter', sans-serif;
-        padding: 5px 10px;
-        min-height: 30px;
-        height: 30px;
-        font-size: 0.82em;
-        border-radius: 6px;
-        box-sizing: border-box;
-    }
-    .issue-filters .autocomplete-result-item {
-        font-family: 'Gotham', 'Montserrat', 'Inter', sans-serif;
-        font-size: 0.85em;
-        padding: 6px 10px;
-    }
-    .issue-table {
-        width: 100%;
-        table-layout: auto;
-        border-collapse: collapse;
-        background: #fff;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    .issue-table th, .issue-table td {
-        padding: 10px 12px;
-        text-align: left;
-        border-bottom: 1px solid #eef0f3;
-        font-size: 0.92em;
-        vertical-align: middle;
-        white-space: nowrap;
-    }
-    .issue-table th { background: #f7f8fa; font-weight: 600; color: #555; }
-    .issue-table col.col-id { width: 60px; }
-    .issue-table col.col-title { width: auto; }
-    .issue-table col.col-type,
-    .issue-table col.col-priority,
-    .issue-table col.col-status { width: 100px; }
-    .issue-table col.col-submitter { width: 1%; }
-    .issue-table col.col-assignee { width: 1%; }
-    .issue-table col.col-date { width: 110px; }
-    .issue-table td.title-cell { white-space: normal; }
-    .issue-table tr:last-child td { border-bottom: none; }
-    .issue-table tr:hover { background: #fafbfc; }
-    .issue-table a { color: #772432; text-decoration: none; font-weight: 500; }
-    .issue-table a:hover { text-decoration: underline; }
     .issue-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.72em; font-weight: 600; color: #fff; text-transform: uppercase; letter-spacing: 0.04em; }
     .badge-type-bug { background: #c0392b; }
     .badge-type-feature { background: #2c7a7b; }
@@ -75,21 +19,9 @@
     .badge-status-closed { background: #38a169; }
     .badge-status-rejected { background: #718096; }
     .badge-status-cancelled { background: #a0aec0; }
-    .empty-row td { text-align: center; padding: 40px; color: #888; font-style: italic; }
-    .muted { color: #888; }
-
-    /* Buttons in the list page */
-    .issue-list-page .btn {
-        font-size: 0.9em;
-        padding: 0.5em 1em;
-        line-height: 1.4;
-    }
-    .issue-list-page .btn i { font-size: 0.9em; }
-
-    /* Subdued, consistent Filter + Reset buttons in the filter bar.
-       One shared class drives both, so they look identical by default and
-       behave identically on hover/focus. */
-    .issue-list-page .filter-action-btn {
+    
+    /* Subdued, consistent Filter + Reset buttons in the filter bar. */
+    .filter-action-btn {
         background: transparent;
         color: #772432;
         border: 1px solid #772432;
@@ -106,21 +38,19 @@
         justify-content: center;
         box-sizing: border-box;
     }
-    .issue-list-page .filter-action-btn:hover {
+    .filter-action-btn:hover {
         background: #e5e7eb;
         color: #772432;
     }
-    /* Focus: light gray fill (subtle, non-maroon) */
-    .issue-list-page .filter-action-btn:focus {
+    .filter-action-btn:focus {
         outline: none;
         background: rgba(0, 0, 0, 0.06);
     }
-    /* When hovered while focused, hover takes precedence (more specific) */
-    .issue-list-page .filter-action-btn:focus:hover {
+    .filter-action-btn:focus:hover {
         background: #e5e7eb;
         color: #772432;
     }
-    .issue-list-page .filter-action-btn i {
+    .filter-action-btn i {
         display: inline-block;
         border-radius: 50%;
         padding: 0;
@@ -128,312 +58,404 @@
         color: inherit;
         transition: background-color 0.15s, padding 0.15s, margin 0.15s;
     }
-    .issue-list-page .filter-action-btn:hover i {
+    .filter-action-btn:hover i {
         padding: 4px 6px;
         margin: -4px -6px;
         background: rgba(119, 36, 50, 0.12);
     }
-    .issue-list-page .filter-action-btn:focus i {
+    .filter-action-btn:focus i {
         padding: 4px 6px;
         margin: -4px -6px;
         background: rgba(119, 36, 50, 0.1);
     }
-    .issue-list-page .filter-action-btn:focus:hover i {
+    .filter-action-btn:focus:hover i {
         background: rgba(119, 36, 50, 0.12);
     }
 
-    /* =========================================================
-       Mobile layout (≤ 768px): convert the table to stacked cards
-       ========================================================= */
-    @media (max-width: 768px) {
-        .issue-list-page { padding: 12px; }
+    /* Custom tweaks for filters inside the new header layout */
+    .msg-header .issue-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        background: transparent;
+        box-shadow: none;
+        padding: 0;
+        margin-bottom: 0;
+        margin-left: auto;
+    }
+    .msg-header .issue-filters .form-group {
+        margin-bottom: 0;
+        min-width: 110px;
+        max-width: 140px;
+        flex: 1 1 auto;
+    }
+    .msg-header .issue-filters .custom-select-label {
+        display: none; /* Hide labels inside the header to keep it compact */
+    }
+    .msg-header .issue-filters .custom-select-trigger {
+        font-family: 'Inter', sans-serif;
+        padding: 4px 10px;
+        min-height: 30px;
+        height: 30px;
+        font-size: 0.82em;
+        border-radius: 6px;
+        box-sizing: border-box;
+    }
 
-        /* Stack the page header so the title sits above the button */
-        .issue-list-page > div:first-child {
+    /* Grid layout for list container */
+    #issues-list-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+        align-content: start;
+    }
+    
+    /* Issue Card Optimized Layout (3:1 Aspect Ratio) */
+    .msg-item.issue-card-row {
+        aspect-ratio: 3 / 1;
+        height: auto;
+        box-sizing: border-box;
+        padding: 1.15rem 1.4rem;
+        margin-bottom: 0; /* Let grid gap manage spacing */
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .msg-item.issue-card-row .msg-content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+        padding-right: 0;
+        gap: 0.75rem; /* Clean gap between rows */
+    }
+    
+    .issue-title-area {
+        display: inline-flex;
+        align-items: center;
+        max-width: 80%;
+    }
+    
+    .issue-id-badge {
+        background: #edf2f7;
+        color: #4a5568;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.78em;
+        font-weight: 700;
+        margin-right: 8px;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+    
+    .issue-title-text {
+        color: #2d3748;
+        font-weight: 700;
+        font-size: 0.95em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .issue-badges-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 0;
+    }
+    
+    .issue-badge-group {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    
+    .issue-club-info {
+        display: flex;
+        align-items: center;
+        font-size: 0.85em;
+        color: #718096; /* Gray matching the icon */
+        font-weight: 700;
+    }
+    
+    .issue-club-info i {
+        margin-right: 4px;
+        color: #718096; /* Gray matching the icon */
+    }
+    
+    .issue-description-preview {
+        font-size: 0.85em;
+        color: #718096;
+        margin: 0;
+        line-height: 1.45;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        flex-grow: 1;
+    }
+    
+    .issue-card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid #edf2f7;
+        padding-top: 0.6rem;
+        margin: 0;
+        font-size: 0.78em;
+        color: #718096;
+    }
+    
+    .issue-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .issue-meta-item i {
+        color: #a0aec0;
+    }
+    
+    .issue-meta-item strong {
+        color: #4a5568;
+    }
+    
+    /* Make pagination clean in the footer */
+    .msg-main .pagination-container {
+        margin: 0 1.5rem 1.5rem 1.5rem;
+        background-color: #fff;
+        border: 1px solid var(--msg-border);
+        box-shadow: none;
+    }
+
+    /* Support responsive/mobile layout for issues msg-layout */
+    @media (max-width: 768px) {
+        .msg-layout {
+            flex-direction: column;
+            height: auto;
+            margin: 10px;
+        }
+        .msg-sidebar {
+            width: 100%;
+            border-right: none;
+            border-bottom: 1px solid var(--msg-border);
+            padding: 1rem;
+        }
+        .msg-nav-container {
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .msg-nav-item {
+            flex: 1 1 calc(50% - 8px);
+            margin-bottom: 0;
+        }
+        .msg-header {
             flex-direction: column;
             align-items: stretch;
             gap: 12px;
+            padding: 1rem;
+            height: auto;
         }
-        .issue-list-page > div:first-child h1 {
-            text-align: center;
-            font-size: 1.4em;
-            margin-bottom: 0;
-        }
-        .issue-list-page > div:first-child .btn { width: 100%; }
-
-        /* Filters: 2-up grid; action row goes full-width below */
-        .issue-filters { padding: 12px; gap: 10px; }
-        .issue-filters .form-group {
-            flex: 1 1 calc(50% - 10px);
-            min-width: 0;
-        }
-        .issue-filters .filter-actions {
-            flex: 1 1 100%;
+        .msg-header .issue-filters {
+            width: 100%;
             margin-left: 0;
-            justify-content: center;
-            gap: 16px;
-        }
-
-        /* Table → card list */
-        .issue-table, .issue-table thead, .issue-table tbody,
-        .issue-table tr, .issue-table td,
-        .issue-table colgroup, .issue-table col {
-            display: block; width: 100%; box-sizing: border-box;
-            border: none;
-            background: transparent;
-        }
-        .issue-table { box-shadow: none; border-radius: 0; }
-        .issue-table colgroup, .issue-table col { display: none; }
-        .issue-table thead { display: none; }
-        .issue-table tbody { display: block; }
-        .issue-table tr {
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-            margin-bottom: 12px;
-            padding: 14px;
-            border: none;
-        }
-        .issue-table tr:hover { background: #fff; }
-        .issue-table td {
-            padding: 0;
-            border: none;
-            white-space: normal;
-            text-align: left;
-        }
-        .issue-table td + td { margin-top: 6px; }
-
-        /* Title row: id chip + title link, side by side */
-        .issue-table td.title-cell {
-            display: flex;
-            align-items: baseline;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 8px;
-            margin-bottom: 10px;
         }
-        .issue-table td.cell-id {
-            font-weight: 600;
-            color: #888;
-            font-size: 0.9em;
-            flex: 0 0 auto;
+        .msg-header .issue-filters .form-group {
+            max-width: none;
         }
-        .issue-table td.title-cell a {
-            font-size: 1.1em;
-            font-weight: 600;
-            color: #222;
-            line-height: 1.3;
+        .msg-header .issue-filters #reset-btn {
+            grid-column: span 2;
+            width: 100%;
         }
-
-        /* Badge row: all three inline */
-        .issue-table td.cell-type,
-        .issue-table td.cell-priority,
-        .issue-table td.cell-status {
-            display: inline-block;
-            width: auto;
-            margin-top: 0;
+        #issues-list-container {
+            grid-template-columns: 1fr;
+            gap: 1rem;
         }
-        .issue-table td.cell-type     { margin-right: 6px; }
-        .issue-table td.cell-priority { margin-right: 6px; }
-
-        /* Metadata: stacked lines with a small label */
-        .issue-table td.cell-club,
-        .issue-table td.cell-submitter,
-        .issue-table td.cell-assignee,
-        .issue-table td.cell-date {
-            font-size: 0.85em;
-            color: #555;
-            display: block;
+        .msg-item.issue-card-row {
+            aspect-ratio: auto;
+            min-height: 140px;
         }
-        .issue-table td.cell-club::before      { content: "{{ _('Club:') }} "; color: #999; }
-        .issue-table td.cell-submitter::before { content: "{{ _('From:') }} "; color: #999; }
-        .issue-table td.cell-assignee::before  { content: "{{ _('To:') }} "; color: #999; }
-        .issue-table td.cell-created::before   { content: "{{ _('Created:') }} "; color: #999; }
-        .issue-table td.cell-updated::before   { content: "{{ _('Updated:') }} "; color: #999; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="page-container issue-list-page">
-
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-        <h1 style="margin-bottom: 0;"><i class="fas fa-tasks"></i> {{ _('Issues') }}</h1>
+<div class="msg-layout">
+    <!-- Sidebar -->
+    <div class="msg-sidebar">
+        <p class="msg-sidebar-eyebrow">{{ _('Tracker') }}</p>
         {% if not is_super_club %}
-        <button type="button" class="btn btn-primary" onclick="openNewIssueModal()">
-            <i class="fas fa-plus"></i> {{ _('New Issue') }}
+        <button class="msg-compose-btn" onclick="openNewIssueModal()">
+            <span><i class="fas fa-plus" style="margin-right:8px;"></i>{{ _('New Issue') }}</span>
+            <span class="compose-arrow"><i class="fas fa-arrow-right"></i></span>
         </button>
         {% endif %}
+
+        <div class="msg-nav-container">
+            <div class="msg-nav-item {% if not filters.get('status') %}active{% endif %}" onclick="window.location.href='{{ url_for('issue_bp.list_issues') }}'">
+                <i class="fas fa-tasks"></i> <span>{{ _('All Issues') }}</span>
+            </div>
+            <div class="msg-nav-item {% if filters.get('status') == 'open' %}active{% endif %}" onclick="window.location.href='{{ url_for('issue_bp.list_issues', status='open') }}'">
+                <i class="fas fa-envelope-open"></i> <span>{{ _('Open') }}</span>
+            </div>
+            <div class="msg-nav-item {% if filters.get('status') == 'in_progress' %}active{% endif %}" onclick="window.location.href='{{ url_for('issue_bp.list_issues', status='in_progress') }}'">
+                <i class="fas fa-spinner"></i> <span>{{ _('In Progress') }}</span>
+            </div>
+            <div class="msg-nav-item {% if filters.get('status') == 'closed' %}active{% endif %}" onclick="window.location.href='{{ url_for('issue_bp.list_issues', status='closed') }}'">
+                <i class="fas fa-check-circle"></i> <span>{{ _('Closed') }}</span>
+            </div>
+        </div>
     </div>
 
-    <form method="GET" class="issue-filters">
-        {% if (is_sysadmin or is_super_club) and clubs %}
-        {% set club_options = [] %}
-        {% for c in clubs %}
-            {% set _ = club_options.append({'value': c.id, 'text': c.club_name}) %}
-        {% endfor %}
-        <div class="form-group">
-            {{ render_custom_select(
-                club_options,
-                selected_club_id or '',
-                label=_('Club'),
-                select_id='club_id',
-                placeholder=''
-            ) }}
-        </div>
-        {% endif %}
-
-        {% set status_options = [] %}
-        {% for s in Issue.STATUSES %}
-            {% set _ = status_options.append({'value': s, 'text': s.replace('_', ' ').title()}) %}
-        {% endfor %}
-        <div class="form-group">
-            {{ render_custom_select(
-                status_options,
-                filters.get('status', ''),
-                label=_('Status'),
-                select_id='status',
-                placeholder=''
-            ) }}
-        </div>
-
-        {% set type_options = [] %}
-        {% for t in Issue.TYPES %}
-            {% set _ = type_options.append({'value': t, 'text': t.title()}) %}
-        {% endfor %}
-        <div class="form-group">
-            {{ render_custom_select(
-                type_options,
-                filters.get('type', ''),
-                label=_('Type'),
-                select_id='type',
-                placeholder=''
-            ) }}
-        </div>
-
-        {% set priority_options = [] %}
-        {% for p in Issue.PRIORITIES %}
-            {% set _ = priority_options.append({'value': p, 'text': p.title()}) %}
-        {% endfor %}
-        <div class="form-group">
-            {{ render_custom_select(
-                priority_options,
-                filters.get('priority', ''),
-                label=_('Priority'),
-                select_id='priority',
-                placeholder=''
-            ) }}
-        </div>
-
-        {% set assignee_options = [] %}
-        {% for u in assignable_users %}
-            {% set _ = assignee_options.append({'value': u.id, 'text': u.display_name or u.username}) %}
-        {% endfor %}
-        <div class="form-group">
-            {{ render_custom_select(
-                assignee_options,
-                assignee_id or '',
-                label=_('Assignee'),
-                select_id='assignee_id',
-                placeholder=''
-            ) }}
-        </div>
-
-        <div class="form-group filter-actions">
-            <a href="{{ url_for('issue_bp.list_issues') }}" class="btn filter-action-btn" id="reset-btn"><i class="fas fa-undo"></i> {{ _('Reset') }}</a>
-        </div>
-    </form>
-
-    <table class="issue-table" id="issuesTable">
-        <colgroup>
-            <col class="col-id">
-            {% if is_super_club %}
-            <col class="col-club" style="width: 120px;">
-            {% endif %}
-            <col class="col-title">
-            <col class="col-type">
-            <col class="col-priority">
-            <col class="col-status">
-            <col class="col-submitter">
-            <col class="col-assignee">
-            <col class="col-date">
-            <col class="col-date">
-        </colgroup>
-        {% set col_idx = 0 %}
-        <thead>
-            <tr>
-                <th class="sortable col-id" data-column-index="{{ col_idx }}" data-sort-dir="asc" data-sort-type="text">#</th>
-                {% set col_idx = col_idx + 1 %}
-                
-                {% if is_super_club %}
-                <th class="sortable col-club" data-column-index="{{ col_idx }}">{{ _('Club') }}</th>
-                {% set col_idx = col_idx + 1 %}
+    <!-- Main Content -->
+    <div class="msg-main">
+        <div class="msg-header">
+            <h2 class="msg-header-title">
+                {% if filters.get('status') == 'open' %}
+                    {{ _('Open Issues') }}
+                {% elif filters.get('status') == 'in_progress' %}
+                    {{ _('In Progress Issues') }}
+                {% elif filters.get('status') == 'closed' %}
+                    {{ _('Closed Issues') }}
+                {% else %}
+                    {{ _('All Issues') }}
                 {% endif %}
-                
-                <th class="sortable col-title" data-column-index="{{ col_idx }}">{{ _('Title') }}</th>
-                {% set col_idx = col_idx + 1 %}
-                
-                <th class="sortable col-type" data-column-index="{{ col_idx }}">{{ _('Type') }}</th>
-                {% set col_idx = col_idx + 1 %}
-                
-                <th class="sortable col-priority" data-column-index="{{ col_idx }}">{{ _('Priority') }}</th>
-                {% set col_idx = col_idx + 1 %}
-                
-                <th class="sortable col-status" data-column-index="{{ col_idx }}">{{ _('Status') }}</th>
-                {% set col_idx = col_idx + 1 %}
-                
-                <th class="sortable col-submitter" data-column-index="{{ col_idx }}">{{ _('Submitter') }}</th>
-                {% set col_idx = col_idx + 1 %}
-                
-                <th class="sortable col-assignee" data-column-index="{{ col_idx }}">{{ _('Assignee') }}</th>
-                {% set col_idx = col_idx + 1 %}
-                
-                <th class="sortable col-created" data-column-index="{{ col_idx }}">{{ _('Created') }}</th>
-                {% set col_idx = col_idx + 1 %}
-                
-                <th class="sortable col-updated" data-column-index="{{ col_idx }}">{{ _('Updated') }}</th>
-                {% set col_idx = col_idx + 1 %}
-            </tr>
-        </thead>
-        <tbody>
+            </h2>
+            
+            <!-- Filter Form in Header -->
+            <form method="GET" class="issue-filters" id="issue-filter-form">
+                <!-- Preserve status in hidden input so changing other dropdowns maintains current status tab -->
+                <input type="hidden" name="status" value="{{ filters.get('status') or '' }}">
+
+                {% if (is_sysadmin or is_super_club) and clubs %}
+                {% set club_options = [] %}
+                {% for c in clubs %}
+                    {% set _ = club_options.append({'value': c.id, 'text': c.club_name}) %}
+                {% endfor %}
+                <div class="form-group">
+                    {{ render_custom_select(
+                        club_options,
+                        selected_club_id or '',
+                        label='',
+                        select_id='club_id',
+                        placeholder=_('Club')
+                    ) }}
+                </div>
+                {% endif %}
+
+                {% set type_options = [] %}
+                {% for t in Issue.TYPES %}
+                    {% set _ = type_options.append({'value': t, 'text': t.title()}) %}
+                {% endfor %}
+                <div class="form-group">
+                    {{ render_custom_select(
+                        type_options,
+                        filters.get('type', ''),
+                        label='',
+                        select_id='type',
+                        placeholder=_('Type')
+                    ) }}
+                </div>
+
+                {% set priority_options = [] %}
+                {% for p in Issue.PRIORITIES %}
+                    {% set _ = priority_options.append({'value': p, 'text': p.title()}) %}
+                {% endfor %}
+                <div class="form-group">
+                    {{ render_custom_select(
+                        priority_options,
+                        filters.get('priority', ''),
+                        label='',
+                        select_id='priority',
+                        placeholder=_('Priority')
+                    ) }}
+                </div>
+
+                {% set assignee_options = [] %}
+                {% for u in assignable_users %}
+                    {% set _ = assignee_options.append({'value': u.id, 'text': u.display_name or u.username}) %}
+                {% endfor %}
+                <div class="form-group">
+                    {{ render_custom_select(
+                        assignee_options,
+                        assignee_id or '',
+                        label='',
+                        select_id='assignee_id',
+                        placeholder=_('Assignee')
+                    ) }}
+                </div>
+
+                <a href="{{ url_for('issue_bp.list_issues', status=filters.get('status') or '') }}" class="btn filter-action-btn" id="reset-btn" title="{{ _('Reset Filters') }}"><i class="fas fa-undo"></i></a>
+            </form>
+        </div>
+
+        <div class="msg-list-container custom-scrollbar" id="issues-list-container">
             {% for issue in issues %}
-            <tr>
-                <td class="cell-id muted" data-label="#" data-sort="{{ '%09d' % issue.id }}">#{{ issue.id }}</td>
-                
-                {% if is_super_club %}
-                <td class="cell-club" data-label="{{ _('Club') }}" data-sort="{{ issue.club.short_name or issue.club.club_name if issue.club else '' }}">{{ issue.club.short_name or issue.club.club_name if issue.club else '—' }}</td>
-                {% endif %}
-                
-                <td class="cell-title title-cell" data-label="{{ _('Title') }}" data-sort="{{ issue.title }}">
-                    <a href="{{ url_for('issue_bp.detail_issue', issue_id=issue.id) }}">{{ issue.title }}</a>
-                </td>
-                <td class="cell-type" data-label="{{ _('Type') }}" data-sort="{{ issue.type }}"><span class="issue-badge badge-type-{{ issue.type }}">{{ issue.type }}</span></td>
-                <td class="cell-priority" data-label="{{ _('Priority') }}" data-sort="{{ issue.priority }}"><span class="issue-badge badge-prio-{{ issue.priority }}">{{ issue.priority }}</span></td>
-                <td class="cell-status" data-label="{{ _('Status') }}" data-sort="{{ issue.status }}"><span class="issue-badge badge-status-{{ issue.status }}">{{ issue.status.replace('_', ' ') }}</span></td>
-                <td class="cell-submitter" data-label="{{ _('Submitter') }}" data-sort="{{ issue.submitter.display_name if issue.submitter else '' }}">{{ issue.submitter.display_name if issue.submitter else '—' }}</td>
-                <td class="cell-assignee" data-label="{{ _('Assignee') }}" data-sort="{{ issue.assignee.display_name if issue.assignee else '' }}">{{ issue.assignee.display_name if issue.assignee else '—' }}</td>
-                <td class="cell-date cell-created muted" data-label="{{ _('Created') }}" data-sort="{{ issue.created_at.isoformat() if issue.created_at else '' }}">{{ issue.created_at.strftime('%Y-%m-%d') if issue.created_at else '—' }}</td>
-                <td class="cell-date cell-updated muted" data-label="{{ _('Updated') }}" data-sort="{{ issue.updated_at.isoformat() if issue.updated_at else '' }}">{{ issue.updated_at.strftime('%Y-%m-%d') if issue.updated_at else '—' }}</td>
-            </tr>
-            {% else %}
-            <tr class="empty-row">
-                <td colspan="{{ 10 if is_super_club else 9 }}">{{ _('No issues found.') }} <a href="#" onclick="openNewIssueModal(); return false;">{{ _('Create the first one.') }}</a></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            <div class="msg-item issue-card-row" onclick="window.location.href='{{ url_for('issue_bp.detail_issue', issue_id=issue.id) }}'">
+                <!-- Content -->
+                <div class="msg-content">
+                    <!-- Row 1: Header (ID, Title, Date) -->
+                    <div class="msg-row-top">
+                        <div class="issue-title-area">
+                            <span class="issue-id-badge">#{{ issue.id }}</span>
+                            <span class="issue-title-text">{{ issue.title }}</span>
+                        </div>
+                        <span class="msg-time">
+                            {{ issue.created_at.strftime('%Y-%m-%d') if issue.created_at else '' }}
+                        </span>
+                    </div>
 
-    <!-- Pagination Controls -->
-    <div class="pagination-container" id="issue-pagination" style="margin-top: 20px;">
-        <div class="pagination-info" id="issue-pagination-info">{{ _('Showing 0 - 0 of 0 issues') }}</div>
-        <div class="pagination-controls"></div>
-        <div class="pagination-size">
-            <label>{{ _('Show:') }}</label>
-            <select class="page-size-select">
-                <option value="10" selected>10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-            </select>
+                    <!-- Row 2: Badges & Club Context -->
+                    <div class="issue-badges-row">
+                        <div class="issue-badge-group">
+                            <span class="issue-badge badge-type-{{ issue.type }}">{{ issue.type }}</span>
+                            <span class="issue-badge badge-prio-{{ issue.priority }}">{{ issue.priority }}</span>
+                            <span class="issue-badge badge-status-{{ issue.status }}">{{ issue.status.replace('_', ' ') }}</span>
+                        </div>
+                        {% if is_super_club and issue.club %}
+                        <div class="issue-club-info">
+                            <i class="fas fa-home" style="margin-right: 4px; color: #718096;"></i>
+                            <span class="issue-club-name">{{ issue.club.short_name or issue.club.club_name }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Row 3: Description Preview -->
+                    <div class="issue-description-preview">
+                        {{ issue.description }}
+                    </div>
+
+                    <!-- Row 4: Footer Meta (Submitted by & Assignee) -->
+                    <div class="issue-card-footer">
+                        <div class="issue-meta-item">
+                            <i class="fas fa-user-circle"></i>
+                            <span>{{ _('Submitted by:') }} <strong>{{ issue.submitter.display_name if issue.submitter else '—' }}</strong></span>
+                        </div>
+                        <div class="issue-meta-item">
+                            <i class="fas fa-user-tag"></i>
+                            <span>{{ _('Assignee:') }} <strong>{{ issue.assignee.display_name if issue.assignee else '—' }}</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-tasks"></i>
+                <p>{{ _('No issues found.') }} {% if not is_super_club %}<a href="#" onclick="openNewIssueModal(); return false;">{{ _('Create the first one.') }}</a>{% endif %}</p>
+            </div>
+            {% endfor %}
         </div>
+
+        <!-- Pagination Controls -->
+        <div class="msg-pagination" id="issue-pagination"></div>
     </div>
 </div>
 {% endblock %}
@@ -451,11 +473,7 @@ class TablePaginator {
     this.table = document.getElementById(this.tableId);
     this.container = document.getElementById(this.containerId);
 
-    if (!this.table || !this.container) return;
-
-    this.tbody = this.table.querySelector('tbody');
-    this.infoDisplay = this.container.querySelector('.pagination-info');
-    this.pageSizeSelect = this.container.querySelector('.page-size-select');
+    if (!this.table) return;
 
     this.init();
   }
@@ -466,22 +484,8 @@ class TablePaginator {
       const savedSize = localStorage.getItem(`${this.storageKey}_page_size`);
       if (savedSize) {
         this.pageSize = parseInt(savedSize, 10);
-        if (this.pageSizeSelect) this.pageSizeSelect.value = this.pageSize;
       }
     }
-
-    // Event listeners
-    if (this.pageSizeSelect) {
-      this.pageSizeSelect.addEventListener('change', (e) => {
-        this.pageSize = parseInt(e.target.value, 10);
-        this.currentPage = 1;
-        if (this.storageKey) {
-          localStorage.setItem(`${this.storageKey}_page_size`, this.pageSize);
-        }
-        this.update();
-      });
-    }
-
     this.update();
   }
 
@@ -492,7 +496,7 @@ class TablePaginator {
   }
 
   getFilteredRows() {
-    return Array.from(this.tbody.rows).filter(row => !row.classList.contains('empty-row'));
+    return Array.from(this.table.querySelectorAll('.msg-item'));
   }
 
   getTotalPages() {
@@ -501,8 +505,7 @@ class TablePaginator {
   }
 
   update() {
-    const rows = Array.from(this.tbody.rows);
-    const filteredRows = this.getFilteredRows();
+    const rows = this.getFilteredRows();
     const totalPages = this.getTotalPages();
 
     if (this.currentPage > totalPages) this.currentPage = totalPages;
@@ -511,45 +514,87 @@ class TablePaginator {
     const startIndex = (this.currentPage - 1) * this.pageSize;
     const endIndex = startIndex + this.pageSize;
 
-    const visibleRows = new Set(filteredRows.slice(startIndex, endIndex));
+    const visibleRows = new Set(rows.slice(startIndex, endIndex));
 
     rows.forEach((row) => {
-      if (row.classList.contains('empty-row')) {
-        row.style.display = filteredRows.length === 0 ? "" : "none";
-      } else {
-        row.style.display = visibleRows.has(row) ? "" : "none";
-      }
+      row.style.setProperty('display', visibleRows.has(row) ? 'flex' : 'none', 'important');
     });
 
-    const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
-    const totalForInfo = filteredRows.length;
-    if (this.infoDisplay) {
-      if (totalForInfo === 0) {
-        this.infoDisplay.textContent = isChinese ? '没有找到记录' : 'No records found';
-      } else {
-        this.infoDisplay.textContent = isChinese
-          ? `显示第 ${startIndex + 1} - ${Math.min(endIndex, totalForInfo)} 条记录，共 ${totalForInfo} 条`
-          : `Showing ${startIndex + 1} - ${Math.min(endIndex, totalForInfo)} of ${totalForInfo}`;
-      }
+    const emptyState = this.table.querySelector('.empty-state');
+    if (emptyState) {
+      emptyState.style.setProperty('display', rows.length === 0 ? 'flex' : 'none', 'important');
     }
 
-    const controlsContainer = this.container.querySelector('.pagination-controls');
-    if (controlsContainer && typeof window.renderNumberedPagination === 'function') {
-      window.renderNumberedPagination(controlsContainer, this.currentPage, totalPages, (page) => this.goToPage(page));
+    if (this.container) {
+      const displayPages = Math.max(1, totalPages);
+      const displayCurrentPage = this.currentPage || 1;
+      
+      let html = '';
+      
+      // Previous button
+      const prevDisabled = displayCurrentPage === 1 ? 'disabled' : '';
+      html += `
+          <button class="msg-pagination-btn" ${prevDisabled} data-page="${displayCurrentPage - 1}" title="Previous Page">
+              <i class="fas fa-chevron-left"></i> Prev
+          </button>
+      `;
+      
+      const maxVisible = 5;
+      let startPage = Math.max(1, displayCurrentPage - Math.floor(maxVisible / 2));
+      let endPage = Math.min(displayPages, startPage + maxVisible - 1);
+      
+      if (endPage - startPage + 1 < maxVisible) {
+          startPage = Math.max(1, endPage - maxVisible + 1);
+      }
+      
+      if (startPage > 1) {
+          html += `<button class="msg-pagination-btn" data-page="1">1</button>`;
+          if (startPage > 2) {
+              html += `<span class="msg-pagination-info">...</span>`;
+          }
+      }
+      
+      for (let p = startPage; p <= endPage; p++) {
+          html += `
+              <button class="msg-pagination-btn ${p === displayCurrentPage ? 'active' : ''}" data-page="${p}">
+                  ${p}
+              </button>
+          `;
+      }
+      
+      if (endPage < displayPages) {
+          if (endPage < displayPages - 1) {
+              html += `<span class="msg-pagination-info">...</span>`;
+          }
+          html += `<button class="msg-pagination-btn" data-page="${displayPages}">${displayPages}</button>`;
+      }
+      
+      // Next button
+      const nextDisabled = displayCurrentPage === displayPages ? 'disabled' : '';
+      html += `
+          <button class="msg-pagination-btn" ${nextDisabled} data-page="${displayCurrentPage + 1}" title="Next Page">
+              Next <i class="fas fa-chevron-right"></i>
+          </button>
+      `;
+      
+      this.container.innerHTML = html;
+      
+      // Attach click events
+      this.container.querySelectorAll('.msg-pagination-btn:not([disabled])').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const page = parseInt(btn.getAttribute('data-page'), 10);
+          this.goToPage(page);
+        });
+      });
     }
   }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Initialize sorting
-  if (typeof setupTableSorting === "function") {
-    setupTableSorting("issuesTable");
-  }
-
-  // Initialize pagination
+  // Initialize pagination targeting the list container
   window.activePaginators = window.activePaginators || {};
   window.activePaginators["issues-list"] = new TablePaginator({
-    tableId: "issuesTable",
+    tableId: "issues-list-container",
     containerId: "issue-pagination",
     pageSize: 10,
     storageKey: "issues_page"

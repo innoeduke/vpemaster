@@ -44,8 +44,9 @@ def list_issues():
         joinedload(Issue.club),
     )
 
+    status_filter = request.args.get('status')
     filters = {
-        'status': request.args.get('status') or None,
+        'status': status_filter,
         'type': request.args.get('type') or None,
         'priority': request.args.get('priority') or None,
     }
@@ -66,8 +67,12 @@ def list_issues():
             query = filter_by_club(query, Issue)
 
     for field, value in filters.items():
-        if value:
-            query = query.filter(getattr(Issue, field) == value)
+        if field == 'status':
+            if value:
+                query = query.filter(Issue.status == value)
+        else:
+            if value:
+                query = query.filter(getattr(Issue, field) == value)
     if assignee_id:
         query = query.filter(Issue.assignee_id == assignee_id)
 
@@ -159,6 +164,19 @@ def update_issue(issue_id):
     new_assignee_id = request.form.get('assignee_id', type=int)
     new_title = (request.form.get('title') or issue.title).strip()
     new_description = (request.form.get('description') or issue.description).strip()
+    new_contributors = request.form.get('contributors')
+    if new_contributors is not None:
+        new_contributors = new_contributors.strip()
+        if not new_contributors:
+            new_contributors = None
+
+    # If assignee changes, set status to in progress
+    if new_assignee_id and new_assignee_id != previous_assignee_id:
+        new_status = Issue.STATUS_IN_PROGRESS
+
+    # If close button is clicked, set status to closed
+    if request.form.get('close_issue') == 'true':
+        new_status = Issue.STATUS_CLOSED
 
     errors = []
     if new_status not in Issue.STATUSES:
@@ -192,6 +210,7 @@ def update_issue(issue_id):
     issue.assignee_id = new_assignee_id
     issue.title = new_title
     issue.description = new_description
+    issue.contributors = new_contributors
 
     if status_changed_to_terminal:
         issue.closed_at = datetime.now(timezone.utc)
