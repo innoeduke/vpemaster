@@ -921,3 +921,78 @@ def test_speech_modal_owner_change_via_save(client, app, default_club, staff_use
         updated = db.session.get(SL, log_id)
         assert [o.id for o in updated.owners] == [new_id]
 
+
+def test_per_owner_custom_credential_save(client, app, default_club, staff_user):
+    """Verify that updating per-owner custom credentials via owner_targets saves and retrieves correctly."""
+    with app.app_context():
+        speaker1 = Contact(Name="Speaker One", Type="Member", credentials="PM1")
+        speaker2 = Contact(Name="Speaker Two", Type="Member", credentials="PM2")
+        db.session.add_all([speaker1, speaker2])
+        db.session.commit()
+        for c in (speaker1, speaker2):
+            cc = ContactClub(contact_id=c.id, club_id=default_club.id)
+            db.session.add(cc)
+        db.session.commit()
+
+        # Create a multi-owner role
+        role = MeetingRole(name="Panelist", type="standard", needs_approval=False, has_single_owner=False)
+        db.session.add(role)
+        db.session.commit()
+
+        st = SessionType(Title="Panel Discussion", role_id=role.id, club_id=default_club.id)
+        db.session.add(st)
+        db.session.commit()
+
+        from datetime import date
+        meeting = Meeting(Meeting_Number=204, Meeting_Date=date.today(), club_id=default_club.id)
+        db.session.add(meeting)
+        db.session.commit()
+
+        log = SessionLog(meeting_id=meeting.id, Meeting_Seq=1,
+                          Type_ID=st.id, Status="Booked")
+        db.session.add(log)
+        db.session.flush()
+        log.owners = [speaker1, speaker2]
+        db.session.commit()
+
+        log_id = log.id
+        sp1_id = speaker1.id
+        sp2_id = speaker2.id
+
+    with client.session_transaction() as sess:
+        sess['_user_id'] = str(staff_user.id)
+        sess['club_id'] = default_club.id
+        sess['_fresh'] = True
+
+    with patch('app.speech_logs_routes.is_authorized', return_value=True):
+        # Update details: set custom credentials "PM3" for speaker1 and "PM4" for speaker2
+        resp = client.post(
+            f'/speech_log/update/{log_id}',
+            json={
+                'owner_ids': [sp1_id, sp2_id],
+                'owner_targets': {
+                    str(sp1_id): {'pathway': 'Non Pathway', 'level': '', 'credential': 'PM3'},
+                    str(sp2_id): {'pathway': 'Non Pathway', 'level': '', 'credential': 'PM4'}
+                }
+            }
+        )
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data.get('success') is True
+        
+        # Verify details endpoint returns the custom credentials
+        resp_details = client.get(f'/speech_log/details/{log_id}')
+        assert resp_details.status_code == 200
+        details_data = resp_details.get_json()
+        log_res = details_data.get('log')
+        assert log_res.get('owner_targets').get(str(sp1_id)).get('credential') == 'PM3'
+        assert log_res.get('owner_targets').get(str(sp2_id)).get('credential') == 'PM4'
+
+    with app.app_context():
+        # Verify the database records in owner_meeting_roles directly
+        from app.models.session import OwnerMeetingRoles
+        omr1 = OwnerMeetingRoles.query.filter_by(meeting_id=meeting.id, contact_id=sp1_id).first()
+        assert omr1.credential == 'PM3'
+        omr2 = OwnerMeetingRoles.query.filter_by(meeting_id=meeting.id, contact_id=sp2_id).first()
+        assert omr2.credential == 'PM4'
+

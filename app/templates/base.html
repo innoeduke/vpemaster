@@ -674,6 +674,11 @@
             updateUnreadCount();
         }
     });
+
+    // Clean up EventSource connection before page unload to prevent console errors
+    window.addEventListener('beforeunload', function() {
+        messageEventSource.close();
+    });
     {% endif %}
   </script>
 

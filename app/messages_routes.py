@@ -432,4 +432,8 @@ def message_events():
         finally:
             announcer.remove_listener(user_id, q)
 
-    return Response(stream_with_context(event_generator()), mimetype='text/event-stream')
+    response = Response(stream_with_context(event_generator()), mimetype='text/event-stream')
+    response.headers['Cache-Control'] = 'no-cache, no-transform'
+    response.headers['Connection'] = 'keep-alive'
+    response.headers['X-Accel-Buffering'] = 'no'
+    return response

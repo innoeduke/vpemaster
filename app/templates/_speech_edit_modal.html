@@ -435,12 +435,26 @@
             transform: translateY(-1px);
         }
 
+        #speechEditModal .sem-sections-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        #speechEditModal .sem-sections-row > .sem-section {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
         /* --- Responsive --- */
         @media (max-width: 640px) {
             #speechEditModal .sem-header,
             #speechEditModal .sem-footer { padding-left: 18px; padding-right: 18px; }
             #speechEditModal .sem-body { padding: 18px; }
             #speechEditModal .sem-section { padding: 16px; }
+            #speechEditModal .sem-sections-row {
+                flex-direction: column;
+                gap: 16px;
+            }
         }
     </style>
 
@@ -527,7 +541,7 @@
               </div>
 
               <!-- Displayed Credential (last) -->
-              <div class="sem-field">
+              <div class="sem-field" style="display: none;">
                 <label for="edit-credential">Displayed Credential</label>
                 <input type="text" id="edit-credential" name="credential" placeholder="e.g. DTM" />
               </div>
@@ -605,43 +619,45 @@
 
         <!-- Role Mode Fields Container -->
         <div id="role-mode-fields" style="display: none;">
-          <section class="sem-section">
-            <header class="sem-section-header">
-              <span class="sem-section-icon sem-section-icon--role"><i class="fas fa-user-tag"></i></span>
-              <div>
-                <h3 class="sem-section-title">Role</h3>
-                <p class="sem-section-desc">The role being assigned in this meeting.</p>
-              </div>
-            </header>
-            <div class="sem-role-display" id="role-name-display"></div>
-          </section>
+          <div class="sem-sections-row">
+            <section class="sem-section">
+              <header class="sem-section-header">
+                <span class="sem-section-icon sem-section-icon--role"><i class="fas fa-user-tag"></i></span>
+                <div>
+                  <h3 class="sem-section-title">Role</h3>
+                  <p class="sem-section-desc">The role being assigned in this meeting.</p>
+                </div>
+              </header>
+              <div class="sem-role-display" id="role-name-display"></div>
+            </section>
 
-          <!-- Session Title (editable for roles) -->
-          <section class="sem-section sem-section--info">
-            <header class="sem-section-header">
-              <span class="sem-section-icon sem-section-icon--info"><i class="fas fa-heading"></i></span>
-              <div>
-                <h3 class="sem-section-title">Session Details</h3>
-                <p class="sem-section-desc">Title and timing for this session.</p>
-              </div>
-            </header>
-            <div class="sem-grid">
-              <div class="sem-field">
-                <label for="role-session-title">Session Title</label>
-                <input type="text" id="role-session-title" name="role_session_title" placeholder="Enter session title" />
-              </div>
-              <div class="sem-duration-row">
-                <div class="sem-field">
-                  <label for="role-duration-min">Min Minutes</label>
-                  <input type="number" id="role-duration-min" name="role_duration_min" min="0" max="480" placeholder="e.g. 5" />
+            <!-- Session Title (editable for roles) -->
+            <section class="sem-section sem-section--info">
+              <header class="sem-section-header">
+                <span class="sem-section-icon sem-section-icon--info"><i class="fas fa-heading"></i></span>
+                <div>
+                  <h3 class="sem-section-title">Session Details</h3>
+                  <p class="sem-section-desc">Title and timing for this session.</p>
                 </div>
+              </header>
+              <div class="sem-grid">
                 <div class="sem-field">
-                  <label for="role-duration-max">Max Minutes</label>
-                  <input type="number" id="role-duration-max" name="role_duration_max" min="0" max="480" placeholder="e.g. 7" />
+                  <label for="role-session-title">Session Title</label>
+                  <input type="text" id="role-session-title" name="role_session_title" placeholder="Enter session title" />
+                </div>
+                <div class="sem-duration-row">
+                  <div class="sem-field">
+                    <label for="role-duration-min">Min Minutes</label>
+                    <input type="number" id="role-duration-min" name="role_duration_min" min="0" max="480" placeholder="e.g. 5" />
+                  </div>
+                  <div class="sem-field">
+                    <label for="role-duration-max">Max Minutes</label>
+                    <input type="number" id="role-duration-max" name="role_duration_max" min="0" max="480" placeholder="e.g. 7" />
+                  </div>
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
+          </div>
 
           <section class="sem-section sem-section--owners">
             <header class="sem-section-header">

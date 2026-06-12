@@ -2083,13 +2083,16 @@ def get_speech_log_details(log_id):
 
         t_pathway = None
         t_level = None
+        t_cred = None
         if omr:
             t_pathway = omr.target_pathway if omr.target_pathway is not None else "Non Pathway"
             t_level = omr.target_level or ""
+            t_cred = omr.credential
 
         owner_targets[str(o.id)] = {
             "pathway": t_pathway,
-            "level": t_level
+            "level": t_level,
+            "credential": t_cred
         }
 
         owners_data.append({
@@ -2244,6 +2247,7 @@ def update_speech_log(log_id):
                 target = owner_targets[contact_str]
                 p_val = target.get('pathway')
                 l_val = target.get('level')
+                cred_val = target.get('credential') or target.get('credentials')
                 if p_val is not None:
                     omr.target_pathway = None if p_val == "Non Pathway" else p_val
                 if l_val is not None:
@@ -2251,6 +2255,8 @@ def update_speech_log(log_id):
                         omr.target_level = None
                     else:
                         omr.target_level = str(l_val) if l_val else None
+                if cred_val is not None:
+                    omr.credential = cred_val
             else:
                 if pathway_val is not None:
                     omr.target_pathway = None if pathway_val == "Non Pathway" else pathway_val

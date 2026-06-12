@@ -125,7 +125,7 @@ function toggleGeneric(isGeneric) {
  *
  * Returns { wrapper, getOwnerId, setOwnerId, focusSearch }.
  */
-function createModalOwnerPicker({ initialOwnerId, contacts, onChange, placeholder = "Search members..." }) {
+function createModalOwnerPicker({ initialOwnerId, initialCredential, contacts, onChange, placeholder = "Search members..." }) {
   const wrapper = document.createElement("div");
   wrapper.className = "modal-owner-picker";
 
@@ -145,12 +145,56 @@ function createModalOwnerPicker({ initialOwnerId, contacts, onChange, placeholde
   searchInput.setAttribute("aria-autocomplete", "list");
   searchInput.setAttribute("aria-expanded", "false");
   searchContainer.appendChild(searchInput);
-  wrapper.appendChild(searchContainer);
 
   let currentOwnerId = initialOwnerId ? String(initialOwnerId) : "";
   let currentContact = currentOwnerId
     ? (contacts || []).find((c) => String(c.id) === currentOwnerId) || null
     : null;
+
+  const getInitialCredential = () => {
+    if (initialCredential !== undefined && initialCredential !== null) {
+      return initialCredential;
+    }
+    if (currentContact) {
+      return currentContact.credentials || currentContact.Credentials || "";
+    }
+    return "";
+  };
+
+  const inputRow = document.createElement("div");
+  inputRow.style.cssText = "display: flex; gap: 12px; align-items: flex-end; width: 100%; margin-top: 8px;";
+
+  searchContainer.style.flex = "1";
+  inputRow.appendChild(searchContainer);
+
+  const suffixGroup = document.createElement("div");
+  suffixGroup.className = "form-group";
+  suffixGroup.style.cssText = "flex: 0 0 90px; margin-bottom: 0;";
+
+  const suffixLabel = document.createElement("label");
+  suffixLabel.textContent = "Suffix";
+  suffixLabel.style.cssText = "display: block; font-size: 11px; font-weight: 700; color: #475569; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 0.05em; text-align: left;";
+  suffixGroup.appendChild(suffixLabel);
+
+  const suffixInput = document.createElement("input");
+  suffixInput.type = "text";
+  suffixInput.className = "role-card-suffix";
+  suffixInput.placeholder = "PM2";
+  suffixInput.value = getInitialCredential();
+  suffixInput.style.cssText = "width: 100%; padding: 8px 12px; border: 1px solid #cbd5e0; border-radius: 7px; font-size: 13.5px; font-family: 'Inter', sans-serif; color: #1e293b; box-sizing: border-box; height: 37px;";
+
+  suffixInput.addEventListener("focus", () => {
+    suffixInput.style.borderColor = "#772432";
+    suffixInput.style.boxShadow = "0 0 0 3px rgba(119, 36, 50, 0.12)";
+  });
+  suffixInput.addEventListener("blur", () => {
+    suffixInput.style.borderColor = "#cbd5e0";
+    suffixInput.style.boxShadow = "none";
+  });
+
+  suffixGroup.appendChild(suffixInput);
+  inputRow.appendChild(suffixGroup);
+  wrapper.appendChild(inputRow);
   let activeIndex = -1;
   let openDropdown = null;
 
@@ -369,6 +413,11 @@ function createModalOwnerPicker({ initialOwnerId, contacts, onChange, placeholde
       ? (contacts || []).find((c) => String(c.id) === newIdStr) || null
       : null;
     renderTag();
+    if (currentContact) {
+      suffixInput.value = currentContact.credentials || currentContact.Credentials || "";
+    } else {
+      suffixInput.value = "";
+    }
     if (!silent && typeof onChange === "function") {
       onChange(currentOwnerId, currentContact);
     }
@@ -383,9 +432,13 @@ function createModalOwnerPicker({ initialOwnerId, contacts, onChange, placeholde
     open();
   }
 
+  function getCredential() {
+    return suffixInput.value;
+  }
+
   renderTag();
 
-  return { wrapper, getOwnerId, setOwnerId, focusSearch };
+  return { wrapper, getOwnerId, setOwnerId, focusSearch, getCredential };
 }
 
 /**
@@ -573,12 +626,14 @@ async function openEditDetailsModal(
       function getOwnerDefaults(ownerId) {
         let pathway = "";
         let level = "";
+        let credential = "";
 
         // 1. Check per-owner saved target first
         const savedTarget = existingOwnerTargets[ownerId];
         if (savedTarget !== undefined && savedTarget !== null) {
           pathway = savedTarget.pathway || "Non Pathway";
           level = savedTarget.level || "";
+          credential = savedTarget.credential || savedTarget.credentials || "";
         } else {
           // 2. Fallback to contact data (only if ownerId has no saved target)
           const contactsList = (window.allContacts && window.allContacts.length)
@@ -597,6 +652,7 @@ async function openEditDetailsModal(
             } else {
               level = "1";
             }
+            credential = contact.credentials || contact.Credentials || "";
           }
         }
 
@@ -607,7 +663,7 @@ async function openEditDetailsModal(
           level = "1";
         }
 
-        return { pathway, level };
+        return { pathway, level, credential };
       }
 
       // Create one card per owner
@@ -625,7 +681,7 @@ async function openEditDetailsModal(
         // pathway/level <select> elements (they get rebuilt on owner change).
         const pathHolder = { el: buildPathwaySelect(initialOwnerId) };
         const levelHolder = { el: buildLevelSelect() };
-
+        
         // Pathway group
         const pathGroup = document.createElement("div");
         pathGroup.className = "form-group";
@@ -667,6 +723,7 @@ async function openEditDetailsModal(
         // the card and the pathway/level selects live below it.
         const ownerPicker = createModalOwnerPicker({
           initialOwnerId: initialOwnerId || null,
+          initialCredential: getOwnerDefaults(initialOwnerId).credential,
           contacts: window.allContacts && window.allContacts.length
             ? window.allContacts
             : contactsList,
@@ -855,10 +912,11 @@ async function saveEditDetailsChanges(event) {
         || "";
       const pathwayName = (card._pathHolder && card._pathHolder.el) ? card._pathHolder.el.value : (card.querySelector(".role-card-pathway")?.value || "");
       const levelVal = (card._levelHolder && card._levelHolder.el) ? card._levelHolder.el.value : (card.querySelector(".role-card-level")?.value || "");
+      const suffixVal = (card._suffixHolder && card._suffixHolder.el) ? card._suffixHolder.el.value : (card.querySelector(".role-card-suffix")?.value || "");
 
       if (ownerId) {
         ownerIds.push(String(ownerId));
-        ownerTargets[String(ownerId)] = { pathway: pathwayName, level: levelVal };
+        ownerTargets[String(ownerId)] = { pathway: pathwayName, level: levelVal, credential: suffixVal };
       }
 
       if (idx === 0) {
@@ -983,6 +1041,7 @@ function mountSpeechModeOwnerPicker({
 
   const picker = createModalOwnerPicker({
     initialOwnerId: logData.owner_id || null,
+    initialCredential: logData.credential || null,
     contacts: (window.allContacts && window.allContacts.length)
       ? window.allContacts
       : (logData.owners_data || []),
@@ -1639,6 +1698,9 @@ function buildSavePayload() {
   // the backend clears the assignment. (Owner is single per speech-mode log.)
   if (modalElements.ownerPicker) {
     payload.owner_id = modalElements.ownerPicker.getOwnerId() || null;
+    if (typeof modalElements.ownerPicker.getCredential === "function") {
+      payload.credential = modalElements.ownerPicker.getCredential() || null;
+    }
   }
 
   // Helper to read the level dropdown (shared across all session types that use pathwayGroup)
