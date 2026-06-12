@@ -296,3 +296,73 @@ def test_revoke_path_completion_resets_contact_path_to_working(app, default_club
         cp = ContactPath.query.filter_by(contact_id=contact.id, path_id=pathway.id).first()
         assert cp.status == 'working'
         assert cp.completed_date is None
+
+
+def test_multiple_in_progress_paths_credentials(app, default_club):
+    """Verify that credentials correctly show the highest completed level of each pathway when a member has multiple in-progress paths."""
+    from app.models import ContactPath, Contact, ContactClub, UserClub, Pathway
+    with app.app_context():
+        user = User.query.filter_by(member_no='M999').first()
+        if not user:
+            user = User(username='multipathuser', member_no='M999', email='mp@test.com')
+            user.set_password('pw')
+            db.session.add(user)
+            db.session.commit()
+            
+        # Create Contact
+        contact = Contact(Name='Multi Path User', Type='Member')
+        db.session.add(contact)
+        db.session.commit()
+        
+        # Link to club and user
+        cc = ContactClub(contact_id=contact.id, club_id=default_club.id)
+        uc = UserClub(user_id=user.id, contact_id=contact.id, club_id=default_club.id)
+        db.session.add_all([cc, uc])
+        db.session.commit()
+
+        # Create Pathways
+        p_pi = Pathway.query.filter_by(abbr='PI').first()
+        if not p_pi:
+            p_pi = Pathway(name="Persuasive Influence", abbr="PI", type="pathway", status="active")
+            db.session.add(p_pi)
+        p_pm = Pathway.query.filter_by(abbr='PM').first()
+        if not p_pm:
+            p_pm = Pathway(name="Presentation Mastery", abbr="PM", type="pathway", status="active")
+            db.session.add(p_pm)
+        db.session.commit()
+
+        # Register both paths as 'working'
+        cp1 = ContactPath(contact_id=contact.id, path_id=p_pi.id, status='working')
+        cp2 = ContactPath(contact_id=contact.id, path_id=p_pm.id, status='working')
+        db.session.add_all([cp1, cp2])
+        db.session.commit()
+
+        # Record level-completion achievements: PI level 3 and PM level 1
+        # Record PI achievements up to Level 3
+        for lvl in range(1, 4):
+            AchievementService.record_achievement(
+                user_id=user.id,
+                requestor_id=user.id,
+                achievement_type='level-completion',
+                award_date=date.today(),
+                path_name='Persuasive Influence',
+                level=lvl
+            )
+        # Record PM level 1 achievement
+        AchievementService.record_achievement(
+            user_id=user.id,
+            requestor_id=user.id,
+            achievement_type='level-completion',
+            award_date=date.today(),
+            path_name='Presentation Mastery',
+            level=1
+        )
+        db.session.commit()
+
+        # Explicitly run sync_contact_metadata
+        from app.utils import sync_contact_metadata
+        sync_contact_metadata(contact.id)
+
+        # Retrieve the updated contact and verify credentials
+        updated_contact = Contact.query.get(contact.id)
+        assert updated_contact.credentials == 'PI3, PM1'

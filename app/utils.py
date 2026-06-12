@@ -502,17 +502,38 @@ def recalculate_contact_metadata(contact, avatar_url=None, dtm_override=None):
             working.is_default = True
             contact._Current_Path = working.pathway.name
 
-    # Priority A: Check for Level Progress in Current Path
-    if contact.Current_Path:
-        level_achievements = [
-            a for a in achievements 
-            if a.achievement_type == 'level-completion' and a.path_name == contact.Current_Path and a.level
-        ]
-        if level_achievements:
-            max_level = max(a.level for a in level_achievements)
-            pathway = Pathway.query.filter_by(name=contact.Current_Path).first()
-            if pathway and pathway.abbr:
-                new_credentials = f"{pathway.abbr}{max_level}"
+    # Priority A: Check for Level Progress in in-progress (working) paths.
+    # If the contact is registered in multiple working paths, check achievements for each.
+    working_paths = [cp for cp in contact.registered_paths if cp.status == 'working']
+    
+    if len(working_paths) > 1:
+        working_creds = []
+        for cp in working_paths:
+            path_name = cp.pathway.name
+            path_abbr = cp.pathway.abbr
+            level_achievements = [
+                a for a in achievements 
+                if a.achievement_type == 'level-completion' and a.path_name == path_name and a.level
+            ]
+            if level_achievements:
+                max_level = max(a.level for a in level_achievements)
+                if path_abbr:
+                    working_creds.append((path_abbr, max_level))
+        if working_creds:
+            # Sort alphabetically by abbreviation to keep the credentials list deterministic
+            working_creds.sort(key=lambda x: x[0])
+            new_credentials = ", ".join(f"{abbr}{level}" for abbr, level in working_creds)
+    else:
+        if contact.Current_Path:
+            level_achievements = [
+                a for a in achievements 
+                if a.achievement_type == 'level-completion' and a.path_name == contact.Current_Path and a.level
+            ]
+            if level_achievements:
+                max_level = max(a.level for a in level_achievements)
+                pathway = Pathway.query.filter_by(name=contact.Current_Path).first()
+                if pathway and pathway.abbr:
+                    new_credentials = f"{pathway.abbr}{max_level}"
 
     # Priority B: Fallback to Most Recently Completed Path (XX5)
     # This ensures that even without progress in a current path, the user shows their last completion.
