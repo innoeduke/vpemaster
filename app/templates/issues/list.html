@@ -12,10 +12,11 @@
         background: #fff; padding: 10px 15px; border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         margin-bottom: 20px; align-items: end;
+        box-sizing: border-box; width: 100%; max-width: 100%;
     }
     .issue-filters .form-group { margin-bottom: 0; min-width: 130px; flex: 1 1 auto; max-width: 180px; }
     .issue-filters .form-group .custom-select-label { margin-bottom: 4px; }
-    .issue-filters .filter-actions { margin-left: auto; display: flex; gap: 8px; align-items: end; }
+    .issue-filters .filter-actions { margin-left: auto; display: flex; gap: 8px; align-items: end; flex-shrink: 0; }
     .issue-filters .custom-select-label { font-family: Arial, sans-serif; font-weight: 600; font-size: 0.8em; color: #555; text-transform: uppercase; letter-spacing: 0.03em; }
     .issue-filters .custom-select-trigger {
         font-family: 'Gotham', 'Montserrat', 'Inter', sans-serif;
@@ -337,8 +338,7 @@
         </div>
 
         <div class="form-group filter-actions">
-            <button type="submit" class="btn filter-action-btn"><i class="fas fa-filter"></i> {{ _('Filter') }}</button>
-            <a href="{{ url_for('issue_bp.list_issues') }}" class="btn filter-action-btn"><i class="fas fa-undo"></i> {{ _('Reset') }}</a>
+            <a href="{{ url_for('issue_bp.list_issues') }}" class="btn filter-action-btn" id="reset-btn"><i class="fas fa-undo"></i> {{ _('Reset') }}</a>
         </div>
     </form>
 
@@ -554,6 +554,34 @@ document.addEventListener("DOMContentLoaded", () => {
     pageSize: 10,
     storageKey: "issues_page"
   });
+
+  // Auto-submit form when any select changes, and show spinner on reset button
+  const filterForm = document.querySelector('.issue-filters');
+  if (filterForm) {
+    filterForm.querySelectorAll('select').forEach(select => {
+      select.addEventListener('change', () => {
+        const resetBtn = document.getElementById('reset-btn');
+        if (resetBtn) {
+          const icon = resetBtn.querySelector('i');
+          if (icon) {
+            icon.className = 'fas fa-spinner fa-spin';
+          }
+        }
+        filterForm.submit();
+      });
+    });
+  }
+
+  // Handle click on reset button (show loading spinner)
+  const resetBtn = document.getElementById('reset-btn');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', (e) => {
+      const icon = resetBtn.querySelector('i');
+      if (icon) {
+        icon.className = 'fas fa-spinner fa-spin';
+      }
+    });
+  }
 });
 </script>
 {% endblock %}
