@@ -134,6 +134,13 @@
 
 {% if is_own_profile or can_reset_password %}
 <div id="reset-password" class="tab-content" style="display: none;">
+  <style>
+    @media (min-width: 769px) {
+      #reset-password .field-label {
+        width: 170px;
+      }
+    }
+  </style>
   <h2 style="text-align: center; margin-top: 20px; margin-bottom: 20px">
     Reset Password
   </h2>
@@ -160,7 +167,7 @@
         </div>
       </div>
     </div>
-    <div class="form-actions" style="margin-top: 10px; display: flex; align-items: center; justify-content: flex-start; gap: 10px;">
+    <div class="form-actions" style="margin-top: 10px; display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
       {% if not is_own_profile and can_reset_password %}
       <button type="submit" name="admin_reset" value="true" class="btn btn-warning" formnovalidate onclick="return confirm('Are you sure you want to reset the password to \'toastmasters\'?');">
           Reset to "toastmasters"
