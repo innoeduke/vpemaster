@@ -8,17 +8,29 @@
 <style>
     .issue-list-page { padding: 20px 0; width: 100%; max-width: 1400px; margin: 0 auto; }
     .issue-filters {
-        display: flex; flex-wrap: wrap; gap: 15px;
-        background: #fff; padding: 15px; border-radius: 8px;
+        display: flex; flex-wrap: wrap; gap: 10px;
+        background: #fff; padding: 10px 15px; border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         margin-bottom: 20px; align-items: end;
     }
-    .issue-filters .form-group { margin-bottom: 0; min-width: 160px; flex: 0 0 auto; }
-    .issue-filters .form-group .custom-select-label { margin-bottom: 10px; }
-    .issue-filters .filter-actions { margin-left: auto; }
-    .issue-filters .custom-select-label { font-family: Arial, sans-serif; font-weight: 600; font-size: 0.95em; color: #333; }
-    .issue-filters .custom-select-trigger,
-    .issue-filters .autocomplete-result-item { font-family: 'Gotham', 'Montserrat', 'Inter', sans-serif; }
+    .issue-filters .form-group { margin-bottom: 0; min-width: 130px; flex: 1 1 auto; max-width: 180px; }
+    .issue-filters .form-group .custom-select-label { margin-bottom: 4px; }
+    .issue-filters .filter-actions { margin-left: auto; display: flex; gap: 8px; align-items: end; }
+    .issue-filters .custom-select-label { font-family: Arial, sans-serif; font-weight: 600; font-size: 0.8em; color: #555; text-transform: uppercase; letter-spacing: 0.03em; }
+    .issue-filters .custom-select-trigger {
+        font-family: 'Gotham', 'Montserrat', 'Inter', sans-serif;
+        padding: 5px 10px;
+        min-height: 30px;
+        height: 30px;
+        font-size: 0.82em;
+        border-radius: 6px;
+        box-sizing: border-box;
+    }
+    .issue-filters .autocomplete-result-item {
+        font-family: 'Gotham', 'Montserrat', 'Inter', sans-serif;
+        font-size: 0.85em;
+        padding: 6px 10px;
+    }
     .issue-table {
         width: 100%;
         table-layout: auto;
@@ -82,6 +94,16 @@
         border: 1px solid #772432;
         font-weight: 600;
         box-shadow: none;
+        padding: 4px 12px;
+        min-height: 30px;
+        height: 30px;
+        font-size: 0.82em;
+        border-radius: 6px;
+        line-height: 1.4;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
     }
     .issue-list-page .filter-action-btn:hover {
         background: #e5e7eb;
@@ -212,6 +234,7 @@
         .issue-table td.cell-priority { margin-right: 6px; }
 
         /* Metadata: stacked lines with a small label */
+        .issue-table td.cell-club,
         .issue-table td.cell-submitter,
         .issue-table td.cell-assignee,
         .issue-table td.cell-date {
@@ -219,6 +242,7 @@
             color: #555;
             display: block;
         }
+        .issue-table td.cell-club::before      { content: "{{ _('Club:') }} "; color: #999; }
         .issue-table td.cell-submitter::before { content: "{{ _('From:') }} "; color: #999; }
         .issue-table td.cell-assignee::before  { content: "{{ _('To:') }} "; color: #999; }
         .issue-table td.cell-created::before   { content: "{{ _('Created:') }} "; color: #999; }
@@ -232,13 +256,15 @@
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
         <h1 style="margin-bottom: 0;"><i class="fas fa-tasks"></i> {{ _('Issues') }}</h1>
+        {% if not is_super_club %}
         <button type="button" class="btn btn-primary" onclick="openNewIssueModal()">
             <i class="fas fa-plus"></i> {{ _('New Issue') }}
         </button>
+        {% endif %}
     </div>
 
     <form method="GET" class="issue-filters">
-        {% if is_sysadmin and clubs %}
+        {% if (is_sysadmin or is_super_club) and clubs %}
         {% set club_options = [] %}
         {% for c in clubs %}
             {% set _ = club_options.append({'value': c.id, 'text': c.club_name}) %}
@@ -316,9 +342,12 @@
         </div>
     </form>
 
-    <table class="issue-table">
+    <table class="issue-table" id="issuesTable">
         <colgroup>
             <col class="col-id">
+            {% if is_super_club %}
+            <col class="col-club" style="width: 120px;">
+            {% endif %}
             <col class="col-title">
             <col class="col-type">
             <col class="col-priority">
@@ -328,40 +357,203 @@
             <col class="col-date">
             <col class="col-date">
         </colgroup>
+        {% set col_idx = 0 %}
         <thead>
             <tr>
-                <th>#</th>
-                <th>{{ _('Title') }}</th>
-                <th>{{ _('Type') }}</th>
-                <th>{{ _('Priority') }}</th>
-                <th>{{ _('Status') }}</th>
-                <th>{{ _('Submitter') }}</th>
-                <th>{{ _('Assignee') }}</th>
-                <th>{{ _('Created') }}</th>
-                <th>{{ _('Updated') }}</th>
+                <th class="sortable col-id" data-column-index="{{ col_idx }}" data-sort-dir="asc" data-sort-type="text">#</th>
+                {% set col_idx = col_idx + 1 %}
+                
+                {% if is_super_club %}
+                <th class="sortable col-club" data-column-index="{{ col_idx }}">{{ _('Club') }}</th>
+                {% set col_idx = col_idx + 1 %}
+                {% endif %}
+                
+                <th class="sortable col-title" data-column-index="{{ col_idx }}">{{ _('Title') }}</th>
+                {% set col_idx = col_idx + 1 %}
+                
+                <th class="sortable col-type" data-column-index="{{ col_idx }}">{{ _('Type') }}</th>
+                {% set col_idx = col_idx + 1 %}
+                
+                <th class="sortable col-priority" data-column-index="{{ col_idx }}">{{ _('Priority') }}</th>
+                {% set col_idx = col_idx + 1 %}
+                
+                <th class="sortable col-status" data-column-index="{{ col_idx }}">{{ _('Status') }}</th>
+                {% set col_idx = col_idx + 1 %}
+                
+                <th class="sortable col-submitter" data-column-index="{{ col_idx }}">{{ _('Submitter') }}</th>
+                {% set col_idx = col_idx + 1 %}
+                
+                <th class="sortable col-assignee" data-column-index="{{ col_idx }}">{{ _('Assignee') }}</th>
+                {% set col_idx = col_idx + 1 %}
+                
+                <th class="sortable col-created" data-column-index="{{ col_idx }}">{{ _('Created') }}</th>
+                {% set col_idx = col_idx + 1 %}
+                
+                <th class="sortable col-updated" data-column-index="{{ col_idx }}">{{ _('Updated') }}</th>
+                {% set col_idx = col_idx + 1 %}
             </tr>
         </thead>
         <tbody>
             {% for issue in issues %}
             <tr>
-                <td class="cell-id muted" data-label="#">#{{ issue.id }}</td>
-                <td class="cell-title title-cell" data-label="{{ _('Title') }}">
+                <td class="cell-id muted" data-label="#" data-sort="{{ '%09d' % issue.id }}">#{{ issue.id }}</td>
+                
+                {% if is_super_club %}
+                <td class="cell-club" data-label="{{ _('Club') }}" data-sort="{{ issue.club.short_name or issue.club.club_name if issue.club else '' }}">{{ issue.club.short_name or issue.club.club_name if issue.club else '—' }}</td>
+                {% endif %}
+                
+                <td class="cell-title title-cell" data-label="{{ _('Title') }}" data-sort="{{ issue.title }}">
                     <a href="{{ url_for('issue_bp.detail_issue', issue_id=issue.id) }}">{{ issue.title }}</a>
                 </td>
-                <td class="cell-type" data-label="{{ _('Type') }}"><span class="issue-badge badge-type-{{ issue.type }}">{{ issue.type }}</span></td>
-                <td class="cell-priority" data-label="{{ _('Priority') }}"><span class="issue-badge badge-prio-{{ issue.priority }}">{{ issue.priority }}</span></td>
-                <td class="cell-status" data-label="{{ _('Status') }}"><span class="issue-badge badge-status-{{ issue.status }}">{{ issue.status.replace('_', ' ') }}</span></td>
-                <td class="cell-submitter" data-label="{{ _('Submitter') }}">{{ issue.submitter.display_name if issue.submitter else '—' }}</td>
-                <td class="cell-assignee" data-label="{{ _('Assignee') }}">{{ issue.assignee.display_name if issue.assignee else '—' }}</td>
-                <td class="cell-date cell-created muted" data-label="{{ _('Created') }}">{{ issue.created_at.strftime('%Y-%m-%d') if issue.created_at else '—' }}</td>
-                <td class="cell-date cell-updated muted" data-label="{{ _('Updated') }}">{{ issue.updated_at.strftime('%Y-%m-%d') if issue.updated_at else '—' }}</td>
+                <td class="cell-type" data-label="{{ _('Type') }}" data-sort="{{ issue.type }}"><span class="issue-badge badge-type-{{ issue.type }}">{{ issue.type }}</span></td>
+                <td class="cell-priority" data-label="{{ _('Priority') }}" data-sort="{{ issue.priority }}"><span class="issue-badge badge-prio-{{ issue.priority }}">{{ issue.priority }}</span></td>
+                <td class="cell-status" data-label="{{ _('Status') }}" data-sort="{{ issue.status }}"><span class="issue-badge badge-status-{{ issue.status }}">{{ issue.status.replace('_', ' ') }}</span></td>
+                <td class="cell-submitter" data-label="{{ _('Submitter') }}" data-sort="{{ issue.submitter.display_name if issue.submitter else '' }}">{{ issue.submitter.display_name if issue.submitter else '—' }}</td>
+                <td class="cell-assignee" data-label="{{ _('Assignee') }}" data-sort="{{ issue.assignee.display_name if issue.assignee else '' }}">{{ issue.assignee.display_name if issue.assignee else '—' }}</td>
+                <td class="cell-date cell-created muted" data-label="{{ _('Created') }}" data-sort="{{ issue.created_at.isoformat() if issue.created_at else '' }}">{{ issue.created_at.strftime('%Y-%m-%d') if issue.created_at else '—' }}</td>
+                <td class="cell-date cell-updated muted" data-label="{{ _('Updated') }}" data-sort="{{ issue.updated_at.isoformat() if issue.updated_at else '' }}">{{ issue.updated_at.strftime('%Y-%m-%d') if issue.updated_at else '—' }}</td>
             </tr>
             {% else %}
             <tr class="empty-row">
-                <td colspan="9">{{ _('No issues found.') }} <a href="#" onclick="openNewIssueModal(); return false;">{{ _('Create the first one.') }}</a></td>
+                <td colspan="{{ 10 if is_super_club else 9 }}">{{ _('No issues found.') }} <a href="#" onclick="openNewIssueModal(); return false;">{{ _('Create the first one.') }}</a></td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+
+    <!-- Pagination Controls -->
+    <div class="pagination-container" id="issue-pagination" style="margin-top: 20px;">
+        <div class="pagination-info" id="issue-pagination-info">{{ _('Showing 0 - 0 of 0 issues') }}</div>
+        <div class="pagination-controls"></div>
+        <div class="pagination-size">
+            <label>{{ _('Show:') }}</label>
+            <select class="page-size-select">
+                <option value="10" selected>10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+class TablePaginator {
+  constructor(config) {
+    this.tableId = config.tableId;
+    this.containerId = config.containerId;
+    this.pageSize = config.pageSize || 10;
+    this.currentPage = 1;
+    this.storageKey = config.storageKey;
+
+    this.table = document.getElementById(this.tableId);
+    this.container = document.getElementById(this.containerId);
+
+    if (!this.table || !this.container) return;
+
+    this.tbody = this.table.querySelector('tbody');
+    this.infoDisplay = this.container.querySelector('.pagination-info');
+    this.pageSizeSelect = this.container.querySelector('.page-size-select');
+
+    this.init();
+  }
+
+  init() {
+    // Load saved page size
+    if (this.storageKey) {
+      const savedSize = localStorage.getItem(`${this.storageKey}_page_size`);
+      if (savedSize) {
+        this.pageSize = parseInt(savedSize, 10);
+        if (this.pageSizeSelect) this.pageSizeSelect.value = this.pageSize;
+      }
+    }
+
+    // Event listeners
+    if (this.pageSizeSelect) {
+      this.pageSizeSelect.addEventListener('change', (e) => {
+        this.pageSize = parseInt(e.target.value, 10);
+        this.currentPage = 1;
+        if (this.storageKey) {
+          localStorage.setItem(`${this.storageKey}_page_size`, this.pageSize);
+        }
+        this.update();
+      });
+    }
+
+    this.update();
+  }
+
+  goToPage(page) {
+    const totalPages = this.getTotalPages();
+    this.currentPage = Math.max(1, Math.min(page, totalPages));
+    this.update();
+  }
+
+  getFilteredRows() {
+    return Array.from(this.tbody.rows).filter(row => !row.classList.contains('empty-row'));
+  }
+
+  getTotalPages() {
+    const rows = this.getFilteredRows();
+    return Math.ceil(rows.length / this.pageSize) || 1;
+  }
+
+  update() {
+    const rows = Array.from(this.tbody.rows);
+    const filteredRows = this.getFilteredRows();
+    const totalPages = this.getTotalPages();
+
+    if (this.currentPage > totalPages) this.currentPage = totalPages;
+    if (this.currentPage < 1) this.currentPage = 1;
+
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+
+    const visibleRows = new Set(filteredRows.slice(startIndex, endIndex));
+
+    rows.forEach((row) => {
+      if (row.classList.contains('empty-row')) {
+        row.style.display = filteredRows.length === 0 ? "" : "none";
+      } else {
+        row.style.display = visibleRows.has(row) ? "" : "none";
+      }
+    });
+
+    const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+    const totalForInfo = filteredRows.length;
+    if (this.infoDisplay) {
+      if (totalForInfo === 0) {
+        this.infoDisplay.textContent = isChinese ? '没有找到记录' : 'No records found';
+      } else {
+        this.infoDisplay.textContent = isChinese
+          ? `显示第 ${startIndex + 1} - ${Math.min(endIndex, totalForInfo)} 条记录，共 ${totalForInfo} 条`
+          : `Showing ${startIndex + 1} - ${Math.min(endIndex, totalForInfo)} of ${totalForInfo}`;
+      }
+    }
+
+    const controlsContainer = this.container.querySelector('.pagination-controls');
+    if (controlsContainer && typeof window.renderNumberedPagination === 'function') {
+      window.renderNumberedPagination(controlsContainer, this.currentPage, totalPages, (page) => this.goToPage(page));
+    }
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  // Initialize sorting
+  if (typeof setupTableSorting === "function") {
+    setupTableSorting("issuesTable");
+  }
+
+  // Initialize pagination
+  window.activePaginators = window.activePaginators || {};
+  window.activePaginators["issues-list"] = new TablePaginator({
+    tableId: "issuesTable",
+    containerId: "issue-pagination",
+    pageSize: 10,
+    storageKey: "issues_page"
+  });
+});
+</script>
 {% endblock %}

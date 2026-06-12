@@ -12,6 +12,7 @@ from .auth.utils import club_permission_required
 from .club_context import (
     authorized_club_required, filter_by_club, get_current_club_id,
 )
+from .constants import GLOBAL_CLUB_ID
 from .models import Club, Issue, IssueComment, User, UserClub
 from .system_messaging import send_system_message
 
@@ -26,7 +27,8 @@ DESCRIPTION_MAX = 10000
 def _get_issue_or_404(issue_id):
     club_id = get_current_club_id()
     query = Issue.query.filter_by(id=issue_id)
-    if club_id:
+    is_sysadmin = current_user.is_authenticated and current_user.is_sysadmin
+    if club_id and not (is_sysadmin and club_id == GLOBAL_CLUB_ID):
         query = query.filter_by(club_id=club_id)
     return query.first_or_404()
 
@@ -49,10 +51,17 @@ def list_issues():
 
     is_sysadmin = current_user.is_authenticated and current_user.is_sysadmin
     selected_club_id = request.args.get('club_id', type=int)
-    if is_sysadmin and selected_club_id:
-        query = query.filter(Issue.club_id == selected_club_id)
+    current_club_id = get_current_club_id()
+    is_super_club = is_sysadmin and current_club_id == GLOBAL_CLUB_ID
+
+    if is_super_club:
+        if selected_club_id:
+            query = query.filter(Issue.club_id == selected_club_id)
     else:
-        query = filter_by_club(query, Issue)
+        if is_sysadmin and selected_club_id:
+            query = query.filter(Issue.club_id == selected_club_id)
+        else:
+            query = filter_by_club(query, Issue)
 
     for field, value in filters.items():
         if value:
@@ -60,7 +69,7 @@ def list_issues():
     if assignee_id:
         query = query.filter(Issue.assignee_id == assignee_id)
 
-    issues = query.order_by(Issue.created_at.desc()).all()
+    issues = query.order_by(Issue.id.asc()).all()
 
     assignable_users = _list_club_users(
         get_current_club_id() if not is_sysadmin or not selected_club_id else selected_club_id,
@@ -74,7 +83,8 @@ def list_issues():
         assignee_id=assignee_id,
         assignable_users=assignable_users,
         is_sysadmin=is_sysadmin,
-        clubs=Club.query.order_by(Club.club_name).all() if is_sysadmin else None,
+        is_super_club=is_super_club,
+        clubs=Club.query.order_by(Club.club_name).all() if (is_sysadmin or is_super_club) else None,
         selected_club_id=selected_club_id,
         Issue=Issue,
     )

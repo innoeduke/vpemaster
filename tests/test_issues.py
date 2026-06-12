@@ -325,6 +325,31 @@ class IssuesRouteTestCase(unittest.TestCase):
         db.session.refresh(issue)
         self.assertIsNone(issue.assignee_id)
 
+    def test_super_club_can_view_all_issues(self):
+        """Sysadmin in the super club context can view all issues across all clubs."""
+        sysadmin, _ = self.create_user("sysadmin", "ClubAdmin", self.club_a)
+
+        # Create issues in club_a and club_b
+        issue_a = self._make_issue(self.club_a, sysadmin, title="Club A Issue")
+
+        user_b, _ = self.create_user("user_b", "Member", self.club_b)
+        issue_b = self._make_issue(self.club_b, user_b, title="Club B Issue")
+
+        # 1. Log in normal member in club_a -> can only see issue_a
+        member, _ = self.create_user("member", "Member", self.club_a)
+        self.login("member", self.club_a)
+        res = self.client.get('/issues/')
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("Club A Issue", res.get_data(as_text=True))
+        self.assertNotIn("Club B Issue", res.get_data(as_text=True))
+
+        # 2. Log in sysadmin in the super club context (club_a is ID 1) -> can see both
+        self.login("sysadmin", self.club_a)
+        res = self.client.get('/issues/')
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("Club A Issue", res.get_data(as_text=True))
+        self.assertIn("Club B Issue", res.get_data(as_text=True))
+
 
 if __name__ == '__main__':
     unittest.main()
