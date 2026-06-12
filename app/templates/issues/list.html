@@ -28,8 +28,8 @@
         font-weight: 600;
         box-shadow: none;
         padding: 4px 12px;
-        min-height: 30px;
-        height: 30px;
+        min-height: 30px !important;
+        height: 30px !important;
         font-size: 0.82em;
         border-radius: 6px;
         line-height: 1.4;
@@ -72,6 +72,14 @@
         background: rgba(119, 36, 50, 0.12);
     }
 
+    /* Maroon New Issue button in Tracker sidebar */
+    .msg-sidebar .msg-compose-btn {
+        background-color: #772432 !important;
+    }
+    .msg-sidebar .msg-compose-btn:hover {
+        background-color: #5f1c28 !important;
+    }
+
     /* Custom tweaks for filters inside the new header layout */
     .msg-header .issue-filters {
         display: flex;
@@ -95,12 +103,18 @@
     }
     .msg-header .issue-filters .custom-select-trigger {
         font-family: 'Inter', sans-serif;
-        padding: 4px 10px;
-        min-height: 30px;
-        height: 30px;
-        font-size: 0.82em;
+        padding: 4px 10px !important;
+        min-height: 30px !important;
+        height: 30px !important;
+        font-size: 0.82em !important;
         border-radius: 6px;
         box-sizing: border-box;
+        display: flex !important;
+        align-items: center !important;
+        line-height: 1.2 !important;
+    }
+    .msg-header .issue-filters .custom-select-trigger .selected-text {
+        font-size: inherit !important;
     }
 
     /* Grid layout for list container */
@@ -109,6 +123,7 @@
         grid-template-columns: repeat(2, minmax(0, 1fr)); /* Force equal 1:1 columns */
         gap: 1.25rem;
         align-content: start;
+        overflow-y: hidden !important; /* Do not allow scrolling and pagination to exist together */
     }
     
     /* Issue Card Optimized Layout (3:1 Aspect Ratio) */
@@ -274,6 +289,11 @@
         .msg-header .issue-filters .form-group {
             max-width: none;
         }
+        .msg-header .issue-filters .custom-select-trigger {
+            height: 30px !important;
+            min-height: 30px !important;
+            padding: 4px 10px !important;
+        }
         .msg-header .issue-filters #reset-btn {
             grid-column: span 2;
             width: 100%;
@@ -321,7 +341,7 @@
     <!-- Main Content -->
     <div class="msg-main">
         <div class="msg-header">
-            <h2 class="msg-header-title">
+            <h2 class="msg-header-title" style="margin-right: auto;">
                 {% if filters.get('status') == 'open' %}
                     {{ _('Open Issues') }}
                 {% elif filters.get('status') == 'in_progress' %}
@@ -337,6 +357,8 @@
             <form method="GET" class="issue-filters" id="issue-filter-form">
                 <!-- Preserve status in hidden input so changing other dropdowns maintains current status tab -->
                 <input type="hidden" name="status" value="{{ filters.get('status') or '' }}">
+
+
 
                 {% if (is_sysadmin or is_super_club) and clubs %}
                 {% set club_options = [] %}
@@ -479,17 +501,239 @@ class TablePaginator {
     if (!this.table) return;
 
     this.init();
+
+    // Recalculate page size dynamically on resize
+    window.addEventListener('resize', () => {
+      const oldSize = this.pageSize;
+      this.updatePageSize();
+      if (oldSize !== this.pageSize) {
+        this.update();
+      }
+    });
   }
 
   init() {
-    // Load saved page size
-    if (this.storageKey) {
-      const savedSize = localStorage.getItem(`${this.storageKey}_page_size`);
-      if (savedSize) {
-        this.pageSize = parseInt(savedSize, 10);
-      }
-    }
+    this.updatePageSize();
     this.update();
+  }
+
+  updatePageSize() {
+    if (!this.table) return;
+    const style = window.getComputedStyle(this.table);
+    const paddingLeft = parseFloat(style.paddingLeft) || 0;
+    const paddingRight = parseFloat(style.paddingRight) || 0;
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+    
+    let parent = this.table;
+    let contentHeight = 0;
+    while (parent) {
+      if (parent.clientHeight > 0 && window.getComputedStyle(parent).overflowY !== 'visible') {
+        const pStyle = window.getComputedStyle(parent);
+        const pTop = parseFloat(pStyle.paddingTop) || 0;
+        const pBottom = parseFloat(pStyle.paddingBottom) || 0;
+        contentHeight = parent.clientHeight - pTop - pBottom;
+        break;
+      }
+      parent = parent.parentElement;
+    }
+    if (contentHeight <= 0) {
+      contentHeight = window.innerHeight - 300;
+    }
+
+    let rowHeight = 45;
+    const tbody = this.table.querySelector('tbody');
+    const tempRow = tbody ? tbody.querySelector('tr:not(.empty-row)') : this.table.querySelector('tr:not(.empty-row)');
+    if (tempRow) {
+      const originalDisplay = tempRow.style.display;
+      tempRow.style.setProperty('display', '', 'important');
+      rowHeight = tempRow.offsetHeight || 45;
+      tempRow.style.setProperty('display', originalDisplay);
+    }
+    const rowsCount = Math.floor(contentHeight / rowHeight);
+    this.pageSize = Math.max(1, rowsCount);
+  }
+
+  goToPage(page) {
+    const totalPages = this.getTotalPages();
+    this.currentPage = Math.max(1, Math.min(page, totalPages));
+    this.update();
+  }
+
+  getFilteredRows() {
+    const tbody = this.table.querySelector('tbody') || this.table;
+    return Array.from(tbody.querySelectorAll('tr')).filter(row => !row.classList.contains('empty-row'));
+  }
+
+  getTotalPages() {
+    const rows = this.getFilteredRows();
+    return Math.ceil(rows.length / this.pageSize) || 1;
+  }
+
+  update() {
+    const rows = this.getFilteredRows();
+    const totalPages = this.getTotalPages();
+
+    if (this.currentPage > totalPages) this.currentPage = totalPages;
+    if (this.currentPage < 1) this.currentPage = 1;
+
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+
+    const visibleRows = new Set(rows.slice(startIndex, endIndex));
+
+    rows.forEach((row) => {
+      row.style.setProperty('display', visibleRows.has(row) ? '' : 'none', 'important');
+    });
+
+    const emptyState = this.table.querySelector('.empty-row');
+    if (emptyState) {
+      emptyState.style.setProperty('display', rows.length === 0 ? '' : 'none', 'important');
+    }
+
+    if (this.container) {
+      const displayPages = Math.max(1, totalPages);
+      const displayCurrentPage = this.currentPage || 1;
+      
+      let html = '';
+      
+      // Previous button
+      const prevDisabled = displayCurrentPage === 1 ? 'disabled' : '';
+      html += `
+          <button class="msg-pagination-btn" ${prevDisabled} data-page="${displayCurrentPage - 1}" title="Previous Page">
+              <i class="fas fa-chevron-left"></i> Prev
+          </button>
+      `;
+      
+      const maxVisible = 5;
+      let startPage = Math.max(1, displayCurrentPage - Math.floor(maxVisible / 2));
+      let endPage = Math.min(displayPages, startPage + maxVisible - 1);
+      
+      if (endPage - startPage + 1 < maxVisible) {
+          startPage = Math.max(1, endPage - maxVisible + 1);
+      }
+      
+      if (startPage > 1) {
+          html += `<button class="msg-pagination-btn" data-page="1">1</button>`;
+          if (startPage > 2) {
+              html += `<span class="msg-pagination-info">...</span>`;
+          }
+      }
+      
+      for (let p = startPage; p <= endPage; p++) {
+          html += `
+              <button class="msg-pagination-btn ${p === displayCurrentPage ? 'active' : ''}" data-page="${p}">
+                  ${p}
+              </button>
+          `;
+      }
+      
+      if (endPage < displayPages) {
+          if (endPage < displayPages - 1) {
+              html += `<span class="msg-pagination-info">...</span>`;
+          }
+          html += `<button class="msg-pagination-btn" data-page="${displayPages}">${displayPages}</button>`;
+      }
+      
+      // Next button
+      const nextDisabled = displayCurrentPage === displayPages ? 'disabled' : '';
+      html += `
+          <button class="msg-pagination-btn" ${nextDisabled} data-page="${displayCurrentPage + 1}" title="Next Page">
+              Next <i class="fas fa-chevron-right"></i>
+          </button>
+      `;
+      
+      this.container.innerHTML = html;
+      
+      // Attach click events
+      this.container.querySelectorAll('.msg-pagination-btn:not([disabled])').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const page = parseInt(btn.getAttribute('data-page'), 10);
+          this.goToPage(page);
+        });
+      });
+    }
+  }
+}
+
+class GridPaginator {
+  constructor(config) {
+    this.tableId = config.tableId;
+    this.containerId = config.containerId;
+    this.pageSize = config.pageSize || 10;
+    this.currentPage = 1;
+    this.storageKey = config.storageKey;
+
+    this.table = document.getElementById(this.tableId);
+    this.container = document.getElementById(this.containerId);
+
+    if (!this.table) return;
+
+    this.init();
+
+    // Recalculate page size dynamically on resize
+    window.addEventListener('resize', () => {
+      const oldSize = this.pageSize;
+      this.updatePageSize();
+      if (oldSize !== this.pageSize) {
+        this.update();
+      }
+    });
+  }
+
+  init() {
+    this.updatePageSize();
+    this.update();
+  }
+
+  updatePageSize() {
+    if (!this.table) return;
+    const style = window.getComputedStyle(this.table);
+    const paddingLeft = parseFloat(style.paddingLeft) || 0;
+    const paddingRight = parseFloat(style.paddingRight) || 0;
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+    
+    let parent = this.table;
+    let contentHeight = 0;
+    while (parent) {
+      if (parent.clientHeight > 0 && window.getComputedStyle(parent).overflowY !== 'visible') {
+        const pStyle = window.getComputedStyle(parent);
+        const pTop = parseFloat(pStyle.paddingTop) || 0;
+        const pBottom = parseFloat(pStyle.paddingBottom) || 0;
+        contentHeight = parent.clientHeight - pTop - pBottom;
+        break;
+      }
+      parent = parent.parentElement;
+    }
+    if (contentHeight <= 0) {
+      contentHeight = window.innerHeight - 300;
+    }
+
+    const contentWidth = (parent || this.table).clientWidth - paddingLeft - paddingRight;
+    const gap = parseFloat(style.rowGap || style.gap) || 20;
+
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+      // On mobile, grid is 1 column. Card has aspect-ratio: auto.
+      // Measure a card height if visible, or default to 150px.
+      let cardHeight = 150;
+      const tempCard = this.table.querySelector('.msg-item');
+      if (tempCard) {
+        const originalDisplay = tempCard.style.display;
+        tempCard.style.setProperty('display', 'flex', 'important');
+        cardHeight = tempCard.offsetHeight || 150;
+        tempCard.style.setProperty('display', originalDisplay);
+      }
+      const rowsCount = Math.floor((contentHeight + gap) / (cardHeight + gap));
+      this.pageSize = Math.max(1, rowsCount);
+    } else {
+      // On desktop, 2 columns, 3:1 aspect ratio
+      const colWidth = (contentWidth - gap) / 2;
+      const cardHeight = colWidth / 3;
+      const rowsCount = Math.floor((contentHeight + gap) / (cardHeight + gap));
+      this.pageSize = Math.max(1, rowsCount) * 2;
+    }
   }
 
   goToPage(page) {
@@ -596,10 +840,9 @@ class TablePaginator {
 document.addEventListener("DOMContentLoaded", () => {
   // Initialize pagination targeting the list container
   window.activePaginators = window.activePaginators || {};
-  window.activePaginators["issues-list"] = new TablePaginator({
+  window.activePaginators["issues-list"] = new GridPaginator({
     tableId: "issues-list-container",
     containerId: "issue-pagination",
-    pageSize: 10,
     storageKey: "issues_page"
   });
 
