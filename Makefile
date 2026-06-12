@@ -134,3 +134,10 @@ lint:
 format:
 	@echo "Formatting code..."
 	@black app/ tests/ --line-length=120
+
+# Deploy code
+pull:
+	git pull
+	@make install
+	@flask db upgrade
+	sudo systemctl restart vpemaster
