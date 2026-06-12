@@ -392,7 +392,7 @@ class User(UserMixin, db.Model):
         
         # Optimization: Check if batch-populated for the current club
         current_club_id = get_current_club_id()
-        if (not club_id or club_id == current_club_id) and getattr(self, '_current_contact', None):
+        if (not club_id or club_id == current_club_id) and hasattr(self, '_current_contact'):
             return self._current_contact
             
         if not club_id:
@@ -413,6 +413,8 @@ class User(UserMixin, db.Model):
     def home_club(self):
         """Get the user's home club. Guest-role UserClub rows are skipped —
         a guest visit does not make a club the user's home club."""
+        if hasattr(self, '_home_club'):
+            return self._home_club
         from .user_club import UserClub
         from .role import Role
         from sqlalchemy import or_

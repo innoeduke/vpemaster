@@ -301,6 +301,28 @@ def empty_trash():
     db.session.commit()
     return jsonify({'success': True, 'message': 'Trash emptied successfully'})
 
+def populate_home_clubs(users):
+    if not users:
+        return
+    user_ids = [u.id for u in users]
+    from app.models.user_club import UserClub
+    from app.models.role import Role
+    from sqlalchemy import or_
+    from sqlalchemy.orm import joinedload
+    
+    ucs = UserClub.query.filter(
+        UserClub.user_id.in_(user_ids),
+        UserClub.is_home == True
+    ).outerjoin(Role, UserClub.auth_role_id == Role.id)\
+     .filter(or_(UserClub.auth_role_id.is_(None), Role.name != 'Guest'))\
+     .options(joinedload(UserClub.club))\
+     .all()
+     
+    uc_map = {uc.user_id: uc.club for uc in ucs}
+    for u in users:
+        u._home_club = uc_map.get(u.id)
+
+
 @messages_bp.route('/api/messages/recipients')
 @login_required
 def get_recipients():
@@ -309,21 +331,53 @@ def get_recipients():
         import traceback
         query = request.args.get('q', '').strip()
         
-        # Base query: all users except current
-        base_query = User.query.filter(User.id != current_user.id)
+        from app.club_context import get_current_club_id, get_or_set_default_club
+        club_id = get_current_club_id() or get_or_set_default_club()
         
-        if query:
-            # Filter by username or contact name
-            # Join with contact to search names
-            pass
+        users = []
+        if club_id:
+            from app.models.user_club import UserClub
+            from app.models.contact import Contact
+            from sqlalchemy import or_
 
-        users = User.query.filter(User.id != current_user.id).all()
+            # Build query for users in the current club (excluding current user)
+            members_query = User.query.filter(User.id != current_user.id)\
+                .join(UserClub, (User.id == UserClub.user_id) & (UserClub.club_id == club_id))\
+                .outerjoin(Contact, UserClub.contact_id == Contact.id)
+            
+            if query:
+                query_like = f"%{query}%"
+                members_query = members_query.filter(
+                    or_(
+                        User.username.ilike(query_like),
+                        User._first_name.ilike(query_like),
+                        User._last_name.ilike(query_like),
+                        Contact.Name.ilike(query_like)
+                    )
+                )
+            
+            # Limit the query to at most 5 results to keep things extremely fast
+            users = members_query.limit(5).all()
+        
+        # Check if query is not empty and matches a user outside/inside the club exactly by username
+        if query:
+            exact_user = User.query.filter(
+                User.id != current_user.id,
+                User.username.ilike(query)
+            ).first()
+            
+            if exact_user and not any(u.id == exact_user.id for u in users):
+                users.append(exact_user)
+        
+        # Batch populate contacts and home clubs to avoid N+1 queries
+        if users:
+            User.populate_contacts(users, club_id)
+            populate_home_clubs(users)
         
         results = []
         for u in users:
             try:
                 display_name = u.display_name
-                username = u.username
                 
                 # Fetch Home Club for context
                 home_club_name = "No Club"
@@ -331,18 +385,12 @@ def get_recipients():
                 if home_club:
                     home_club_name = home_club.club_name
 
-                # Search name or username
-                search_name = display_name.lower()
-                search_username = username.lower()
-                query_str = query.lower()
-                
-                if not query or query_str in search_name or query_str in search_username:
-                    results.append({
-                        'id': u.id, 
-                        'name': display_name, 
-                        'email': u.email, 
-                        'home_club': home_club_name
-                    })
+                results.append({
+                    'id': u.id, 
+                    'name': display_name, 
+                    'email': u.email, 
+                    'home_club': home_club_name
+                })
             except Exception as inner_e:
                 print(f"Skipping user {u.id} due to error: {inner_e}")
                 continue

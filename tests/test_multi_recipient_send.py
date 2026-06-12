@@ -322,6 +322,49 @@ class MultiRecipientSendTestCase(unittest.TestCase):
         self.assertEqual(data_p2['pages'], 2)
         self.assertEqual(data_p2['current_page'], 2)
 
+    def test_recipient_autocomplete_scoping_and_fallback(self):
+        """Test autocomplete recipient logic context scoping and exact username fallback."""
+        # 1. Create a second club and a user in it
+        other_club = Club(club_name="Other Club", club_no="222222")
+        db.session.add(other_club)
+        db.session.commit()
+        
+        # User in the same club as alice (current club)
+        # recv1 (bob), recv2 (carol), recv3 (dave) are already in self.club
+        
+        # Create an external user (eve) who is only in other_club
+        external_user, _ = self._make_user("eve", other_club, self.role_member)
+        
+        # 2. Login as alice (sender)
+        self.login(self.sender, self.club)
+        
+        # 3. Search with a query matching current club member (bob)
+        # Should return bob
+        res_bob = self.client.get('/api/messages/recipients?q=bo')
+        self.assertEqual(res_bob.status_code, 200)
+        data_bob = res_bob.get_json()
+        self.assertTrue(any(u['name'] == 'bob' for u in data_bob))
+        
+        # 4. Search with a query matching external user (eve) but NOT exact username (e.g. substring 'ev')
+        # Should NOT return eve
+        res_eve_sub = self.client.get('/api/messages/recipients?q=ev')
+        self.assertEqual(res_eve_sub.status_code, 200)
+        data_eve_sub = res_eve_sub.get_json()
+        self.assertFalse(any(u['name'] == 'eve' for u in data_eve_sub))
+        
+        # 5. Search with exact username for external user ('eve')
+        # Should return eve
+        res_eve_exact = self.client.get('/api/messages/recipients?q=eve')
+        self.assertEqual(res_eve_exact.status_code, 200)
+        data_eve_exact = res_eve_exact.get_json()
+        self.assertTrue(any(u['name'] == 'eve' for u in data_eve_exact))
+        
+        # 6. Verify current user (alice) is never in the results
+        res_self = self.client.get('/api/messages/recipients?q=alice')
+        self.assertEqual(res_self.status_code, 200)
+        data_self = res_self.get_json()
+        self.assertFalse(any(u['name'] == 'alice' for u in data_self))
+
 
 if __name__ == '__main__':
 
