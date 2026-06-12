@@ -157,6 +157,8 @@ function showDetail(id) {
     const homeProposalMatch = msg.body.match(/\[HOME_CLUB_PROPOSAL:(\d+):(\d+)\]/);
     // Handle User Join Requests (User requesting Admin)
     const joinRequestMatch = msg.body.match(/\[JOIN_REQUEST:(\d+):(\d+)\]/);
+    // Handle Issue links
+    const issueLinkMatch = msg.body.match(/\[ISSUE_LINK:(\d+):([^\]]+)\]/);
     // Handle responded state (post-action marker)
     const respondedMatch = msg.body.match(/\[Responded:\s*(JOIN|REJECT|APPROVE|ACCEPT)(?::\s*([^\]]+))?\]/i);
 
@@ -172,6 +174,9 @@ function showDetail(id) {
     }
     if (joinRequestMatch) {
         displayBody = displayBody.replace(joinRequestMatch[0], '');
+    }
+    if (issueLinkMatch) {
+        displayBody = displayBody.replace(issueLinkMatch[0], '');
     }
     if (respondedMatch) {
         displayBody = displayBody.replace(respondedMatch[0], '');
@@ -315,6 +320,26 @@ function showDetail(id) {
         `;
         bodyEl.insertAdjacentHTML('beforeend', actionsHtml);
     }
+
+    if (issueLinkMatch) {
+         const issueId = issueLinkMatch[1];
+         const issueUrl = escapeHtml(issueLinkMatch[2]);
+         const actionsHtml = `
+            <div class="message-actions join-request-card join-request-card--primary">
+                <div class="join-request-header">
+                    <span class="join-request-icon"><i class="fas fa-tasks"></i></span>
+                    <h3 class="join-request-title">Issue Assignment</h3>
+                </div>
+                <div class="join-request-actions">
+                    <a href="${issueUrl}" class="btn btn-join btn-join-accept" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-external-link-alt" style="margin-right: 5px;"></i> View Issue #${issueId}
+                    </a>
+                </div>
+            </div>
+        `;
+        bodyEl.insertAdjacentHTML('beforeend', actionsHtml);
+    }
+
     const replyBtn = document.getElementById('detail-reply-btn');
     const restoreBtn = document.getElementById('detail-restore-btn');
     const deleteBtn = document.getElementById('detail-delete-btn');

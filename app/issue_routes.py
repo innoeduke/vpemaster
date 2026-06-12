@@ -195,7 +195,7 @@ def update_issue(issue_id):
             (
                 f'You have been assigned to issue #{issue.id} ({issue.type}, {issue.priority} priority).\n\n'
                 f'{issue.description}\n\n'
-                f'View: {url_for("issue_bp.detail_issue", issue_id=issue.id, _external=True)}'
+                f'[ISSUE_LINK:{issue.id}:{url_for("issue_bp.detail_issue", issue_id=issue.id, _external=True)}]'
             ),
         )
 
