@@ -1476,9 +1476,15 @@ def _generate_logs_from_template(meeting, template_file):
                     type_id = session_type.id
             
             # --- Resolve Session Title ---
-            session_title_for_log = title_val or type_val
-            if not title_val and session_type:
+            if title_val:
+                session_title_for_log = title_val
+            elif session_type:
+                if session_type.Title == 'Evaluation':
+                    session_title_for_log = None
+                else:
                     session_title_for_log = session_type.Title
+            else:
+                session_title_for_log = type_val
 
             # --- Resolve Durations ---
             def local_safe_int(v):

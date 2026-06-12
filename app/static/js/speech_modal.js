@@ -13,6 +13,9 @@ const modalElements = {
   sessionType: document.getElementById("edit-session-type-title"),
   speechTitle: document.getElementById("edit-speech-title"),
   speechTitleLabel: document.querySelector('#edit-speech-title-label'),
+  evaluationTitleContainer: document.getElementById("evaluation-title-container"),
+  evaluationSpeakerSelect: document.getElementById("evaluation-speaker-select"),
+  evaluationCustomTitle: document.getElementById("evaluation-custom-title"),
   sessionOwner: document.getElementById("edit-session-owner"),
   credential: document.getElementById("edit-credential"),
   mediaUrl: document.getElementById("edit-speech-media-url"),
@@ -1084,7 +1087,19 @@ function mountSpeechModeOwnerPicker({
       // saved record reflects the unassigned state.
       if (!newContact) {
         modalElements.credential.value = "";
-        modalElements.speechTitle.value = modalElements.sessionType.value || "";
+        if (modalElements.sessionType.value === "Evaluation") {
+          if (modalElements.evaluationSpeakerSelect) {
+            modalElements.evaluationSpeakerSelect.value = "";
+          }
+          if (modalElements.evaluationCustomTitle) {
+            modalElements.evaluationCustomTitle.value = "";
+            modalElements.evaluationCustomTitle.disabled = true;
+            modalElements.evaluationCustomTitle.required = false;
+            modalElements.evaluationCustomTitle.placeholder = "";
+          }
+        } else {
+          modalElements.speechTitle.value = modalElements.sessionType.value || "";
+        }
       }
     },
     placeholder: logData.owner_id ? "Change owner..." : "Add owner...",
@@ -1096,18 +1111,6 @@ function mountSpeechModeOwnerPicker({
 }
 
 function resetModal(logData, sessionType) {
-  // Restore original text input if it was previously replaced by a select
-  if (modalElements.speechTitle && modalElements.speechTitle.tagName === "SELECT") {
-    const input = document.createElement("input");
-    input.type = "text";
-    input.id = "edit-speech-title";
-    input.name = "speech_title";
-    input.required = true;
-    input.placeholder = "";
-    modalElements.speechTitle.replaceWith(input);
-    modalElements.speechTitle = input;
-  }
-
   toggleGeneric(false);
   modalElements.form.reset();
   modalElements.logId.value = logData.id;
@@ -1119,6 +1122,22 @@ function resetModal(logData, sessionType) {
   modalElements.mediaUrl.value = logData.Media_URL || "";
   modalElements.speechTitle.disabled = false;
   modalElements.credential.disabled = false;
+
+  if (modalElements.evaluationTitleContainer) {
+    modalElements.evaluationTitleContainer.style.display = "none";
+    modalElements.evaluationSpeakerSelect.innerHTML = '<option value="">-- Select Speaker --</option>';
+    modalElements.evaluationSpeakerSelect.onchange = null;
+    modalElements.evaluationSpeakerSelect.required = false;
+    modalElements.evaluationCustomTitle.value = "";
+    modalElements.evaluationCustomTitle.disabled = true;
+    modalElements.evaluationCustomTitle.required = false;
+    modalElements.evaluationCustomTitle.placeholder = "";
+  }
+  if (modalElements.speechTitle) {
+    modalElements.speechTitle.style.display = "block";
+    modalElements.speechTitle.required = true;
+  }
+
   // Populate duration fields
   if (modalElements.durationMin) {
     modalElements.durationMin.value = (logData.Duration_Min != null && logData.Duration_Min !== "") ? logData.Duration_Min : "";
@@ -1271,49 +1290,89 @@ const SpeechModalSetupManager = {
       modalElements.speechTitleLabel.textContent = speechTitleLabelText;
     }
 
-    // Restore original text input if it was previously replaced by a select
-    if (modalElements.speechTitle.tagName === "SELECT") {
-      const input = document.createElement("input");
-      input.type = "text";
-      input.id = "edit-speech-title";
-      input.name = "speech_title";
-      input.required = true;
-      input.placeholder = "";
-      modalElements.speechTitle.replaceWith(input);
-      modalElements.speechTitle = input;
-    }
+    if (sessionType === "Evaluation") {
+      if (modalElements.speechTitle) {
+        modalElements.speechTitle.style.display = "none";
+        modalElements.speechTitle.required = false;
+      }
+      if (modalElements.evaluationTitleContainer) {
+        modalElements.evaluationTitleContainer.style.display = "flex";
+      }
+      if (modalElements.evaluationSpeakerSelect) {
+        modalElements.evaluationSpeakerSelect.innerHTML = "";
+        modalElements.evaluationSpeakerSelect.required = true;
 
-    // Evaluation: replace disabled text input with a select dropdown of
-    // available speakers so the user can change the evaluation target.
-    if (sessionType === "Evaluation" && logData.available_speakers && logData.available_speakers.length > 0) {
-      const select = document.createElement("select");
-      select.id = "edit-speech-title";
-      select.name = "speech_title";
-      select.required = true;
-      // Match the modal's input styling
-      select.style.cssText = "width:100%;padding:10px 12px;border:1px solid #cbd5e0;border-radius:8px;background:#fff;font-size:14px;font-family:Inter,sans-serif;color:#1e293b;box-sizing:border-box;";
+        const emptyOpt = document.createElement("option");
+        emptyOpt.value = "";
+        emptyOpt.textContent = "-- Select Speaker --";
+        modalElements.evaluationSpeakerSelect.appendChild(emptyOpt);
 
-      const emptyOpt = document.createElement("option");
-      emptyOpt.value = "";
-      emptyOpt.textContent = "-- Select Speaker --";
-      select.appendChild(emptyOpt);
+        const speakers = logData.available_speakers || [];
+        speakers.forEach(name => {
+          const opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name;
+          modalElements.evaluationSpeakerSelect.appendChild(opt);
+        });
 
-      const currentTitle = logData.Session_Title || "";
-      logData.available_speakers.forEach(name => {
-        const opt = document.createElement("option");
-        opt.value = name;
-        opt.textContent = name;
-        if (name === currentTitle) opt.selected = true;
-        select.appendChild(opt);
-      });
+        const othersOpt = document.createElement("option");
+        othersOpt.value = "Others";
+        othersOpt.textContent = "Others";
+        modalElements.evaluationSpeakerSelect.appendChild(othersOpt);
 
-      modalElements.speechTitle.replaceWith(select);
-      modalElements.speechTitle = select;
+        const currentTitle = logData.Session_Title || "";
+        const isSpeaker = speakers.includes(currentTitle);
+
+        if (isSpeaker) {
+          modalElements.evaluationSpeakerSelect.value = currentTitle;
+          if (modalElements.evaluationCustomTitle) modalElements.evaluationCustomTitle.value = "";
+        } else if (currentTitle !== "") {
+          modalElements.evaluationSpeakerSelect.value = "Others";
+          if (modalElements.evaluationCustomTitle) modalElements.evaluationCustomTitle.value = currentTitle;
+        } else {
+          modalElements.evaluationSpeakerSelect.value = "";
+          if (modalElements.evaluationCustomTitle) modalElements.evaluationCustomTitle.value = "";
+        }
+
+        const syncEvaluationTitleInputs = () => {
+          const selectVal = modalElements.evaluationSpeakerSelect.value;
+          if (selectVal === "Others") {
+            if (modalElements.evaluationCustomTitle) {
+              modalElements.evaluationCustomTitle.disabled = false;
+              modalElements.evaluationCustomTitle.required = true;
+              modalElements.evaluationCustomTitle.placeholder = "Enter person or session to evaluate";
+            }
+          } else {
+            if (modalElements.evaluationCustomTitle) {
+              modalElements.evaluationCustomTitle.disabled = true;
+              modalElements.evaluationCustomTitle.required = false;
+              modalElements.evaluationCustomTitle.placeholder = "";
+              modalElements.evaluationCustomTitle.value = "";
+            }
+          }
+        };
+
+        modalElements.evaluationSpeakerSelect.onchange = syncEvaluationTitleInputs;
+        syncEvaluationTitleInputs();
+      }
     } else {
-      modalElements.speechTitle.disabled =
-        sessionType === "Evaluation" || sessionType === "Individual Evaluator";
+      if (modalElements.speechTitle) {
+        modalElements.speechTitle.style.display = "block";
+        modalElements.speechTitle.required = true;
+        modalElements.speechTitle.disabled = sessionType === "Individual Evaluator";
+      }
+      if (modalElements.evaluationTitleContainer) {
+        modalElements.evaluationTitleContainer.style.display = "none";
+      }
+      if (modalElements.evaluationSpeakerSelect) {
+        modalElements.evaluationSpeakerSelect.onchange = null;
+        modalElements.evaluationSpeakerSelect.required = false;
+      }
     }
-    modalElements.speechTitle.placeholder = SpeechModalSetupManager.getTitlePlaceholder(sessionType);
+
+    if (modalElements.speechTitle) {
+      modalElements.speechTitle.placeholder = SpeechModalSetupManager.getTitlePlaceholder(sessionType);
+    }
 
     // Mount owner picker in place of the static owner name
     mountSpeechModeOwnerPicker({
@@ -1385,7 +1444,38 @@ const SpeechModalSetupManager = {
       if (!isChecked) {
         modalElements.projectSelectDropdown.value = "";
         if (sessionType === "Evaluation" || sessionType === "Individual Evaluator") {
-          modalElements.speechTitle.value = logData.Session_Title || "";
+          if (sessionType === "Evaluation") {
+            const speakers = logData.available_speakers || [];
+            const currentTitle = logData.Session_Title || "";
+            const isSpeaker = speakers.includes(currentTitle);
+            if (modalElements.evaluationSpeakerSelect) {
+              if (isSpeaker) {
+                modalElements.evaluationSpeakerSelect.value = currentTitle;
+                if (modalElements.evaluationCustomTitle) modalElements.evaluationCustomTitle.value = "";
+              } else if (currentTitle !== "") {
+                modalElements.evaluationSpeakerSelect.value = "Others";
+                if (modalElements.evaluationCustomTitle) modalElements.evaluationCustomTitle.value = currentTitle;
+              } else {
+                modalElements.evaluationSpeakerSelect.value = "";
+                if (modalElements.evaluationCustomTitle) modalElements.evaluationCustomTitle.value = "";
+              }
+              const selectVal = modalElements.evaluationSpeakerSelect.value;
+              if (modalElements.evaluationCustomTitle) {
+                if (selectVal === "Others") {
+                  modalElements.evaluationCustomTitle.disabled = false;
+                  modalElements.evaluationCustomTitle.required = true;
+                  modalElements.evaluationCustomTitle.placeholder = "Enter person or session to evaluate";
+                } else {
+                  modalElements.evaluationCustomTitle.disabled = true;
+                  modalElements.evaluationCustomTitle.required = false;
+                  modalElements.evaluationCustomTitle.placeholder = "";
+                  modalElements.evaluationCustomTitle.value = "";
+                }
+              }
+            }
+          } else {
+            modalElements.speechTitle.value = logData.Session_Title || "";
+          }
         }
       } else {
         if (projectsList.length === 1) {
@@ -1683,11 +1773,24 @@ function buildSavePayload() {
     projectSelectDropdown,
     pathwaySelectDropdown,
   } = modalElements;
+
+  let sessionTitleVal = speechTitle.value || "";
+  if (sessionType.value === "Evaluation") {
+    if (modalElements.evaluationSpeakerSelect) {
+      const selectVal = modalElements.evaluationSpeakerSelect.value;
+      if (selectVal === "Others") {
+        sessionTitleVal = modalElements.evaluationCustomTitle ? modalElements.evaluationCustomTitle.value || "" : "";
+      } else {
+        sessionTitleVal = selectVal || "";
+      }
+    }
+  }
+
   const payload = {
     session_type_title: sessionType.value,
     media_url: mediaUrl.value || null,
     credential: credential.value || null,
-    session_title: speechTitle.value || "",
+    session_title: sessionTitleVal,
     duration_min: modalElements.durationMin && modalElements.durationMin.value !== "" ? parseInt(modalElements.durationMin.value, 10) : null,
     duration_max: modalElements.durationMax && modalElements.durationMax.value !== "" ? parseInt(modalElements.durationMax.value, 10) : null,
   };

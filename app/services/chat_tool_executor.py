@@ -2011,7 +2011,9 @@ class ChatToolExecutor:
 
         project_id = _safe_int(params.get('project_id'))
         pathway_val = (params.get('pathway') or '').strip() or None
-        session_title = params.get('session_title') or st_title
+        session_title = params.get('session_title')
+        if not session_title and st_title.strip().lower() != 'evaluation':
+            session_title = st_title
 
         # The agenda UI has a hard-coded rule for session_type='Evaluation':
         # it auto-prepends 'Evaluator for ' to Session_Title. If the LLM
@@ -2019,17 +2021,22 @@ class ChatToolExecutor:
         # title ends up duplicated ('Evaluator for Evaluation for X'). Strip
         # the common prefixes so the stored title is always just the
         # speaker's name / speech title.
-        if st_title.strip().lower() == 'evaluation' and session_title:
-            import re as _re
-            # Match: "Evaluator for X" / "Evaluation for X" / "Evaluation of X" /
-            #        "Evaluation: X" / "Evaluation - X" (case-insensitive)
-            match = _re.match(
-                r'^\s*(?:evaluator|evaluation)\s*(?:for|of)\s+(.+)$'
-                r'|^\s*evaluation\s*[:\-]\s*(.+)$',
-                session_title, _re.IGNORECASE,
-            )
-            if match:
-                session_title = (match.group(1) or match.group(2)).strip()
+        if st_title.strip().lower() == 'evaluation':
+            if session_title:
+                import re as _re
+                # Match: "Evaluator for X" / "Evaluation for X" / "Evaluation of X" /
+                #        "Evaluation: X" / "Evaluation - X" (case-insensitive)
+                match = _re.match(
+                    r'^\s*(?:evaluator|evaluation)\s*(?:for|of)\s+(.+)$'
+                    r'|^\s*evaluation\s*[:\-]\s*(.+)$',
+                    session_title, _re.IGNORECASE,
+                )
+                if match:
+                    session_title = (match.group(1) or match.group(2)).strip()
+                elif session_title.strip().lower() == 'evaluation':
+                    session_title = None
+            else:
+                session_title = None
 
         is_hidden = bool(params.get('is_hidden', False))
 

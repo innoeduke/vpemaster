@@ -2131,15 +2131,23 @@ def get_speech_log_details(log_id):
 
     # For Evaluation / Individual Evaluator sessions, include the list of
     # available speakers in the meeting so the frontend can render a select.
+    # Only include speakers whose session is valid for project and has a project checked.
     if role_name in ("Evaluation", "Individual Evaluator") and meeting_id:
-        speaker_names = db.session.query(Contact.Name)\
-            .join(OwnerMeetingRoles, Contact.id == OwnerMeetingRoles.contact_id)\
-            .join(SessionType, OwnerMeetingRoles.role_id == SessionType.role_id)\
-            .filter(
-                OwnerMeetingRoles.meeting_id == meeting_id,
-                SessionType.Valid_for_Project == True
-            ).distinct().all()
-        log_data["available_speakers"] = [name[0] for name in speaker_names]
+        from app.models.project import ProjectID
+        speaker_logs = SessionLog.query.join(SessionType).filter(
+            SessionLog.meeting_id == meeting_id,
+            SessionType.Valid_for_Project == True,
+            SessionLog.Project_ID != None,
+            SessionLog.Project_ID != ProjectID.GENERIC
+        ).all()
+        
+        speaker_names = []
+        for sl in speaker_logs:
+            for owner in sl.owners:
+                if owner.Name not in speaker_names:
+                    speaker_names.append(owner.Name)
+                    
+        log_data["available_speakers"] = speaker_names
 
     return jsonify(success=True, log=log_data)
 

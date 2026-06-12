@@ -1779,19 +1779,21 @@ document.addEventListener("DOMContentLoaded", () => {
     // PRESERVE: If we have a current title and it's not a new manual row, keep it.
     let newTitle = currentTitle;
     if (sessionType && sessionType.Predefined) {
-      newTitle = sessionType.Title;
+      newTitle = sessionType.Title === "Evaluation" ? "" : sessionType.Title;
     }
 
     // --- Auto-Title Logic for Manually Added Rows ---
     if (row.dataset.isNewManually === "true" && !row.dataset.hasUserEditedTitle) {
       if (sessionType && sessionType.Title !== "Evaluation") {
         newTitle = sessionType.Title;
+      } else if (sessionType && sessionType.Title === "Evaluation") {
+        newTitle = "";
       }
     }
 
-    // Special case: If changing *to* Evaluation, keep the speaker name
+    // Special case: If changing *to* Evaluation, keep the speaker name (if it's not "Evaluation" or empty)
     if (sessionType && sessionType.Title === "Evaluation") {
-      newTitle = currentTitle;
+      newTitle = currentTitle === "Evaluation" ? "" : currentTitle;
     }
 
     titleCell.innerHTML = "";

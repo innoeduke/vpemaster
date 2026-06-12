@@ -493,6 +493,12 @@
               <!-- Title (first row) -->
               <div class="sem-field">
                 <label for="edit-speech-title" id="edit-speech-title-label">Title</label>
+                <div id="evaluation-title-container" style="display: none; gap: 12px; width: 100%;">
+                  <select id="evaluation-speaker-select" style="flex: 1; min-width: 0; padding: 10px 12px; font-size: 14px;">
+                    <option value="">-- Select Speaker --</option>
+                  </select>
+                  <input type="text" id="evaluation-custom-title" placeholder="" style="flex: 1; min-width: 0;" disabled />
+                </div>
                 <input type="text" id="edit-speech-title" name="speech_title" required placeholder="Enter title" />
               </div>
 
