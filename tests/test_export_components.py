@@ -783,13 +783,15 @@ class TestRosterComponent(unittest.TestCase):
     @patch('app.services.export.components.roster.orm')
     @patch('app.services.export.components.roster.Roster')
     def test_roster_render(self, mock_roster_model, mock_orm):
-        """Test roster rendering with ticket names."""
+        """Test roster rendering with ticket names, price, roles, and qty."""
         # Setup mock data for orm
         mock_orm.joinedload.return_value = Mock()
         
         # Setup mock data for Roster
         mock_entry = Mock()
         mock_entry.order_number = 1
+        mock_entry.quantity = 2
+        mock_entry.get_role_names.return_value = ["Speaker", "Timer"]
         
         mock_entry.contact = Mock()
         mock_entry.contact.Name = "John Doe"
@@ -797,13 +799,12 @@ class TestRosterComponent(unittest.TestCase):
         
         mock_entry.ticket = Mock()
         mock_entry.ticket.name = "Early Bird"
+        mock_entry.ticket.price = 20.0
         
         # Mock the query chain
-        # Roster.query.options(...).filter_by(...).order_by(...).all()
         mock_query = mock_roster_model.query
         mock_query.options.return_value = mock_query
         mock_query.filter_by.return_value = mock_query
-        mock_query.order_by.return_value = mock_query
         mock_query.all.return_value = [mock_entry]
         
         context = Mock()
@@ -813,15 +814,18 @@ class TestRosterComponent(unittest.TestCase):
         self.component.render(self.ws, context, 1)
         
         # Verify Headers
-        self.assertEqual(self.ws.cell(row=1, column=1).value, "Order")
-        self.assertEqual(self.ws.cell(row=1, column=2).value, "Name")
-        self.assertEqual(self.ws.cell(row=1, column=3).value, "Ticket")
+        self.assertEqual(self.ws.cell(row=1, column=1).value, "Name")
+        self.assertEqual(self.ws.cell(row=1, column=2).value, "Ticket")
+        self.assertEqual(self.ws.cell(row=1, column=3).value, "Ticket Price")
+        self.assertEqual(self.ws.cell(row=1, column=4).value, "Roles")
+        self.assertEqual(self.ws.cell(row=1, column=5).value, "Qty")
         
         # Verify Data
-        self.assertEqual(self.ws.cell(row=2, column=1).value, 1)
-        self.assertEqual(self.ws.cell(row=2, column=2).value, "John Doe")
-        # Should contain ONLY ticket name, not type
-        self.assertEqual(self.ws.cell(row=2, column=3).value, "Early Bird")
+        self.assertEqual(self.ws.cell(row=2, column=1).value, "John Doe")
+        self.assertEqual(self.ws.cell(row=2, column=2).value, "Early Bird")
+        self.assertEqual(self.ws.cell(row=2, column=3).value, 20.0)
+        self.assertEqual(self.ws.cell(row=2, column=4).value, "Speaker, Timer")
+        self.assertEqual(self.ws.cell(row=2, column=5).value, 2)
 
     @patch('app.services.export.components.roster.orm')
     @patch('app.services.export.components.roster.Roster')
@@ -832,13 +836,14 @@ class TestRosterComponent(unittest.TestCase):
         
         mock_entry = Mock()
         mock_entry.order_number = 2
+        mock_entry.quantity = 1
+        mock_entry.get_role_names.return_value = []
         mock_entry.contact.Name = "Jane Doe"
         mock_entry.ticket = None # No ticket
         
         mock_query = mock_roster_model.query
         mock_query.options.return_value = mock_query
         mock_query.filter_by.return_value = mock_query
-        mock_query.order_by.return_value = mock_query
         mock_query.all.return_value = [mock_entry]
         
         context = Mock()
@@ -846,7 +851,71 @@ class TestRosterComponent(unittest.TestCase):
         
         self.component.render(self.ws, context, 1)
         
+        self.assertEqual(self.ws.cell(row=2, column=1).value, "Jane Doe")
+        self.assertEqual(self.ws.cell(row=2, column=2).value, "")
         self.assertEqual(self.ws.cell(row=2, column=3).value, "")
+        self.assertEqual(self.ws.cell(row=2, column=4).value, "")
+        self.assertEqual(self.ws.cell(row=2, column=5).value, 1)
+
+    @patch('app.services.export.components.roster.orm')
+    @patch('app.services.export.components.roster.Roster')
+    def test_roster_render_grouping_sorting(self, mock_roster_model, mock_orm):
+        """Test grouping: Officers first, then Paid (order_number not null), then Unpaid (order_number null), sorted by name asc."""
+        mock_orm.joinedload.return_value = Mock()
+
+        # 1. Unpaid - Name: "Charlie"
+        entry_unpaid_charlie = Mock()
+        entry_unpaid_charlie.order_number = None
+        entry_unpaid_charlie.quantity = 1
+        entry_unpaid_charlie.get_role_names.return_value = []
+        entry_unpaid_charlie.contact.Name = "Charlie"
+        entry_unpaid_charlie.ticket.name = "Walk-in"
+        entry_unpaid_charlie.ticket.price = 50.0
+
+        # 2. Paid - Name: "Bob"
+        entry_paid_bob = Mock()
+        entry_paid_bob.order_number = 123
+        entry_paid_bob.quantity = 1
+        entry_paid_bob.get_role_names.return_value = []
+        entry_paid_bob.contact.Name = "Bob"
+        entry_paid_bob.ticket.name = "Member"
+        entry_paid_bob.ticket.price = 30.0
+
+        # 3. Officer - Name: "Zack"
+        entry_officer_zack = Mock()
+        entry_officer_zack.order_number = None
+        entry_officer_zack.quantity = 1
+        entry_officer_zack.get_role_names.return_value = []
+        entry_officer_zack.contact.Name = "Zack"
+        entry_officer_zack.ticket.name = "Officer"
+        entry_officer_zack.ticket.price = 0.0
+
+        # 4. Officer - Name: "Alice"
+        entry_officer_alice = Mock()
+        entry_officer_alice.order_number = None
+        entry_officer_alice.quantity = 1
+        entry_officer_alice.get_role_names.return_value = []
+        entry_officer_alice.contact.Name = "Alice"
+        entry_officer_alice.ticket.name = "Officer"
+        entry_officer_alice.ticket.price = 0.0
+
+        mock_query = mock_roster_model.query
+        mock_query.options.return_value = mock_query
+        mock_query.filter_by.return_value = mock_query
+        # Input out of order
+        mock_query.all.return_value = [entry_unpaid_charlie, entry_paid_bob, entry_officer_zack, entry_officer_alice]
+
+        context = Mock()
+        self.component.render(self.ws, context, 1)
+
+        # Expected sort order:
+        # Group 1 (Paid): Bob
+        # Group 2 (Unpaid): Charlie
+        # Group 3 (Officers): Alice, then Zack
+        self.assertEqual(self.ws.cell(row=2, column=1).value, "Bob") # Row 2 (headers is Row 1)
+        self.assertEqual(self.ws.cell(row=3, column=1).value, "Charlie")
+        self.assertEqual(self.ws.cell(row=4, column=1).value, "Alice")
+        self.assertEqual(self.ws.cell(row=5, column=1).value, "Zack")
 
 
 if __name__ == '__main__':

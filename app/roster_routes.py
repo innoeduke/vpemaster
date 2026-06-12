@@ -99,8 +99,13 @@ def roster():
                 .options(db.joinedload(Roster.roles), db.joinedload(Roster.ticket))\
                 .outerjoin(Contact, Roster.contact_id == Contact.id)\
                 .filter(Roster.meeting_id == selected_meeting_id)\
-                .order_by(Roster.order_number.asc())\
                 .all()
+                
+            def get_sort_key(entry):
+                name = entry.contact.Name if entry.contact else ""
+                return (entry.order_number is None, entry.order_number or 0, name.lower())
+                
+            roster_entries.sort(key=get_sort_key)
         
         # Roles map
         roles_map = RoleService.get_role_takers(selected_meeting_id, club_id)

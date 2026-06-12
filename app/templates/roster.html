@@ -130,7 +130,7 @@
             <table class="table table-striped" id="rosterTable">
                 <thead>
                     <tr>
-                        <th class="sortable header-order" data-column-index="0">#</th>
+                        <th class="sortable header-order" data-column-index="0" data-sort-dir="asc">{{ _('Ord#') }}</th>
                         <th class="sortable header-name" data-column-index="1">{{ _('Name') }}</th>
                         <th class="sortable header-ticket" data-column-index="2">{{ _('Ticket') }}</th>
                         <th class="header-roles desktop-only">{{ _('Roles') }}</th>
@@ -150,7 +150,9 @@
                     {% set _checkin_time = entry.checked_in_at.strftime('%H:%M') if _checked else '' %}
                     {% set _checkin_title = (_checkin_label ~ ' ' ~ _checkin_time ~ (' (' ~ _checkin_who ~ ')' if _checkin_who else '')) if _checked else _checkin_label %}
                     <tr data-entry-id="{{ entry.id }}" data-order="{{ entry.order_number }}"
-                        data-contact-id="{{ entry.contact_id or '' }}" data-ticket-id="{{ entry.ticket.id if entry.ticket else '' }}">
+                        data-contact-id="{{ entry.contact_id or '' }}" data-ticket-id="{{ entry.ticket.id if entry.ticket else '' }}"
+                        data-ticket-price="{{ entry.ticket.price if entry.ticket else '' }}"
+                        data-ticket-name="{{ entry.ticket.name if entry.ticket else '' }}">
                         <td class="cell-order">{{ entry.order_number if entry.order_number is not none else '' }}</td>
                         <td class="cell-name">
                             <button type="button"

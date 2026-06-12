@@ -814,14 +814,23 @@ function createPrintPage(titlePrefix, meetingNum, formattedDate, regionText, clu
   `;
 
   const logoDiv = document.createElement('div');
-  logoDiv.style = "width: 120px; text-align: right; flex-shrink: 0;";
   if (clubLogoUrl) {
+    logoDiv.style = "width: 120px; height: 80px; text-align: right; flex-shrink: 0; display: flex; align-items: center; justify-content: flex-end;";
     logoDiv.innerHTML = `<img src="${clubLogoUrl}" style="max-width: 100%; height: auto; max-height: 80px;" alt="Club Logo">`;
+  } else {
+    logoDiv.style = "width: 120px; text-align: right; flex-shrink: 0;";
   }
 
   headerDiv.appendChild(textDiv);
   headerDiv.appendChild(logoDiv);
   pageDiv.appendChild(headerDiv);
+
+  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+  const nameHeader = isChinese ? "姓名" : "Name";
+  const ticketHeader = isChinese ? "门票" : "Ticket";
+  const priceHeader = isChinese ? "票价" : "Ticket Price";
+  const rolesHeader = isChinese ? "角色" : "Roles";
+  const qtyHeader = isChinese ? "数量" : "Qty";
 
   // Page Table
   const table = document.createElement('table');
@@ -829,11 +838,11 @@ function createPrintPage(titlePrefix, meetingNum, formattedDate, regionText, clu
   table.innerHTML = `
     <thead>
         <tr>
-            <th style="width: 60px; white-space: nowrap;">#</th>
-            <th style="width: 200px;">Name</th>
-            <th style="width: 130px;">Ticket</th>
-            <th style="width: 160px;">Roles</th>
-            <th style="width: 50px; text-align: center; white-space: nowrap;">Qty</th>
+            <th style="width: 200px;">${nameHeader}</th>
+            <th style="width: 130px;">${ticketHeader}</th>
+            <th style="width: 100px;">${priceHeader}</th>
+            <th style="width: 230px;">${rolesHeader}</th>
+            <th style="width: 54px; text-align: center; white-space: nowrap;">${qtyHeader}</th>
         </tr>
     </thead>
     <tbody></tbody>
@@ -846,127 +855,237 @@ function createPrintPage(titlePrefix, meetingNum, formattedDate, regionText, clu
 }
 
 function populateExportPages() {
+  const modal = document.getElementById("roster-export-modal");
   const pagesContainer = document.getElementById("print-pages-container");
   const pageContainerPrimary = document.querySelector(".page-container");
-  if (!pagesContainer) return;
+  if (!pagesContainer || !modal) return;
 
-  // Clear existing pages
-  pagesContainer.innerHTML = '';
+  // Temporarily make modal rendered for offsetHeight measurements
+  const originalDisplay = modal.style.display;
+  const originalPosition = modal.style.position;
+  const originalLeft = modal.style.left;
+  const originalTop = modal.style.top;
+  const originalVisibility = modal.style.visibility;
 
-  // Get metadata for header
-  const meetingNum = pageContainerPrimary ? pageContainerPrimary.dataset.meetingNumber || "0" : "0";
-  const meetingDateOriginal = pageContainerPrimary ? pageContainerPrimary.dataset.meetingDate || "" : "";
-  const clubId = pageContainerPrimary ? pageContainerPrimary.dataset.clubId || "" : "";
-  const clubLogoUrl = pageContainerPrimary ? pageContainerPrimary.dataset.clubLogoUrl || "" : "";
-  const clubNo = pageContainerPrimary ? pageContainerPrimary.dataset.clubNo || "" : "";
-  const clubName = pageContainerPrimary ? pageContainerPrimary.dataset.clubName || "" : "";
-  const clubDistrict = pageContainerPrimary ? pageContainerPrimary.dataset.clubDistrict || "" : "";
-  const clubDivision = pageContainerPrimary ? pageContainerPrimary.dataset.clubDivision || "" : "";
-  const clubArea = pageContainerPrimary ? pageContainerPrimary.dataset.clubArea || "" : "";
-  let formattedDate = meetingDateOriginal;
-  if (meetingDateOriginal && meetingDateOriginal.length === 10) {
-    const parts = meetingDateOriginal.split('-');
-    if (parts.length === 3) {
-      const d = new Date(parts[0], parseInt(parts[1]) - 1, parts[2]);
-      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-      // Use &nbsp; for the date spaces to prevent html2canvas collapsing them
-      formattedDate = `${months[d.getMonth()]}&nbsp;${d.getDate()},&nbsp;${d.getFullYear()}`;
+  modal.style.display = "block";
+  modal.style.position = "absolute";
+  modal.style.left = "-9999px";
+  modal.style.top = "-9999px";
+  modal.style.visibility = "hidden";
+
+  try {
+    // Clear existing pages
+    pagesContainer.innerHTML = '';
+
+    // Get metadata for header
+    const meetingNum = pageContainerPrimary ? pageContainerPrimary.dataset.meetingNumber || "0" : "0";
+    const meetingDateOriginal = pageContainerPrimary ? pageContainerPrimary.dataset.meetingDate || "" : "";
+    const clubId = pageContainerPrimary ? pageContainerPrimary.dataset.clubId || "" : "";
+    const clubLogoUrl = pageContainerPrimary ? pageContainerPrimary.dataset.clubLogoUrl || "" : "";
+    const clubNo = pageContainerPrimary ? pageContainerPrimary.dataset.clubNo || "" : "";
+    const clubName = pageContainerPrimary ? pageContainerPrimary.dataset.clubName || "" : "";
+    const clubDistrict = pageContainerPrimary ? pageContainerPrimary.dataset.clubDistrict || "" : "";
+    const clubDivision = pageContainerPrimary ? pageContainerPrimary.dataset.clubDivision || "" : "";
+    const clubArea = pageContainerPrimary ? pageContainerPrimary.dataset.clubArea || "" : "";
+    const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+    let formattedDate = meetingDateOriginal;
+    if (meetingDateOriginal && meetingDateOriginal.length === 10) {
+      const parts = meetingDateOriginal.split('-');
+      if (parts.length === 3) {
+        const d = new Date(parts[0], parseInt(parts[1]) - 1, parts[2]);
+        if (isChinese) {
+          formattedDate = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+        } else {
+          const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+          // Use &nbsp; for the date spaces to prevent html2canvas collapsing them
+          formattedDate = `${months[d.getMonth()]}&nbsp;${d.getDate()},&nbsp;${d.getFullYear()}`;
+        }
+      }
     }
-  }
 
-  // Get all valid rows from the original table
-  const originalRows = document.querySelectorAll("#rosterTable tbody tr");
-  const officerRows = [];
-  const extractedRows = [];
+    // Get all valid rows from the original table
+    const originalRows = document.querySelectorAll("#rosterTable tbody tr");
+    const officerRows = [];
+    const paidRows = [];
+    const unpaidRows = [];
 
-  originalRows.forEach(row => {
-    // Check if it's the 15 empty rows placeholder
-    if (!row.dataset.entryId && !row.dataset.contactId && !row.querySelector('.roster-roles')) return;
+    originalRows.forEach(row => {
+      // Check if it's the 15 empty rows placeholder
+      if (!row.dataset.entryId && !row.dataset.contactId && !row.querySelector('.roster-roles')) return;
 
-    const orderCell = row.querySelector('.cell-order');
-    const nameCell = row.querySelector('.cell-name');
-    const ticketCell = row.querySelector('.cell-ticket');
-    const rolesCell = row.querySelector('.cell-roles');
-    const contactId = String(row.dataset.contactId || "");
+      // Filter out cancelled tickets
+      if (row.dataset.ticketName === "Cancelled") return;
 
-    // Create new row for print table
-    const tr = document.createElement("tr");
+      const nameCell = row.querySelector('.cell-name');
+      const ticketCell = row.querySelector('.cell-ticket');
+      const rolesCell = row.querySelector('.cell-roles');
 
-    // Column order: Order | Name | Ticket | Roles | Qty
+      // Create new row for print table
+      const tr = document.createElement("tr");
 
-    const tdOrder = document.createElement("td");
-    tdOrder.className = "print-cell-order";
-    tdOrder.innerHTML = orderCell ? orderCell.innerHTML : '';
-    tr.appendChild(tdOrder);
+      // Column order: Name | Ticket | Ticket Price | Roles | Qty
 
-    const tdName = document.createElement("td");
-    if (nameCell) {
-      // Strip the live check-in badge — it's a screen-only toggle for officers.
-      const nameClone = nameCell.cloneNode(true);
-      nameClone.querySelectorAll('.checkin-badge').forEach(el => el.remove());
-      tdName.innerHTML = nameClone.innerHTML;
+      const tdName = document.createElement("td");
+      if (nameCell) {
+        // Strip the live check-in badge — it's a screen-only toggle for officers.
+        const nameClone = nameCell.cloneNode(true);
+        nameClone.querySelectorAll('.checkin-badge').forEach(el => el.remove());
+        tdName.innerHTML = nameClone.innerHTML;
+      }
+      tr.appendChild(tdName);
+      tr._contactName = tdName.textContent.trim().toLowerCase();
+ 
+      const tdTicket = document.createElement("td");
+      tdTicket.innerHTML = ticketCell ? ticketCell.innerHTML : '';
+      tr.appendChild(tdTicket);
+ 
+      const tdPrice = document.createElement("td");
+      tdPrice.className = "print-cell-price";
+      const priceVal = row.dataset.ticketPrice;
+      tdPrice.innerHTML = (priceVal !== undefined && priceVal !== null && priceVal !== "") ? `¥${parseFloat(priceVal).toFixed(2)}` : "";
+      tr.appendChild(tdPrice);
+ 
+      const tdRoles = document.createElement("td");
+      tdRoles.innerHTML = rolesCell ? rolesCell.innerHTML : '';
+      tr.appendChild(tdRoles);
+ 
+      const tdQty = document.createElement("td");
+      tdQty.className = "print-cell-qty";
+      const qtyCell = row.querySelector('.cell-quantity');
+      tdQty.innerHTML = qtyCell ? qtyCell.innerHTML : '1';
+      tr.appendChild(tdQty);
+ 
+      // Grouping
+      const ticketType = ticketCell ? ticketCell.querySelector(".ticket-badge")?.dataset.type : "";
+      if (ticketType === "Officer") {
+        officerRows.push(tr);
+      } else {
+        const orderVal = row.dataset.order;
+        const isOrderNull = (orderVal === undefined || orderVal === null || orderVal === "" || orderVal === "None" || orderVal === "null");
+        if (!isOrderNull) {
+          paidRows.push(tr);
+        } else {
+          unpaidRows.push(tr);
+        }
+      }
+    });
+ 
+    // Sort groups alphabetically by name (case-insensitive) for exported roster
+    paidRows.sort((a, b) => a._contactName.localeCompare(b._contactName));
+    unpaidRows.sort((a, b) => a._contactName.localeCompare(b._contactName));
+    officerRows.sort((a, b) => a._contactName.localeCompare(b._contactName));
+ 
+    // Build region string for page header
+    const regionParts = [];
+    if (clubDistrict && clubDistrict !== 'None') regionParts.push(`D${clubDistrict}`);
+    if (clubDivision && clubDivision !== 'None') regionParts.push(`Div ${clubDivision}`);
+    if (clubArea && clubArea !== 'None') regionParts.push(`Area ${clubArea}`);
+    if (clubNo && clubNo !== 'None') regionParts.push(`Club ${clubNo}`);
+    if (clubName && clubName !== 'None') regionParts.push(clubName);
+    const regionText = regionParts.length > 0 ? regionParts.join(' / ') : '';
+
+    // Helper to pad page with empty rows until it fills the safely printable area
+    function padPageWithEmptyRows(pageDiv) {
+      const table = pageDiv.querySelector('table');
+      const tbody = table.querySelector('tbody');
+      const headerDiv = pageDiv.querySelector('.print-header');
+      const maxHeight = 1010;
+
+      while (true) {
+        const emptyTr = document.createElement('tr');
+        emptyTr.className = 'print-empty-row';
+        emptyTr.innerHTML = '<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>';
+        tbody.appendChild(emptyTr);
+
+        const currentHeight = headerDiv.offsetHeight + 20 + table.offsetHeight;
+        if (currentHeight > maxHeight) {
+          tbody.removeChild(emptyTr);
+          break;
+        }
+      }
     }
-    tr.appendChild(tdName);
 
-    const tdTicket = document.createElement("td");
-    tdTicket.innerHTML = ticketCell ? ticketCell.innerHTML : '';
-    tr.appendChild(tdTicket);
+    // Helper to paginate a list of rows under a specific group title
+    function paginateGroup(rows, groupHeaderTitle) {
+      if (rows.length === 0) {
+        const pageDiv = createPrintPage(
+          null, meetingNum, formattedDate, regionText, clubLogoUrl, [],
+          groupHeaderTitle
+        );
+        pagesContainer.appendChild(pageDiv);
+        padPageWithEmptyRows(pageDiv);
+        return;
+      }
 
-    const tdRoles = document.createElement("td");
-    tdRoles.innerHTML = rolesCell ? rolesCell.innerHTML : '';
-    tr.appendChild(tdRoles);
+      let pageDiv = createPrintPage(
+        null, meetingNum, formattedDate, regionText, clubLogoUrl, [],
+        groupHeaderTitle
+      );
+      pagesContainer.appendChild(pageDiv);
 
-    const qtyCell = row.querySelector('.cell-quantity');
-    const tdQty = document.createElement("td");
-    tdQty.className = "print-cell-qty";
-    tdQty.innerHTML = qtyCell ? qtyCell.innerHTML : '1';
-    tr.appendChild(tdQty);
+      let table = pageDiv.querySelector('table');
+      let tbody = table.querySelector('tbody');
+      let headerDiv = pageDiv.querySelector('.print-header');
 
-    // Officer-ticket-based detection: row goes to the Officers page
-    // when its ticket has data-type="Officer".
-    const ticketType = ticketCell ? ticketCell.querySelector(".ticket-badge")?.dataset.type : "";
-    if (ticketType === "Officer") {
-      officerRows.push(tr);
+      const maxHeight = 1010; // Target printable height limit inside print-page
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        tbody.appendChild(row);
+
+        // Measure current height
+        // Header height + margin-bottom (20px) + table height
+        const currentHeight = headerDiv.offsetHeight + 20 + table.offsetHeight;
+
+        if (currentHeight > maxHeight && tbody.children.length > 1) {
+          // Remove from current page
+          tbody.removeChild(row);
+
+          // Before moving to a new page, pad the current page with empty rows
+          padPageWithEmptyRows(pageDiv);
+
+          // Start a new page
+          pageDiv = createPrintPage(
+            null, meetingNum, formattedDate, regionText, clubLogoUrl, [],
+            groupHeaderTitle
+          );
+          pagesContainer.appendChild(pageDiv);
+
+          // Get elements of the new page
+          table = pageDiv.querySelector('table');
+          tbody = table.querySelector('tbody');
+          headerDiv = pageDiv.querySelector('.print-header');
+
+          // Append to new page
+          tbody.appendChild(row);
+        }
+      }
+
+      // Pad the final page of this group with empty rows
+      padPageWithEmptyRows(pageDiv);
+    }
+
+    // Populate pages for each group (Paid Roster first, then Unpaid Roster, then Officers last)
+    if (officerRows.length === 0 && paidRows.length === 0 && unpaidRows.length === 0) {
+      paginateGroup([], isChinese ? "会议花名册" : "Meeting Roster");
     } else {
-      extractedRows.push(tr);
+      if (paidRows.length > 0) {
+        paginateGroup(paidRows, isChinese ? "已付费名单" : "Paid Roster");
+      }
+      if (unpaidRows.length > 0) {
+        paginateGroup(unpaidRows, isChinese ? "未付费名单" : "Unpaid Roster");
+      }
+      if (officerRows.length > 0) {
+        paginateGroup(officerRows, isChinese ? "官员" : "Officers");
+      }
     }
-  });
-
-  // Build region string for page header
-  const regionParts = [];
-  if (clubDistrict && clubDistrict !== 'None') regionParts.push(`D${clubDistrict}`);
-  if (clubDivision && clubDivision !== 'None') regionParts.push(`Div ${clubDivision}`);
-  if (clubArea && clubArea !== 'None') regionParts.push(`Area ${clubArea}`);
-  if (clubNo && clubNo !== 'None') regionParts.push(`Club ${clubNo}`);
-  if (clubName && clubName !== 'None') regionParts.push(clubName);
-  const regionText = regionParts.length > 0 ? regionParts.join(' / ') : '';
-
-  // Paginate rows into multiple A4 DOM containers
-  // A4 at 96 DPI: 794×1123px, content area 714×1043px
-  // Header ~60px + thead ~38px + bottom margin ~30px = ~128px overhead
-  // Available for rows: 1043 - 128 = 915px
-  // Row height ~35-45px with role tags, using 15 rows for comfortable fit
-  const rowsPerPage = 15;
-  const numPages = Math.ceil(extractedRows.length / rowsPerPage) || 1; // At least 1 empty page
-
-  for (let i = 0; i < numPages; i++) {
-    const startIdx = i * rowsPerPage;
-    const endIdx = Math.min(startIdx + rowsPerPage, extractedRows.length);
-    const pageRows = extractedRows.slice(startIdx, endIdx);
-    const pageDiv = createPrintPage(
-      null, meetingNum, formattedDate, regionText, clubLogoUrl, pageRows,
-      "Meeting&nbsp;Roster"
-    );
-    pagesContainer.appendChild(pageDiv);
-  }
-
-  // Officers go on a separate page at the end
-  if (officerRows.length > 0) {
-    const officerPage = createPrintPage(
-      "Officers", meetingNum, formattedDate, regionText, clubLogoUrl, officerRows,
-      "Officers"
-    );
-    pagesContainer.appendChild(officerPage);
+  } finally {
+    // Restore original modal styling
+    modal.style.display = originalDisplay;
+    modal.style.position = originalPosition;
+    modal.style.left = originalLeft;
+    modal.style.top = originalTop;
+    modal.style.visibility = originalVisibility;
   }
 }
 
