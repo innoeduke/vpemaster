@@ -22,14 +22,37 @@
       <img src="{{ url_for('static', filename='images/logo.webp') }}" alt="Memory Maker Logo" class="login-logo" />
       <h2>我的头马旅程</h2>
       <h1>Memory Maker</h1>
-      {% with messages = get_flashed_messages(with_categories=true) %} {% if
-      messages %}
-      <div class="alert-container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="flash-messages">
         {% for category, message in messages %}
-        <div class="alert alert-{{ category }}">{{ message }}</div>
+        <div class="flash {{ category }}">
+          {% if category == 'success' %}
+          <i class="fas fa-check-circle"></i>
+          {% elif category in ['error', 'danger'] %}
+          <i class="fas fa-exclamation-circle"></i>
+          {% else %}
+          <i class="fas fa-info-circle"></i>
+          {% endif %}
+          <span>{{ message }}</span>
+          <span class="close-flash" onclick="this.parentElement.remove();">&times;</span>
+        </div>
         {% endfor %}
       </div>
-      {% endif %} {% endwith %}
+      <script>
+        document.addEventListener('DOMContentLoaded', () => {
+          const flashes = document.querySelectorAll('.flash-messages .flash');
+          flashes.forEach(flash => {
+            setTimeout(() => {
+              flash.style.opacity = '0';
+              flash.style.transform = 'translateY(20px)';
+              flash.addEventListener('transitionend', () => flash.remove());
+            }, 3000);
+          });
+        });
+      </script>
+      {% endif %}
+      {% endwith %}
       <form action="{{ url_for('auth_bp.login') }}{% if request.args.get('next') %}?next={{ request.args.get('next') }}{% endif %}" method="post" class="login-form">
         <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
         <div>

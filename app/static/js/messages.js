@@ -777,29 +777,9 @@ function respondToUserJoinRequest(messageId, action) {
 function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
-    toast.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        padding: 12px 24px;
-        background: ${type === 'success' ? '#48bb78' : (type === 'error' ? '#f56565' : '#4299e1')};
-        color: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        z-index: 9999;
-        font-weight: 500;
-        opacity: 0;
-        transform: translateY(20px);
-        transition: opacity 0.3s, transform 0.3s;
-    `;
-    toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : (type === 'error' ? 'exclamation-circle' : 'info-circle')}"></i> ${message}`;
+    toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : (type === 'error' ? 'exclamation-circle' : 'info-circle')}"></i> <span>${message}</span>`;
     
     document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.style.opacity = '1';
-        toast.style.transform = 'translateY(0)';
-    }, 10);
     
     setTimeout(() => {
         toast.style.opacity = '0';

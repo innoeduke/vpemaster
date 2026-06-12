@@ -528,12 +528,31 @@
           {% for category, message in messages %}
           {% if category != 'duplicate_warning' %}
           <div class="flash {{ category }}">
-            {{ message }}
+            {% if category == 'success' %}
+            <i class="fas fa-check-circle"></i>
+            {% elif category in ['error', 'danger'] %}
+            <i class="fas fa-exclamation-circle"></i>
+            {% else %}
+            <i class="fas fa-info-circle"></i>
+            {% endif %}
+            <span>{{ message }}</span>
             <span class="close-flash" onclick="this.parentElement.remove();">&times;</span>
           </div>
           {% endif %}
           {% endfor %}
         </div>
+        <script>
+          document.addEventListener('DOMContentLoaded', () => {
+            const flashes = document.querySelectorAll('.flash-messages .flash');
+            flashes.forEach(flash => {
+              setTimeout(() => {
+                flash.style.opacity = '0';
+                flash.style.transform = 'translateY(20px)';
+                flash.addEventListener('transitionend', () => flash.remove());
+              }, 3000);
+            });
+          });
+        </script>
         {% endif %}
         {% endwith %}
         {% endblock %}
