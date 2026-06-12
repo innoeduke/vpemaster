@@ -106,7 +106,7 @@
     /* Grid layout for list container */
     #issues-list-container {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr)); /* Force equal 1:1 columns */
         gap: 1.25rem;
         align-content: start;
     }
@@ -122,6 +122,7 @@
         color: inherit;
         display: flex;
         flex-direction: column;
+        min-width: 0; /* Prevents overflow from breaking grid columns */
     }
     
     .msg-item.issue-card-row .msg-content {
@@ -134,9 +135,11 @@
     }
     
     .issue-title-area {
-        display: inline-flex;
-        align-items: center;
-        max-width: 80%;
+        display: flex;
+        align-items: flex-start;
+        flex: 1;
+        min-width: 0; /* Important for wrapping inside flexbox */
+        margin-right: 12px;
     }
     
     .issue-id-badge {
@@ -155,9 +158,9 @@
         color: #2d3748;
         font-weight: 700;
         font-size: 0.95em;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        line-height: 1.35;
+        word-wrap: break-word;
+        word-break: break-word;
     }
     
     .issue-badges-row {
