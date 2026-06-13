@@ -603,6 +603,22 @@ class User(UserMixin, db.Model):
         return f"/{relative}"
 
     @staticmethod
+    def get_active_members_query(club_id, is_sysadmin=False):
+        """
+        Returns the query for active (non-deleted) users in a club.
+        For sysadmin viewing the global/system-wide club, queries all active users.
+        """
+        from .user_club import UserClub
+        from ..constants import GLOBAL_CLUB_ID
+
+        if club_id and not (is_sysadmin and club_id == GLOBAL_CLUB_ID):
+            return User.query.join(UserClub).filter(
+                UserClub.club_id == club_id,
+                User.status != 'deleted'
+            )
+        return User.query.filter(User.status != 'deleted')
+
+    @staticmethod
     def populate_contacts(users, club_id=None):
         """
         Batch-populates contact records for a list of users for a specific club.

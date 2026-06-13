@@ -180,27 +180,6 @@ def show_users():
         and club_id == GLOBAL_CLUB_ID
     )
 
-    # KPI metrics: total members in the club. The "Members" page in the
-    # super club is used by sysadmins to manage users across every club,
-    # so the stat should reflect the total user count for that context
-    # rather than the (empty) ContactClub join against the super club.
-    if is_super_club_sysadmin:
-        # Use a simple users count; will be patched up below once
-        # users_total is computed by _build_users_data.
-        type_counts = {'Member': 0}
-    else:
-        from .models import Contact, ContactClub
-        from sqlalchemy import func
-        if club_id:
-            type_counts_rows = db.session.query(
-                Contact.Type, func.count(Contact.id)
-            ).join(ContactClub).filter(
-                ContactClub.club_id == club_id
-            ).group_by(Contact.Type).all()
-            type_counts = {t: c for t, c in type_counts_rows}
-        else:
-            type_counts = {}
-
     # Server-render the first page so the user sees rows immediately.
     # The JS background-loads the rest of the rows for client pagination.
     # Local import to avoid circular import at module load time.
@@ -212,10 +191,12 @@ def show_users():
         initial_users = []
         users_total = 0
 
-    # For the super club, the Members stat should match the user count
-    # (the sysadmin sees all users across every club on this page).
-    if is_super_club_sysadmin:
-        type_counts = {'Member': users_total}
+    # KPI: total members in the club. The stat must match the table below,
+    # so it uses the same data source (users joined to UserClub, status
+    # != 'deleted'). A Contact+ContactClub join can overcount because a
+    # contact with Type='Member' can exist in the club without a backing
+    # user account.
+    type_counts = {'Member': users_total}
 
     return render_template('users.html',
                            club_id=club_id,

@@ -1004,13 +1004,10 @@ def _build_users_data(per_page=None, offset=0):
     club_id = get_current_club_id()
 
     # Users: Filter by club membership (Exception: sysadmin in Technical Support sees all)
-    if club_id and not (current_user.is_sysadmin and club_id == GLOBAL_CLUB_ID):
-        base_query = User.query.join(UserClub).filter(
-            UserClub.club_id == club_id,
-            User.status != 'deleted'
-        )
-    else:
-        base_query = User.query.filter(User.status != 'deleted')
+    base_query = User.get_active_members_query(
+        club_id=club_id,
+        is_sysadmin=current_user.is_sysadmin
+    )
 
     total = base_query.count()
 

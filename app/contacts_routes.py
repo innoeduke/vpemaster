@@ -97,6 +97,13 @@ def show_contacts():
         .join(ContactClub).filter(ContactClub.club_id == club_id)\
         .group_by(Contact.Type).all()
     type_counts = {t: c for t, c in type_counts_query}
+
+    # KPI: total members in the club. Use the unified helper to align with the members page.
+    from .models import User
+    type_counts['Member'] = User.get_active_members_query(
+        club_id=club_id,
+        is_sysadmin=current_user.is_sysadmin
+    ).count()
     
     contacts = []
     contacts_json_data = []

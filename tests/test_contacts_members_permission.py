@@ -195,5 +195,46 @@ class ContactsPermissionTestCase(unittest.TestCase):
         data = response.get_json()
         self.assertTrue(data['success'])
 
+    def test_kpi_member_count_alignment(self):
+        """Test that the Total Members KPI count on the contacts page matches the members page count."""
+        # Grant MEMBERS_MANAGE to the staff role so they can access the members page
+        perm_members_manage = Permission(name=Permissions.MEMBERS_MANAGE, description="Manage Members", category="members")
+        db.session.add(perm_members_manage)
+        self.role_staff.permissions.append(perm_members_manage)
+        
+        # Add a Member contact without a User account
+        extra_contact = Contact(Name="Extra Member No User", Type="Member")
+        db.session.add(extra_contact)
+        db.session.flush()
+        db.session.add(ContactClub(contact_id=extra_contact.id, club_id=self.club.id))
+        db.session.commit()
+
+        # Login as staff (who can view both settings/members and contacts)
+        self.login("staff", "password")
+
+        # Set session current club context
+        with self.client.session_transaction() as sess:
+            sess['current_club_id'] = self.club.id
+
+        # 1. Fetch contacts page, check Total Members KPI value using regex
+        response = self.client.get('/contacts')
+        self.assertEqual(response.status_code, 200)
+        html_contacts = response.get_data(as_text=True)
+        
+        import re
+        contacts_member_stat = re.search(r'style="color:\s*#28a745"[^>]*>\s*(\d+)\s*</div>', html_contacts)
+        self.assertIsNotNone(contacts_member_stat)
+        # We expect 2 active users, not 3 member contacts
+        self.assertEqual(contacts_member_stat.group(1), "2")
+
+        # 2. Fetch members page, check Total Members KPI value
+        response = self.client.get('/users')
+        self.assertEqual(response.status_code, 200)
+        html_users = response.get_data(as_text=True)
+        
+        users_member_stat = re.search(r'style="color:\s*#28a745"[^>]*>\s*(\d+)\s*</div>', html_users)
+        self.assertIsNotNone(users_member_stat)
+        self.assertEqual(users_member_stat.group(1), "2")
+
 if __name__ == '__main__':
     unittest.main()
