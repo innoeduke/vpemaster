@@ -213,15 +213,24 @@ class Roster(db.Model):
                 if is_officer:
                     ticket_name = "Officer"
                     ticket_type = "Officer"
-                    
-                    # Fetch ticket using robust lookup
-                    ticket_obj = Ticket.get_by_name(name=ticket_name, type=ticket_type, club_id=club_id)
-                    
-                    if not ticket_obj:
-                        ticket_obj = Ticket.query.filter_by(club_id=club_id, type=ticket_type).first()
-                    
-                    if not ticket_obj:
-                        ticket_obj = Ticket.query.filter_by(club_id=club_id).first()
+                elif contact.Type == 'Guest':
+                    ticket_name = "Role-taker"
+                    ticket_type = "Guest"
+                else:
+                    ticket_name = "Early-bird"
+                    ticket_type = "Member"
+
+                # Fetch ticket using robust lookup
+                ticket_obj = Ticket.get_by_name(name=ticket_name, type=ticket_type, club_id=club_id)
+
+                if not ticket_obj:
+                    ticket_obj = Ticket.query.filter_by(club_id=club_id, name=ticket_name).first()
+
+                if not ticket_obj:
+                    ticket_obj = Ticket.query.filter_by(club_id=club_id, type=ticket_type).first()
+
+                if not ticket_obj:
+                    ticket_obj = Ticket.query.filter_by(club_id=club_id).first()
 
                 roster_entry = Roster(
                     meeting_id=meeting_id,

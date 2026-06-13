@@ -44,7 +44,17 @@ def list_issues():
         joinedload(Issue.club),
     )
 
-    status_filter = request.args.get('status')
+    # Default the status filter to 'open' when none is supplied so that
+    # the Open tab opens by default (per the request). An empty value
+    # (?status=) is treated as "no filter" and is the marker used by the
+    # "All Issues" sidebar link to intentionally opt out of the default.
+    raw_status = request.args.get('status')
+    if raw_status is None:
+        status_filter = Issue.STATUS_OPEN
+    elif raw_status == '':
+        status_filter = None
+    else:
+        status_filter = raw_status
     filters = {
         'status': status_filter,
         'type': request.args.get('type') or None,

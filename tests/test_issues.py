@@ -353,23 +353,24 @@ class IssuesRouteTestCase(unittest.TestCase):
     def test_default_filter_includes_closed_issues(self):
         admin, _ = self.create_user("admin", "ClubAdmin", self.club_a)
         self.login("admin", self.club_a)
-        
+
         # Create an open and a closed issue
         self._make_issue(self.club_a, admin, title="Open Issue", status=Issue.STATUS_OPEN)
         self._make_issue(self.club_a, admin, title="Closed Issue", status=Issue.STATUS_CLOSED)
-        
-        # Default view (no status param): should show Open and Closed
+
+        # Default view (no status param): the Open tab opens by default,
+        # so Closed is hidden and Open is shown.
         res = self.client.get('/issues/')
         self.assertEqual(res.status_code, 200)
         self.assertIn("Open Issue", res.get_data(as_text=True))
-        self.assertIn("Closed Issue", res.get_data(as_text=True))
-        
+        self.assertNotIn("Closed Issue", res.get_data(as_text=True))
+
         # Filter status=closed: should show Closed, hide Open
         res = self.client.get('/issues/?status=closed')
         self.assertEqual(res.status_code, 200)
         self.assertNotIn("Open Issue", res.get_data(as_text=True))
         self.assertIn("Closed Issue", res.get_data(as_text=True))
-        
+
         # Filter status="" (All): should show both
         res = self.client.get('/issues/?status=')
         self.assertEqual(res.status_code, 200)

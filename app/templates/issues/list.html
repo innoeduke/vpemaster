@@ -323,7 +323,7 @@
         {% endif %}
 
         <div class="msg-nav-container">
-            <div class="msg-nav-item {% if not filters.get('status') %}active{% endif %}" onclick="window.location.href='{{ url_for('issue_bp.list_issues') }}'">
+            <div class="msg-nav-item {% if not filters.get('status') %}active{% endif %}" onclick="window.location.href='{{ url_for('issue_bp.list_issues', status='') }}'">
                 <i class="fas fa-tasks"></i> <span>{{ _('All Issues') }}</span>
             </div>
             <div class="msg-nav-item {% if filters.get('status') == 'open' %}active{% endif %}" onclick="window.location.href='{{ url_for('issue_bp.list_issues', status='open') }}'">

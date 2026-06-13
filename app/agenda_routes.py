@@ -1951,26 +1951,64 @@ def _tally_votes_and_set_winners(meeting):
     for category, candidate_votes in category_votes.items():
         if not candidate_votes:
             continue
-            
+
         max_winners = config_map.get(category, 1)
 
-        # Sort candidates by vote count descending
-        sorted_candidates = sorted(candidate_votes, key=lambda x: x[1], reverse=True)
-        
-        # Group candidates by vote count
-        from itertools import groupby
-        groups = []
-        for k, g in groupby(sorted_candidates, key=lambda x: x[1]):
-            groups.append(list(g))
-            
+        # Compute historical wins per candidate in the same club, excluding
+        # the current meeting. This is the tie-breaker when two candidates
+        # have the same vote count: the one with fewer historical wins wins.
+        from .models.voting import MeetingAwardWinner
+        candidate_ids = [cid for cid, _ in candidate_votes if cid is not None]
+        if candidate_ids:
+            hist_rows = db.session.query(
+                MeetingAwardWinner.contact_id,
+                func.count(MeetingAwardWinner.id)
+            ).join(Meeting, MeetingAwardWinner.meeting_id == Meeting.id).filter(
+                Meeting.club_id == meeting.club_id,
+                Meeting.id != meeting.id,
+                MeetingAwardWinner.award_category == category,
+                MeetingAwardWinner.contact_id.in_(candidate_ids),
+            ).group_by(MeetingAwardWinner.contact_id).all()
+            hist_counts = {cid: cnt for cid, cnt in hist_rows}
+        else:
+            hist_counts = {}
+
+        # Sort: vote count desc, then historical wins asc (fewer wins first),
+        # then contact_id asc for stable ordering.
+        def sort_key(item):
+            cid, count = item
+            return (-count, hist_counts.get(cid, 0), cid if cid is not None else 0)
+        sorted_candidates = sorted(candidate_votes, key=sort_key)
+
+        # Group candidates by consecutive vote count (tie groups), then fill
+        # the winner slots group by group. A tie group that fits in the
+        # remaining slots is taken as-is. A tie group that overflows is
+        # tie-broken by historical wins (fewer wins first).
         selected_winners = []
-        for group in groups:
-            if len(selected_winners) >= max_winners:
+        idx = 0
+        while idx < len(sorted_candidates) and len(selected_winners) < max_winners:
+            cid, count = sorted_candidates[idx]
+            if cid is None:
+                idx += 1
+                continue
+            # Collect all candidates tied with this vote count
+            tied_group = [(cid, count)]
+            j = idx + 1
+            while j < len(sorted_candidates) and sorted_candidates[j][1] == count:
+                if sorted_candidates[j][0] is not None:
+                    tied_group.append(sorted_candidates[j])
+                j += 1
+            idx = j
+
+            remaining = max_winners - len(selected_winners)
+            if len(tied_group) <= remaining:
+                selected_winners.extend(c[0] for c in tied_group)
+            else:
+                # Tie-break: sort by historical wins asc, then contact_id asc
+                tied_group.sort(key=lambda x: (hist_counts.get(x[0], 0), x[0]))
+                selected_winners.extend(c[0] for c in tied_group[:remaining])
+                # Stop after picking the required slots
                 break
-                
-            # Since a tie occurred for these slots, we include all members of the group
-            # even if it causes the total number of winners to slightly exceed max_winners.
-            selected_winners.extend([c[0] for c in group if c[0] is not None])
 
         if selected_winners:
             winners[category] = selected_winners
