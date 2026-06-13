@@ -42,6 +42,20 @@ def messages():
     """Render the main messages page."""
     return render_template('messages.html', title='Messages')
 
+def _get_club_members_set(user_ids):
+    from app.club_context import get_current_club_id, get_or_set_default_club
+    from app.models.user_club import UserClub
+    
+    club_id = get_current_club_id() or get_or_set_default_club()
+    if not club_id or not user_ids:
+        return set()
+        
+    memberships = UserClub.query.filter(
+        UserClub.user_id.in_(list(user_ids)),
+        UserClub.club_id == club_id
+    ).all()
+    return {uc.user_id for uc in memberships}
+
 @messages_bp.route('/api/messages/inbox')
 @login_required
 def get_inbox():
@@ -54,6 +68,9 @@ def get_inbox():
     ).order_by(Message.timestamp.desc()).paginate(
         page=page, per_page=per_page, error_out=False)
     
+    sender_ids = {m.sender_id for m in messages.items if m.sender_id}
+    member_user_ids = _get_club_members_set(sender_ids)
+    
     return jsonify({
         'messages': [{
             'id': m.id,
@@ -63,7 +80,8 @@ def get_inbox():
             'body': m.body,
             'timestamp': m.timestamp.strftime('%Y-%m-%d %H:%M'),
             'read': m.read,
-            'avatar_url': m.sender.full_avatar_url if m.sender else None
+            'avatar_url': m.sender.full_avatar_url if m.sender else None,
+            'is_member': m.sender_id in member_user_ids if m.sender_id else True
         } for m in messages.items],
         'total': messages.total,
         'pages': messages.pages,
@@ -82,6 +100,9 @@ def get_sent():
     ).order_by(Message.timestamp.desc()).paginate(
         page=page, per_page=per_page, error_out=False)
     
+    recipient_ids = {m.recipient_id for m in messages.items if m.recipient_id}
+    member_user_ids = _get_club_members_set(recipient_ids)
+    
     return jsonify({
         'messages': [{
             'id': m.id,
@@ -91,7 +112,8 @@ def get_sent():
             'body': m.body,
             'timestamp': m.timestamp.strftime('%Y-%m-%d %H:%M'),
             'read': m.read,
-            'avatar_url': m.recipient.full_avatar_url if m.recipient else None
+            'avatar_url': m.recipient.full_avatar_url if m.recipient else None,
+            'is_member': m.recipient_id in member_user_ids if m.recipient_id else False
         } for m in messages.items],
         'total': messages.total,
         'pages': messages.pages,
@@ -114,6 +136,13 @@ def get_trash():
     ).order_by(Message.timestamp.desc()).paginate(
         page=page, per_page=per_page, error_out=False)
     
+    other_ids = set()
+    for m in messages.items:
+        other_id = m.sender_id if m.recipient_id == current_user.id else m.recipient_id
+        if other_id:
+            other_ids.add(other_id)
+    member_user_ids = _get_club_members_set(other_ids)
+    
     return jsonify({
         'messages': [{
             'id': m.id,
@@ -126,7 +155,8 @@ def get_trash():
             'timestamp': m.timestamp.strftime('%Y-%m-%d %H:%M'),
             'read': m.read,
             'avatar_url': (m.sender.full_avatar_url if m.sender else None) if m.recipient_id == current_user.id else (m.recipient.full_avatar_url if m.recipient else None),
-            'type': 'inbox' if m.recipient_id == current_user.id else 'sent'
+            'type': 'inbox' if m.recipient_id == current_user.id else 'sent',
+            'is_member': (m.sender_id in member_user_ids if m.sender_id else True) if m.recipient_id == current_user.id else (m.recipient_id in member_user_ids if m.recipient_id else False)
         } for m in messages.items],
         'total': messages.total,
         'pages': messages.pages,

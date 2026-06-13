@@ -241,3 +241,59 @@ def test_cancel_join_request(client, test_user, admin_user, app):
             assert "[Responded: CANCELLED]" in m.body
             assert m.read is True
 
+
+def test_request_quit_club_flow(client, test_user, admin_user, app):
+    """Test requesting to quit a club and cancelling the request."""
+    from app.models import db, Club, UserClub, Message
+    with app.app_context():
+        Club.query.filter(Club.club_no == '999').delete()
+        club = Club(club_no='999', club_name='Test Quit Club', status='active')
+        db.session.add(club)
+        db.session.commit()
+        club_id = club.id
+        
+        # Link user as a member
+        db.session.add(UserClub(user_id=test_user.id, club_id=club_id, is_home=False))
+        db.session.commit()
+        
+    with client.session_transaction() as sess:
+        sess['_user_id'] = str(test_user.id)
+        sess['_fresh'] = True
+        
+    # 1. Send quit request
+    response = client.post(f'/clubs/{club_id}/request_quit', json={})
+    assert response.status_code == 200
+    assert response.json['success'] is True
+    assert 'request to leave the club has been sent' in response.json['message']
+    
+    # Retrieve clubs page and verify "Cancel Quit" button is rendered
+    response = client.get('/clubs')
+    assert response.status_code == 200
+    assert f'cancelQuitRequest(this, {club_id})'.encode() in response.data
+    
+    # 2. Cancel the quit request
+    response = client.post(f'/clubs/{club_id}/cancel_quit', json={})
+    assert response.status_code == 200
+    assert response.json['success'] is True
+    assert 'quit request has been cancelled' in response.json['message'].lower()
+    
+    # Verify message has been marked as Responded: CANCELLED
+    with app.app_context():
+        msgs = Message.query.filter(
+            Message.sender_id == test_user.id,
+            Message.body.like("%[Responded: CANCELLED]%")
+        ).all()
+        assert len(msgs) > 0
+        for m in msgs:
+            assert m.read is True
+            
+    # Retrieve clubs page and verify Quit button is back
+    response = client.get('/clubs')
+    assert response.status_code == 200
+    assert f'cancelQuitRequest(this, {club_id})'.encode() not in response.data
+    assert f'requestQuitClub(this, {club_id})'.encode() in response.data
+
+
+
+
+

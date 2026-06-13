@@ -961,3 +961,37 @@ def cancel_join_request(club_id):
     db.session.commit()
     return jsonify({'success': True, 'message': 'Your join request has been cancelled.'})
 
+
+@clubs_bp.route('/clubs/<int:club_id>/cancel_quit', methods=['POST'])
+@login_required
+def cancel_quit_request(club_id):
+    club = db.session.get(Club, club_id)
+    if not club:
+        return jsonify({'success': False, 'error': 'Club not found'}), 404
+        
+    from app.models import Message
+    import re
+
+    # Find related messages sent by this user for this club
+    related_msgs = Message.query.filter(
+        Message.sender_id == current_user.id,
+        Message.body.like(f"%[QUIT_REQUEST:{current_user.id}:{club_id}]%")
+    ).all()
+
+    if not related_msgs:
+        return jsonify({'success': False, 'error': 'No pending quit request found for this club.'}), 400
+
+    count = 0
+    for m in related_msgs:
+        if "[Responded:" not in m.body:
+            m.body = re.sub(r'\[QUIT_REQUEST:\d+:\d+\]', "\n\n[Responded: CANCELLED]", m.body)
+            m.read = True
+            count += 1
+
+    if count == 0:
+        return jsonify({'success': False, 'error': 'Your request has already been processed.'}), 400
+
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Your quit request has been cancelled.'})
+
+

@@ -306,9 +306,9 @@
     }
 
     .btn-follow-badge.followed:hover {
-        background-color: #fee2e2;
-        color: #ef4444;
-        border-color: #fca5a5;
+        background-color: rgba(113, 128, 150, 0.05);
+        color: #4a5568;
+        border-color: #a0aec0;
     }
 
     .btn-favorite .star-icon.fas {
@@ -525,38 +525,39 @@
     }
 
     .btn-join {
-        background-color: #772432 !important;
-        border-color: #772432 !important;
-        color: white !important;
-        font-weight: 600;
-        padding: 8px 10px;
-        border-radius: 8px;
-        font-size: 0.85rem;
-        width: 140px !important;
-        flex-shrink: 0;
-        justify-content: center;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        cursor: pointer;
-        transition: all 0.2s;
-        border: 1px solid #772432;
+        background-color: transparent !important;
+        border: 1px solid #772432 !important;
+        color: #772432 !important;
+        font-family: inherit !important;
+        font-weight: 600 !important;
+        padding: 5px 12px !important;
+        border-radius: 6px !important;
+        font-size: 0.8rem !important;
+        flex-shrink: 0 !important;
+        justify-content: center !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        cursor: pointer !important;
+        transition: all 0.2s !important;
+        height: 30px !important;
     }
 
     .btn-join:hover {
-        background-color: #5d1c27 !important;
+        background-color: rgba(119, 36, 50, 0.05) !important;
         border-color: #5d1c27 !important;
+        color: #5d1c27 !important;
     }
 
     .btn-enter {
-        background-color: #ebf8ff !important;
-        border: 1px solid #90cdf4 !important;
+        background-color: transparent !important;
+        border: none !important;
         color: #2b6cb0 !important;
-        font-weight: 600;
-        padding: 8px 10px;
-        border-radius: 8px;
-        font-size: 0.85rem;
-        width: 140px !important;
+        font-family: inherit !important;
+        font-weight: 600 !important;
+        padding: 5px 12px;
+        border-radius: 6px;
+        font-size: 0.8rem;
         flex-shrink: 0;
         justify-content: center;
         display: inline-flex;
@@ -565,62 +566,67 @@
         cursor: pointer;
         transition: all 0.2s;
         margin-left: auto;
+        height: 30px;
     }
 
     .btn-enter:hover {
-        background-color: #bee3f8 !important;
-        border-color: #63b3ed !important;
+        background-color: #ebf8ff !important;
     }
 
     .btn-enter:disabled {
-        background-color: #edf2f7 !important;
-        border-color: #e2e8f0 !important;
+        background-color: transparent !important;
+        border: none !important;
         color: #a0aec0 !important;
         cursor: not-allowed;
     }
 
     .btn-cancel-request {
-        background-color: white !important;
-        border: 1px solid #cbd5e0 !important;
-        color: #4a5568 !important;
-        font-weight: 600;
-        padding: 8px 10px;
-        border-radius: 8px;
-        font-size: 0.85rem;
-        width: 140px !important;
-        flex-shrink: 0;
-        justify-content: center;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        cursor: pointer;
-        transition: all 0.2s;
+        background-color: transparent !important;
+        border: 1px solid #718096 !important;
+        color: #718096 !important;
+        font-family: inherit !important;
+        font-weight: 600 !important;
+        padding: 5px 12px !important;
+        border-radius: 6px !important;
+        font-size: 0.8rem !important;
+        flex-shrink: 0 !important;
+        justify-content: center !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        cursor: pointer !important;
+        transition: all 0.2s !important;
+        height: 30px !important;
     }
 
     .btn-cancel-request:hover {
-        background-color: #f7fafc !important;
-        border-color: #a0aec0 !important;
-        color: #2d3748 !important;
+        background-color: rgba(113, 128, 150, 0.05) !important;
+        border-color: #4a5568 !important;
+        color: #4a5568 !important;
     }
 
     .btn-quit {
-        background-color: white !important;
-        border-color: #e53e3e !important;
+        background-color: transparent !important;
+        border: 1px solid #e53e3e !important;
         color: #e53e3e !important;
-        font-weight: 600;
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-size: 0.85rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        cursor: pointer;
-        transition: all 0.2s;
-        border: 1px solid #e53e3e;
+        font-family: inherit !important;
+        font-weight: 600 !important;
+        padding: 5px 12px !important;
+        border-radius: 6px !important;
+        font-size: 0.8rem !important;
+        flex-shrink: 0 !important;
+        justify-content: center !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        cursor: pointer !important;
+        transition: all 0.2s !important;
+        height: 30px !important;
     }
 
     .btn-quit:hover {
-        background-color: #fff5f5 !important;
+        background-color: rgba(229, 62, 62, 0.05) !important;
+        border-color: #c53030 !important;
         color: #c53030 !important;
     }
 
@@ -792,6 +798,169 @@
             justify-content: center;
         }
     }
+
+    /* --- Custom Confirmation Modal --- */
+    .custom-modal {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(17, 14, 12, 0.55);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        justify-content: center;
+        align-items: center;
+        animation: modalFadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .custom-modal-content {
+        background: linear-gradient(180deg, #fefdfc 0%, #faf8f5 100%);
+        padding: 0;
+        border-radius: 20px;
+        width: 90%;
+        max-width: 420px;
+        box-shadow:
+            0 2px 4px rgba(17, 14, 12, 0.04),
+            0 12px 28px rgba(17, 14, 12, 0.08),
+            0 24px 56px rgba(17, 14, 12, 0.12);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        transform: translateY(0);
+        animation: modalSlideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .custom-modal-content::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #772432 0%, #9b3d4a 50%, #c4a48c 100%);
+    }
+
+    .custom-modal-icon {
+        width: 56px;
+        height: 56px;
+        margin: 36px auto 16px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5em;
+    }
+
+    .custom-modal-icon.confirm {
+        background: rgba(119, 36, 50, 0.07);
+        color: #772432;
+    }
+
+    .custom-modal-icon.alert {
+        background: rgba(0, 65, 101, 0.07);
+        color: #004165;
+    }
+
+    .custom-modal-title {
+        font-size: 1.15em;
+        font-weight: 700;
+        margin: 0 32px 8px;
+        color: #1a1714;
+        letter-spacing: -0.01em;
+        text-align: center;
+    }
+
+    .custom-modal-message {
+        font-size: 0.875em;
+        color: #4a1e0e;
+        font-weight: 500;
+        line-height: 1.55;
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+        margin: 0 32px 28px;
+        text-align: left;
+        padding: 14px 18px;
+        background: linear-gradient(135deg, rgba(180, 120, 20, 0.08) 0%, rgba(180, 120, 20, 0.03) 100%);
+        border-radius: 12px;
+        border: 1px solid rgba(180, 120, 20, 0.15);
+        position: relative;
+    }
+
+    .custom-modal-message::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 10%;
+        bottom: 10%;
+        width: 3px;
+        border-radius: 0 3px 3px 0;
+        background: #c4862a;
+        opacity: 0.6;
+    }
+
+    .custom-modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        padding: 20px 32px 28px;
+        background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.015) 100%);
+        border-top: 1px solid #f0ece6;
+    }
+
+    .custom-modal-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 28px;
+        border-radius: 12px;
+        font-size: 0.9em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        border: none;
+        min-width: 110px;
+        font-family: inherit;
+        letter-spacing: 0.01em;
+    }
+
+    .btn-confirm {
+        background-color: #772432;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(119, 36, 50, 0.25);
+    }
+
+    .btn-confirm:hover {
+        background-color: #5e1c27;
+        box-shadow: 0 4px 14px rgba(119, 36, 50, 0.35);
+        transform: translateY(-1px);
+    }
+
+    .btn-confirm:active {
+        transform: translateY(0);
+        box-shadow: 0 1px 4px rgba(119, 36, 50, 0.2);
+    }
+
+    .btn-cancel {
+        background-color: #f5f3f0;
+        color: #5c5651;
+    }
+
+    .btn-cancel:hover {
+        background-color: #ebe7e1;
+        color: #1a1714;
+    }
+
+    @keyframes modalFadeIn {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
+
+    @keyframes modalSlideUp {
+        from { transform: translateY(24px); opacity: 0; }
+        to   { transform: translateY(0); opacity: 1; }
+    }
 </style>
 {% endblock %}
 
@@ -872,21 +1041,35 @@
                             {% endif %}
                         </button>
                         
-                        {% if is_home %}
-                        <div class="status-badge home-badge" style="margin-bottom: 0;">
-                            <i class="fas fa-home"></i> {{ _('Home Club') }}
+                        <div class="membership-actions-wrapper">
+                            {% if not is_member %}
+                                {% if club.id in pending_club_ids %}
+                                    <button class="btn-cancel-request" onclick="cancelJoinRequest(this, {{ club.id }})">
+                                        <i class="fas fa-times-circle"></i> {{ _('Cancel Request') }}
+                                    </button>
+                                {% else %}
+                                    <button class="btn-join" onclick="requestJoinClub(this, {{ club.id }})">
+                                        <i class="fas fa-user-plus"></i> {{ _('Join') }}
+                                    </button>
+                                {% endif %}
+                            {% else %}
+                                {% if club.id in pending_quit_club_ids %}
+                                    <button class="btn-cancel-request" onclick="cancelQuitRequest(this, {{ club.id }})">
+                                        <i class="fas fa-times-circle"></i> {{ _('Cancel Quit') }}
+                                    </button>
+                                {% else %}
+                                    <button class="btn-quit" onclick="requestQuitClub(this, {{ club.id }})">
+                                        <i class="fas fa-user-minus"></i> {{ _('Quit') }}
+                                    </button>
+                                {% endif %}
+                            {% endif %}
                         </div>
-                        {% elif is_member %}
-                        <div class="status-badge member-badge" style="margin-bottom: 0;">
-                            <i class="fas fa-check-circle"></i> {{ _('Member') }}
-                        </div>
-                        {% endif %}
                     </div>
                     
                     <!-- Next Meeting Box -->
                     <div class="next-meeting-box {% if next_meeting %}has-meeting{% endif %}">
                         <div class="next-meeting-header">
-                            <i class="far fa-calendar-alt"></i> <span>{{ _('Next Meeting') }}</span>
+                             <i class="far fa-calendar-alt"></i> <span>{{ _('Next Meeting') }}</span>
                         </div>
                         {% if next_meeting %}
                         <div class="next-meeting-content">
@@ -925,26 +1108,22 @@
                             </div>
                         {% endif %}
                         
-                        <div class="membership-actions-wrapper">
-                            {% if not is_member %}
-                                {% if club.id in pending_club_ids %}
-                                    <button class="btn btn-cancel-request" onclick="cancelJoinRequest(this, {{ club.id }})">
-                                        <i class="fas fa-times-circle"></i> {{ _('Cancel Request') }}
-                                    </button>
-                                {% else %}
-                                    <button class="btn btn-join" onclick="requestJoinClub(this, {{ club.id }})">
-                                        <i class="fas fa-user-plus"></i> {{ _('Join') }}
-                                    </button>
-                                {% endif %}
-                            {% endif %}
+                        {% if is_home %}
+                        <div class="status-badge home-badge" style="margin-bottom: 0;">
+                            <i class="fas fa-home"></i> {{ _('Home Club') }}
                         </div>
+                        {% elif is_member %}
+                        <div class="status-badge member-badge" style="margin-bottom: 0;">
+                            <i class="fas fa-check-circle"></i> {{ _('Member') }}
+                        </div>
+                        {% endif %}
                         
                         {% if club.id == get_current_club_id() %}
-                        <button class="btn btn-enter" disabled>
+                        <button class="btn-enter" disabled>
                             <i class="fas fa-check-circle"></i> {{ _('Entered') }}
                         </button>
                         {% else %}
-                        <button class="btn btn-enter" onclick="enterClub(this, {{ club.id }})">
+                        <button class="btn-enter" onclick="enterClub(this, {{ club.id }})">
                             <i class="fas fa-sign-in-alt"></i> {{ _('Enter') }}
                         </button>
                         {% endif %}
@@ -1036,23 +1215,33 @@
                                 <div class="membership-actions-wrapper">
                                     {% if not is_member %}
                                         {% if club.id in pending_club_ids %}
-                                            <button class="btn btn-cancel-request" onclick="cancelJoinRequest(this, {{ club.id }})" style="margin: 0; padding: 6px 10px; font-size: 0.85rem; border-radius: 6px; height: 34px; width: 140px !important; flex-shrink: 0;">
+                                            <button class="btn-cancel-request" onclick="cancelJoinRequest(this, {{ club.id }})" style="margin: 0; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; height: 30px; flex-shrink: 0;">
                                                 <i class="fas fa-times-circle"></i> {{ _('Cancel Request') }}
                                             </button>
                                         {% else %}
-                                            <button class="btn btn-join" onclick="requestJoinClub(this, {{ club.id }})" style="margin: 0; padding: 6px 10px; font-size: 0.85rem; border-radius: 6px; height: 34px; width: 140px !important; flex-shrink: 0;">
+                                            <button class="btn-join" onclick="requestJoinClub(this, {{ club.id }})" style="margin: 0; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; height: 30px; flex-shrink: 0;">
                                                 <i class="fas fa-user-plus"></i> {{ _('Join') }}
+                                            </button>
+                                        {% endif %}
+                                    {% else %}
+                                        {% if club.id in pending_quit_club_ids %}
+                                            <button class="btn-cancel-request" onclick="cancelQuitRequest(this, {{ club.id }})" style="margin: 0; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; height: 30px; flex-shrink: 0;">
+                                                <i class="fas fa-times-circle"></i> {{ _('Cancel Quit') }}
+                                            </button>
+                                        {% else %}
+                                            <button class="btn-quit" onclick="requestQuitClub(this, {{ club.id }})" style="margin: 0; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; height: 30px; flex-shrink: 0;">
+                                                <i class="fas fa-user-minus"></i> {{ _('Quit') }}
                                             </button>
                                         {% endif %}
                                     {% endif %}
                                 </div>
                                 
                                 {% if club.id == get_current_club_id() %}
-                                <button class="btn btn-enter" disabled style="margin: 0; padding: 6px 10px; font-size: 0.85rem; border-radius: 6px; height: 34px; width: 140px !important; flex-shrink: 0;">
+                                <button class="btn-enter" disabled style="margin: 0; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; height: 30px; flex-shrink: 0;">
                                     <i class="fas fa-check-circle"></i> {{ _('Entered') }}
                                 </button>
                                 {% else %}
-                                <button class="btn btn-enter" onclick="enterClub(this, {{ club.id }})" style="margin: 0; padding: 6px 10px; font-size: 0.85rem; border-radius: 6px; height: 34px; width: 140px !important; flex-shrink: 0;">
+                                <button class="btn-enter" onclick="enterClub(this, {{ club.id }})" style="margin: 0; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; height: 30px; flex-shrink: 0;">
                                     <i class="fas fa-sign-in-alt"></i> {{ _('Enter') }}
                                 </button>
                                 {% endif %}
@@ -1159,6 +1348,19 @@
     </div>
 </div>
 {% endfor %}
+
+<!-- Custom Modal for Confirmation -->
+<div id="custom-modal" class="custom-modal">
+    <div class="custom-modal-content">
+        <div id="custom-modal-icon" class="custom-modal-icon"></div>
+        <div id="custom-modal-title" class="custom-modal-title"></div>
+        <div id="custom-modal-message" class="custom-modal-message"></div>
+        <div id="custom-modal-actions" class="custom-modal-actions">
+            <button id="custom-modal-cancel" class="custom-modal-btn btn-cancel" style="display: none;">{{ _('Cancel') }}</button>
+            <button id="custom-modal-ok" class="custom-modal-btn btn-confirm">{{ _('OK') }}</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -1310,13 +1512,12 @@
                 document.querySelectorAll(`[data-club-id="${clubId}"] .membership-actions-wrapper`).forEach(wrapper => {
                     if (wrapper.closest('tr')) {
                         // Table row style
-                        wrapper.innerHTML = '<button class="btn btn-cancel-request" onclick="cancelJoinRequest(this, ' + clubId + ')" style="margin: 0; padding: 6px 10px; font-size: 0.85rem; border-radius: 6px; height: 34px; width: 140px !important; flex-shrink: 0;"><i class="fas fa-times-circle"></i> {{ _("Cancel Request") }}</button>';
+                        wrapper.innerHTML = '<button class="btn-cancel-request" onclick="cancelJoinRequest(this, ' + clubId + ')" style="margin: 0; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; height: 30px; flex-shrink: 0;"><i class="fas fa-times-circle"></i> {{ _("Cancel Request") }}</button>';
                     } else {
                         // Card style
-                        wrapper.innerHTML = '<button class="btn btn-cancel-request" onclick="cancelJoinRequest(this, ' + clubId + ')"><i class="fas fa-times-circle"></i> {{ _("Cancel Request") }}</button>';
+                        wrapper.innerHTML = '<button class="btn-cancel-request" onclick="cancelJoinRequest(this, ' + clubId + ')"><i class="fas fa-times-circle"></i> {{ _("Cancel Request") }}</button>';
                     }
                 });
-                alert(data.message);
             } else {
                 alert(data.error || 'Failed to request join.');
                 btn.disabled = false;
@@ -1354,12 +1555,11 @@
                 // Replace cancel button with Join button
                 document.querySelectorAll(`[data-club-id="${clubId}"] .membership-actions-wrapper`).forEach(wrapper => {
                     if (wrapper.closest('tr')) {
-                        wrapper.innerHTML = '<button class="btn btn-join" onclick="requestJoinClub(this, ' + clubId + ')" style="margin: 0; padding: 6px 10px; font-size: 0.85rem; border-radius: 6px; height: 34px; width: 140px !important; flex-shrink: 0;"><i class="fas fa-user-plus"></i> {{ _("Join") }}</button>';
+                        wrapper.innerHTML = '<button class="btn-join" onclick="requestJoinClub(this, ' + clubId + ')" style="margin: 0; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; height: 30px; flex-shrink: 0;"><i class="fas fa-user-plus"></i> {{ _("Join") }}</button>';
                     } else {
-                        wrapper.innerHTML = '<button class="btn btn-join" onclick="requestJoinClub(this, ' + clubId + ')"><i class="fas fa-user-plus"></i> {{ _("Join") }}</button>';
+                        wrapper.innerHTML = '<button class="btn-join" onclick="requestJoinClub(this, ' + clubId + ')"><i class="fas fa-user-plus"></i> {{ _("Join") }}</button>';
                     }
                 });
-                alert(data.message);
             } else {
                 alert(data.error || 'Failed to cancel request.');
                 btn.disabled = false;
@@ -1373,9 +1573,53 @@
         });
     }
 
+    // --- Custom Modal Helper Functions ---
+    window.showCustomConfirm = function (title, message, iconClass = "confirm") {
+        return new Promise((resolve) => {
+            const modal = document.getElementById("custom-modal");
+            const titleEl = document.getElementById("custom-modal-title");
+            const messageEl = document.getElementById("custom-modal-message");
+            const iconEl = document.getElementById("custom-modal-icon");
+            const okBtn = document.getElementById("custom-modal-ok");
+            const cancelBtn = document.getElementById("custom-modal-cancel");
+
+            titleEl.textContent = title;
+            messageEl.innerHTML = message;
+            iconEl.className = "custom-modal-icon " + iconClass;
+            iconEl.innerHTML = iconClass === "confirm" ? '<i class="fas fa-question-circle"></i>' : '<i class="fas fa-exclamation-circle"></i>';
+
+            cancelBtn.style.display = "inline-block";
+            modal.style.display = "flex";
+
+            const handleOk = () => {
+                modal.style.display = "none";
+                cleanup();
+                resolve(true);
+            };
+
+            const handleCancel = () => {
+                modal.style.display = "none";
+                cleanup();
+                resolve(false);
+            };
+
+            const cleanup = () => {
+                okBtn.removeEventListener("click", handleOk);
+                cancelBtn.removeEventListener("click", handleCancel);
+            };
+
+            okBtn.addEventListener("click", handleOk);
+            cancelBtn.addEventListener("click", handleCancel);
+        });
+    };
+
     // Request to Quit Action (AJAX)
-    function requestQuitClub(btn, clubId) {
-        if (!confirm('{{ _("Are you sure you want to request to leave this club?") }}')) {
+    async function requestQuitClub(btn, clubId) {
+        const confirmed = await window.showCustomConfirm(
+            '{{ _("Quit Club") }}',
+            '{{ _("Are you sure you want to request to leave this club?") }}'
+        );
+        if (!confirmed) {
             return;
         }
         btn.disabled = true;
@@ -1398,13 +1642,12 @@
                 document.querySelectorAll(`[data-club-id="${clubId}"] .membership-actions-wrapper`).forEach(wrapper => {
                     if (wrapper.closest('tr')) {
                         // Table row style
-                        wrapper.innerHTML = '<span class="badge badge-pending-quit"><i class="fas fa-spinner fa-spin"></i> {{ _("Pending Quit") }}</span>';
+                        wrapper.innerHTML = '<button class="btn-cancel-request" onclick="cancelQuitRequest(this, ' + clubId + ')" style="margin: 0; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; height: 30px; flex-shrink: 0;"><i class="fas fa-times-circle"></i> {{ _("Cancel Quit") }}</button>';
                     } else {
                         // Card style
-                        wrapper.innerHTML = '<span class="badge badge-pending-quit"><i class="fas fa-spinner fa-spin"></i> {{ _("Pending Quit Approval") }}</span>';
+                        wrapper.innerHTML = '<button class="btn-cancel-request" onclick="cancelQuitRequest(this, ' + clubId + ')"><i class="fas fa-times-circle"></i> {{ _("Cancel Quit") }}</button>';
                     }
                 });
-                alert(data.message);
             } else {
                 alert(data.error || 'Failed to request quit.');
                 btn.disabled = false;
@@ -1413,6 +1656,52 @@
         })
         .catch(err => {
             alert('An error occurred while requesting to quit.');
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        });
+    }
+
+    // Cancel Quit Request Action (AJAX)
+    async function cancelQuitRequest(btn, clubId) {
+        const confirmed = await window.showCustomConfirm(
+            '{{ _("Cancel Quit Request") }}',
+            '{{ _("Are you sure you want to cancel your quit request?") }}'
+        );
+        if (!confirmed) {
+            return;
+        }
+        btn.disabled = true;
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ _("Cancelling...") }}';
+        
+        fetch(`/clubs/${clubId}/cancel_quit`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Network error');
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Replace cancel button with Quit button
+                document.querySelectorAll(`[data-club-id="${clubId}"] .membership-actions-wrapper`).forEach(wrapper => {
+                    if (wrapper.closest('tr')) {
+                        wrapper.innerHTML = '<button class="btn-quit" onclick="requestQuitClub(this, ' + clubId + ')" style="margin: 0; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; height: 30px; flex-shrink: 0;"><i class="fas fa-user-minus"></i> {{ _("Quit") }}</button>';
+                    } else {
+                        wrapper.innerHTML = '<button class="btn-quit" onclick="requestQuitClub(this, ' + clubId + ')"><i class="fas fa-user-minus"></i> {{ _("Quit") }}</button>';
+                    }
+                });
+            } else {
+                alert(data.error || 'Failed to cancel request.');
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        })
+        .catch(err => {
+            alert('An error occurred while cancelling the request.');
             btn.disabled = false;
             btn.innerHTML = originalHtml;
         });
