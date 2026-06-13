@@ -23,22 +23,23 @@ Requires the `MEMBERS_MANAGE` permission (typically held by Admins / SAA).
 
 ## CSV Format
 
-The file must have a header row (which is skipped) and up to 5 columns:
+The file must have a header row (which is skipped) and exactly 6 columns:
 
-| # | Column       | Required | Notes |
-|---|--------------|----------|-------|
-| 1 | Fullname     | Yes      | Used to look up a matching `Contact` (linked if found) |
-| 2 | Username     | Yes      | Must be unique across users |
-| 3 | Member ID    | No       | Stored only |
-| 4 | Email        | No       | Must be unique if provided; checked against existing users |
-| 5 | Mentor Name  | No       | Used to look up a `Contact` and set as mentor (linked if found) |
+| # | Column        | Required | Notes |
+|---|---------------|----------|-------|
+| 1 | Fullname*     | Yes      | Used to link/create contact. Maroon asterisk in UI. |
+| 2 | Username      | No       | If blank, an 8-character letters-only username is auto-generated. Must be globally unique. |
+| 3 | Member Number | No       | Format `PN-nnnnn`. Must be unique in the club. |
+| 4 | Email*        | Yes      | Must be globally unique. Checked against existing users and contacts. |
+| 5 | Phone         | No       | Checked for duplicates within the club. |
+| 6 | Mentor Name   | No       | Used to look up a contact and link as mentor. |
 
 ### Example
 
 ```csv
-Fullname,Username,Member ID,Email,Mentor Name
-Jane Doe,janed,12345,jane@example.com,John Smith
-Bob Lee,blee,12346,bob@example.com,
+Fullname*,Username,Member Number,Email*,Phone,Mentor Name
+John Doe,johndoe,PN-1234567,john.doe@example.com,+1234567890,Jane Smith
+Alice Smith,,PN-7654321,alice@example.com,,
 ```
 
 ## Behavior
@@ -58,9 +59,10 @@ Bob Lee,blee,12346,bob@example.com,
 - `No selected file` — file input was empty.
 - `Invalid file type. Please upload a .csv file.` — file did not end in `.csv`.
 - `You don't have permission to perform this action.` — caller lacks `MEMBERS_MANAGE`.
-- `Skipping row: Fullname and Username are mandatory. Row: ...`
-- `Skipping user '<username>': User already exists.`
-- `Skipping user '<username>': Email '<email>' is already registered.`
+- `Invalid column headers. Expected: Fullname*, Username, Member Number, Email*, Phone, Mentor Name.` — headers don't match the expected layout.
+- `Row error: Fullname is required, Email is required. Row: ...` — mandatory fields are missing.
+- `Row error: Invalid Member Number format: '12345'. Expected format is PN-nnnnn` — incorrect Member Number format.
+- `Skipping 'Jane Doe': User 'janed' already exists globally.` — username or email is already registered.
 
 ## Related
 

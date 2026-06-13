@@ -838,15 +838,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Bulk Import file selector triggers automatic form submit
-  const bulkFile = document.getElementById('bulk-import-file');
-  const bulkBtn = document.getElementById('bulk-import-btn');
-  if (bulkFile && bulkBtn) {
-    bulkBtn.addEventListener('click', () => bulkFile.click());
-    bulkFile.addEventListener('change', () => {
-      if (bulkFile.files.length > 0) {
-        document.getElementById('bulk-import-form').submit();
-      }
-    });
-  }
 });

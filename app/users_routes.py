@@ -551,56 +551,69 @@ def delete_user(user_id):
     return redirect(url_for('users_bp.show_users'))
 
 
-@users_bp.route('/user/bulk_import', methods=['POST'])
+@users_bp.route('/user/bulk_import', methods=['GET', 'POST'])
 @login_required
 def bulk_import_members():
     if not is_authorized(Permissions.MEMBERS_MANAGE):
         flash("You don't have permission to perform this action.", 'error')
         return redirect(url_for('users_bp.show_users'))
 
-    if 'file' not in request.files:
-        flash('No file part', 'error')
-        return redirect(url_for('users_bp.show_users'))
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            flash('No file part', 'error')
+            return redirect(url_for('users_bp.bulk_import_members'))
 
-    file = request.files['file']
-    if file.filename == '':
-        flash('No selected file', 'error')
-        return redirect(url_for('users_bp.show_users'))
+        file = request.files['file']
+        if file.filename == '':
+            flash('No selected file', 'error')
+            return redirect(url_for('users_bp.bulk_import_members'))
 
-    if file and (file.filename.endswith('.csv') or file.filename.endswith('.xlsx')):
-        ext = file.filename.rsplit('.', 1)[1].lower()
-        file_bytes = file.read()
+        if file and (file.filename.endswith('.csv') or file.filename.endswith('.xlsx')):
+            ext = file.filename.rsplit('.', 1)[1].lower()
+            file_bytes = file.read()
 
-        from app.services.member_import_service import process_member_file
-        club_id = get_current_club_id()
-        report = process_member_file(file_bytes, ext, club_id)
+            from app.services.member_import_service import process_member_file
+            club_id = get_current_club_id()
+            report = process_member_file(file_bytes, ext, club_id)
 
-        added = report.get('added', [])
-        invited = report.get('invited', [])
-        failed_users = report.get('failed', [])
+            added = report.get('added', [])
+            invited = report.get('invited', [])
+            failed_users = report.get('failed', [])
 
-        show_example = any(
-            "Failed to parse" in f or "Unsupported file extension" in f
-            for f in failed_users
-        )
-        return render_template(
-            'import_report.html',
-            added=added,
-            invited=invited,
-            failed_users=failed_users,
-            show_example=show_example,
-        )
+            show_example = any(
+                "Failed to parse" in f or "Unsupported file extension" in f or "Invalid column headers" in f
+                for f in failed_users
+            )
+            return render_template(
+                'import_report.html',
+                added=added,
+                invited=invited,
+                failed_users=failed_users,
+                show_example=show_example,
+                is_post=True
+            )
 
-    else:
-        # If the file doesn't have .csv or .xlsx, or doesn't exist
-        failed_users = ["Invalid file type. Please upload a .csv or .xlsx file."]
-        return render_template(
-            'import_report.html',
-            added=[],
-            invited=[],
-            failed_users=failed_users,
-            show_example=True,
-        )
+        else:
+            # If the file doesn't have .csv or .xlsx, or doesn't exist
+            failed_users = ["Invalid file type. Please upload a .csv or .xlsx file."]
+            return render_template(
+                'import_report.html',
+                added=[],
+                invited=[],
+                failed_users=failed_users,
+                show_example=True,
+                is_post=True
+            )
+
+    # GET request: render empty upload form
+    return render_template(
+        'import_report.html',
+        added=[],
+        invited=[],
+        failed_users=[],
+        show_example=True,
+        is_post=False
+    )
 
 
 @users_bp.route('/user/request_join', methods=['POST'])

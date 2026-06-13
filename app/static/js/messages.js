@@ -83,12 +83,14 @@ function loadMessages(tab, silent=false, page=1) {
                 }
                 const isReceived = tab === 'inbox' || (tab === 'trash' && msg.type === 'inbox');
                 const party = isReceived ? msg.sender : msg.recipient;
+                const isMember = msg.is_member !== false;
+                const memberClass = isMember ? '' : 'non-member';
                 return `
                 <div class="msg-item ${!msg.read && isReceived ? 'unread' : ''}" onclick="showDetail(${msg.id})">
                     <div class="msg-avatar-wrap">
                         ${avatarSrc
-                            ? `<img src="${avatarSrc}" class="msg-avatar" alt="" onerror="this.outerHTML='<div class=\\'msg-avatar-placeholder\\'>${getInitials(party).replace(/'/g, "\\'")}</div>'">`
-                            : `<div class="msg-avatar-placeholder">${getInitials(party)}</div>`
+                            ? `<img src="${avatarSrc}" class="msg-avatar" alt="" onerror="this.outerHTML='<div class=\\'msg-avatar-placeholder ${memberClass}\\'">${getInitials(party).replace(/'/g, "\\'")}</div>'">`
+                            : `<div class="msg-avatar-placeholder ${memberClass}">${getInitials(party)}</div>`
                         }
                     </div>
                     <div class="msg-content">
@@ -134,6 +136,8 @@ function showDetail(id) {
     const modal = document.getElementById('messageDetailModal');
     const isReceived = currentTab === 'inbox' || (currentTab === 'trash' && msg.type === 'inbox');
     const otherParty = isReceived ? msg.sender : msg.recipient;
+    const isMember = msg.is_member !== false;
+    const memberClass = isMember ? '' : 'non-member';
 
     document.getElementById('detail-subject').innerHTML = formatSubjectWithBadge(msg.subject);
     document.getElementById('detail-sender').textContent = (isReceived ? 'From ' : 'To ') + otherParty;
@@ -145,8 +149,8 @@ function showDetail(id) {
         detailAvatarSrc = `/static/${root}/${detailAvatarSrc}`;
     }
     avatarContainer.innerHTML = detailAvatarSrc
-        ? `<img src="${detailAvatarSrc}" class="msg-avatar" alt="" onerror="this.outerHTML='<div class=\\'msg-avatar-placeholder\\'>${getInitials(otherParty).replace(/'/g, "\\'")}</div>'">`
-        : `<div class="msg-avatar-placeholder">${getInitials(otherParty)}</div>`;
+        ? `<img src="${detailAvatarSrc}" class="msg-avatar" alt="" onerror="this.outerHTML='<div class=\\'msg-avatar-placeholder ${memberClass}\\'">${getInitials(otherParty).replace(/'/g, "\\'")}</div>'">`
+        : `<div class="msg-avatar-placeholder ${memberClass}">${getInitials(otherParty)}</div>`;
     
 
     // Handle Join Requests
@@ -157,10 +161,12 @@ function showDetail(id) {
     const homeProposalMatch = msg.body.match(/\[HOME_CLUB_PROPOSAL:(\d+):(\d+)\]/);
     // Handle User Join Requests (User requesting Admin)
     const joinRequestMatch = msg.body.match(/\[JOIN_REQUEST:(\d+):(\d+)\]/);
+    // Handle User Quit Requests
+    const quitRequestMatch = msg.body.match(/\[QUIT_REQUEST:(\d+):(\d+)\]/);
     // Handle Issue links
     const issueLinkMatch = msg.body.match(/\[ISSUE_LINK:(\d+):([^\]]+)\]/);
     // Handle responded state (post-action marker)
-    const respondedMatch = msg.body.match(/\[Responded:\s*(JOIN|REJECT|APPROVE|ACCEPT)(?::\s*([^\]]+))?\]/i);
+    const respondedMatch = msg.body.match(/\[Responded:\s*(JOIN|REJECT|APPROVE|ACCEPT|QUIT)(?::\s*([^\]]+))?\]/i);
 
     let displayBody = msg.body;
     if (requestMatch) {
@@ -174,6 +180,9 @@ function showDetail(id) {
     }
     if (joinRequestMatch) {
         displayBody = displayBody.replace(joinRequestMatch[0], '');
+    }
+    if (quitRequestMatch) {
+        displayBody = displayBody.replace(quitRequestMatch[0], '');
     }
     if (issueLinkMatch) {
         displayBody = displayBody.replace(issueLinkMatch[0], '');
@@ -225,7 +234,7 @@ function showDetail(id) {
     if (respondedMatch) {
         const verb = respondedMatch[1].toUpperCase();
         const note = respondedMatch[2] ? respondedMatch[2].trim() : '';
-        const statusVerb = (verb === 'JOIN' || verb === 'ACCEPT' || verb === 'APPROVE') ? 'Accepted' : 'Declined';
+        const statusVerb = (verb === 'JOIN' || verb === 'ACCEPT' || verb === 'APPROVE' || verb === 'QUIT') ? 'Accepted' : 'Declined';
         const statusClass = statusVerb === 'Accepted' ? 'message-status-card accepted' : 'message-status-card declined';
         const statusIcon = statusVerb === 'Accepted' ? 'fa-check-circle' : 'fa-times-circle';
         const noteHtml = note ? `<span class="status-note">${escapeHtml(note)}</span>` : '';
@@ -313,6 +322,26 @@ function showDetail(id) {
                         <i class="fas fa-check"></i> Approve
                     </button>
                     <button onclick="respondToUserJoinRequest(${msg.id}, 'reject')" class="btn btn-join btn-join-reject">
+                        <i class="fas fa-times"></i> Reject
+                    </button>
+                </div>
+            </div>
+        `;
+        bodyEl.insertAdjacentHTML('beforeend', actionsHtml);
+    }
+
+    if (quitRequestMatch && isInbox) {
+         const actionsHtml = `
+            <div class="message-actions join-request-card join-request-card--primary">
+                <div class="join-request-header">
+                    <span class="join-request-icon"><i class="fas fa-user-minus"></i></span>
+                    <h3 class="join-request-title">Club Quit Request</h3>
+                </div>
+                <div class="join-request-actions">
+                    <button onclick="respondToUserQuitRequest(${msg.id}, 'approve')" class="btn btn-join btn-join-reject">
+                        <i class="fas fa-check"></i> Approve
+                    </button>
+                    <button onclick="respondToUserQuitRequest(${msg.id}, 'reject')" class="btn btn-join btn-join-accept">
                         <i class="fas fa-times"></i> Reject
                     </button>
                 </div>
@@ -582,7 +611,12 @@ function escapeHtml(text) {
 
 // Helper to extract initials
 function getInitials(name) {
-    return name ? name.substring(0, 2).toUpperCase() : '??';
+    if (!name || name === 'N/A') return '??';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) {
+        return parts[0].substring(0, 2).toUpperCase();
+    }
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 function respondToJoinRequest(messageId, action) {
@@ -739,6 +773,53 @@ function respondToUserJoinRequest(messageId, action) {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
     fetch('/clubs/respond_join_request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            message_id: messageId,
+            action: action
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(action === 'approve' ? 'Request Approved.' : 'Request Rejected.', 'success');
+            closeMessageDetailModal();
+            loadMessages(currentTab, false, currentPage);
+        } else {
+            showToast(data.error || 'Action failed', 'error');
+            btn.innerHTML = originalText;
+            if (container) {
+                 container.querySelectorAll('button').forEach(b => b.disabled = false);
+            } else {
+                 btn.disabled = false;
+            }
+        }
+    })
+    .catch(err => {
+        showToast('Error processing request', 'error');
+        btn.innerHTML = originalText;
+        if (container) {
+             container.querySelectorAll('button').forEach(b => b.disabled = false);
+        } else {
+             btn.disabled = false;
+        }
+    });
+}
+
+function respondToUserQuitRequest(messageId, action) {
+    const btn = event.target.closest('button');
+    const container = btn.closest('.message-actions');
+    if (container) {
+        container.querySelectorAll('button').forEach(b => b.disabled = true);
+    } else {
+         btn.disabled = true;
+    }
+    
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    fetch('/clubs/respond_quit_request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

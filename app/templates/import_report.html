@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('Import Report') }}{% endblock %}
+{% block title %}{{ _('Import Report') if is_post else _('Bulk Import Members') }}{% endblock %}
 
 {% block head_extra %}
 <style>
@@ -230,6 +230,94 @@
   }
   .btn-example:hover { background: #002d47; color: #fff; }
 
+  .btn-primary {
+    background: #10b981;
+    color: #fff;
+    border: 1px solid #10b981;
+  }
+  .btn-primary:hover { background: #059669; color: #fff; }
+
+  /* Premium Upload Form Styles */
+  .import-upload-card {
+    background: #fff;
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 48px 24px;
+    text-align: center;
+    margin-bottom: 24px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+
+  .import-upload-card:hover {
+    border-color: #004165;
+    background: #f8fafc;
+  }
+
+  .import-upload-card i.upload-icon {
+    display: inline-block;
+    font-size: 3rem;
+    color: #94a3b8;
+    margin-bottom: 16px;
+    transition: color 0.2s ease;
+  }
+
+  .import-upload-card:hover i.upload-icon {
+    color: #004165;
+  }
+
+  .import-upload-card h3 {
+    margin: 0 0 8px 0;
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .import-upload-card p {
+    margin: 0 0 20px 0;
+    font-size: 0.875rem;
+    color: #64748b;
+  }
+
+  .file-select-btn {
+    background: #004165;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .file-select-btn:hover {
+    background: #002d47;
+  }
+
+  #selected-file-info {
+    margin-top: 14px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #0f172a;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  #selected-file-info i {
+    font-size: 1rem;
+    color: #10b981;
+    margin: 0;
+  }
+
+
+
   @media (max-width: 640px) {
     .import-table .col-email { display: none; }
     .import-table th:nth-child(3),
@@ -242,132 +330,10 @@
 <div class="import-report">
   <div class="import-report-header">
     <i class="fas fa-file-import"></i>
-    <h1>{{ _('Import Report') }}</h1>
+    <h1>{{ _('Import Report') if is_post else _('Bulk Import Members') }}</h1>
   </div>
 
-  {% set total_count = added|length + invited|length + failed_users|length %}
-  {% set has_any = total_count > 0 %}
-
-  <div class="import-summary">
-    <div class="import-stat {{ 'is-success' if added else 'is-empty' }}">
-      <span class="stat-number">{{ added|length }}</span>
-      <span class="stat-label">{{ _('Added') }}</span>
-    </div>
-    <div class="import-stat {{ 'is-invite' if invited else 'is-empty' }}">
-      <span class="stat-number">{{ invited|length }}</span>
-      <span class="stat-label">{{ _('Invited') }}</span>
-    </div>
-    <div class="import-stat {{ 'is-error' if failed_users else 'is-empty' }}">
-      <span class="stat-number">{{ failed_users|length }}</span>
-      <span class="stat-label">{{ _('Failed') }}</span>
-    </div>
-  </div>
-
-  {# Added section #}
-  <div class="import-section">
-    <div class="import-section-header">
-      <i class="fas fa-user-plus"></i>
-      <h3>{{ _('Added members') }}</h3>
-      <span class="section-count">{{ added|length }}</span>
-    </div>
-    {% if added %}
-    <table class="import-table">
-      <thead>
-        <tr>
-          <th class="col-name">{{ _('Full name') }}</th>
-          <th class="col-username">{{ _('Username') }}</th>
-          <th class="col-email">{{ _('Email') }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for m in added %}
-        <tr>
-          <td class="col-name">
-            <span class="row-avatar">{{ (m.fullname or '?')[:2]|upper }}</span>
-            {{ m.fullname }}
-          </td>
-          <td class="col-username">{{ m.username }}</td>
-          <td class="col-email">{{ m.email or '—' }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-    <div class="import-empty">
-      <i class="fas fa-inbox"></i>
-      {{ _('No new members were added.') }}
-    </div>
-    {% endif %}
-  </div>
-
-  {# Invited section #}
-  <div class="import-section">
-    <div class="import-section-header">
-      <i class="fas fa-envelope"></i>
-      <h3>{{ _('Invited (existing users)') }}</h3>
-      <span class="section-count">{{ invited|length }}</span>
-    </div>
-    {% if invited %}
-    <table class="import-table">
-      <thead>
-        <tr>
-          <th class="col-name">{{ _('Full name') }}</th>
-          <th class="col-username">{{ _('Username') }}</th>
-          <th class="col-email">{{ _('Email') }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for m in invited %}
-        <tr>
-          <td class="col-name">
-            <span class="row-avatar">{{ (m.fullname or '?')[:2]|upper }}</span>
-            {{ m.fullname }}
-          </td>
-          <td class="col-username">{{ m.username }}</td>
-          <td class="col-email">{{ m.email or '—' }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-    <div class="import-empty">
-      <i class="fas fa-paper-plane"></i>
-      {{ _('No invitations were sent.') }}
-    </div>
-    {% endif %}
-  </div>
-
-  {# Failed section #}
-  <div class="import-section is-failed">
-    <div class="import-section-header">
-      <i class="fas fa-exclamation-triangle"></i>
-      <h3>{{ _('Failed rows') }}</h3>
-      <span class="section-count">{{ failed_users|length }}</span>
-    </div>
-    {% if failed_users %}
-    <table class="import-table">
-      <thead>
-        <tr>
-          <th class="col-reason">{{ _('Reason') }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for f in failed_users %}
-        <tr>
-          <td class="col-reason">{{ f }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-    <div class="import-empty">
-      <i class="fas fa-check"></i>
-      {{ _('No rows failed.') }}
-    </div>
-    {% endif %}
-  </div>
-
-  <div class="import-actions">
+  <div class="import-actions" style="margin-bottom: 28px;">
     <a href="{{ url_for('users_bp.show_users') }}" class="btn btn-back">
       <i class="fas fa-arrow-left"></i> {{ _('Back to Members') }}
     </a>
@@ -375,9 +341,166 @@
        class="btn btn-example" download>
       <i class="fas fa-file-csv"></i> {{ _('Download Example CSV') }}
     </a>
+    {% if is_post %}
+      <a href="{{ url_for('users_bp.bulk_import_members') }}" class="btn btn-primary" style="margin-left: auto;">
+        <i class="fas fa-upload"></i> {{ _('Import Another File') }}
+      </a>
+    {% endif %}
+    {% if not is_post %}
+      <button type="submit" form="upload-form" class="btn btn-primary" id="submit-btn" style="display: none; margin-left: auto; cursor: pointer;">
+        <i class="fas fa-upload"></i> {{ _('Upload') }}
+      </button>
+    {% endif %}
   </div>
 
-  {% if show_example %}
+  {% if is_post %}
+    {% set total_count = added|length + invited|length + failed_users|length %}
+
+    <div class="import-summary">
+      <div class="import-stat {{ 'is-success' if added else 'is-empty' }}">
+        <span class="stat-number">{{ added|length }}</span>
+        <span class="stat-label">{{ _('Added') }}</span>
+      </div>
+      <div class="import-stat {{ 'is-invite' if invited else 'is-empty' }}">
+        <span class="stat-number">{{ invited|length }}</span>
+        <span class="stat-label">{{ _('Invited') }}</span>
+      </div>
+      <div class="import-stat {{ 'is-error' if failed_users else 'is-empty' }}">
+        <span class="stat-number">{{ failed_users|length }}</span>
+        <span class="stat-label">{{ _('Failed') }}</span>
+      </div>
+    </div>
+
+    {# Added section #}
+    <div class="import-section">
+      <div class="import-section-header">
+        <i class="fas fa-user-plus"></i>
+        <h3>{{ _('Added members') }}</h3>
+        <span class="section-count">{{ added|length }}</span>
+      </div>
+      {% if added %}
+      <table class="import-table">
+        <thead>
+          <tr>
+            <th class="col-name">{{ _('Full name') }}</th>
+            <th class="col-username">{{ _('Username') }}</th>
+            <th class="col-email">{{ _('Email') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in added %}
+          <tr>
+            <td class="col-name">
+              <span class="row-avatar">{{ (m.fullname or '?')[:2]|upper }}</span>
+              {{ m.fullname }}
+            </td>
+            <td class="col-username">{{ m.username }}</td>
+            <td class="col-email">{{ m.email or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="import-empty">
+        <i class="fas fa-inbox"></i>
+        {{ _('No new members were added.') }}
+      </div>
+      {% endif %}
+    </div>
+
+    {# Invited section #}
+    <div class="import-section">
+      <div class="import-section-header">
+        <i class="fas fa-envelope"></i>
+        <h3>{{ _('Invited (existing users)') }}</h3>
+        <span class="section-count">{{ invited|length }}</span>
+      </div>
+      {% if invited %}
+      <table class="import-table">
+        <thead>
+          <tr>
+            <th class="col-name">{{ _('Full name') }}</th>
+            <th class="col-username">{{ _('Username') }}</th>
+            <th class="col-email">{{ _('Email') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in invited %}
+          <tr>
+            <td class="col-name">
+              <span class="row-avatar">{{ (m.fullname or '?')[:2]|upper }}</span>
+              {{ m.fullname }}
+            </td>
+            <td class="col-username">{{ m.username }}</td>
+            <td class="col-email">{{ m.email or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="import-empty">
+        <i class="fas fa-paper-plane"></i>
+        {{ _('No invitations were sent.') }}
+      </div>
+      {% endif %}
+    </div>
+
+    {# Failed section #}
+    <div class="import-section is-failed">
+      <div class="import-section-header">
+        <i class="fas fa-exclamation-triangle"></i>
+        <h3>{{ _('Failed rows') }}</h3>
+        <span class="section-count">{{ failed_users|length }}</span>
+      </div>
+      {% if failed_users %}
+      <table class="import-table">
+        <thead>
+          <tr>
+            <th class="col-reason">{{ _('Reason') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in failed_users %}
+          <tr>
+            <td class="col-reason">{{ f }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="import-empty">
+        <i class="fas fa-check"></i>
+        {{ _('No rows failed.') }}
+      </div>
+      {% endif %}
+    </div>
+
+  {% else %}
+
+    {# Drag and Drop Form #}
+    <form action="{{ url_for('users_bp.bulk_import_members') }}" method="post" enctype="multipart/form-data" id="upload-form">
+      <div class="import-upload-card" id="drop-zone" onclick="document.getElementById('file-input').click();">
+        <i class="fas fa-cloud-upload-alt upload-icon"></i>
+        <h3>{{ _('Drag & Drop File Here') }}</h3>
+        <p>{{ _('or click to browse from your computer') }}</p>
+        <span class="file-select-btn">
+          <i class="fas fa-folder-open"></i> {{ _('Choose File') }}
+        </span>
+        <input type="file" name="file" id="file-input" accept=".csv,.xlsx" style="display: none;" />
+        
+        <div id="selected-file-info">
+          <i class="fas fa-check-circle"></i>
+          <span id="file-name-text"></span>
+        </div>
+      </div>
+
+    </form>
+
+  {% endif %}
+
+
+
+  {% if show_example or not is_post %}
   <div class="import-section" style="margin-top: 24px;">
     <div class="import-section-header">
       <i class="fas fa-table"></i>
@@ -390,10 +513,11 @@
       <table class="import-table">
         <thead>
           <tr>
-            <th>Fullname (Required)</th>
-            <th>Username (Required)</th>
+            <th>Fullname<span style="color: #6b2030; font-weight: bold;">*</span></th>
+            <th>Username</th>
             <th>Member Number</th>
-            <th>Email</th>
+            <th>Email<span style="color: #6b2030; font-weight: bold;">*</span></th>
+            <th>Phone</th>
             <th>Mentor Name</th>
           </tr>
         </thead>
@@ -401,15 +525,17 @@
           <tr>
             <td>John Doe</td>
             <td>johndoe</td>
-            <td>1234567</td>
+            <td>PN-1234567</td>
             <td>john.doe@example.com</td>
+            <td>+1234567890</td>
             <td>Jane Smith</td>
           </tr>
           <tr>
             <td>Alice Smith</td>
-            <td>alicesmith</td>
             <td></td>
+            <td>PN-7654321</td>
             <td>alice@example.com</td>
+            <td></td>
             <td></td>
           </tr>
         </tbody>
@@ -418,4 +544,75 @@
   </div>
   {% endif %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+{% if not is_post %}
+<script>
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+  const fileInfo = document.getElementById('selected-file-info');
+  const fileNameText = document.getElementById('file-name-text');
+  const submitBtn = document.getElementById('submit-btn');
+
+  if (dropZone && fileInput) {
+    // Prevent default drag behaviors
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, preventDefaults, false);
+      document.body.addEventListener(eventName, preventDefaults, false);
+    });
+
+    // Highlight drop zone when item is dragged over it
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropZone.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, unhighlight, false);
+    });
+
+    // Handle dropped files
+    dropZone.addEventListener('drop', handleDrop, false);
+
+    // Handle selected files via input
+    fileInput.addEventListener('change', handleFileSelect, false);
+  }
+
+  function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  function highlight(e) {
+    dropZone.style.borderColor = '#004165';
+    dropZone.style.background = '#f8fafc';
+  }
+
+  function unhighlight(e) {
+    dropZone.style.borderColor = '#cbd5e1';
+    dropZone.style.background = '#fff';
+  }
+
+  function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    if (files.length > 0) {
+      fileInput.files = files;
+      updateFileInfo(files[0].name);
+    }
+  }
+
+  function handleFileSelect(e) {
+    if (fileInput.files.length > 0) {
+      updateFileInfo(fileInput.files[0].name);
+    }
+  }
+
+  function updateFileInfo(name) {
+    fileNameText.textContent = name;
+    fileInfo.style.display = 'inline-flex';
+    submitBtn.style.display = 'inline-flex';
+  }
+</script>
+{% endif %}
 {% endblock %}

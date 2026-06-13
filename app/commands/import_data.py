@@ -133,8 +133,9 @@ def import_members(file, club_no):
     print(f"Importing members into club ID {club_id} from {file}...")
     try:
         with open(file, 'rb') as f:
-            file_bytes = f.read()
-            success_count, failed_users = process_member_file(file_bytes, ext, club_id)
+            report = process_member_file(file_bytes, ext, club_id)
+            success_count = len(report.get('added', [])) + len(report.get('invited', []))
+            failed_users = report.get('failed', [])
             print(f"Successfully imported/invited {success_count} members.")
             if failed_users:
                 print("Failed rows:")
