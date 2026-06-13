@@ -891,6 +891,15 @@ class ChatService:
                 # Allow LLM to process tool results before returning
                 if executed_tools and not text_response:
                     continue
+                # If a tool returned a failure with a guidance message and the
+                # LLM did not produce a text response, fall back to surfacing
+                # the tool's guidance. Otherwise trust the LLM's reply.
+                if not text_response:
+                    for tool in executed_tools:
+                        tool_result = tool.get('result', {})
+                        if tool_result.get('success') is False and tool_result.get('message'):
+                            text_response = tool_result['message']
+                            break
                 return text_response, executed_tools
 
         # Retries exhausted - let LLM generate constructive feedback from tool guidance

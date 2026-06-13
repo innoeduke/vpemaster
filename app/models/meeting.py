@@ -1,6 +1,7 @@
 """Meeting model."""
 import os
 from sqlalchemy.dialects import mysql
+from sqlalchemy import event
 from .base import db
 
 
@@ -161,6 +162,19 @@ class Meeting(db.Model):
     def best_speaker_id(self):
         return self._get_first_winner_id('speaker')
 
+    @best_speaker_id.setter
+    def best_speaker_id(self, value):
+        from .voting import MeetingAwardWinner
+        if self.id is None:
+            # Meeting is not yet flushed; defer the record creation by
+            # removing any previously stored value and queueing the new one
+            # via a SQLAlchemy after_insert event.
+            self._pending_best_speaker_id = value
+            return
+        MeetingAwardWinner.query.filter_by(meeting_id=self.id, award_category='speaker').delete()
+        if value is not None:
+            db.session.add(MeetingAwardWinner(meeting_id=self.id, award_category='speaker', contact_id=value))
+
     @property
     def best_speaker(self):
         return self._get_first_winner_contact('speaker')
@@ -261,3 +275,19 @@ class Meeting(db.Model):
         except Exception as e:
             db.session.rollback()
             return False, str(e)
+
+
+@event.listens_for(Meeting, 'after_insert')
+def _apply_pending_best_speaker_id(mapper, connection, target):
+    """Flush any best_speaker_id that was set before the meeting had an id."""
+    pending = getattr(target, '_pending_best_speaker_id', None)
+    if pending is not None and target.id is not None:
+        from .voting import MeetingAwardWinner
+        connection.execute(
+            MeetingAwardWinner.__table__.insert().values(
+                meeting_id=target.id,
+                award_category='speaker',
+                contact_id=pending,
+            )
+        )
+        target._pending_best_speaker_id = None

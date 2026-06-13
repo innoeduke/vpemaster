@@ -34,7 +34,7 @@ class UserRefactorTestCase(unittest.TestCase):
 
     def populate_data(self):
         # 1. Create Club
-        self.club = Club(club_no='000000', club_name='Test Club', district='Test District')
+        self.club = Club(id=2, club_no='000000', club_name='Test Club', district='Test District')
         db.session.add(self.club)
         db.session.commit()
 
@@ -130,7 +130,7 @@ class UserRefactorTestCase(unittest.TestCase):
     def test_update_user_via_form(self):
         """Test updating a user via the /user/form route."""
         self.login()
-        
+
         # Create a user to update first
         target_contact = Contact(Name="Update Target")
         db.session.add(target_contact)
@@ -139,20 +139,23 @@ class UserRefactorTestCase(unittest.TestCase):
         target_user.set_password('password')
         db.session.add(target_user)
         db.session.commit()
-        
+
+        # Username update requires the super-club sysadmin path; set the
+        # session's current_club_id to GLOBAL_CLUB_ID so this branch fires.
+        from app.constants import GLOBAL_CLUB_ID
         with self.client.session_transaction() as sess:
-            sess['current_club_id'] = self.club.id
-            
+            sess['current_club_id'] = GLOBAL_CLUB_ID
+
         update_data = {
             'username': 'target_updated',
             'full_name': 'Target Updated',
             'email': 'target_updated@test.com',
             'roles': [self.role_user.id]
         }
-        
+
         response = self.client.post(f'/user/form/{target_user.id}', data=update_data, follow_redirects=True)
         self.assertEqual(response.status_code, 200)
-        
+
         # Verify Update
         updated_user = db.session.get(User, target_user.id)
         self.assertEqual(updated_user.username, 'target_updated')
@@ -207,9 +210,9 @@ class UserRefactorTestCase(unittest.TestCase):
     def test_delete_user_multi_club_reassigns_home(self):
         """Test delete_user when user has multiple clubs reassigns home club."""
         self.login()
-        
+
         # 1. Create a second club
-        club2 = Club(club_no='999999', club_name='Club Two', district='Test District')
+        club2 = Club(id=3, club_no='999999', club_name='Club Two', district='Test District')
         db.session.add(club2)
         db.session.flush()
         
