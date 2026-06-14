@@ -77,33 +77,10 @@
           </button>
         </div>
       </form>
-      <div class="divider">
-        <span>or</span>
-      </div>
-      <div class="guest-login">
-        <a href="{{ url_for('agenda_bp.agenda') }}" id="guest-login-link" class="btn btn-secondary">Continue as
-          Guest</a>
-      </div>
-
-      <!-- Guest Club Selection Modal -->
-      <div id="guest-modal" class="modal-overlay">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h2>Select a Club</h2>
-          </div>
-          <div class="modal-body">
-            <label for="guest-club-select" class="modal-label">Choose a club to visit:</label>
-            <select id="guest-club-select" class="form-control modal-select">
-              {% for club in clubs %}
-              <option value="{{ club.id }}">{{ club.club_name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="modal-actions">
-            <button id="cancel-guest" type="button" class="btn btn-secondary">Cancel</button>
-            <button id="confirm-guest" type="button" class="btn btn-primary">Continue</button>
-          </div>
-        </div>
+      <div class="back-to-home">
+        <a href="{{ url_for('main_bp.index') }}" class="login-link">
+          <i class="fas fa-arrow-left"></i> {{ _('Back to Home') }}
+        </a>
       </div>
     </div>
 
@@ -116,57 +93,10 @@
     </footer>
   </div>
 
-  <script src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      const guestLink = document.getElementById('guest-login-link');
-      const guestModal = document.getElementById('guest-modal');
-      const cancelGuestBtn = document.getElementById('cancel-guest');
-      const confirmGuestBtn = document.getElementById('confirm-guest');
-      const guestClubSelect = document.getElementById('guest-club-select');
       const signUpLink = document.getElementById('sign-up-link');
       const usernameInput = document.getElementById('username');
-
-      // Initialize guest custom select if modal exists
-      if (guestClubSelect) {
-        new CustomSelect('guest-club-select');
-      }
-
-      // Guest Modal Event Listeners
-      if (guestLink) {
-        guestLink.addEventListener('click', function (e) {
-          e.preventDefault();
-          guestModal.classList.add('active');
-        });
-      }
-
-      if (cancelGuestBtn) {
-        cancelGuestBtn.addEventListener('click', function () {
-          guestModal.classList.remove('active');
-        });
-      }
-
-      if (confirmGuestBtn) {
-        confirmGuestBtn.addEventListener('click', function () {
-          // Need to get value from the original select which custom select updates
-          let clubId = guestClubSelect.value;
-          if (!clubId && guestClubSelect.options.length > 0) {
-            // Fallback to first option if value is empty (common in custom selects before first change)
-            clubId = guestClubSelect.options[0].value;
-          }
-          if (clubId) {
-            window.location.href = "{{ url_for('agenda_bp.agenda') }}?club_id=" + clubId;
-          }
-        });
-      }
-
-      if (guestModal) {
-        guestModal.addEventListener('click', function (e) {
-          if (e.target === guestModal) {
-            guestModal.classList.remove('active');
-          }
-        });
-      }
 
       // Sign Up: pre-fill the register page with whatever the user has typed.
       // The link's href is a fallback; we override it at click time so the
