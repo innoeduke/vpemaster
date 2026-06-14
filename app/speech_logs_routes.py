@@ -2186,15 +2186,29 @@ def update_speech_log(log_id):
     from .services.role_service import RoleService
     owner_ids = data.get('owner_ids', []) # Expected list of IDs
 
+    # Helper to check if a value is a valid owner ID
+    def parse_owner_id(val):
+        if val is None:
+            return None
+        val_str = str(val).strip().lower()
+        if val_str in ('', 'none', 'null', 'undefined'):
+            return None
+        try:
+            return int(val)
+        except (ValueError, TypeError):
+            return None
+
     # Backward compatibility: if single 'owner_id' provided and no 'owner_ids', use it
     if not owner_ids and 'owner_id' in data:
          val = data.get('owner_id')
-         if val:
-             owner_ids = [int(val)]
+         parsed_val = parse_owner_id(val)
+         if parsed_val is not None:
+             owner_ids = [parsed_val]
 
     # Normalize to ints — the client sends string IDs, but Contact.id is integer
     if owner_ids:
-        owner_ids = [int(oid) for oid in owner_ids if oid]
+        owner_ids = [parse_owner_id(oid) for oid in owner_ids]
+        owner_ids = [oid for oid in owner_ids if oid is not None]
 
     if 'owner_ids' in data or 'owner_id' in data:
         RoleService.assign_meeting_role(log, owner_ids, is_admin=is_authorized(Permissions.SPEECH_LOGS_MANAGE))

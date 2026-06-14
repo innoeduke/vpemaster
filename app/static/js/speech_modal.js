@@ -565,13 +565,18 @@ async function openEditDetailsModal(
           ownerIds = JSON.parse(row.dataset.ownerIds || "[]");
         } catch (e) {
           const singleId = row.dataset.ownerId;
-          if (singleId) ownerIds = [singleId];
+          if (singleId && !["none", "null", "undefined"].includes(String(singleId).toLowerCase())) {
+            ownerIds = [singleId];
+          }
         }
         if (ownerIds.length === 0) {
           const singleId = row.dataset.ownerId;
-          if (singleId) ownerIds = [singleId];
+          if (singleId && !["none", "null", "undefined"].includes(String(singleId).toLowerCase())) {
+            ownerIds = [singleId];
+          }
         }
       }
+      ownerIds = ownerIds.filter(id => id && !["none", "null", "undefined"].includes(String(id).toLowerCase()));
 
       // Parse existing per-owner targets if available
       let existingOwnerTargets = data.log.owner_targets || {};
@@ -910,9 +915,12 @@ async function saveEditDetailsChanges(event) {
     cards.forEach((card, idx) => {
       // Read the ownerId from the picker first (authoritative), fall back to
       // the legacy dataset attribute in case the picker is not present.
-      const ownerId = (card._ownerPicker && card._ownerPicker.getOwnerId())
+      let ownerId = (card._ownerPicker && card._ownerPicker.getOwnerId())
         || card.dataset.ownerId
         || "";
+      if (ownerId && ["none", "null", "undefined"].includes(String(ownerId).toLowerCase())) {
+        ownerId = "";
+      }
       const pathwayName = (card._pathHolder && card._pathHolder.el) ? card._pathHolder.el.value : (card.querySelector(".role-card-pathway")?.value || "");
       const levelVal = (card._levelHolder && card._levelHolder.el) ? card._levelHolder.el.value : (card.querySelector(".role-card-level")?.value || "");
       const suffixVal = (card._suffixHolder && card._suffixHolder.el) ? card._suffixHolder.el.value : (card.querySelector(".role-card-suffix")?.value || "");
