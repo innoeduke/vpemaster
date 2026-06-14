@@ -177,88 +177,89 @@ def _get_roles_for_voting(meeting_id, meeting):
     
     enriched_roles = _enrich_role_data_for_voting(consolidated, meeting)
     
-    # Consolidate 'role-taker' category to one row per person
-    # 1. Separate role-takers from others
-    other_roles = [r for r in enriched_roles if r.get('award_category') != 'role-taker']
-    
-    # 2. Get all role takers for the meeting using RoleService
-    role_takers_map = RoleService.get_role_takers(meeting_id, meeting.club_id)
-    
-    # 3. Create consolidated rows for each person who took a 'role-taker' role
-    consolidated_role_takers = []
-    
-    # Determine winner info for role-taker award
-    voter_identifier = get_session_voter_identifier()
-    user_vote_ids = set()
-    if meeting.status == 'running' and voter_identifier:
-        votes = Vote.query.filter_by(
-            meeting_id=meeting_id,
-            voter_identifier=voter_identifier,
-            award_category='role-taker'
-        ).all()
-        for vote in votes:
-            if vote.contact_id:
-                user_vote_ids.add(vote.contact_id)
-            
-    role_taker_winner_ids = set()
-    if meeting.status == 'finished':
-        from .models.voting import MeetingAwardWinner
-        winners = MeetingAwardWinner.query.filter_by(meeting_id=meeting.id, award_category='role-taker').all()
-        if winners:
-            role_taker_winner_ids = {w.contact_id for w in winners}
-        elif meeting.best_role_taker_id:
-            role_taker_winner_ids.add(meeting.best_role_taker_id)
-
-    # Vote counts for role-takers (admins only)
-    vote_counts = {}
-    if (is_authorized(Permissions.MEETING_MANAGE, meeting=meeting) or is_authorized(Permissions.VOTING_TRACK_PROGRESS, meeting=meeting)) and meeting.status in ['running', 'finished']:
-        counts = db.session.query(Vote.contact_id, func.count(Vote.id)).filter(
-            Vote.meeting_id == meeting_id,
-            Vote.award_category == 'role-taker'
-        ).group_by(Vote.contact_id).all()
-        for cid, count in counts:
-            vote_counts[cid] = count
-
-    for contact_id_str, roles in role_takers_map.items():
-        # Filter roles for this person that belong to the 'role-taker' award category
-        person_role_taker_roles = [r for r in roles if r.get('award_category') == 'role-taker']
-        
-        if not person_role_taker_roles:
-            continue
-            
-        contact_id = int(contact_id_str)
-        first_role = person_role_taker_roles[0]
-        
-        # Combine and deduplicate role names: "Timer, Ah-Counter"
-        role_names = []
-        for r in person_role_taker_roles:
-            if r['name'] not in role_names:
-                role_names.append(r['name'])
-        combined_role_names = ", ".join(role_names)
-        
-        # Build consolidated role-taker entry
-        is_winner = (contact_id in user_vote_ids) if meeting.status == 'running' else (contact_id in role_taker_winner_ids)
-        category_has_winner = (len(user_vote_ids) > 0) if meeting.status == 'running' else bool(role_taker_winner_ids)
-
-        role_entry = {
-            'role': combined_role_names,
-            'icon': 'fa-users', # Generic icon for consolidated roles
-            'session_id': first_role.get('session_log_id'), # Might be None
-            'owner_id': contact_id,
-            'owner_name': first_role.get('owner_name'),
-            'owner_avatar_url': first_role.get('owner_avatar_url'),
-            'award_category': 'role-taker',
-            'award_category_open': not category_has_winner,
-            'award_type': 'role-taker' if is_winner else None,
-            'vote_count': vote_counts.get(contact_id, 0)
-        }
-        consolidated_role_takers.append(role_entry)
-
-    # 4. Handle custom awards configurations
+    # 4. Handle custom awards configurations & disabled awards
     from .models.voting import MeetingAwardConfig, MeetingAwardWinner
     configs = MeetingAwardConfig.query.filter_by(meeting_id=meeting.id).all()
+    disabled_cats = {c.award_category for c in configs if c.max_votes_per_user == 0 or c.max_winners == 0}
+
+    # Consolidate 'role-taker' category to one row per person
+    # 1. Separate role-takers from others (and filter disabled standard categories)
+    other_roles = [r for r in enriched_roles if r.get('award_category') != 'role-taker' and r.get('award_category') not in disabled_cats]
+    
+    consolidated_role_takers = []
+    if 'role-taker' not in disabled_cats:
+        # 2. Get all role takers for the meeting using RoleService
+        role_takers_map = RoleService.get_role_takers(meeting_id, meeting.club_id)
+        
+        # 3. Create consolidated rows for each person who took a 'role-taker' role
+        # Determine winner info for role-taker award
+        voter_identifier = get_session_voter_identifier()
+        user_vote_ids = set()
+        if meeting.status == 'running' and voter_identifier:
+            votes = Vote.query.filter_by(
+                meeting_id=meeting_id,
+                voter_identifier=voter_identifier,
+                award_category='role-taker'
+            ).all()
+            for vote in votes:
+                if vote.contact_id:
+                    user_vote_ids.add(vote.contact_id)
+                
+        role_taker_winner_ids = set()
+        if meeting.status == 'finished':
+            winners = MeetingAwardWinner.query.filter_by(meeting_id=meeting.id, award_category='role-taker').all()
+            if winners:
+                role_taker_winner_ids = {w.contact_id for w in winners}
+            elif meeting.best_role_taker_id:
+                role_taker_winner_ids.add(meeting.best_role_taker_id)
+
+        # Vote counts for role-takers (admins only)
+        vote_counts = {}
+        if (is_authorized(Permissions.MEETING_MANAGE, meeting=meeting) or is_authorized(Permissions.VOTING_TRACK_PROGRESS, meeting=meeting)) and meeting.status in ['running', 'finished']:
+            counts = db.session.query(Vote.contact_id, func.count(Vote.id)).filter(
+                Vote.meeting_id == meeting_id,
+                Vote.award_category == 'role-taker'
+            ).group_by(Vote.contact_id).all()
+            for cid, count in counts:
+                vote_counts[cid] = count
+
+        for contact_id_str, roles in role_takers_map.items():
+            # Filter roles for this person that belong to the 'role-taker' award category
+            person_role_taker_roles = [r for r in roles if r.get('award_category') == 'role-taker']
+            
+            if not person_role_taker_roles:
+                continue
+                
+            contact_id = int(contact_id_str)
+            first_role = person_role_taker_roles[0]
+            
+            # Combine and deduplicate role names: "Timer, Ah-Counter"
+            role_names = []
+            for r in person_role_taker_roles:
+                if r['name'] not in role_names:
+                    role_names.append(r['name'])
+            combined_role_names = ", ".join(role_names)
+            
+            # Build consolidated role-taker entry
+            is_winner = (contact_id in user_vote_ids) if meeting.status == 'running' else (contact_id in role_taker_winner_ids)
+            category_has_winner = (len(user_vote_ids) > 0) if meeting.status == 'running' else bool(role_taker_winner_ids)
+
+            role_entry = {
+                'role': combined_role_names,
+                'icon': 'fa-users', # Generic icon for consolidated roles
+                'session_id': first_role.get('session_log_id'), # Might be None
+                'owner_id': contact_id,
+                'owner_name': first_role.get('owner_name'),
+                'owner_avatar_url': first_role.get('owner_avatar_url'),
+                'award_category': 'role-taker',
+                'award_category_open': not category_has_winner,
+                'award_type': 'role-taker' if is_winner else None,
+                'vote_count': vote_counts.get(contact_id, 0)
+            }
+            consolidated_role_takers.append(role_entry)
+
     standard_cats = {'speaker', 'evaluator', 'table-topic', 'role-taker', 'debater', 'lucky_draw', 'lucky-draw-winner'}
-    custom_configs = [c for c in configs if c.award_category not in standard_cats]
+    custom_configs = [c for c in configs if c.award_category not in standard_cats and c.award_category not in disabled_cats]
     
     custom_roles = []
     if custom_configs:
@@ -570,11 +571,31 @@ def batch_vote():
             voter_identifier=voter_identifier
         ).delete()
         
+        # Load configs to get disabled categories and max votes
+        from .models.voting import MeetingAwardConfig
+        configs = MeetingAwardConfig.query.filter_by(meeting_id=meeting_id).all()
+        disabled_cats = {c.award_category for c in configs if c.max_votes_per_user == 0 or c.max_winners == 0}
+        
+        category_votes_count = {}
+        
         # Add new votes
         for v in votes:
             contact_id = v.get('contact_id')
             award_category = v.get('award_category')
             if contact_id and award_category:
+                if award_category in disabled_cats:
+                    continue
+                
+                # Enforce max votes per user limit (capping at max_votes or max_winners)
+                config_item = next((c for c in configs if c.award_category == award_category), None)
+                max_votes_allowed = 1
+                if config_item:
+                    max_votes_allowed = min(config_item.max_votes_per_user, config_item.max_winners)
+                
+                category_votes_count[award_category] = category_votes_count.get(award_category, 0) + 1
+                if category_votes_count[award_category] > max_votes_allowed:
+                    continue
+
                 new_vote = Vote(
                     meeting_id=meeting_id,
                     voter_identifier=voter_identifier,
@@ -632,6 +653,12 @@ def vote_for_award():
 
     if not (meeting.status == 'running' or (meeting.status == 'finished' and is_admin) or (meeting.status != 'finished' and is_meeting_date and has_voting_view_results)):
         return jsonify(success=False, message="Voting is not active for this meeting."), 403
+
+    # Check if category is disabled
+    from .models.voting import MeetingAwardConfig
+    config = MeetingAwardConfig.query.filter_by(meeting_id=meeting.id, award_category=award_category).first()
+    if config and (config.max_votes_per_user == 0 or config.max_winners == 0):
+        return jsonify(success=False, message="This award is not enabled for this meeting."), 400
 
     # Determine voter identity
     if current_user.is_authenticated:

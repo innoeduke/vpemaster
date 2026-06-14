@@ -1857,8 +1857,28 @@ def update_logs():
                 category = award.get('category', '').strip()
                 if not category:
                     continue
-                max_votes = int(award.get('max_votes', 1) or 1)
-                max_winners = int(award.get('max_winners', 1) or 1)
+                
+                raw_votes = award.get('max_votes')
+                if raw_votes is None or raw_votes == '':
+                    max_votes = 1
+                else:
+                    try:
+                        max_votes = max(0, int(raw_votes))
+                    except (ValueError, TypeError):
+                        max_votes = 1
+
+                raw_winners = award.get('max_winners')
+                if raw_winners is None or raw_winners == '':
+                    max_winners = 1
+                else:
+                    try:
+                        max_winners = max(0, int(raw_winners))
+                    except (ValueError, TypeError):
+                        max_winners = 1
+
+                # Rule 1: max votes <= max winners
+                max_votes = min(max_votes, max_winners)
+
                 winner_ids = award.get('winner_ids', [])
 
                 associated_role = award.get('associated_role')
@@ -1876,18 +1896,19 @@ def update_logs():
                     associated_role=associated_role,
                 ))
 
-                # Save winners
-                for wid in winner_ids:
-                    if wid:
-                        try:
-                            contact_id = int(wid)
-                        except (ValueError, TypeError):
-                            continue
-                        db.session.add(MeetingAwardWinner(
-                            meeting_id=meeting.id,
-                            award_category=category,
-                            contact_id=contact_id,
-                        ))
+                # Save winners (only if max_winners > 0)
+                if max_winners > 0:
+                    for wid in winner_ids[:max_winners]:
+                        if wid:
+                            try:
+                                contact_id = int(wid)
+                            except (ValueError, TypeError):
+                                continue
+                            db.session.add(MeetingAwardWinner(
+                                meeting_id=meeting.id,
+                                award_category=category,
+                                contact_id=contact_id,
+                            ))
         else:
             # Legacy per-category award handling
             if 'best_speaker_id' in data:
@@ -1914,8 +1935,17 @@ def update_logs():
             if award_configs_data:
                 from .models.voting import MeetingAwardConfig
                 for category, conf in award_configs_data.items():
-                    max_votes = conf.get('max_votes_per_user', 1)
-                    max_winners = conf.get('max_winners', 1)
+                    raw_votes = conf.get('max_votes_per_user', 1)
+                    raw_winners = conf.get('max_winners', 1)
+                    try:
+                        max_winners = max(0, int(raw_winners))
+                    except (ValueError, TypeError):
+                        max_winners = 1
+                    try:
+                        max_votes = max(0, int(raw_votes))
+                    except (ValueError, TypeError):
+                        max_votes = 1
+                    max_votes = min(max_votes, max_winners)
                     
                     existing_config = MeetingAwardConfig.query.filter_by(meeting_id=meeting.id, award_category=category).first()
                     if existing_config:

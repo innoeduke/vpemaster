@@ -604,12 +604,194 @@ def test_unified_awards_saving(client, app, default_club, staff_user):
                     if standard_orders:
                         assert categories.index('best-dresser') > categories.index(standard_orders[-1])
 
-    # Also check via client GET integration to ensure the voting page renders custom categories
+        # Also check via client GET integration to ensure the voting page renders custom categories
+        with patch('app.voting_routes.is_authorized', return_value=True):
+            resp_voting = client.get(f'/voting/{meeting_id}')
+            assert resp_voting.status_code == 200
+            html_voting = resp_voting.get_data(as_text=True)
+            assert 'Best Dresser' in html_voting
+            # Ensure it does NOT contain 'Best Dresser Roles'
+            assert 'Best Dresser Roles' not in html_voting
+
+
+def test_awards_validation_and_disabling(client, app, default_club, staff_user):
+    """Verify that updating awards enforces max_votes <= max_winners, allows 0 to disable, hides from voting page, and blocks votes."""
+    with app.app_context():
+        # Ensure staff role has AGENDA_EDIT permission
+        from app.models import AuthRole, Permission
+        from app.auth.permissions import Permissions
+        staff_role = AuthRole.query.filter_by(name='Staff').first()
+        agenda_edit_perm = Permission.query.filter_by(name=Permissions.MEETING_MANAGE).first()
+        if staff_role and agenda_edit_perm and agenda_edit_perm not in staff_role.permissions:
+            staff_role.permissions.append(agenda_edit_perm)
+            db.session.commit()
+
+        # Create contacts
+        c_1 = Contact(Name="Winner One", Type="Member")
+        db.session.add(c_1)
+        db.session.commit()
+        db.session.add(ContactClub(contact_id=c_1.id, club_id=default_club.id))
+        db.session.commit()
+
+        from app.models import Roster, Ticket
+        t = Ticket.query.filter_by(name='Standard').first()
+        if not t:
+            t = Ticket(name='Standard', price=0)
+            db.session.add(t)
+            db.session.commit()
+
+        from datetime import date
+        meeting = Meeting(
+            Meeting_Number=996,
+            Meeting_Date=date.today(),
+            club_id=default_club.id,
+            status='running',
+        )
+        db.session.add(meeting)
+        db.session.commit()
+        meeting_id = meeting.id
+        w1_id = c_1.id
+
+        # Add to roster
+        r1 = Roster(meeting_id=meeting_id, contact_id=w1_id, ticket_id=t.id, order_number=1)
+        db.session.add(r1)
+        db.session.commit()
+
+    # Authenticate client
+    client.post('/login', data=dict(username='staff', password='password'))
+    with client.session_transaction() as sess:
+        sess['club_id'] = default_club.id
+        sess['current_club_id'] = default_club.id
+
+    # Post unified awards list:
+    # 1. 'speaker' has max_votes = 0, max_winners = 0 (disabled standard category, try to pass winner_ids)
+    # 2. 'best-dresser' (custom) has max_votes = 3, max_winners = 2 (capped to 2)
+    # 3. 'best-tie' (custom) has max_votes = 0, max_winners = 0 (disabled custom category)
+    with patch('app.agenda_routes.is_authorized', return_value=True):
+        resp = client.post(
+            '/agenda/update',
+            json={
+                'meeting_id': meeting_id,
+                'agenda_data': [],
+                'awards': [
+                    {
+                        'category': 'speaker',
+                        'label': 'Best Speaker',
+                        'max_votes': 0,
+                        'max_winners': 0,
+                        'associated_role': None,
+                        'winner_ids': [w1_id]
+                    },
+                    {
+                        'category': 'best-dresser',
+                        'label': 'Best Dresser',
+                        'max_votes': 3,
+                        'max_winners': 2,
+                        'associated_role': None,
+                        'winner_ids': [w1_id]
+                    },
+                    {
+                        'category': 'best-tie',
+                        'label': 'Best Tie',
+                        'max_votes': 0,
+                        'max_winners': 0,
+                        'associated_role': None,
+                        'winner_ids': []
+                    }
+                ]
+            }
+        )
+
+        assert resp.status_code == 200
+        assert resp.get_json().get('success') is True
+
+        with app.app_context():
+            from app.models.voting import MeetingAwardConfig, MeetingAwardWinner
+            configs = MeetingAwardConfig.query.filter_by(meeting_id=meeting_id).all()
+            
+            # speaker config should have 0 votes/winners
+            sp_cfg = next(c for c in configs if c.award_category == 'speaker')
+            assert sp_cfg.max_votes_per_user == 0
+            assert sp_cfg.max_winners == 0
+
+            # best-dresser config should have max_votes capped at 2 (since max_winners=2)
+            dr_cfg = next(c for c in configs if c.award_category == 'best-dresser')
+            assert dr_cfg.max_votes_per_user == 2
+            assert dr_cfg.max_winners == 2
+
+            # best-tie config should have 0 votes/winners
+            tie_cfg = next(c for c in configs if c.award_category == 'best-tie')
+            assert tie_cfg.max_votes_per_user == 0
+            assert tie_cfg.max_winners == 0
+
+            # Verify no winners saved for disabled 'speaker' category
+            winners = MeetingAwardWinner.query.filter_by(meeting_id=meeting_id).all()
+            speaker_winners = [w for w in winners if w.award_category == 'speaker']
+            assert len(speaker_winners) == 0
+
+            # Verify dresser winner is saved
+            dresser_winners = [w for w in winners if w.award_category == 'best-dresser']
+            assert len(dresser_winners) == 1
+            assert dresser_winners[0].contact_id == w1_id
+
+            # Verify voting page roles generation filters out disabled categories
+            from app.voting_routes import _get_roles_for_voting
+            from flask_login import login_user
+            m_obj = db.session.get(Meeting, meeting_id)
+            
+            with app.test_request_context():
+                from app.models import User
+                staff = db.session.get(User, staff_user.id)
+                login_user(staff)
+                
+                with patch('app.voting_routes.is_authorized', return_value=True):
+                    roles = _get_roles_for_voting(meeting_id, m_obj)
+                    categories = {r.get('award_category') for r in roles}
+                    
+                    # 'speaker' and 'best-tie' must not be present
+                    assert 'speaker' not in categories
+                    assert 'best-tie' not in categories
+                    # 'best-dresser' should be present
+                    assert 'best-dresser' in categories
+
+    # Verify that requesting voting page does not render disabled categories
     with patch('app.voting_routes.is_authorized', return_value=True):
         resp_voting = client.get(f'/voting/{meeting_id}')
         assert resp_voting.status_code == 200
-        html_voting = resp_voting.get_data(as_text=True)
-        assert 'Best Dresser' in html_voting
-        # Ensure it does NOT contain 'Best Dresser Roles'
-        assert 'Best Dresser Roles' not in html_voting
+        html = resp_voting.get_data(as_text=True)
+        assert 'Best Speaker' not in html
+        assert 'Best Tie' not in html
+        assert 'Best Dresser' in html
+
+    # Verify backend voting route blocks/ignores votes for disabled categories
+    # Try batch voting for a disabled category 'speaker'
+    resp_batch = client.post(
+        '/voting/batch_vote',
+        json={
+            'meeting_id': meeting_id,
+            'votes': [
+                {'contact_id': w1_id, 'award_category': 'speaker'},
+                {'contact_id': w1_id, 'award_category': 'best-dresser'}
+            ]
+        }
+    )
+    assert resp_batch.status_code == 200
+    with app.app_context():
+        from app.models.voting import Vote
+        # There should be a vote for best-dresser, but not for speaker
+        dresser_votes = Vote.query.filter_by(meeting_id=meeting_id, award_category='best-dresser').all()
+        assert len(dresser_votes) == 1
+        speaker_votes = Vote.query.filter_by(meeting_id=meeting_id, award_category='speaker').all()
+        assert len(speaker_votes) == 0
+
+    # Try individual vote endpoint for 'speaker'
+    resp_indiv = client.post(
+        '/voting/vote',
+        json={
+            'meeting_id': meeting_id,
+            'contact_id': w1_id,
+            'award_category': 'speaker'
+        }
+    )
+    assert resp_indiv.status_code == 400
 

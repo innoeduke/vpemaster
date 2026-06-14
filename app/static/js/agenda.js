@@ -651,26 +651,44 @@ document.addEventListener("DOMContentLoaded", () => {
       const tdMaxWinners = document.createElement('td');
       const maxWinnersInput = document.createElement('input');
       maxWinnersInput.type = 'number';
-      maxWinnersInput.min = '1';
+      maxWinnersInput.min = '0';
       maxWinnersInput.value = award.max_winners;
+
+      // 3. Max Votes
+      const tdMaxVotes = document.createElement('td');
+      const maxVotesInput = document.createElement('input');
+      maxVotesInput.type = 'number';
+      maxVotesInput.min = '0';
+      maxVotesInput.value = award.max_votes;
+
       maxWinnersInput.addEventListener('change', () => {
-        const newVal = Math.max(1, parseInt(maxWinnersInput.value) || 1);
+        let newVal = parseInt(maxWinnersInput.value);
+        if (isNaN(newVal)) newVal = 0;
+        newVal = Math.max(0, newVal);
         maxWinnersInput.value = newVal;
         award.max_winners = newVal;
+
+        // Enforce rule 1: max votes <= max winners
+        if (award.max_votes > newVal) {
+          award.max_votes = newVal;
+          maxVotesInput.value = newVal;
+        }
+
         // Adjust winner selects
         renderWinnerSelects(winnerContainer, award, isFinished);
       });
       tdMaxWinners.appendChild(maxWinnersInput);
       tr.appendChild(tdMaxWinners);
 
-      // 3. Max Votes
-      const tdMaxVotes = document.createElement('td');
-      const maxVotesInput = document.createElement('input');
-      maxVotesInput.type = 'number';
-      maxVotesInput.min = '1';
-      maxVotesInput.value = award.max_votes;
       maxVotesInput.addEventListener('change', () => {
-        const newVal = Math.max(1, parseInt(maxVotesInput.value) || 1);
+        let newVal = parseInt(maxVotesInput.value);
+        if (isNaN(newVal)) newVal = 0;
+        newVal = Math.max(0, newVal);
+
+        // Enforce rule 1: max votes <= max winners
+        if (newVal > award.max_winners) {
+          newVal = award.max_winners;
+        }
         maxVotesInput.value = newVal;
         award.max_votes = newVal;
       });
@@ -774,8 +792,13 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       candidates = getCandidatesForCategory(award.category);
     }
-    
-    const count = Math.max(1, award.max_winners || 1);
+    let count = 1;
+    if (award.max_winners !== undefined && award.max_winners !== null) {
+      const parsed = parseInt(award.max_winners);
+      if (!isNaN(parsed)) {
+        count = Math.max(0, parsed);
+      }
+    }
 
     // Ensure winner_ids array is right-sized (pad with empty strings)
     while (award.winner_ids.length < count) award.winner_ids.push('');
