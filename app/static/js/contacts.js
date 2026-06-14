@@ -9,8 +9,8 @@ let allContactsCache = []; // Cache of all contacts from API
 let filteredContacts = []; // Contacts after applying search filter
 let currentPage = 1;
 let pageSize = 10;
-let sortColumnIndex = 3; // Metrics
-let sortDirection = 'desc';
+let sortColumnIndex = null; // null = use backend order (default sort done in DB)
+let sortDirection = 'asc';
 let selectedContactIds = new Set(); // Globally tracked selected IDs
 // Set true when the cache currently holds only the server-rendered first
 // page. The background load fills in the rest; the page-size dropdown
@@ -124,13 +124,15 @@ function applyFilters() {
     });
   }
 
-  // Sort filtered contacts
-  filteredContacts.sort((a, b) => {
-    const aVal = getContactSortValue(a, sortColumnIndex);
-    const bVal = getContactSortValue(b, sortColumnIndex);
-    const comparison = aVal.localeCompare(bVal, undefined, { numeric: true, sensitivity: 'base' });
-    return sortDirection === 'asc' ? comparison : -comparison;
-  });
+  // Sort filtered contacts (skip when no column chosen — preserve backend order)
+  if (sortColumnIndex !== null) {
+    filteredContacts.sort((a, b) => {
+      const aVal = getContactSortValue(a, sortColumnIndex);
+      const bVal = getContactSortValue(b, sortColumnIndex);
+      const comparison = aVal.localeCompare(bVal, undefined, { numeric: true, sensitivity: 'base' });
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }
 }
 
 /**
@@ -676,10 +678,12 @@ function setupContactsTableSorting() {
     });
   });
 
-  // Set initial UI state
-  const initialHeader = Array.from(headers).find(h => parseInt(h.dataset.columnIndex) === sortColumnIndex);
-  if (initialHeader) {
-    initialHeader.dataset.sortDir = sortDirection;
+  // Set initial UI state (only if a default sort column was chosen)
+  if (sortColumnIndex !== null) {
+    const initialHeader = Array.from(headers).find(h => parseInt(h.dataset.columnIndex) === sortColumnIndex);
+    if (initialHeader) {
+      initialHeader.dataset.sortDir = sortDirection;
+    }
   }
 }
 

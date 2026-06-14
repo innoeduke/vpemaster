@@ -9,7 +9,7 @@ from .auth.permissions import Permissions
 from .club_context import get_current_club_id, authorized_club_required
 from flask_login import current_user
 from sqlalchemy.orm import joinedload, defer
-from sqlalchemy import func
+from sqlalchemy import func, case
 
 from datetime import date, timedelta
 
@@ -813,7 +813,15 @@ def _build_contacts_data(per_page=None, offset=0):
         joinedload(Contact.mentor),
         joinedload(Contact.registered_paths).joinedload(ContactPath.pathway),
         defer(Contact.Bio)
-    ).order_by(Contact.Name.asc())
+    ).order_by(
+        case(
+            (Contact.Type == 'Member', 0),
+            (Contact.Type == 'Past Member', 1),
+            (Contact.Type == 'Guest', 2),
+            else_=3
+        ),
+        Contact.Name.asc()
+    )
     if per_page is not None:
         query = query.limit(per_page).offset(offset)
     contacts = query.all()
