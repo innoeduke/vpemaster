@@ -11,9 +11,10 @@ from datetime import datetime
 main_bp = Blueprint('main_bp', __name__)
 
 @main_bp.route('/')
-@login_required
 def index():
-    return redirect(url_for('agenda_bp.agenda'))
+    if current_user.is_authenticated:
+        return redirect(url_for('agenda_bp.agenda'))
+    return redirect(url_for('clubs_bp.list_clubs'))
 
 @main_bp.route('/calendar')
 @login_required
