@@ -64,7 +64,6 @@ class MemoryPagination:
 
 
 @clubs_bp.route('/clubs')
-@login_required
 def list_clubs():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 12, type=int)
@@ -901,31 +900,32 @@ def favorite_club(club_id):
 
 
 @clubs_bp.route('/clubs/<int:club_id>/enter', methods=['POST'])
-@login_required
 def enter_club(club_id):
     club = db.session.get(Club, club_id)
     if not club:
         return jsonify({'success': False, 'error': 'Club not found'}), 404
-        
-    # Check if already a member
-    from app.models import UserClub
-    uc = UserClub.query.filter_by(user_id=current_user.id, club_id=club_id).first()
-    if not uc:
-        # User is not a member, so they take the Guest role
-        from app.models import AuthRole
-        guest_role = AuthRole.query.filter_by(name='Guest').first()
-        if not guest_role:
-            return jsonify({'success': False, 'error': 'Guest role not found in system.'}), 500
-            
-        # Create a UserClub record with Guest role
-        current_user.ensure_contact(club_id=club_id)
-        current_user.set_club_role(club_id, role_id=guest_role.id)
-        db.session.commit()
-        
+
+    # Only create a UserClub record for logged-in users. Guests browse without
+    # a stored membership — the session-stored club context is all that's needed.
+    if current_user.is_authenticated:
+        from app.models import UserClub
+        uc = UserClub.query.filter_by(user_id=current_user.id, club_id=club_id).first()
+        if not uc:
+            # User is not a member, so they take the Guest role
+            from app.models import AuthRole
+            guest_role = AuthRole.query.filter_by(name='Guest').first()
+            if not guest_role:
+                return jsonify({'success': False, 'error': 'Guest role not found in system.'}), 500
+
+            # Create a UserClub record with Guest role
+            current_user.ensure_contact(club_id=club_id)
+            current_user.set_club_role(club_id, role_id=guest_role.id)
+            db.session.commit()
+
     # Set current club context in session
     from app.club_context import set_current_club_id
     set_current_club_id(club_id)
-    
+
     return jsonify({'success': True, 'redirect_url': url_for('agenda_bp.agenda')})
 
 
