@@ -2350,6 +2350,10 @@ def update_speech_log(log_id):
         if speaker and speaker.DTM:
             speaker_is_dtm = True
 
+    if log.meeting:
+        from app.agenda_routes import _recalculate_start_times
+        _recalculate_start_times([log.meeting])
+
     try:
         db.session.commit()
 

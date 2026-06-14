@@ -1867,7 +1867,21 @@ function buildSavePayload() {
 function handleSaveSuccess(updateResult, payload) {
   const logId = modalElements.logId.value;
 
-  if (!window.location.pathname.includes("/agenda")) {
+  // Determine if the duration (min or max) has changed. If so, we must
+  // reload the page to refresh all start times that depend on it.
+  const agendaRow = document.querySelector(`tr[data-id="${logId}"]`);
+  let durationChanged = false;
+  if (agendaRow) {
+    const oldMin = agendaRow.dataset.durationMin || "";
+    const oldMax = agendaRow.dataset.durationMax || "";
+    const newMin = (updateResult.duration_min !== null && updateResult.duration_min !== undefined) ? String(updateResult.duration_min) : "";
+    const newMax = (updateResult.duration_max !== null && updateResult.duration_max !== undefined) ? String(updateResult.duration_max) : "";
+    if (oldMin !== newMin || oldMax !== newMax) {
+      durationChanged = true;
+    }
+  }
+
+  if (!window.location.pathname.includes("/agenda") || durationChanged) {
     window.location.reload();
     return;
   }
