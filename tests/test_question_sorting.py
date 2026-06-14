@@ -9,22 +9,17 @@ class TestQuestionSorting(unittest.TestCase):
             {'role': 'Role 2', 'award_category': 'speaker'},
             {'role': 'Role 3', 'award_category': 'role-taker'},
             {'role': 'Role 4', 'award_category': 'evaluator'},
+            {'role': 'Role Custom', 'award_category': 'best-dresser'},
             {'role': 'Role 5', 'award_category': 'none'},
             {'role': 'Role 6', 'award_category': None},
         ]
 
-        # Expected order: speaker, evaluator, role-taker, table-topic
-        # any other categories (including None/none) should come last (or handled gracefully)
-        
+        # Expected order: speaker, evaluator, role-taker, table-topic, custom, none/None
         grouped = group_roles_by_category(roles)
-        
-        # Extract the category keys from the result
         categories = [key for key, group in grouped]
-        
-        # Filter out None/none for the core check, but we should inspect full order
         core_categories = [c for c in categories if c and c != 'none']
         
-        expected_order = ['speaker', 'evaluator', 'role-taker', 'table-topic']
+        expected_order = ['speaker', 'evaluator', 'role-taker', 'table-topic', 'best-dresser']
         
         self.assertEqual(core_categories, expected_order, 
                          f"Categories were not sorted correctly. Got: {core_categories}")

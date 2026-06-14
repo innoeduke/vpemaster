@@ -3,7 +3,7 @@
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from flask import Blueprint, render_template, request, session, jsonify, current_app, redirect, url_for
-from .models import SessionLog, SessionType, Contact, Meeting, User, MeetingRole, Vote, AuthRole
+from .models import SessionLog, SessionType, Contact, Meeting, User, MeetingRole, Vote, AuthRole, Roster, Ticket
 from . import db
 from datetime import datetime
 import secrets
@@ -140,7 +140,11 @@ def _sort_roles_for_voting(roles):
     
     def get_category_priority(role):
         cat = role.get('award_category', '') or ''
-        return CATEGORY_ORDER.get(cat, 99)
+        if cat in CATEGORY_ORDER:
+            return CATEGORY_ORDER[cat]
+        if cat in ('none', ''):
+            return 99
+        return 6
 
     roles.sort(key=lambda x: (
         get_category_priority(x),
@@ -250,8 +254,94 @@ def _get_roles_for_voting(meeting_id, meeting):
         }
         consolidated_role_takers.append(role_entry)
 
+    # 4. Handle custom awards configurations
+    from .models.voting import MeetingAwardConfig, MeetingAwardWinner
+    configs = MeetingAwardConfig.query.filter_by(meeting_id=meeting.id).all()
+    standard_cats = {'speaker', 'evaluator', 'table-topic', 'role-taker', 'debater', 'lucky_draw', 'lucky-draw-winner'}
+    custom_configs = [c for c in configs if c.award_category not in standard_cats]
+    
+    custom_roles = []
+    if custom_configs:
+        # Fetch roster contacts
+        roster_rows = Roster.query \
+            .options(db.joinedload(Roster.contact), db.joinedload(Roster.ticket)) \
+            .join(Ticket, Roster.ticket_id == Ticket.id) \
+            .filter(Roster.meeting_id == meeting.id,
+                    Ticket.name != 'Cancelled') \
+            .order_by(Roster.order_number.asc()) \
+            .all()
+        seen_contacts = set()
+        roster_contacts = []
+        for r in roster_rows:
+            if r.contact_id and r.contact_id not in seen_contacts:
+                seen_contacts.add(r.contact_id)
+                roster_contacts.append(r.contact)
+                
+        # Build winner set and vote counts for custom categories
+        winner_set = set()
+        voter_identifier = get_session_voter_identifier()
+        if meeting.status == 'running':
+            if voter_identifier:
+                user_votes = Vote.query.filter_by(
+                    meeting_id=meeting.id,
+                    voter_identifier=voter_identifier
+                ).all()
+                for vote in user_votes:
+                    if vote.award_category:
+                        winner_set.add((vote.award_category, vote.contact_id))
+        elif meeting.status == 'finished':
+            winners = MeetingAwardWinner.query.filter_by(meeting_id=meeting.id).all()
+            for w in winners:
+                winner_set.add((w.award_category, w.contact_id))
+                
+        vote_counts = {}
+        if (is_authorized(Permissions.MEETING_MANAGE, meeting=meeting) or is_authorized(Permissions.VOTING_TRACK_PROGRESS, meeting=meeting)) and meeting.status in ['running', 'finished']:
+            counts = db.session.query(Vote.contact_id, Vote.award_category, func.count(Vote.id)).filter(
+                Vote.meeting_id == meeting.id
+            ).group_by(Vote.contact_id, Vote.award_category).all()
+            for cid, cat, count in counts:
+                vote_counts[(cid, cat)] = count
+                
+        for config in custom_configs:
+            cat = config.award_category
+            category_has_winner = any(w_cat == cat for w_cat, _ in winner_set)
+            
+            # Determine candidate list
+            candidates_to_use = []
+            if config.associated_role:
+                from .models import OwnerMeetingRoles
+                role_takers = db.session.query(Contact)\
+                    .join(OwnerMeetingRoles, OwnerMeetingRoles.contact_id == Contact.id)\
+                    .join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
+                    .filter(OwnerMeetingRoles.meeting_id == meeting.id,
+                            MeetingRole.name == config.associated_role)\
+                    .all()
+                candidates_to_use = role_takers
+            else:
+                candidates_to_use = roster_contacts
+
+            for contact in candidates_to_use:
+                if not contact:
+                    continue
+                owner_id = contact.id
+                is_winner = (cat, owner_id) in winner_set
+                
+                custom_role_entry = {
+                    'role': 'Candidate',
+                    'icon': 'fa-award',
+                    'session_id': None,
+                    'owner_id': owner_id,
+                    'owner_name': contact.Name,
+                    'owner_avatar_url': contact.Avatar_URL,
+                    'award_category': cat,
+                    'award_category_open': not category_has_winner,
+                    'award_type': cat if is_winner else None,
+                    'vote_count': vote_counts.get((owner_id, cat), 0)
+                }
+                custom_roles.append(custom_role_entry)
+
     # Combine back
-    final_roles = other_roles + consolidated_role_takers
+    final_roles = other_roles + consolidated_role_takers + custom_roles
     
     sorted_roles = _sort_roles_for_voting(final_roles)
 

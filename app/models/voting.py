@@ -52,6 +52,7 @@ class MeetingAwardConfig(db.Model):
     award_category = db.Column(db.String(50), nullable=False)
     max_votes_per_user = db.Column(db.Integer, default=1, nullable=False)
     max_winners = db.Column(db.Integer, default=1, nullable=False)
+    associated_role = db.Column(db.String(50), nullable=True)
 
     meeting = db.relationship('Meeting', backref=db.backref('award_configs', cascade='all, delete-orphan'))
 

@@ -489,27 +489,11 @@ document.addEventListener("DOMContentLoaded", () => {
       viewDetailsBtn.addEventListener("click", () => {
         const currentStatus = meetingStatusBtn ? meetingStatusBtn.dataset.currentStatus : '';
         const isFinished = (currentStatus === 'finished');
-        const currentType = viewDetailsBtn.dataset.meetingType || '';
-        // The four classic best_* awards and Lucky Draw Winner only need
-        // the meeting to be finished. Best Debater is meaningful only on
-        // Debate-type meetings, so it needs both gates.
-        const finishedOnlySelects = [
-          "edit-best-speaker",
-          "edit-best-evaluator",
-          "edit-best-table-topic",
-          "edit-best-role-taker",
-          "edit-lucky-draw-winner"
-        ];
-        finishedOnlySelects.forEach(id => {
-          const select = document.getElementById(id);
-          if (select) {
-            select.disabled = !isFinished;
-          }
-        });
-        const debaterSelect = document.getElementById("edit-best-debater");
-        if (debaterSelect) {
-          debaterSelect.disabled = !(isFinished && currentType === 'Debate');
-        }
+        // Update the global finished flag and render the awards table
+        window.__meetingFinished = isFinished;
+        // Deep copy the initial awards state when opening the modal
+        currentAwards = JSON.parse(JSON.stringify(window.__awardsInitial || []));
+        renderAwardsTable();
         document.getElementById("meetingDetailsModal").style.display = "flex";
       });
     }
@@ -607,8 +591,241 @@ document.addEventListener("DOMContentLoaded", () => {
   function closeMeetingDetailsModal() {
     document.getElementById("meetingDetailsModal").style.display = "none";
   }
-  // Ensure the function is global so the close button onclick works
   window.closeMeetingDetailsModal = closeMeetingDetailsModal;
+
+  // ---- Awards Table ----
+
+  let currentAwards = [];
+
+  // Map category keys to candidate lists in voting_candidates
+  const CATEGORY_TO_CANDIDATE_KEY = {
+    'speaker': 'speaker',
+    'evaluator': 'evaluator',
+    'table-topic': 'table-topic',
+    'role-taker': 'role-taker',
+    'debater': 'debater',
+    'lucky_draw': 'lucky-draw-winner',
+  };
+
+  function getCandidatesForCategory(category) {
+    const vc = window.__votingCandidates || {};
+    const key = CATEGORY_TO_CANDIDATE_KEY[category];
+    if (key && vc[key]) return vc[key];
+    // For custom categories, use the lucky-draw-winner pool (roster)
+    return vc['lucky-draw-winner'] || [];
+  }
+
+  function renderAwardsTable() {
+    const tbody = document.getElementById('awards-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const awards = currentAwards || [];
+    const isFinished = window.__meetingFinished;
+
+    awards.forEach((award, idx) => {
+      const tr = document.createElement('tr');
+      tr.dataset.index = idx;
+
+      // 1. Award Name
+      const tdName = document.createElement('td');
+      if (award.is_default) {
+        tdName.className = 'award-name-cell';
+        tdName.textContent = award.label;
+      } else {
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.className = 'award-name-input';
+        nameInput.value = award.label;
+        nameInput.placeholder = 'Award name';
+        nameInput.addEventListener('input', () => {
+          award.label = nameInput.value;
+          // Also update category key for custom awards
+          award.category = nameInput.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        });
+        tdName.appendChild(nameInput);
+      }
+      tr.appendChild(tdName);
+
+      // 2. Max Winners
+      const tdMaxWinners = document.createElement('td');
+      const maxWinnersInput = document.createElement('input');
+      maxWinnersInput.type = 'number';
+      maxWinnersInput.min = '1';
+      maxWinnersInput.value = award.max_winners;
+      maxWinnersInput.addEventListener('change', () => {
+        const newVal = Math.max(1, parseInt(maxWinnersInput.value) || 1);
+        maxWinnersInput.value = newVal;
+        award.max_winners = newVal;
+        // Adjust winner selects
+        renderWinnerSelects(winnerContainer, award, isFinished);
+      });
+      tdMaxWinners.appendChild(maxWinnersInput);
+      tr.appendChild(tdMaxWinners);
+
+      // 3. Max Votes
+      const tdMaxVotes = document.createElement('td');
+      const maxVotesInput = document.createElement('input');
+      maxVotesInput.type = 'number';
+      maxVotesInput.min = '1';
+      maxVotesInput.value = award.max_votes;
+      maxVotesInput.addEventListener('change', () => {
+        const newVal = Math.max(1, parseInt(maxVotesInput.value) || 1);
+        maxVotesInput.value = newVal;
+        award.max_votes = newVal;
+      });
+      tdMaxVotes.appendChild(maxVotesInput);
+      tr.appendChild(tdMaxVotes);
+
+      // 3.5. Based on Role
+      const tdRole = document.createElement('td');
+      if (award.is_default) {
+        tdRole.textContent = '—';
+        tdRole.style.color = '#94a3b8';
+        tdRole.style.textAlign = 'center';
+      } else {
+        const roleSel = document.createElement('select');
+        // Empty default option: Roster (Any)
+        const emptyOpt = document.createElement('option');
+        emptyOpt.value = '';
+        emptyOpt.textContent = '— Roster (Any) —';
+        roleSel.appendChild(emptyOpt);
+
+        const roles = window.__meetingRoles || [];
+        roles.forEach(r => {
+          const opt = document.createElement('option');
+          opt.value = r.name;
+          opt.textContent = r.name;
+          if (award.associated_role === r.name) opt.selected = true;
+          roleSel.appendChild(opt);
+        });
+
+        roleSel.addEventListener('change', () => {
+          award.associated_role = roleSel.value || null;
+          // Dynamically re-populate candidates in Winner(s) column
+          renderWinnerSelects(winnerContainer, award, isFinished);
+        });
+
+        tdRole.appendChild(roleSel);
+      }
+      tr.appendChild(tdRole);
+
+      // 4. Winner(s) — selects
+      const tdWinners = document.createElement('td');
+      const winnerContainer = document.createElement('div');
+      winnerContainer.className = 'winner-selects';
+      renderWinnerSelects(winnerContainer, award, isFinished);
+      tdWinners.appendChild(winnerContainer);
+      tr.appendChild(tdWinners);
+
+      // 5. Delete button
+      const tdActions = document.createElement('td');
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'btn-delete-award';
+      delBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+      delBtn.title = award.is_default ? 'Default awards cannot be deleted' : 'Delete this award';
+      delBtn.disabled = award.is_default;
+      if (!award.is_default) {
+        delBtn.addEventListener('click', () => {
+          const i = currentAwards.indexOf(award);
+          if (i !== -1) currentAwards.splice(i, 1);
+          renderAwardsTable();
+        });
+      }
+      tdActions.appendChild(delBtn);
+      tr.appendChild(tdActions);
+
+      tbody.appendChild(tr);
+    });
+
+    // Wire up the Add Award button
+    const addBtn = document.getElementById('add-award-btn');
+    if (addBtn) {
+      // Remove old listener by cloning
+      const newBtn = addBtn.cloneNode(true);
+      addBtn.parentNode.replaceChild(newBtn, addBtn);
+      newBtn.addEventListener('click', () => {
+        currentAwards.push({
+          category: '',
+          label: '',
+          max_votes: 1,
+          max_winners: 1,
+          associated_role: null,
+          winner_ids: [],
+          is_default: false,
+        });
+        renderAwardsTable();
+        // Focus the new name input
+        const lastInput = tbody.querySelector('tr:last-child .award-name-input');
+        if (lastInput) lastInput.focus();
+      });
+    }
+  }
+
+  function renderWinnerSelects(container, award, isFinished) {
+    container.innerHTML = '';
+    
+    // Determine candidate list: if associated_role is specified, use role_candidates, otherwise use default category or roster
+    let candidates = [];
+    if (!award.is_default && award.associated_role) {
+      const rc = window.__roleCandidates || {};
+      candidates = rc[award.associated_role] || [];
+    } else {
+      candidates = getCandidatesForCategory(award.category);
+    }
+    
+    const count = Math.max(1, award.max_winners || 1);
+
+    // Ensure winner_ids array is right-sized (pad with empty strings)
+    while (award.winner_ids.length < count) award.winner_ids.push('');
+    if (award.winner_ids.length > count) award.winner_ids.length = count;
+
+    for (let i = 0; i < count; i++) {
+      const sel = document.createElement('select');
+      sel.disabled = !isFinished;
+      // Empty option
+      const emptyOpt = document.createElement('option');
+      emptyOpt.value = '';
+      emptyOpt.textContent = '— Select —';
+      sel.appendChild(emptyOpt);
+
+      candidates.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.name;
+        if (String(award.winner_ids[i]) === String(c.id)) opt.selected = true;
+        sel.appendChild(opt);
+      });
+
+      const idx = i;
+      sel.addEventListener('change', () => {
+        award.winner_ids[idx] = sel.value ? parseInt(sel.value) : '';
+      });
+
+      container.appendChild(sel);
+    }
+  }
+
+  function collectAwardsFromTable() {
+    const awards = currentAwards || [];
+    return awards
+      .filter(a => a.category || a.label) // skip empty rows
+      .map(a => ({
+        category: a.category || a.label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+        label: a.label,
+        max_votes: a.max_votes,
+        max_winners: a.max_winners,
+        associated_role: a.associated_role || null,
+        winner_ids: (a.winner_ids || []).filter(id => id !== '' && id !== null && id !== undefined),
+      }));
+  }
+
+  // Initial render on page load (if data is available)
+  if (window.__awardsInitial) {
+    currentAwards = JSON.parse(JSON.stringify(window.__awardsInitial));
+    renderAwardsTable();
+  }
 
   window.refreshAgendaTable = function() {
     const meetingId = meetingFilter ? meetingFilter.value : null;
@@ -813,18 +1030,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const awardConfigs = {};
-    const categories = ['speaker', 'evaluator', 'table-topic', 'role-taker', 'debater', 'lucky_draw'];
-    categories.forEach(cat => {
-      const votesEl = document.getElementById(`edit-votes-${cat}`);
-      const winnersEl = document.getElementById(`edit-winners-${cat}`);
-      if (votesEl && winnersEl) {
-        awardConfigs[cat] = {
-          max_votes_per_user: parseInt(votesEl.value) || 1,
-          max_winners: parseInt(winnersEl.value) || 1
-        };
-      }
-    });
+    // Collect unified awards data from the awards table
+    const awardsPayload = collectAwardsFromTable();
 
     fetch("/agenda/update", {
       method: "POST",
@@ -845,13 +1052,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const n = parseInt(el.value, 10);
           return Number.isFinite(n) ? n : null;
         })(),
-        best_speaker_id: document.getElementById("edit-best-speaker") ? Array.from(document.getElementById("edit-best-speaker").selectedOptions).map(opt => opt.value) : [],
-        best_evaluator_id: document.getElementById("edit-best-evaluator") ? Array.from(document.getElementById("edit-best-evaluator").selectedOptions).map(opt => opt.value) : [],
-        best_table_topic_id: document.getElementById("edit-best-table-topic") ? Array.from(document.getElementById("edit-best-table-topic").selectedOptions).map(opt => opt.value) : [],
-        best_role_taker_id: document.getElementById("edit-best-role-taker") ? Array.from(document.getElementById("edit-best-role-taker").selectedOptions).map(opt => opt.value) : [],
-        best_debater_id: document.getElementById("edit-best-debater") ? Array.from(document.getElementById("edit-best-debater").selectedOptions).map(opt => opt.value) : [],
-        lucky_draw_winner_id: document.getElementById("edit-lucky-draw-winner") ? Array.from(document.getElementById("edit-lucky-draw-winner").selectedOptions).map(opt => opt.value) : [],
-        award_configs: awardConfigs,
+        awards: awardsPayload,
       }),
     })
       .then((response) => response.json())

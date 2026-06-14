@@ -26,6 +26,91 @@ from .models import ContactClub
 
 agenda_bp = Blueprint('agenda_bp', __name__)
 
+# The four standard award categories that are always shown.
+# 'debater' and 'lucky_draw' are excluded — they appear only when
+# explicitly configured for a meeting.
+DEFAULT_AWARD_CATEGORIES = [
+    {'category': 'speaker',     'label': 'Best Speaker'},
+    {'category': 'evaluator',   'label': 'Best Evaluator'},
+    {'category': 'table-topic', 'label': 'Best Table Topic'},
+    {'category': 'role-taker',  'label': 'Best Role Taker'},
+]
+
+
+def get_meeting_awards(meeting):
+    """Build a unified list of award dicts for a meeting.
+
+    Each dict has:
+        category   – DB key (e.g. 'speaker', 'lucky_draw', 'custom-xyz')
+        label      – human-readable name
+        max_votes  – max votes per user  (from MeetingAwardConfig, default 1)
+        max_winners – max winners allowed (from MeetingAwardConfig, default 1)
+        associated_role - selected role name (from MeetingAwardConfig, default None)
+        winner_ids – list of contact_ids currently recorded as winners
+        is_default – True for the four standard awards
+    """
+    from .models.voting import MeetingAwardConfig, MeetingAwardWinner
+
+    # 1. Seed with defaults
+    awards_map = {}
+    for d in DEFAULT_AWARD_CATEGORIES:
+        awards_map[d['category']] = {
+            'category': d['category'],
+            'label': d['label'],
+            'max_votes': 1,
+            'max_winners': 1,
+            'associated_role': None,
+            'winner_ids': [],
+            'is_default': True,
+        }
+
+    if meeting:
+        # 2. Merge in any saved configs (including custom categories)
+        configs = MeetingAwardConfig.query.filter_by(meeting_id=meeting.id).all()
+        for c in configs:
+            if c.award_category in awards_map:
+                awards_map[c.award_category]['max_votes'] = c.max_votes_per_user
+                awards_map[c.award_category]['max_winners'] = c.max_winners
+                awards_map[c.award_category]['associated_role'] = c.associated_role
+            else:
+                awards_map[c.award_category] = {
+                    'category': c.award_category,
+                    'label': c.award_category.replace('-', ' ').replace('_', ' ').title(),
+                    'max_votes': c.max_votes_per_user,
+                    'max_winners': c.max_winners,
+                    'associated_role': c.associated_role,
+                    'winner_ids': [],
+                    'is_default': False,
+                }
+
+        # 3. Fill in winner_ids
+        winners = MeetingAwardWinner.query.filter_by(meeting_id=meeting.id).all()
+        for w in winners:
+            if w.award_category in awards_map:
+                awards_map[w.award_category]['winner_ids'].append(w.contact_id)
+            else:
+                # A winner exists for a category with no config yet — create entry
+                awards_map[w.award_category] = {
+                    'category': w.award_category,
+                    'label': w.award_category.replace('-', ' ').replace('_', ' ').title(),
+                    'max_votes': 1,
+                    'max_winners': 1,
+                    'associated_role': None,
+                    'winner_ids': [w.contact_id],
+                    'is_default': False,
+                }
+
+    # 4. Return as ordered list: defaults first (in order), then extras alphabetically
+    default_cats = [d['category'] for d in DEFAULT_AWARD_CATEGORIES]
+    result = [awards_map[cat] for cat in default_cats if cat in awards_map]
+    extras = sorted(
+        [a for a in awards_map.values() if a['category'] not in default_cats],
+        key=lambda a: a['category'],
+    )
+    result.extend(extras)
+    return result
+
+
 # --- Helper Functions for Data Fetching ---
 
 # Table Topics, Prepared Speaker, Pathway Speech, Panel Discussion
@@ -950,6 +1035,24 @@ def agenda():
                 'max_winners': c.max_winners
             }
 
+    # Fetch meeting roles for the club and candidate mapping for JS
+    meeting_roles = [{'id': r.id, 'name': r.name} for r in MeetingRole.get_all_for_club(club_id)]
+    role_candidates = {}
+    if selected_meeting:
+        from .models import OwnerMeetingRoles
+        role_takers = db.session.query(MeetingRole.name, Contact.id, Contact.Name)\
+            .join(OwnerMeetingRoles, OwnerMeetingRoles.role_id == MeetingRole.id)\
+            .join(Contact, OwnerMeetingRoles.contact_id == Contact.id)\
+            .filter(OwnerMeetingRoles.meeting_id == selected_meeting.id)\
+            .all()
+        for r_name, c_id, c_name in role_takers:
+            if r_name not in role_candidates:
+                role_candidates[r_name] = []
+            role_candidates[r_name].append({'id': c_id, 'name': c_name})
+
+    # --- Unified Awards List ---
+    awards = get_meeting_awards(selected_meeting)
+
     # --- Render Template ---
     # Serialize ProjectID as a dictionary for safe JSON conversion in template
     project_id_dict = {
@@ -976,7 +1079,10 @@ def agenda():
                            next_meeting_num=next_meeting_num,
                            ProjectID=project_id_dict,
                            voting_candidates=voting_candidates,
-                           award_configs=award_configs)
+                           award_configs=award_configs,
+                           awards=awards,
+                           meeting_roles=meeting_roles,
+                           role_candidates=role_candidates)
 
 
 # --- API Endpoints for Asynchronous Data Loading ---
@@ -1737,45 +1843,92 @@ def update_logs():
                     new_winner = MeetingAwardWinner(meeting_id=meeting.id, award_category=category, contact_id=contact_id)
                     db.session.add(new_winner)
 
-        if 'best_speaker_id' in data:
-            update_award('speaker', parse_award_ids(data.get('best_speaker_id')))
-        if 'best_evaluator_id' in data:
-            update_award('evaluator', parse_award_ids(data.get('best_evaluator_id')))
-        if 'best_table_topic_id' in data:
-            update_award('table-topic', parse_award_ids(data.get('best_table_topic_id')))
-        if 'best_role_taker_id' in data:
-            update_award('role-taker', parse_award_ids(data.get('best_role_taker_id')))
-        if 'best_debater_id' in data:
-            debater_ids = parse_award_ids(data.get('best_debater_id'))
-            if debater_ids and meeting.type != 'Debate':
-                return jsonify(
-                    success=False,
-                    message="Best Debater can only be set on Debate-type meetings.",
-                ), 400
-            update_award('debater', debater_ids)
-        if 'lucky_draw_winner_id' in data:
-            update_award('lucky_draw', parse_award_ids(data.get('lucky_draw_winner_id')))
-            
-        # Handle Award Configurations
-        award_configs_data = data.get('award_configs')
-        if award_configs_data:
+        # ---- Unified Awards Handling ----
+        # If the new 'awards' key is present, use it for both configs and winners.
+        # Otherwise fall back to the legacy per-category keys.
+        awards_data = data.get('awards')
+        if awards_data is not None:
             from .models.voting import MeetingAwardConfig
-            for category, conf in award_configs_data.items():
-                max_votes = conf.get('max_votes_per_user', 1)
-                max_winners = conf.get('max_winners', 1)
-                
-                existing_config = MeetingAwardConfig.query.filter_by(meeting_id=meeting.id, award_category=category).first()
-                if existing_config:
-                    existing_config.max_votes_per_user = max_votes
-                    existing_config.max_winners = max_winners
+            # Clear all existing configs and winners for this meeting
+            MeetingAwardConfig.query.filter_by(meeting_id=meeting.id).delete()
+            MeetingAwardWinner.query.filter_by(meeting_id=meeting.id).delete()
+
+            for award in awards_data:
+                category = award.get('category', '').strip()
+                if not category:
+                    continue
+                max_votes = int(award.get('max_votes', 1) or 1)
+                max_winners = int(award.get('max_winners', 1) or 1)
+                winner_ids = award.get('winner_ids', [])
+
+                associated_role = award.get('associated_role')
+                if associated_role:
+                    associated_role = associated_role.strip()
                 else:
-                    new_config = MeetingAwardConfig(
-                        meeting_id=meeting.id,
-                        award_category=category,
-                        max_votes_per_user=max_votes,
-                        max_winners=max_winners
-                    )
-                    db.session.add(new_config)
+                    associated_role = None
+
+                # Save config
+                db.session.add(MeetingAwardConfig(
+                    meeting_id=meeting.id,
+                    award_category=category,
+                    max_votes_per_user=max_votes,
+                    max_winners=max_winners,
+                    associated_role=associated_role,
+                ))
+
+                # Save winners
+                for wid in winner_ids:
+                    if wid:
+                        try:
+                            contact_id = int(wid)
+                        except (ValueError, TypeError):
+                            continue
+                        db.session.add(MeetingAwardWinner(
+                            meeting_id=meeting.id,
+                            award_category=category,
+                            contact_id=contact_id,
+                        ))
+        else:
+            # Legacy per-category award handling
+            if 'best_speaker_id' in data:
+                update_award('speaker', parse_award_ids(data.get('best_speaker_id')))
+            if 'best_evaluator_id' in data:
+                update_award('evaluator', parse_award_ids(data.get('best_evaluator_id')))
+            if 'best_table_topic_id' in data:
+                update_award('table-topic', parse_award_ids(data.get('best_table_topic_id')))
+            if 'best_role_taker_id' in data:
+                update_award('role-taker', parse_award_ids(data.get('best_role_taker_id')))
+            if 'best_debater_id' in data:
+                debater_ids = parse_award_ids(data.get('best_debater_id'))
+                if debater_ids and meeting.type != 'Debate':
+                    return jsonify(
+                        success=False,
+                        message="Best Debater can only be set on Debate-type meetings.",
+                    ), 400
+                update_award('debater', debater_ids)
+            if 'lucky_draw_winner_id' in data:
+                update_award('lucky_draw', parse_award_ids(data.get('lucky_draw_winner_id')))
+                
+            # Handle Award Configurations (legacy)
+            award_configs_data = data.get('award_configs')
+            if award_configs_data:
+                from .models.voting import MeetingAwardConfig
+                for category, conf in award_configs_data.items():
+                    max_votes = conf.get('max_votes_per_user', 1)
+                    max_winners = conf.get('max_winners', 1)
+                    
+                    existing_config = MeetingAwardConfig.query.filter_by(meeting_id=meeting.id, award_category=category).first()
+                    if existing_config:
+                        existing_config.max_votes_per_user = max_votes
+                        existing_config.max_winners = max_winners
+                    else:
+                        new_config = MeetingAwardConfig(
+                            meeting_id=meeting.id,
+                            award_category=category,
+                            max_votes_per_user=max_votes,
+                            max_winners=max_winners
+                        )
+                        db.session.add(new_config)
 
         new_media_id = None
         if new_media_url:

@@ -319,8 +319,10 @@ def test_lucky_draw_placeholder_in_modal_for_finished_meeting(client, app, defau
 
     assert resp.status_code == 200
     html = resp.get_data(as_text=True)
-    assert 'id="edit-lucky-draw-winner"' in html
-    assert 'id="edit-best-debater"' in html
+    # The awards section is now JS-rendered from serialized data.
+    # Check that the serialized awards data and table structure exist.
+    assert 'id="awards-table"' in html
+    assert 'window.__awardsInitial' in html
 
 
 
@@ -438,3 +440,176 @@ def test_meeting_details_awards_dropdown_options(client, app, default_club, staf
         # Role Taker Candidate
         assert 'Role Taker Candidate' in html
         assert f'value="{role_taker_id}"' in html
+
+
+def test_unified_awards_saving(client, app, default_club, staff_user):
+    """Verify that sending the new unified 'awards' list updates configs and winners, and supports custom categories, role constraints, and multiple winners."""
+    with app.app_context():
+        # Ensure staff role has AGENDA_EDIT permission
+        from app.models import AuthRole, Permission
+        from app.auth.permissions import Permissions
+        staff_role = AuthRole.query.filter_by(name='Staff').first()
+        agenda_edit_perm = Permission.query.filter_by(name=Permissions.MEETING_MANAGE).first()
+        if staff_role and agenda_edit_perm and agenda_edit_perm not in staff_role.permissions:
+            staff_role.permissions.append(agenda_edit_perm)
+            db.session.commit()
+
+        # Create contacts
+        c_1 = Contact(Name="Winner One", Type="Member")
+        c_2 = Contact(Name="Winner Two", Type="Member")
+        db.session.add_all([c_1, c_2])
+        db.session.commit()
+        db.session.add(ContactClub(contact_id=c_1.id, club_id=default_club.id))
+        db.session.add(ContactClub(contact_id=c_2.id, club_id=default_club.id))
+        db.session.commit()
+
+        # Build roster so they are candidates for custom awards
+        from app.models import Roster, Ticket
+        # Get or create ticket
+        t = Ticket.query.filter_by(name='Standard').first()
+        if not t:
+            t = Ticket(name='Standard', price=0)
+            db.session.add(t)
+            db.session.commit()
+
+        from datetime import date
+        meeting = Meeting(
+            Meeting_Number=997,
+            Meeting_Date=date.today(),
+            club_id=default_club.id,
+            status='finished',
+        )
+        db.session.add(meeting)
+        db.session.commit()
+        meeting_id = meeting.id
+        w1_id = c_1.id
+        w2_id = c_2.id
+
+        # Add to roster
+        r1 = Roster(meeting_id=meeting_id, contact_id=w1_id, ticket_id=t.id, order_number=1)
+        r2 = Roster(meeting_id=meeting_id, contact_id=w2_id, ticket_id=t.id, order_number=2)
+        db.session.add_all([r1, r2])
+        db.session.commit()
+
+        # Create a meeting role and assign Winner One to it
+        mr_timer = MeetingRole(name="Timer", type="standard", needs_approval=False, has_single_owner=True, club_id=default_club.id)
+        db.session.add(mr_timer)
+        db.session.commit()
+        
+        # Add to OwnerMeetingRoles
+        from app.models import OwnerMeetingRoles
+        omr = OwnerMeetingRoles(meeting_id=meeting_id, role_id=mr_timer.id, contact_id=w1_id)
+        db.session.add(omr)
+        db.session.commit()
+
+    # Authenticate client
+    client.post('/login', data=dict(
+        username='staff',
+        password='password'
+    ))
+    with client.session_transaction() as sess:
+        sess['club_id'] = default_club.id
+        sess['current_club_id'] = default_club.id
+
+    # Post unified awards list to update endpoint
+    with patch('app.agenda_routes.is_authorized', return_value=True):
+        resp = client.post(
+            '/agenda/update',
+            json={
+                'meeting_id': meeting_id,
+                'agenda_data': [],
+                'meeting_title': 'Unified Awards Theme',
+                'awards': [
+                    # A default category with a winner
+                    {
+                        'category': 'speaker',
+                        'label': 'Best Speaker',
+                        'max_votes': 1,
+                        'max_winners': 1,
+                        'associated_role': None,
+                        'winner_ids': [w1_id]
+                    },
+                    # A custom category based on "Timer" role with Winner One
+                    {
+                        'category': 'best-dresser',
+                        'label': 'Best Dresser',
+                        'max_votes': 2,
+                        'max_winners': 2,
+                        'associated_role': 'Timer',
+                        'winner_ids': [w1_id]
+                    }
+                ]
+            }
+        )
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data.get('success') is True
+
+        with app.app_context():
+            from app.models.voting import MeetingAwardConfig, MeetingAwardWinner
+            # Verify configs
+            configs = MeetingAwardConfig.query.filter_by(meeting_id=meeting_id).all()
+            assert len(configs) == 2
+            
+            speaker_config = next(c for c in configs if c.award_category == 'speaker')
+            assert speaker_config.max_votes_per_user == 1
+            assert speaker_config.max_winners == 1
+            assert speaker_config.associated_role is None
+            
+            dresser_config = next(c for c in configs if c.award_category == 'best-dresser')
+            assert dresser_config.max_votes_per_user == 2
+            assert dresser_config.max_winners == 2
+            assert dresser_config.associated_role == 'Timer'
+            
+            # Verify winners
+            winners = MeetingAwardWinner.query.filter_by(meeting_id=meeting_id).all()
+            assert len(winners) == 2
+            
+            speaker_winners = [w for w in winners if w.award_category == 'speaker']
+            assert len(speaker_winners) == 1
+            assert speaker_winners[0].contact_id == w1_id
+            
+            dresser_winners = [w for w in winners if w.award_category == 'best-dresser']
+            assert len(dresser_winners) == 1
+            assert dresser_winners[0].contact_id == w1_id
+
+            # Verify voting page roles generation and sorting for custom categories
+            from app.voting_routes import _get_roles_for_voting
+            from flask_login import login_user
+            m_obj = db.session.get(Meeting, meeting_id)
+            
+            with app.test_request_context():
+                from app.models import User
+                # Log in user inside the request context
+                staff = db.session.get(User, staff_user.id)
+                login_user(staff)
+                
+                with patch('app.voting_routes.is_authorized', return_value=True):
+                    roles = _get_roles_for_voting(meeting_id, m_obj)
+                    
+                    # best-dresser is associated with Timer role (only w1_id took it), so it should generate exactly 1 synthetic role
+                    dresser_roles = [r for r in roles if r.get('award_category') == 'best-dresser']
+                    assert len(dresser_roles) == 1
+                    assert dresser_roles[0].get('owner_id') == w1_id
+                    
+                    # Ensure they are sorted correctly (using group_roles_by_category)
+                    from app.utils import group_roles_by_category
+                    grouped = group_roles_by_category(roles)
+                    categories = [cat for cat, items in grouped]
+                    assert 'best-dresser' in categories
+                    
+                    # If standard categories are present, custom should follow them
+                    standard_orders = [cat for cat in categories if cat in ('speaker', 'evaluator', 'role-taker', 'table-topic')]
+                    if standard_orders:
+                        assert categories.index('best-dresser') > categories.index(standard_orders[-1])
+
+    # Also check via client GET integration to ensure the voting page renders custom categories
+    with patch('app.voting_routes.is_authorized', return_value=True):
+        resp_voting = client.get(f'/voting/{meeting_id}')
+        assert resp_voting.status_code == 200
+        html_voting = resp_voting.get_data(as_text=True)
+        assert 'Best Dresser' in html_voting
+        # Ensure it does NOT contain 'Best Dresser Roles'
+        assert 'Best Dresser Roles' not in html_voting
+

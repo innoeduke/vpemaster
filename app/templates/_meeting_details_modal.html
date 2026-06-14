@@ -243,6 +243,139 @@
             transform: translateY(-1px);
         }
 
+        /* --- Awards table --- */
+        #meetingDetailsModal .mdm-awards-table-wrap {
+            overflow-x: auto;
+        }
+        #meetingDetailsModal .mdm-awards-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 13px;
+            font-family: "Inter", sans-serif;
+        }
+        #meetingDetailsModal .mdm-awards-table thead th {
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 8px 10px;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+        #meetingDetailsModal .mdm-awards-table tbody td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+        #meetingDetailsModal .mdm-awards-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        #meetingDetailsModal .mdm-awards-table .award-name-cell {
+            font-weight: 600;
+            color: #1e293b;
+            white-space: nowrap;
+        }
+        #meetingDetailsModal .mdm-awards-table .award-name-input {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: "Inter", sans-serif;
+            color: #1e293b;
+            background: #fff;
+        }
+        #meetingDetailsModal .mdm-awards-table .award-name-input:focus {
+            outline: none;
+            border-color: #772432;
+            box-shadow: 0 0 0 2px rgba(119, 36, 50, 0.12);
+        }
+        #meetingDetailsModal .mdm-awards-table input[type="number"] {
+            width: 60px;
+            padding: 6px 8px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: "Inter", sans-serif;
+            text-align: center;
+            color: #1e293b;
+            background: #fff;
+        }
+        #meetingDetailsModal .mdm-awards-table input[type="number"]:focus {
+            outline: none;
+            border-color: #772432;
+            box-shadow: 0 0 0 2px rgba(119, 36, 50, 0.12);
+        }
+        #meetingDetailsModal .mdm-awards-table select {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: "Inter", sans-serif;
+            color: #1e293b;
+            background: #fff;
+            min-width: 120px;
+        }
+        #meetingDetailsModal .mdm-awards-table select:focus {
+            outline: none;
+            border-color: #772432;
+            box-shadow: 0 0 0 2px rgba(119, 36, 50, 0.12);
+        }
+        #meetingDetailsModal .mdm-awards-table select:disabled {
+            background: #f1f5f9;
+            color: #94a3b8;
+            cursor: not-allowed;
+            border-color: #e2e8f0;
+        }
+        #meetingDetailsModal .mdm-awards-table .winner-selects {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        #meetingDetailsModal .mdm-awards-table .btn-delete-award {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: color 0.15s, background 0.15s;
+        }
+        #meetingDetailsModal .mdm-awards-table .btn-delete-award:hover {
+            color: #dc2626;
+            background: rgba(220, 38, 38, 0.08);
+        }
+        #meetingDetailsModal .mdm-awards-table .btn-delete-award:disabled {
+            color: #e2e8f0;
+            cursor: not-allowed;
+            background: none;
+        }
+        #meetingDetailsModal .mdm-add-award-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 10px;
+            padding: 7px 14px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #772432;
+            background: rgba(119, 36, 50, 0.06);
+            border: 1px dashed rgba(119, 36, 50, 0.3);
+            border-radius: 7px;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+            font-family: "Inter", sans-serif;
+        }
+        #meetingDetailsModal .mdm-add-award-btn:hover {
+            background: rgba(119, 36, 50, 0.12);
+            border-color: rgba(119, 36, 50, 0.5);
+        }
+
         /* --- Responsive --- */
         @media (max-width: 640px) {
             #meetingDetailsModal .mdm-header,
@@ -251,6 +384,8 @@
             #meetingDetailsModal .mdm-grid,
             #meetingDetailsModal .mdm-grid--three { grid-template-columns: 1fr; }
             #meetingDetailsModal .mdm-section { padding: 16px; }
+            #meetingDetailsModal .mdm-awards-table { font-size: 12px; }
+            #meetingDetailsModal .mdm-awards-table input[type="number"] { width: 48px; }
         }
     </style>
 
@@ -334,139 +469,52 @@
         </div>
       </section>
 
-      <!-- Section 2: Recognition & Awards -->
+      <!-- Section 2: Recognition & Awards (unified) -->
       <section class="mdm-section mdm-section--awards">
         <header class="mdm-section-header">
           <span class="mdm-section-icon mdm-section-icon--awards"><i class="fas fa-trophy"></i></span>
           <div>
             <h3 class="mdm-section-title">Recognition & Awards</h3>
-            <p class="mdm-section-desc">Highlight the top performers from this meeting.</p>
+            <p class="mdm-section-desc">Configure award limits and assign winners.</p>
           </div>
         </header>
         {% if not selected_meeting or selected_meeting.status != 'finished' %}
         <div class="mdm-notice">
           <i class="fas fa-info-circle"></i>
-          <span>These fields become editable once the meeting is marked as <strong>finished</strong>.</span>
+          <span>Winner selection becomes editable once the meeting is marked as <strong>finished</strong>.</span>
         </div>
         {% endif %}
-        <div class="mdm-grid mdm-grid--three">
-          <div class="mdm-field">
-            <label for="edit-best-speaker">Best Speaker</label>
-            <select id="edit-best-speaker" class="edit-mode-field" multiple {% if not selected_meeting or selected_meeting.status != 'finished' %}disabled{% endif %}>
-              {% set found_winners = [] %}
-              {% if selected_meeting %}
-                {% for w in selected_meeting.award_winners if w.award_category == 'speaker' %}
-                  {% set _ = found_winners.append(w.contact_id) %}
-                {% endfor %}
-              {% endif %}
-              {% for candidate in (voting_candidates['speaker'] if voting_candidates else []) %}
-              <option value="{{ candidate.id }}" {% if candidate.id in found_winners %}selected{% endif %}>{{ candidate.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="mdm-field">
-            <label for="edit-best-evaluator">Best Evaluator</label>
-            <select id="edit-best-evaluator" class="edit-mode-field" multiple {% if not selected_meeting or selected_meeting.status != 'finished' %}disabled{% endif %}>
-              {% set found_winners = [] %}
-              {% if selected_meeting %}
-                {% for w in selected_meeting.award_winners if w.award_category == 'evaluator' %}
-                  {% set _ = found_winners.append(w.contact_id) %}
-                {% endfor %}
-              {% endif %}
-              {% for candidate in (voting_candidates['evaluator'] if voting_candidates else []) %}
-              <option value="{{ candidate.id }}" {% if candidate.id in found_winners %}selected{% endif %}>{{ candidate.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="mdm-field">
-            <label for="edit-best-table-topic">Best Table Topic</label>
-            <select id="edit-best-table-topic" class="edit-mode-field" multiple {% if not selected_meeting or selected_meeting.status != 'finished' %}disabled{% endif %}>
-              {% set found_winners = [] %}
-              {% if selected_meeting %}
-                {% for w in selected_meeting.award_winners if w.award_category == 'table-topic' %}
-                  {% set _ = found_winners.append(w.contact_id) %}
-                {% endfor %}
-              {% endif %}
-              {% for candidate in (voting_candidates['table-topic'] if voting_candidates else []) %}
-              <option value="{{ candidate.id }}" {% if candidate.id in found_winners %}selected{% endif %}>{{ candidate.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="mdm-field">
-            <label for="edit-best-role-taker">Best Role Taker</label>
-            <select id="edit-best-role-taker" class="edit-mode-field" multiple {% if not selected_meeting or selected_meeting.status != 'finished' %}disabled{% endif %}>
-              {% set found_winners = [] %}
-              {% if selected_meeting %}
-                {% for w in selected_meeting.award_winners if w.award_category == 'role-taker' %}
-                  {% set _ = found_winners.append(w.contact_id) %}
-                {% endfor %}
-              {% endif %}
-              {% for candidate in (voting_candidates['role-taker'] if voting_candidates else []) %}
-              <option value="{{ candidate.id }}" {% if candidate.id in found_winners %}selected{% endif %}>{{ candidate.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="mdm-field">
-            <label for="edit-best-debater">Best Debater</label>
-            <select id="edit-best-debater" class="edit-mode-field" multiple {% if not selected_meeting or selected_meeting.status != 'finished' or selected_meeting.type != 'Debate' %}disabled{% endif %}>
-              {% set found_winners = [] %}
-              {% if selected_meeting %}
-                {% for w in selected_meeting.award_winners if w.award_category == 'debater' %}
-                  {% set _ = found_winners.append(w.contact_id) %}
-                {% endfor %}
-              {% endif %}
-              {% for candidate in (voting_candidates['debater'] if voting_candidates else []) %}
-              <option value="{{ candidate.id }}" {% if candidate.id in found_winners %}selected{% endif %}>{{ candidate.name }}</option>
-              {% endfor %}
-            </select>
-            <small class="mdm-hint">
-              <i class="fas fa-info-circle"></i>Enabled only for Debate-type meetings.
-            </small>
-          </div>
-          <div class="mdm-field">
-            <label for="edit-lucky-draw-winner">Lucky Draw Winner</label>
-            <select id="edit-lucky-draw-winner" class="edit-mode-field" multiple {% if not selected_meeting or selected_meeting.status != 'finished' %}disabled{% endif %}>
-              {% set found_winners = [] %}
-              {% if selected_meeting %}
-                {% for w in selected_meeting.award_winners if w.award_category == 'lucky_draw' %}
-                  {% set _ = found_winners.append(w.contact_id) %}
-                {% endfor %}
-              {% endif %}
-              {% for candidate in (voting_candidates['lucky-draw-winner'] if voting_candidates else []) %}
-              <option value="{{ candidate.id }}" {% if candidate.id in found_winners %}selected{% endif %}>{{ candidate.name }}</option>
-              {% endfor %}
-            </select>
-            <small class="mdm-hint">
-              <i class="fas fa-info-circle"></i>Pick from the meeting's roster.
-            </small>
-          </div>
+
+        <div class="mdm-awards-table-wrap">
+          <table class="mdm-awards-table" id="awards-table">
+            <thead>
+              <tr>
+                <th>Award Name</th>
+                <th style="width:80px">Max Winners</th>
+                <th style="width:80px">Max Votes</th>
+                <th>Based on Role</th>
+                <th>Winner(s)</th>
+                <th style="width:44px"></th>
+              </tr>
+            </thead>
+            <tbody id="awards-table-body">
+              <!-- Rendered by JS from window.__awardsInitial -->
+            </tbody>
+          </table>
+          <button type="button" class="mdm-add-award-btn" id="add-award-btn" title="Add a custom award">
+            <i class="fas fa-plus"></i> Add Award
+          </button>
         </div>
       </section>
 
-      <!-- Section 2.5: Award Configurations -->
-      <section class="mdm-section">
-        <header class="mdm-section-header">
-          <span class="mdm-section-icon mdm-section-icon--awards"><i class="fas fa-cog"></i></span>
-          <div>
-            <h3 class="mdm-section-title">Award Configurations</h3>
-            <p class="mdm-section-desc">Set max votes per user and max winners allowed per category.</p>
-          </div>
-        </header>
-        <div class="mdm-grid mdm-grid--three">
-          {% for award in ['speaker', 'evaluator', 'table-topic', 'role-taker', 'debater', 'lucky_draw'] %}
-          <div class="mdm-field">
-            <label>{{ award | replace('-', ' ') | replace('_', ' ') | title }} Limits</label>
-            <div style="display: flex; gap: 8px;">
-               <input type="number" id="edit-votes-{{ award }}" class="edit-mode-field" title="Max Votes Per User" placeholder="Votes" min="1" value="{{ award_configs.get(award, {}).get('max_votes_per_user', 1) }}">
-               <input type="number" id="edit-winners-{{ award }}" class="edit-mode-field" title="Max Winners" placeholder="Winners" min="1" value="{{ award_configs.get(award, {}).get('max_winners', 1) }}">
-            </div>
-            <small class="mdm-hint">
-              Votes / Winners
-            </small>
-          </div>
-          {% endfor %}
-        </div>
-      </section>
+      <!-- Serialize awards data and voting candidates for JS -->
+      <script>
+        window.__awardsInitial = {{ awards | tojson }};
+        window.__votingCandidates = {{ voting_candidates | tojson }};
+        window.__meetingFinished = {{ 'true' if selected_meeting and selected_meeting.status == 'finished' else 'false' }};
+        window.__meetingRoles = {{ meeting_roles | tojson }};
+        window.__roleCandidates = {{ role_candidates | tojson }};
+      </script>
 
       <!-- Section 3: Media -->
       <section class="mdm-section">

@@ -996,7 +996,9 @@ def group_roles_by_category(roles):
     
     def get_priority(role):
         cat = role.get('award_category') or 'none'
-        return CATEGORY_PRIORITY.get(cat, 99)
+        if cat in CATEGORY_PRIORITY:
+            return CATEGORY_PRIORITY[cat]
+        return 6
 
     grouped = []
     # Sort roles by priority first, then alphabetical for consistency within same priority (though distinct categories)

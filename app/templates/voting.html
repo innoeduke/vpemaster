@@ -260,7 +260,7 @@
                 'table-topic': {'num': 4, 'title': _('Best Table Topic Speaker')},
                 'debater': {'num': 5, 'title': _('Best Debater')}
                 } %}
-                {% set meta = category_meta.get(category, {'num': '', 'title': _((category or 'Other')|replace('-', ' ')|title + ' Roles')}) %}
+                {% set meta = category_meta.get(category, {'num': '', 'title': _((category or 'Other')|replace('-', ' ')|title)}) %}
 
                 <div class="accordion-item" data-category="{{ category or 'other' }}">
                     {% set voting_disabled = False %}
