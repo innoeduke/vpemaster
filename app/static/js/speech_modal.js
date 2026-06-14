@@ -1122,7 +1122,6 @@ function resetModal(logData, sessionType) {
   toggleGeneric(false);
   modalElements.form.reset();
   modalElements.logId.value = logData.id;
-  modalElements.title.textContent = "Edit Details";
   modalElements.sessionOwner.value = logData.owner_name || "";
   modalElements.speechTitle.value = logData.Session_Title || "";
   modalElements.credential.value = logData.credential || "";
@@ -1225,7 +1224,6 @@ const SpeechModalSetupManager = {
   },
 
   setupRole(logData, { sessionType, workingPath }) {
-    modalElements.title.textContent = "Edit Details";
     modalElements.speechTitle.disabled = true;
     modalElements.standardSelection.style.display = "none";
     modalElements.projectGroup.style.display = "none";
@@ -1293,7 +1291,6 @@ const SpeechModalSetupManager = {
   },
 
   setupProjectRole(logData, { sessionType, workingPath, projectIds, defaultOption, speechTitleLabelText }) {
-    modalElements.title.textContent = "Edit Details";
     if (speechTitleLabelText) {
       modalElements.speechTitleLabel.textContent = speechTitleLabelText;
     }
@@ -1516,7 +1513,6 @@ const SpeechModalSetupManager = {
   },
 
   setupSpeech(logData, { workingPath, nextProject, sessionType }) {
-    modalElements.title.textContent = "Edit Details";
     modalElements.speechTitle.placeholder = SpeechModalSetupManager.getTitlePlaceholder(sessionType);
     modalElements.standardSelection.style.display = "block";
     if (modalElements.standardProjectFields) {
