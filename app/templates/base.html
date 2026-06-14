@@ -260,17 +260,20 @@
         {% if club %}
         <div class="header-divider"></div>
         <div class="header-club-container">
-          <div class="header-club-badge {% if current_user.is_authenticated and current_user.club_memberships %}dropdown-club-wrapper{% endif %}" 
+          {% set has_my_clubs = current_user.is_authenticated and current_user.club_memberships %}
+          {% set show_club_dropdown = has_my_clubs or (not current_user.is_authenticated and is_module_enabled('Club Directory')) %}
+          <div class="header-club-badge {% if show_club_dropdown %}dropdown-club-wrapper{% endif %}"
              style="position: relative !important; overflow: visible !important;"
              title="{{ club.club_name }} (No. {{ club.club_no }})">
             <img src="{{ url_for('static', filename=club.effective_logo_url) }}" class="header-club-logo" alt="Club Logo" />
             <span class="club-name-text">{{ club.club_name }}</span>
-            {% if current_user.is_authenticated and current_user.club_memberships|length > 1 %}
+            {% if (current_user.is_authenticated and current_user.club_memberships|length > 1) or (not current_user.is_authenticated and is_module_enabled('Club Directory')) %}
             <i class="fas fa-caret-down club-dropdown-arrow"></i>
             {% endif %}
-            
-            {% if current_user.is_authenticated and current_user.club_memberships %}
+
+            {% if show_club_dropdown %}
             <div class="club-dropdown-menu" style="position: absolute !important; top: calc(100% + 6px) !important; left: 0 !important;">
+              {% if has_my_clubs %}
               <div class="club-dropdown-header">{{ _('My Clubs') }}</div>
               {% for uc in current_user.club_memberships %}
               {% set member_club = uc.club %}
@@ -289,6 +292,9 @@
               {% endfor %}
               {% if is_module_enabled('Club Directory') %}
               <div class="menu-divider"></div>
+              {% endif %}
+              {% endif %}
+              {% if is_module_enabled('Club Directory') %}
               <a href="{{ url_for('clubs_bp.list_clubs') }}" class="club-dropdown-item {% if request.endpoint and request.endpoint.startswith('clubs_bp') %}active{% endif %}">
                 <i class="fas fa-network-wired" style="font-size: 0.9rem; color: #64748b; width: 24px; text-align: center; flex-shrink: 0;"></i>
                 <div class="club-dropdown-info">
@@ -662,11 +668,11 @@
         });
     }
 
+    {% if current_user.is_authenticated %}
     // Initial load and polling (60s fallback)
     document.addEventListener('DOMContentLoaded', updateUnreadCount);
     setInterval(updateUnreadCount, 60000);
 
-    {% if current_user.is_authenticated %}
     // Server-Sent Events for real-time unread count updates
     const messageEventSource = new EventSource('/api/messages/events');
     messageEventSource.addEventListener('message', function(event) {
