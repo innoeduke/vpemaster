@@ -170,6 +170,7 @@ def update_issue(issue_id):
     previous_assignee_id = issue.assignee_id
 
     new_status = request.form.get('status') or issue.status
+    new_type = request.form.get('type') or issue.type
     new_priority = request.form.get('priority') or issue.priority
     new_assignee_id = request.form.get('assignee_id', type=int)
     new_title = (request.form.get('title') or issue.title).strip()
@@ -191,6 +192,8 @@ def update_issue(issue_id):
     errors = []
     if new_status not in Issue.STATUSES:
         errors.append('Invalid status.')
+    if new_type not in Issue.TYPES:
+        errors.append('Invalid type.')
     if new_priority not in Issue.PRIORITIES:
         errors.append('Invalid priority.')
     if not new_title:
@@ -216,6 +219,7 @@ def update_issue(issue_id):
     )
 
     issue.status = new_status
+    issue.type = new_type
     issue.priority = new_priority
     issue.assignee_id = new_assignee_id
     issue.title = new_title
