@@ -55,6 +55,7 @@
 
   <script id="tm-rows-data" type="application/json">{{ rows|tojson }}</script>
   <script id="tm-type-choices" type="application/json">{{ type_choices|tojson }}</script>
+  <script id="tm-role-choices" type="application/json">{{ roles|tojson }}</script>
   <script id="tm-template-name" type="application/json">{{ template_name|tojson }}</script>
   <script id="tm-save-url" type="application/json">
     {{ url_for('template_manager_bp.save_template', name=template_name)|tojson }}

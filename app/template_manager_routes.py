@@ -12,7 +12,7 @@ from . import db
 from .auth.utils import club_permission_required
 from .auth.permissions import Permissions
 from .club_context import authorized_club_required, get_current_club_id
-from .models import Meeting, SessionLog, SessionType
+from .models import Meeting, MeetingRole, SessionLog, SessionType
 from .services import meeting_template_service as tpl_service
 from .services.meeting_template_service import (
     TemplateNameInvalid, TemplateNotFound, TemplatePathEscape,
@@ -134,11 +134,14 @@ def edit_template(name):
     session_types = SessionType.get_all_for_club(club_id)
     type_choices = sorted({st.Title for st in session_types} | {'Section', 'Generic'})
 
+    roles = [r.name for r in MeetingRole.get_all_for_club(club_id)]
+
     return render_template(
         'template_manager/editor.html',
         template_name=name,
         rows=payload['rows'],
         type_choices=type_choices,
+        roles=roles,
         notice=request.args.get('notice'),
     )
 

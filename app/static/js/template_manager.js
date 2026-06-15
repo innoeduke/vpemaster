@@ -81,6 +81,21 @@
     return html;
   }
 
+  function roleOptions(selected) {
+    var html = '<option value=""></option>';
+    var hasMatch = false;
+    editor.roleChoices.forEach(function (r) {
+      var sel = r === selected ? ' selected' : '';
+      if (sel) hasMatch = true;
+      html += '<option value="' + escapeHtml(r) + '"' + sel + '>' + escapeHtml(r) + '</option>';
+    });
+    // Preserve legacy / custom role text that's not in the current list
+    if (selected && !hasMatch) {
+      html += '<option value="' + escapeHtml(selected) + '" selected>' + escapeHtml(selected) + ' (legacy)</option>';
+    }
+    return html;
+  }
+
   function renderRows() {
     var tbody = document.getElementById('tm-rows-body');
     if (!tbody) return;
@@ -96,7 +111,7 @@
         +   '<td class="tm-num-col tm-drag-handle" title="Drag to reorder"><span class="tm-grip"><i class="fas fa-grip-vertical"></i></span> ' + (idx + 1) + '</td>'
         +   '<td class="tm-type-col"><select class="tm-type">' + typeOptions(row.type) + '</select></td>'
         +   '<td class="tm-title-col"><input type="text" class="tm-title" value="' + escapeHtml(row.title) + '"></td>'
-        +   '<td class="tm-role-col"><input type="text" class="tm-role" value="' + escapeHtml(row.role) + '"></td>'
+        +   '<td class="tm-role-col"><select class="tm-role">' + roleOptions(row.role) + '</select></td>'
         +   '<td class="tm-minmax-col"><input type="number" min="0" class="tm-min" value="' + escapeHtml(row.duration_min) + '"></td>'
         +   '<td class="tm-minmax-col"><input type="number" min="0" class="tm-max" value="' + escapeHtml(row.duration_max) + '"></td>'
         +   '<td class="tm-check-col"><input type="checkbox" class="tm-hidden"' + (row.hidden ? ' checked' : '') + '></td>'
@@ -135,8 +150,6 @@
       if (isNaN(idx) || !editor.rows[idx]) return;
       var row = editor.rows[idx];
       if (e.target.classList.contains('tm-title')) row.title = e.target.value;
-      else if (e.target.classList.contains('tm-role')) row.role = e.target.value;
-      else if (e.target.classList.contains('tm-owner')) row.owner = e.target.value;
       else if (e.target.classList.contains('tm-min')) row.duration_min = e.target.value;
       else if (e.target.classList.contains('tm-max')) row.duration_max = e.target.value;
     });
@@ -155,6 +168,7 @@
           tr.classList.remove('tm-row-section');
         }
       }
+      else if (e.target.classList.contains('tm-role')) row.role = e.target.value;
       else if (e.target.classList.contains('tm-hidden')) row.hidden = e.target.checked;
     });
 
@@ -238,6 +252,7 @@
       };
     }) : [];
     editor.typeChoices = readJson('tm-type-choices') || ['Section', 'Generic'];
+    editor.roleChoices = readJson('tm-role-choices') || [];
     editor.saveUrl = readJson('tm-save-url') || '';
     editor.listUrl = readJson('tm-list-url') || '/meetings/templates';
 
