@@ -344,10 +344,8 @@
         editor.rows[idx] = tmp2;
         renderRows();
       } else if (btn.classList.contains('tm-delete-row')) {
-        if (window.confirm('Delete this row?')) {
-          editor.rows.splice(idx, 1);
-          renderRows();
-        }
+        editor.rows.splice(idx, 1);
+        renderRows();
       }
     });
 

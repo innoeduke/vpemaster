@@ -517,6 +517,11 @@ def delete_user(user_id):
     user = db.get_or_404(User, user_id)
     current_club_id = get_current_club_id()
 
+    if user.id == current_user.id:
+        from .translations.translations import translate as _
+        flash(_("You cannot remove yourself from the club. Please contact another administrator or the system administrator for assistance."), 'warning')
+        return redirect(url_for('users_bp.show_users'))
+
     # Super club is a management interface, not a real club. "Remove from
     # the super club" therefore means "remove the user from the system":
     # delete the User row, which cascades to all UserClub rows via

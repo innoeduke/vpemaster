@@ -264,3 +264,22 @@ class UserRefactorTestCase(unittest.TestCase):
         remaining_uc = UserClub.query.filter_by(user_id=target_user.id, club_id=club2.id).first()
         self.assertIsNotNone(remaining_uc, "UserClub for club2 should still exist")
         self.assertTrue(remaining_uc.is_home, "club2 UserClub should be marked as is_home")
+
+    def test_delete_self_is_forbidden(self):
+        """Test that a logged-in user cannot delete themselves."""
+        self.login()
+        
+        with self.client.session_transaction() as sess:
+            sess['current_club_id'] = self.club.id
+            
+        # Call delete_user route with the logged in user's ID (self.admin_user.id)
+        response = self.client.post(f'/user/delete/{self.admin_user.id}', follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        
+        # Verify warning message appears in the rendered HTML
+        self.assertIn("You cannot remove yourself from the club", response.get_data(as_text=True))
+        
+        # Verify UserClub is NOT deleted
+        admin_uc = UserClub.query.filter_by(user_id=self.admin_user.id, club_id=self.club.id).first()
+        self.assertIsNotNone(admin_uc, "UserClub record for self should not be deleted")
+
