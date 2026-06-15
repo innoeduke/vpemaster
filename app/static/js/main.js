@@ -755,14 +755,16 @@ document.addEventListener("DOMContentLoaded", function () {
                 const usageType = data.type || 'session';
                 showUsageWarningModal(data.message, data.logs, usageId, usageType);
               } else {
-                alert(data.message || "An error occurred while deleting the item.");
+                if (typeof closeDeleteModal === 'function') closeDeleteModal();
+                showFlashMessage(data.message || "An error occurred while deleting the item.", "warning");
               }
             }
           }
         })
         .catch((error) => {
           console.error("Delete Error:", error);
-          alert("An error occurred while deleting the item.");
+          if (typeof closeDeleteModal === 'function') closeDeleteModal();
+          showFlashMessage("An error occurred while deleting the item.", "error");
         });
     });
   }
@@ -906,5 +908,56 @@ function renderNumberedPagination(controlsContainer, currentPage, totalPages, on
   controlsContainer.onPageClickCallback = onPageClick;
 }
 window.renderNumberedPagination = renderNumberedPagination;
+
+/**
+ * Show a flash message dynamically matching Flask's server-rendered flash messages
+ * @param {string} message The message to display
+ * @param {string} category The category of the flash message ('success', 'warning', 'error', 'danger', 'info')
+ */
+function showFlashMessage(message, category = 'info') {
+  let container = document.querySelector('.flash-messages');
+  if (!container) {
+    container = document.createElement('div');
+    container.className = 'flash-messages';
+    const wrapper = document.querySelector('.content-wrapper');
+    if (wrapper) {
+      wrapper.insertBefore(container, wrapper.firstChild);
+    } else {
+      document.body.appendChild(container);
+    }
+  }
+
+  const flash = document.createElement('div');
+  flash.className = `flash ${category}`;
+
+  let iconClass = 'fa-info-circle';
+  if (category === 'success') {
+    iconClass = 'fa-check-circle';
+  } else if (category === 'error' || category === 'danger' || category === 'warning') {
+    iconClass = 'fa-exclamation-circle';
+  }
+
+  flash.innerHTML = `
+    <i class="fas ${iconClass}"></i>
+    <span>${message}</span>
+    <span class="close-flash" onclick="this.parentElement.remove();">&times;</span>
+  `;
+
+  container.appendChild(flash);
+
+  // Auto-remove after 3 seconds matching the base.html behavior
+  setTimeout(() => {
+    flash.style.opacity = '0';
+    flash.style.transform = 'translateY(20px)';
+    flash.addEventListener('transitionend', () => {
+      flash.remove();
+      if (container.children.length === 0) {
+        container.remove();
+      }
+    });
+  }, 3000);
+}
+window.showFlashMessage = showFlashMessage;
+
 
 

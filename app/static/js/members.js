@@ -288,20 +288,62 @@ async function handleUserSubmit(e) {
   }
 }
 
-function openRemoveUserModal(actionUrl, userName) {
+function openRemoveUserModal(actionUrl, userName, targetUserId) {
   const deleteModal = document.getElementById("deleteModal");
   const deleteForm = document.getElementById("deleteForm");
   const deleteModalText = document.getElementById("deleteModalText");
   
   if (deleteForm && deleteModal && deleteModalText) {
-    deleteForm.action = actionUrl;
-    deleteModalText.innerHTML = `
-      <strong>Remove "${userName}" from this club?</strong><br><br>
-      <span style="font-size: 0.9em; color: #666;">
-        Their contact record will be converted from <em>Member</em> to <em>Guest</em>.<br>
-        If the user has no other club memberships, their account will also be removed.
-      </span>
-    `;
+    if (targetUserId && typeof CURRENT_USER_ID !== 'undefined' && targetUserId === CURRENT_USER_ID) {
+      const titleCannotRemove = deleteModal.getAttribute('data-title-cannot-remove') || 'Cannot Remove Yourself';
+      const msgCannotRemove = deleteModal.getAttribute('data-msg-cannot-remove') || 'You cannot remove yourself from the club. Please contact another administrator or the system administrator for assistance.';
+      const btnOkText = deleteModal.getAttribute('data-btn-ok') || 'OK';
+
+      deleteModalText.innerHTML = `
+        <div style="text-align: center; padding: 10px 0;">
+          <div style="font-size: 3em; color: #dd6b20; margin-bottom: 15px;">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <h3 style="margin-bottom: 10px; color: #2d3748;">
+            ${titleCannotRemove}
+          </h3>
+          <p style="font-size: 0.95em; color: #4a5568; line-height: 1.5; margin: 0 10px;">
+            ${msgCannotRemove}
+          </p>
+        </div>
+      `;
+      
+      deleteForm.style.display = "none";
+      
+      let okBtn = document.getElementById("deleteModalOkBtn");
+      if (!okBtn) {
+        okBtn = document.createElement("button");
+        okBtn.id = "deleteModalOkBtn";
+        okBtn.type = "button";
+        okBtn.className = "btn btn-secondary";
+        okBtn.style.margin = "15px auto 0 auto";
+        okBtn.style.display = "block";
+        okBtn.onclick = closeDeleteModal;
+        deleteModalText.appendChild(okBtn);
+      }
+      okBtn.textContent = btnOkText;
+      okBtn.style.display = "block";
+    } else {
+      deleteForm.style.display = "block";
+      deleteForm.action = actionUrl;
+      
+      const okBtn = document.getElementById("deleteModalOkBtn");
+      if (okBtn) okBtn.style.display = "none";
+      
+      deleteModalText.innerHTML = `
+        <strong>Remove "${userName}" from this club?</strong><br><br>
+        <span style="font-size: 0.9em; color: #666;">
+          Their contact record will be converted from <em>Member</em> to <em>Guest</em>.<br>
+          If the user has no other club memberships, their account will also be removed.
+        </span>
+      `;
+    }
+    
     deleteModal.style.display = "flex";
   }
 }
@@ -565,7 +607,7 @@ async function loadUsersAsync() {
             <button type="button" class="icon-btn edit-user-btn" onclick="openUserModal('${user.id}', this)" title="${isChinese ? '编辑' : 'Edit'}">
               <i class="fas fa-edit"></i>
             </button>
-            <button class="delete-btn icon-btn" onclick="openRemoveUserModal('/user/delete/${user.id}', '${escapedName}')" title="${isChinese ? '移出俱乐部' : 'Remove from Club'}">
+            <button class="delete-btn icon-btn" onclick="openRemoveUserModal('/user/delete/${user.id}', '${escapedName}', ${user.id})" title="${isChinese ? '移出俱乐部' : 'Remove from Club'}">
               <i class="fas fa-user-minus"></i>
             </button>
           </div>
@@ -688,7 +730,7 @@ async function fetchRemainingUsers() {
           <button type="button" class="icon-btn edit-user-btn" onclick="openUserModal('${user.id}', this)" title="${isChinese ? '编辑' : 'Edit'}">
             <i class="fas fa-edit"></i>
           </button>
-          <button class="delete-btn icon-btn" onclick="openRemoveUserModal('/user/delete/${user.id}', '${escapedName}')" title="${isChinese ? '移出俱乐部' : 'Remove from Club'}">
+          <button class="delete-btn icon-btn" onclick="openRemoveUserModal('/user/delete/${user.id}', '${escapedName}', ${user.id})" title="${isChinese ? '移出俱乐部' : 'Remove from Club'}">
             <i class="fas fa-user-minus"></i>
           </button>
         </div>

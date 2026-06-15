@@ -21,6 +21,7 @@
     // Global configuration
     const avatarRootDir = "{{ config.AVATAR_ROOT_DIR }}";
     const CURRENT_LOCALE = "{{ get_locale() }}";
+    const CURRENT_USER_ID = {{ current_user.id if current_user.is_authenticated else 'null' }};
     const ENABLED_MODULES = {
       'Booking': {{ is_module_enabled('Booking') | tojson }},
       'Voting': {{ is_module_enabled('Voting') | tojson }},

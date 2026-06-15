@@ -519,7 +519,10 @@ def delete_user(user_id):
 
     if user.id == current_user.id:
         from .translations.translations import translate as _
-        flash(_("You cannot remove yourself from the club. Please contact another administrator or the system administrator for assistance."), 'warning')
+        msg = _("You cannot remove yourself from the club. Please contact another administrator or the system administrator for assistance.")
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify(success=False, message=msg)
+        flash(msg, 'warning')
         return redirect(url_for('users_bp.show_users'))
 
     # Super club is a management interface, not a real club. "Remove from

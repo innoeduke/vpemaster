@@ -1,4 +1,7 @@
-<div id="deleteModal" class="modal">
+<div id="deleteModal" class="modal"
+     data-title-cannot-remove="{{ _('Cannot Remove Yourself') }}"
+     data-msg-cannot-remove="{{ _('You cannot remove yourself from the club. Please contact another administrator or the system administrator for assistance.') }}"
+     data-btn-ok="{{ _('OK') }}">
     <div class="modal-content">
         <span class="close" onclick="closeDeleteModal()">&times;</span>
         <p id="deleteModalText" style="text-align: center;"></p>

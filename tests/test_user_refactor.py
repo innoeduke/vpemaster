@@ -266,18 +266,26 @@ class UserRefactorTestCase(unittest.TestCase):
         self.assertTrue(remaining_uc.is_home, "club2 UserClub should be marked as is_home")
 
     def test_delete_self_is_forbidden(self):
-        """Test that a logged-in user cannot delete themselves."""
+        """Test that a logged-in user cannot delete themselves (both standard and AJAX)."""
         self.login()
         
         with self.client.session_transaction() as sess:
             sess['current_club_id'] = self.club.id
             
-        # Call delete_user route with the logged in user's ID (self.admin_user.id)
+        # 1. Standard POST (redirect)
         response = self.client.post(f'/user/delete/{self.admin_user.id}', follow_redirects=True)
         self.assertEqual(response.status_code, 200)
-        
-        # Verify warning message appears in the rendered HTML
         self.assertIn("You cannot remove yourself from the club", response.get_data(as_text=True))
+        
+        # 2. AJAX POST (JSON response)
+        response_ajax = self.client.post(
+            f'/user/delete/{self.admin_user.id}',
+            headers={'X-Requested-With': 'XMLHttpRequest'}
+        )
+        self.assertEqual(response_ajax.status_code, 200)
+        data = response_ajax.get_json()
+        self.assertFalse(data['success'])
+        self.assertIn("You cannot remove yourself from the club", data['message'])
         
         # Verify UserClub is NOT deleted
         admin_uc = UserClub.query.filter_by(user_id=self.admin_user.id, club_id=self.club.id).first()

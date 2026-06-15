@@ -125,7 +125,7 @@
                   <button type="button" class="icon-btn edit-user-btn" onclick="openUserModal('{{ user.id }}', this)" title="{{ _('Edit') }}">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button class="delete-btn icon-btn" onclick="openRemoveUserModal('/user/delete/{{ user.id }}', '{{ (user.contact_name or user.username)|replace("'", "\\'")|replace('"', '&quot;') }}')" title="{{ _('Remove from Club') }}">
+                  <button class="delete-btn icon-btn" onclick="openRemoveUserModal('/user/delete/{{ user.id }}', '{{ (user.contact_name or user.username)|replace("'", "\\'")|replace('"', '&quot;') }}', {{ user.id }})" title="{{ _('Remove from Club') }}">
                     <i class="fas fa-user-minus"></i>
                   </button>
                 </div>
