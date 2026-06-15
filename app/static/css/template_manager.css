@@ -47,7 +47,14 @@
 .tm-num-col { text-align: right; width: 80px; }
 .tm-date-col { width: 160px; color: var(--text-2, #5a6270); }
 .tm-check-col { text-align: center; width: 70px; }
-.tm-actions-col { width: 200px; white-space: nowrap; }
+.tm-actions-col { width: 90px; white-space: nowrap; }
+
+/* Container for a group of tm-action-btn instances — flex row, snug gap. */
+.tm-action-buttons {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
 
 .tm-empty {
   color: var(--text-2, #5a6270);
