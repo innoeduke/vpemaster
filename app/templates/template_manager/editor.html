@@ -24,16 +24,16 @@
 
   <div id="tm-save-status" class="tm-status" hidden></div>
 
+  <div class="tm-editor-table-wrap">
   <table class="tm-editor-table" id="tm-rows">
     <thead>
       <tr>
         <th class="tm-num-col">#</th>
-        <th>{{ _('Type') }}</th>
-        <th>{{ _('Title') }}</th>
-        <th>{{ _('Role') }}</th>
-        <th>{{ _('Owner') }}</th>
-        <th class="tm-num-col">{{ _("Min") }}</th>
-        <th class="tm-num-col">{{ _("Max") }}</th>
+        <th class="tm-type-col">{{ _('Type') }}</th>
+        <th class="tm-title-col">{{ _('Title') }}</th>
+        <th class="tm-role-col">{{ _('Role') }}</th>
+        <th class="tm-minmax-col">{{ _("Min") }}</th>
+        <th class="tm-minmax-col">{{ _("Max") }}</th>
         <th class="tm-check-col">{{ _('Hidden') }}</th>
         <th class="tm-actions-col">{{ _('Actions') }}</th>
       </tr>
@@ -42,6 +42,7 @@
       {# rows are rendered client-side from #tm-rows-data #}
     </tbody>
   </table>
+  </div>
 
   <div class="tm-editor-actions">
     <button type="button" class="btn btn-secondary" id="tm-add-row">

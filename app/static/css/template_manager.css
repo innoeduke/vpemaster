@@ -141,6 +141,7 @@
   border: 1px solid var(--border-1, #e3e6ea);
   border-radius: 6px;
   overflow: hidden;
+  table-layout: fixed;
 }
 
 .tm-editor-table th {
@@ -156,6 +157,10 @@
   padding: 0.4rem 0.5rem;
   border-bottom: 1px solid var(--border-1, #eef0f3);
   vertical-align: middle;
+}
+
+.tm-editor-table tr.tm-row-section {
+  background-color: #fceef0; /* light rose/burgundy tint for Section rows */
 }
 
 .tm-editor-table input[type="text"],
@@ -178,7 +183,157 @@
 }
 
 .tm-editor-table .tm-check-col input { width: auto; }
-.tm-editor-table .tm-num-col input { text-align: right; }
+.tm-editor-table .tm-minmax-col input { text-align: right; }
+
+/* Column widths — table-layout:fixed + explicit widths so each column
+   has the room it needs and the title stretches to fill the rest. */
+.tm-editor-table th.tm-num-col,
+.tm-editor-table td.tm-num-col { width: 50px; }
+.tm-editor-table th.tm-type-col,
+.tm-editor-table td.tm-type-col { width: 200px; }
+.tm-editor-table th.tm-title-col,
+.tm-editor-table td.tm-title-col { width: auto; }   /* fills remaining space */
+.tm-editor-table td.tm-title-col input { font-weight: 500; }
+.tm-editor-table th.tm-role-col,
+.tm-editor-table td.tm-role-col { width: 180px; }
+.tm-editor-table th.tm-minmax-col,
+.tm-editor-table td.tm-minmax-col { width: 75px; }
+.tm-editor-table th.tm-check-col,
+.tm-editor-table td.tm-check-col { width: 85px; }
+.tm-editor-table th.tm-actions-col,
+.tm-editor-table td.tm-actions-col { width: 120px; }
+
+/* Cell padding on the fixed-layout editor is tighter than the list */
+.tm-editor-table th,
+.tm-editor-table td {
+  padding: 0.4rem 0.5rem;
+}
+
+/* Make the role and number inputs respect their column width */
+.tm-editor-table input[type="text"],
+.tm-editor-table input[type="number"],
+.tm-editor-table select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--border-1, #d0d4da);
+  border-radius: 3px;
+  font-size: 0.9rem;
+  background: #fff;
+}
+.tm-editor-table input[type="text"]:focus,
+.tm-editor-table input[type="number"]:focus,
+.tm-editor-table select:focus {
+  outline: 2px solid var(--accent, #2d72d9);
+  outline-offset: -1px;
+  border-color: transparent;
+}
+
+.tm-editor-table .tm-actions-col {
+  white-space: nowrap;
+  width: 1%;
+  padding: 0.25rem;
+}
+
+/* ----------------------------------------------------------------
+   tm-action-btn — polished, label-less icon button for row actions.
+   Aesthetic: refined industrial / precision instrument. Crisp 1px
+   border, layered shadows, warm-neutral palette, rust-red danger
+   variant. Sized to icon + 14px breathing room.
+   ---------------------------------------------------------------- */
+.tm-action-btn {
+  --tm-action-bg: #fafbfc;
+  --tm-action-bg-hover: #eef1f5;
+  --tm-action-bg-active: #e4e8ec;
+  --tm-action-border: #d8dde3;
+  --tm-action-border-hover: #9aa5b1;
+  --tm-action-fg: #4a5563;
+  --tm-action-fg-hover: #1a202c;
+  --tm-action-shadow: 0 1px 0 rgba(16, 24, 40, 0.04),
+                      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --tm-action-shadow-hover: 0 1px 2px rgba(16, 24, 40, 0.08),
+                            inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --tm-action-shadow-active: inset 0 1px 2px rgba(16, 24, 40, 0.1);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  margin: 0 2px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--tm-action-fg);
+  background: var(--tm-action-bg);
+  border: 1px solid var(--tm-action-border);
+  border-radius: 6px;
+  box-shadow: var(--tm-action-shadow);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease-out,
+    border-color 160ms ease-out,
+    color 160ms ease-out,
+    box-shadow 120ms ease-out,
+    transform 120ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tm-action-btn i,
+.tm-action-btn svg {
+  pointer-events: none;
+  display: block;
+}
+
+.tm-action-btn:hover {
+  background: var(--tm-action-bg-hover);
+  border-color: var(--tm-action-border-hover);
+  color: var(--tm-action-fg-hover);
+  box-shadow: var(--tm-action-shadow-hover);
+  transform: translateY(-1px);
+}
+
+.tm-action-btn:active {
+  background: var(--tm-action-bg-active);
+  box-shadow: var(--tm-action-shadow-active);
+  transform: translateY(0);
+}
+
+.tm-action-btn:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Destructive variant — warm rust, not alarm-red */
+.tm-action-btn--danger {
+  --tm-action-bg: #b64339;
+  --tm-action-bg-hover: #963228;
+  --tm-action-bg-active: #7d281d;
+  --tm-action-border: #8c2e26;
+  --tm-action-border-hover: #6f231b;
+  --tm-action-fg: #fff8f7;
+  --tm-action-fg-hover: #ffffff;
+  --tm-action-shadow: 0 1px 0 rgba(60, 12, 6, 0.25),
+                      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  --tm-action-shadow-hover: 0 2px 4px rgba(60, 12, 6, 0.3),
+                            inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  --tm-action-shadow-active: inset 0 2px 4px rgba(40, 6, 2, 0.35);
+}
+
+/* Disabled state (for when validation rules block an action) */
+.tm-action-btn[disabled],
+.tm-action-btn[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: var(--tm-action-shadow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tm-action-btn { transition: none; }
+  .tm-action-btn:hover { transform: none; }
+}
 
 .tm-drag-handle {
   cursor: grab;
@@ -226,5 +381,6 @@
   .tm-editor-table { font-size: 0.8rem; }
   .tm-editor-table th,
   .tm-editor-table td { padding: 0.3rem 0.35rem; }
-  .tm-actions-col { width: auto; }
+  .tm-editor-table th.tm-actions-col,
+  .tm-editor-table td.tm-actions-col { width: auto; }
 }

@@ -85,25 +85,25 @@
     var tbody = document.getElementById('tm-rows-body');
     if (!tbody) return;
     if (!editor.rows.length) {
-      tbody.innerHTML = '<tr class="tm-empty-row"><td colspan="9" style="text-align:center; padding:1rem; color:#888;">No rows yet. Click "Add row" to start.</td></tr>';
+      tbody.innerHTML = '<tr class="tm-empty-row"><td colspan="8" style="text-align:center; padding:1rem; color:#888;">No rows yet. Click "Add row" to start.</td></tr>';
       return;
     }
     var html = '';
     editor.rows.forEach(function (row, idx) {
+      var rowClass = row.type === 'Section' ? ' class="tm-row-section"' : '';
       html += ''
-        + '<tr data-idx="' + idx + '">'
+        + '<tr data-idx="' + idx + '"' + rowClass + '>'
         +   '<td class="tm-num-col tm-drag-handle" title="Drag to reorder"><span class="tm-grip"><i class="fas fa-grip-vertical"></i></span> ' + (idx + 1) + '</td>'
-        +   '<td><select class="tm-type">' + typeOptions(row.type) + '</select></td>'
-        +   '<td><input type="text" class="tm-title" value="' + escapeHtml(row.title) + '"></td>'
-        +   '<td><input type="text" class="tm-role" value="' + escapeHtml(row.role) + '"></td>'
-        +   '<td><input type="text" class="tm-owner" value="' + escapeHtml(row.owner) + '"></td>'
-        +   '<td class="tm-num-col"><input type="number" min="0" class="tm-min" value="' + escapeHtml(row.duration_min) + '"></td>'
-        +   '<td class="tm-num-col"><input type="number" min="0" class="tm-max" value="' + escapeHtml(row.duration_max) + '"></td>'
+        +   '<td class="tm-type-col"><select class="tm-type">' + typeOptions(row.type) + '</select></td>'
+        +   '<td class="tm-title-col"><input type="text" class="tm-title" value="' + escapeHtml(row.title) + '"></td>'
+        +   '<td class="tm-role-col"><input type="text" class="tm-role" value="' + escapeHtml(row.role) + '"></td>'
+        +   '<td class="tm-minmax-col"><input type="number" min="0" class="tm-min" value="' + escapeHtml(row.duration_min) + '"></td>'
+        +   '<td class="tm-minmax-col"><input type="number" min="0" class="tm-max" value="' + escapeHtml(row.duration_max) + '"></td>'
         +   '<td class="tm-check-col"><input type="checkbox" class="tm-hidden"' + (row.hidden ? ' checked' : '') + '></td>'
         +   '<td class="tm-actions-col">'
-        +     '<button type="button" class="btn btn-sm btn-secondary tm-move-up" title="Move up"><i class="fas fa-arrow-up"></i></button> '
-        +     '<button type="button" class="btn btn-sm btn-secondary tm-move-down" title="Move down"><i class="fas fa-arrow-down"></i></button> '
-        +     '<button type="button" class="btn btn-sm btn-danger tm-delete-row" title="Delete row"><i class="fas fa-trash"></i></button>'
+        +     '<button type="button" class="tm-action-btn tm-move-up" title="Move up" aria-label="Move up"><i class="fas fa-arrow-up"></i></button>'
+        +     '<button type="button" class="tm-action-btn tm-move-down" title="Move down" aria-label="Move down"><i class="fas fa-arrow-down"></i></button>'
+        +     '<button type="button" class="tm-action-btn tm-action-btn--danger tm-delete-row" title="Delete row" aria-label="Delete row"><i class="fas fa-trash"></i></button>'
         +   '</td>'
         + '</tr>';
     });
@@ -147,7 +147,14 @@
       var idx = parseInt(tr.getAttribute('data-idx'), 10);
       if (isNaN(idx) || !editor.rows[idx]) return;
       var row = editor.rows[idx];
-      if (e.target.classList.contains('tm-type')) row.type = e.target.value;
+      if (e.target.classList.contains('tm-type')) {
+        row.type = e.target.value;
+        if (row.type === 'Section') {
+          tr.classList.add('tm-row-section');
+        } else {
+          tr.classList.remove('tm-row-section');
+        }
+      }
       else if (e.target.classList.contains('tm-hidden')) row.hidden = e.target.checked;
     });
 
