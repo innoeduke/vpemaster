@@ -236,7 +236,22 @@
 
     renderRows();
     wireEditorEvents();
-    wireDragReorder();
+
+    // Sortable.js is loaded with `defer` in base.html, so it may not be
+    // available the moment this script runs. Poll briefly until it is, then
+    // attach the drag handler.
+    var sortableAttempts = 0;
+    function tryWireDrag() {
+      if (typeof window.Sortable !== 'undefined') {
+        wireDragReorder();
+      } else if (sortableAttempts < 20) {
+        sortableAttempts += 1;
+        window.setTimeout(tryWireDrag, 50);
+      } else {
+        console.warn('Sortable.js not available; drag-to-reorder disabled.');
+      }
+    }
+    tryWireDrag();
   }
 
   function wireDragReorder() {
