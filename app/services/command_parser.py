@@ -36,8 +36,8 @@ class CommandParser:
         # Route commands to tool parameters
         if cmd == '/create-meeting':
             if len(args) < 1:
-                from app.models import Meeting
-                type_to_template = Meeting.get_type_to_template(club_id)
+                from app.services.meeting_template_service import get_template_filename_map
+                type_to_template = get_template_filename_map(club_id)
                 template_list = ", ".join([f"'{k}'" for k in type_to_template.keys()])
                 return False, (
                     "Usage: `/create-meeting <date> [template_name]`\n"
@@ -383,8 +383,8 @@ class CommandParser:
         # Check /create-meeting
         if check_perm(Permissions.MEETING_CREATE):
             try:
-                from app.models import Meeting
-                type_to_template = Meeting.get_type_to_template(club_id)
+                from app.services.meeting_template_service import get_template_filename_map
+                type_to_template = get_template_filename_map(club_id)
                 template_list = ", ".join([f"'{k}'" for k in type_to_template.keys()])
                 tpl_suffix = f" (Available templates: {template_list})"
             except Exception:

@@ -271,7 +271,8 @@ class ChatToolExecutor:
             return {'success': False, 'message': "Invalid date format. Use YYYY-MM-DD."}
             
         # Get template listing
-        type_to_template = Meeting.get_type_to_template(club_id)
+        from app.services.meeting_template_service import get_template_filename_map
+        type_to_template = get_template_filename_map(club_id)
         
         if not template_name:
             # List templates and request selection

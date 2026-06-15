@@ -952,8 +952,9 @@ def agenda():
     club_id = get_current_club_id()
 
     # --- Template Data ---
-    # We use the mapping defined in the Meeting model as the source of truth
-    meeting_types = Meeting.get_type_to_template(club_id)
+    # Source of truth is the template service (filesystem-based)
+    from .services.meeting_template_service import get_template_filename_map
+    meeting_types = get_template_filename_map(club_id)
 
     members = Contact.query.join(ContactClub).filter(
         ContactClub.club_id == club_id,
@@ -1230,124 +1231,6 @@ def export_agenda(meeting_id):
     )
 
 
-@agenda_bp.route('/agenda/export_template', methods=['POST'])
-@login_required
-@authorized_club_required
-def export_meeting_template():
-    """
-    Exports the current meeting structure as a CSV template file
-    in the club's resource folder.
-    """
-    if not is_authorized(Permissions.MEETING_MANAGE):
-        return jsonify(success=False, message="Permission denied"), 403
-
-    data = request.get_json()
-    meeting_id = data.get('meeting_id')
-    template_name = data.get('template_name')
-
-    if not meeting_id or not template_name:
-        return jsonify(success=False, message="Meeting ID and Template Name are required"), 400
-
-    meeting = db.session.get(Meeting, meeting_id)
-    if not meeting:
-        return jsonify(success=False, message="Meeting not found"), 404
-
-    club_id = get_current_club_id()
-    if meeting.club_id != club_id:
-        return jsonify(success=False, message="Unauthorized"), 403
-
-    # Fetch logs
-    logs = SessionLog.query.filter_by(meeting_id=meeting_id).order_by(SessionLog.Meeting_Seq.asc()).all()
-
-    # Sanitize filename: replace spaces with _ and add .csv
-    safe_name = template_name.strip().replace(' ', '_')
-    if not safe_name:
-        return jsonify(success=False, message="Invalid template name"), 400
-    
-    filename = f"{safe_name}.csv"
-
-    # Target folder: static/club_resources/<club_id>/templates/
-    templates_dir = os.path.join(current_app.static_folder, 'club_resources', str(club_id), 'templates')
-    os.makedirs(templates_dir, exist_ok=True)
-    filepath = os.path.join(templates_dir, filename)
-
-    try:
-        # Write CSV content: Type,Title,Role,Owner,Duration_Min,Duration_Max,Hidden
-        with open(filepath, mode='w', newline='', encoding='utf-8-sig') as f:
-            writer = csv.writer(f)
-            writer.writerow(['Type', 'Title', 'Role', 'Owner', 'Duration_Min', 'Duration_Max', 'Hidden'])
-            
-            for log in logs:
-                st = log.session_type
-                role_name = st.role.name if st and st.role else ""
-                type_title = st.Title if st else ""
-                
-                # Reset Title to Type title unless it's a Section or Generic type
-                session_title = log.Session_Title or ""
-                if type_title and type_title not in ["Section", "Generic"]:
-                    session_title = type_title
-                
-                writer.writerow([
-                    type_title,
-                    session_title,
-                    role_name,
-                    "", # Owner column blank as requested
-                    log.Duration_Min if log.Duration_Min is not None else 0,
-                    log.Duration_Max if log.Duration_Max is not None else "",
-                    "true" if log.hidden else ""
-                ])
-                
-        return jsonify(success=True, message=f"Template '{filename}' exported successfully to your club resources.")
-    except Exception as e:
-        current_app.logger.error(f"Error exporting template: {str(e)}")
-        return jsonify(success=False, message=str(e)), 500
-
-
-@agenda_bp.route('/agenda/delete_template', methods=['POST'])
-@login_required
-@authorized_club_required
-def delete_meeting_template():
-    """
-    Deletes a club-specific meeting template CSV file.
-    """
-    if not is_authorized(Permissions.MEETING_MANAGE):
-        return jsonify(success=False, message="Permission denied"), 403
-
-    data = request.get_json()
-    template_name = data.get('template_name')
-
-    if not template_name:
-        return jsonify(success=False, message="Template name is required"), 400
-
-    club_id = get_current_club_id()
-    
-    # Get mapping to find the filename
-    type_to_template = Meeting.get_type_to_template(club_id)
-    filename = type_to_template.get(template_name)
-    
-    if not filename:
-        return jsonify(success=False, message=f"Template '{template_name}' not found"), 404
-        
-    template_path = Meeting.get_template_path(club_id, filename)
-    
-    # Security check: Ensure we are only deleting files within the club's resource folder
-    club_resources_dir = os.path.abspath(os.path.join(current_app.static_folder, 'club_resources', str(club_id)))
-    abs_template_path = os.path.abspath(template_path)
-    
-    if not abs_template_path.startswith(club_resources_dir):
-        return jsonify(success=False, message="Cannot delete templates outside of club resources"), 403
-
-    if not os.path.exists(template_path):
-        return jsonify(success=False, message="Template file not found on disk"), 404
-
-    try:
-        os.remove(template_path)
-        return jsonify(success=True, message=f"Template '{template_name}' deleted successfully.")
-    except Exception as e:
-        current_app.logger.error(f"Error deleting template: {str(e)}")
-        return jsonify(success=False, message=str(e)), 500
-
-
 @agenda_bp.route('/agenda/ppt/<int:meeting_id>')
 @login_required
 @authorized_club_required
@@ -1393,14 +1276,13 @@ def _validate_meeting_form_data(form):
     meeting_type = form.get('meeting_type')
     club_id = get_current_club_id()
     
-    # Check template validity using the model's mapping
-    template_file = Meeting.get_type_to_template(club_id).get(meeting_type)
+    # Check template validity via the template service (filesystem-based)
+    from .services.meeting_template_service import get_template_filename_map, template_exists
+    template_file = get_template_filename_map(club_id).get(meeting_type)
     if not template_file:
          raise ValueError(f"Invalid meeting type: {meeting_type}")
-         
-    template_path = Meeting.get_template_path(club_id, template_file)
-    
-    if not os.path.exists(template_path):
+
+    if not template_exists(club_id, template_file):
          raise ValueError(f"Template file not found for meeting type: {meeting_type}")
 
     meeting_date_str = form.get('meeting_date')
@@ -1513,180 +1395,143 @@ def _upsert_meeting_record(data, media_id):
     return meeting
 
 
+def _safe_int(v):
+    """Parse a string into an int, returning None on empty / unparseable input."""
+    if v is None or v == '':
+        return None
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return None
+
+
 def _generate_logs_from_template(meeting, template_file):
-    """Reads the CSV template and generates session logs."""
-    # Clear existing owners/roles first (to avoid FK constraints)
+    """Read the CSV template via the template service and materialize SessionLog rows."""
     if meeting.id:
         OwnerMeetingRoles.query.filter_by(meeting_id=meeting.id).delete(synchronize_session=False)
-
-    # Clear existing logs
     if meeting.id:
         SessionLog.query.filter_by(meeting_id=meeting.id).delete()
-    
-    template_path = Meeting.get_template_path(meeting.club_id, template_file)
-        
-    # Get current ExComm team from database for officer auto-population
-    from .models import ExComm
-    club_id = get_current_club_id()
-    excomm = None
-    excomm_officers = {}
-    
-    if club_id:
-        # Resolve the correct ExComm team for this meeting's date
-        excomm = meeting.get_excomm()
-        
-        if excomm:
-            # Build officer mapping from ExComm model
-            excomm_officers = excomm.get_officers()  # Returns dict like {'President': Contact, 'VPE': Contact, ...}
 
-            # Load all available session types for this club (Local + Global)
+    from .services import meeting_template_service as tpl_service
+    template_rows = tpl_service.parse_template_rows(meeting.club_id, template_file)
+
+    club_id = get_current_club_id()
+    excomm_officers = {}
+    if club_id:
+        excomm = meeting.get_excomm()
+        if excomm:
+            excomm_officers = excomm.get_officers()
+
     all_session_types = SessionType.get_all_for_club(club_id)
     session_types_map = {st.Title: st for st in all_session_types}
 
-    with open(template_path, 'r', encoding='utf-8') as f:
-        reader = csv.reader(f)
-        next(reader, None)  # Skip Header Row
-        
-        seq = 1
-        current_time = meeting.Start_Time
+    GENERIC_ID = SessionType.get_id_by_title('Generic', club_id)
+    GE_REPORT_ID = SessionType.get_id_by_title('General Evaluation Report', club_id)
+    EVALUATION_ID = SessionType.get_id_by_title('Evaluation', club_id)
 
-        for row in reader:
-            # Skip perfectly empty rows
-            if not any(cell.strip() for cell in row):
-                continue
+    seq = 1
+    current_time = meeting.Start_Time
 
-            # Parse row columns safely
-            def get_col(idx):
-                return row[idx].strip() if idx < len(row) and row[idx].strip() else None
+    for row in template_rows:
+        type_val = (row.get('type') or '').strip()
+        title_val = (row.get('title') or '').strip() or None
+        role_val = (row.get('role') or '').strip() or None
+        owner_val = (row.get('owner') or '').strip() or None
+        min_val = row.get('duration_min')
+        max_val = row.get('duration_max')
+        is_hidden = bool(row.get('hidden'))
 
-            type_val = get_col(0)
-            title_val = get_col(1)
-            role_val = get_col(2)
-            owner_val = get_col(3)
-            min_val = get_col(4)
-            max_val = get_col(5)
-            hidden_val = get_col(6)  # Optional Hidden flag
-            
-            # Resolve common IDs for the club
-            GENERIC_ID = SessionType.get_id_by_title('Generic', club_id)
-            GE_REPORT_ID = SessionType.get_id_by_title('General Evaluation Report', club_id)
-            EVALUATION_ID = SessionType.get_id_by_title('Evaluation', club_id)
+        # --- Resolve Session Type ---
+        session_type = None
+        type_id = GENERIC_ID
+        if type_val:
+            session_type = session_types_map.get(type_val)
+            if session_type:
+                type_id = session_type.id
 
-            # --- Resolve Session Type ---
-            session_type = None
-            type_id = GENERIC_ID
-            if type_val:
-                # Use lookup map instead of direct query to support inheritance
-                session_type = session_types_map.get(type_val)
-                if session_type:
-                    type_id = session_type.id
-            
-            # --- Resolve Session Title ---
-            if title_val:
-                session_title_for_log = title_val
-            elif session_type:
-                if session_type.Title == 'Evaluation':
-                    session_title_for_log = None
-                else:
-                    session_title_for_log = session_type.Title
+        # --- Resolve Session Title ---
+        if title_val:
+            session_title_for_log = title_val
+        elif session_type:
+            if session_type.Title == 'Evaluation':
+                session_title_for_log = None
             else:
-                session_title_for_log = type_val
+                session_title_for_log = session_type.Title
+        else:
+            session_title_for_log = type_val or None
 
-            # --- Resolve Durations ---
-            def local_safe_int(v):
-                try: return int(v) if v else None
-                except ValueError: return None
+        # --- Resolve Durations ---
+        duration_min = _safe_int(min_val)
+        duration_max = _safe_int(max_val)
 
-            duration_min = local_safe_int(min_val)
-            duration_max = local_safe_int(max_val)
+        if duration_min is None and duration_max is None and session_type:
+            duration_min = session_type.Duration_Min
+            duration_max = session_type.Duration_Max
 
-            if duration_min is None and duration_max is None and session_type:
-                duration_min = session_type.Duration_Min
-                duration_max = session_type.Duration_Max
+        if type_id == GE_REPORT_ID:
+            duration_max = 3 if meeting.ge_mode == 1 else 5
 
-            # Special Logic for GE styles
-            if type_id == GE_REPORT_ID:  # General Evaluation Report
-                if meeting.ge_mode == 1: # Distributed
-                    duration_max = 3
-                else:  # 0: Traditional
-                    duration_max = 5
-            
-            break_minutes = 1
-            if type_id == EVALUATION_ID and meeting.ge_mode == 1:  # Individual Evaluation
-                break_minutes += 1
+        break_minutes = 1
+        if type_id == EVALUATION_ID and meeting.ge_mode == 1:
+            break_minutes += 1
 
-            # --- Resolve Owner ---
-            owner_id = None
-            credentials = ''
-            if owner_val:
-                owner = Contact.query.join(ContactClub).filter(
-                    Contact.Name == owner_val, 
-                    ContactClub.club_id == club_id
-                ).first()
-                if owner:
-                    owner_id = owner.id
-                    credentials = derive_credentials(owner)
-            
-            # Auto-populate from Excomm Team if owner is missing
-            if not owner_id and excomm_officers:
-                role_to_check = role_val
-                if not role_to_check and session_type and session_type.role:
-                        role_to_check = session_type.role.name
-                
-                if role_to_check:
-                        # Check if this role exists in the ExComm officers dict
-                        officer_contact = excomm_officers.get(role_to_check)
-                        if officer_contact:
-                            owner_id = officer_contact.id
-                            credentials = derive_credentials(officer_contact)
-            
-            # --- Create Log ---
-            # Fetch contact to assign as owner if needed
-            owner_contact = db.session.get(Contact, owner_id) if owner_id else None
+        # --- Resolve Owner ---
+        owner_id = None
+        credentials = ''
+        if owner_val:
+            owner = Contact.query.join(ContactClub).filter(
+                Contact.Name == owner_val,
+                ContactClub.club_id == club_id,
+            ).first()
+            if owner:
+                owner_id = owner.id
+                credentials = derive_credentials(owner)
 
-            # Determine if session is hidden based on template column
-            is_hidden = hidden_val and hidden_val.lower() == 'true'
+        if not owner_id and excomm_officers:
+            role_to_check = role_val
+            if not role_to_check and session_type and session_type.role:
+                role_to_check = session_type.role.name
+            if role_to_check:
+                officer_contact = excomm_officers.get(role_to_check)
+                if officer_contact:
+                    owner_id = officer_contact.id
+                    credentials = derive_credentials(officer_contact)
 
-            new_log = SessionLog(
-                meeting_id=meeting.id,
-                Meeting_Seq=seq,
-                Type_ID=type_id,
-                # Owner_ID and credentials removed
-                Duration_Min=duration_min,
-                Duration_Max=duration_max,
-                Session_Title=session_title_for_log,
-                Status='Booked',
-                hidden=is_hidden
-            )
-            
-            # Calculate Start Time
-            is_section = False
-            if session_type and session_type.Is_Section:
-                is_section = True
-            
-            if not is_section:
-                new_log.Start_Time = current_time
-                # Calculate next start time
-                dur_to_add = int(duration_max or 0)
-                dt_current = datetime.combine(meeting.Meeting_Date, current_time)
-                next_dt = dt_current + timedelta(minutes=dur_to_add + break_minutes)
-                current_time = next_dt.time()
-            else:
-                new_log.Start_Time = None
+        owner_contact = db.session.get(Contact, owner_id) if owner_id else None
 
-            db.session.add(new_log)
-            db.session.flush()
+        new_log = SessionLog(
+            meeting_id=meeting.id,
+            Meeting_Seq=seq,
+            Type_ID=type_id,
+            Duration_Min=duration_min,
+            Duration_Max=duration_max,
+            Session_Title=session_title_for_log,
+            Status='Booked',
+            hidden=is_hidden,
+        )
 
-            if owner_contact:
-                # Ensure session_type is available for RoleService
-                if not new_log.session_type and session_type:
-                    new_log.session_type = session_type
-                
-                from .services.role_service import RoleService
-                RoleService.assign_meeting_role(new_log, [owner_contact.id], is_admin=True)
-            seq += 1
+        is_section = bool(session_type and session_type.Is_Section)
+        if not is_section:
+            new_log.Start_Time = current_time
+            dur_to_add = int(duration_max or 0)
+            dt_current = datetime.combine(meeting.Meeting_Date, current_time)
+            next_dt = dt_current + timedelta(minutes=dur_to_add + break_minutes)
+            current_time = next_dt.time()
+        else:
+            new_log.Start_Time = None
 
-        recalculate_section_ids(meeting)
+        db.session.add(new_log)
+        db.session.flush()
+
+        if owner_contact:
+            if not new_log.session_type and session_type:
+                new_log.session_type = session_type
+            from .services.role_service import RoleService
+            RoleService.assign_meeting_role(new_log, [owner_contact.id], is_admin=True)
+
+        seq += 1
+
+    recalculate_section_ids(meeting)
 
 
 @agenda_bp.route('/agenda/create', methods=['POST'])

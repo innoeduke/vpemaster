@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Template Manager') }}{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/template_manager.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4 template-manager">
+  <h1 class="page-title">
+    <i class="fas fa-layer-group"></i> {{ _('Template Manager') }}
+  </h1>
+
+  {% if notice %}
+  <div class="alert alert-success" role="alert">{{ notice }}</div>
+  {% endif %}
+  {% if error %}
+  <div class="alert alert-error" role="alert">{{ error }}</div>
+  {% endif %}
+
+  <section class="tm-section">
+    <h2 class="tm-section-title">{{ _('Your Club Templates') }}</h2>
+
+    {% if templates %}
+    <table class="tm-table">
+      <thead>
+        <tr>
+          <th>{{ _('Name') }}</th>
+          <th class="tm-num-col">{{ _('Sessions') }}</th>
+          <th class="tm-date-col">{{ _('Updated') }}</th>
+          <th class="tm-actions-col">{{ _('Actions') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in templates %}
+        <tr>
+          <td>{{ t.display_name }}</td>
+          <td class="tm-num-col">{{ t.row_count }}</td>
+          <td class="tm-date-col">
+            <time datetime="{{ t.mtime|int }}">{{ t.mtime_display }}</time>
+          </td>
+          <td class="tm-actions-col">
+            <a class="btn btn-primary btn-sm"
+               href="{{ url_for('template_manager_bp.edit_template', name=t.filename) }}">
+              <i class="fas fa-pen"></i> {{ _('Edit') }}
+            </a>
+            <button type="button" class="btn btn-danger btn-sm tm-delete-btn"
+                    data-name="{{ t.filename }}" data-display="{{ t.display_name }}">
+              <i class="fas fa-trash"></i> {{ _('Delete') }}
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="tm-empty">{{ _('No templates yet. Create one from a seed template or export from an existing meeting.') }}</p>
+    {% endif %}
+  </section>
+
+  <section class="tm-section">
+    <h2 class="tm-section-title">{{ _('Create from Seed Template') }}</h2>
+    {% if available_seeds %}
+    <form method="get" action="{{ url_for('template_manager_bp.create_from_seed') }}" class="tm-form">
+      <label class="tm-field">
+        <span>{{ _('Seed') }}</span>
+        <select name="seed" required>
+          {% for s in available_seeds %}
+          <option value="{{ s.filename }}">{{ s.display_name }} ({{ s.row_count }} sessions)</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="tm-field">
+        <span>{{ _('New template name') }}</span>
+        <input type="text" name="name" required pattern="[A-Za-z0-9 _\-]+"
+               title="{{ _('Letters, numbers, spaces, underscores, and hyphens only') }}"
+               placeholder="{{ _('e.g. My Club Keynote') }}">
+      </label>
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-plus"></i> {{ _('Create') }}
+      </button>
+    </form>
+    {% else %}
+    <p class="tm-empty">{{ _('All seed templates are already in this club.') }}</p>
+    {% endif %}
+  </section>
+
+  <section class="tm-section">
+    <h2 class="tm-section-title">{{ _('Export from Meeting') }}</h2>
+
+    {% if not show_export_form %}
+    <p>
+      <a class="btn btn-secondary"
+         href="{{ url_for('template_manager_bp.list_templates', show_export=1) }}">
+        <i class="fas fa-file-export"></i> {{ _('Show meetings to export from') }}
+      </a>
+    </p>
+    {% else %}
+    <form method="post" action="{{ url_for('template_manager_bp.export_from_meeting') }}" class="tm-form">
+      <label class="tm-field">
+        <span>{{ _('Meeting') }}</span>
+        <select name="meeting_id" required>
+          {% for m in meetings %}
+          <option value="{{ m.id }}">
+            #{{ m.Meeting_Number }}{% if m.Meeting_Date %} — {{ m.Meeting_Date.strftime('%Y-%m-%d') }}{% endif %}{% if m.Meeting_Title %} — {{ m.Meeting_Title }}{% endif %}
+          </option>
+          {% else %}
+          <option disabled>{{ _('No meetings in this club') }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="tm-field">
+        <span>{{ _('New template name') }}</span>
+        <input type="text" name="template_name" required pattern="[A-Za-z0-9 _\-]+"
+               title="{{ _('Letters, numbers, spaces, underscores, and hyphens only') }}"
+               placeholder="{{ _('e.g. Keynote from Meeting 42') }}">
+      </label>
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-file-export"></i> {{ _('Export') }}
+      </button>
+      <a class="btn btn-secondary"
+         href="{{ url_for('template_manager_bp.list_templates') }}">
+        {{ _('Cancel') }}
+      </a>
+    </form>
+    {% endif %}
+  </section>
+</div>
+
+<script src="{{ url_for('static', filename='js/template_manager.js') }}"></script>
+<script>
+  window.TemplateManager.initListPage();
+</script>
+{% endblock %}

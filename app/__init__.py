@@ -203,6 +203,7 @@ def create_app(config_class='config.Config'):
         from .chat_routes import chat_bp
         from .issue_routes import issue_bp
         from .checkin_routes import checkin_bp
+        from .template_manager_routes import template_bp
 
         # Import models so SQLAlchemy knows about them
         from . import models
@@ -228,6 +229,7 @@ def create_app(config_class='config.Config'):
         app.register_blueprint(messages_bp)
         app.register_blueprint(planner_bp)
         app.register_blueprint(uploads_bp)
+        app.register_blueprint(template_bp)
         app.register_blueprint(chat_bp)
         app.register_blueprint(issue_bp)
         from .about_club_routes import about_club_bp

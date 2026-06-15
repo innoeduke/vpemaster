@@ -65,8 +65,9 @@ def test_meeting_creation_club_scoping(app):
             shutil.rmtree(club2_dir)
 
         # Seed club directories so the test template is copied over
-        Meeting.get_type_to_template(club1.id)
-        Meeting.get_type_to_template(club2.id)
+        from app.services.meeting_template_service import list_templates
+        list_templates(club1.id)
+        list_templates(club2.id)
 
         # 4. Generate logs for Club 1 meeting using Club 1 context
         from flask import session

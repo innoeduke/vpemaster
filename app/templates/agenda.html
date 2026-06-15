@@ -204,7 +204,6 @@
         <button id="cancel-edit-btn" class="btn btn-secondary">{{ _('Cancel') }}</button>
         <button id="view-details-btn" class="btn btn-primary" data-meeting-type="{{ selected_meeting.type or '' }}">{{ _('Details') }}</button>
         <button id="add-row-btn" class="btn btn-primary">{{ _('+Section') }}</button>
-        <button id="export-template-btn" class="btn btn-primary">{{ _('Export') }}</button>
         <button id="edit-logs-btn" class="btn btn-primary">{{ _('Save') }}</button>
     </div>
     {% endif %}
@@ -466,10 +465,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Initialize custom selects for New Meeting form
-            new CustomSelect('meeting_type', {
-                canDelete: true,
-                deleteCallback: window.deleteMeetingTemplate
-            });
+            new CustomSelect('meeting_type');
             new CustomSelect('ge_mode');
         });
 

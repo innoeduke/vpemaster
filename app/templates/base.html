@@ -314,7 +314,7 @@
       <div class="header-center-nav">
         <ul class="header-nav-links">
           <!-- 1. Meetings Dropdown -->
-          {% set meetings_active = request.endpoint and (request.endpoint == 'main_bp.calendar' or request.endpoint.startswith('agenda_bp') or request.endpoint.startswith('booking_bp') or request.endpoint.startswith('voting_bp') or request.endpoint.startswith('roster_bp')) %}
+          {% set meetings_active = request.endpoint and (request.endpoint == 'main_bp.calendar' or request.endpoint.startswith('agenda_bp') or request.endpoint.startswith('booking_bp') or request.endpoint.startswith('voting_bp') or request.endpoint.startswith('roster_bp') or request.endpoint.startswith('template_manager_bp')) %}
           {% if not in_club_directory %}
           <li class="nav-dropdown-wrapper {% if meetings_active %}active{% endif %}">
             <a href="#" class="nav-dropdown-trigger">
@@ -354,6 +354,14 @@
               <li class="{% if request.endpoint and request.endpoint.startswith('roster_bp') %}submenu-active{% endif %}">
                 <a href="{{ url_for('roster_bp.roster') }}">
                   <i class="fas fa-users"></i> {{ _('Roster') }}
+                </a>
+              </li>
+              {% endif %}
+              {% if is_authorized(Permissions.MEETING_MANAGE) %}
+              <li class="menu-divider"></li>
+              <li class="{% if request.endpoint and request.endpoint.startswith('template_manager_bp') %}submenu-active{% endif %}">
+                <a href="{{ url_for('template_manager_bp.list_templates') }}">
+                  <i class="fas fa-layer-group"></i> {{ _('Template Manager') }}
                 </a>
               </li>
               {% endif %}

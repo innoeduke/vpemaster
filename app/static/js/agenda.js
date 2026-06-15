@@ -370,41 +370,6 @@ document.addEventListener("DOMContentLoaded", () => {
       jpgButton.addEventListener("click", exportAgendaJPG);
     }
 
-    const exportTemplateBtn = document.getElementById("export-template-btn");
-    if (exportTemplateBtn) {
-      exportTemplateBtn.addEventListener("click", () => {
-        const meetingId = meetingFilter.value;
-        if (!meetingId) {
-          showCustomAlert("Select Meeting", "Please select a meeting to export.");
-          return;
-        }
-
-        const templateName = prompt("Enter a name for the new meeting template:");
-        if (templateName && templateName.trim()) {
-          fetch("/agenda/export_template", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              meeting_id: meetingId,
-              template_name: templateName
-            }),
-          })
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.success) {
-                window.location.reload();
-              } else {
-                showCustomAlert("Error", "Error exporting template: " + data.message);
-              }
-            })
-            .catch((error) => {
-              console.error("Error:", error);
-              showCustomAlert("Error", "An error occurred while exporting.");
-            });
-        }
-      });
-    }
-
     // --- Action Button Logic ---
     if (actionBtn && actionMenu) {
       actionBtn.addEventListener("click", (e) => {
@@ -3168,40 +3133,5 @@ window.showCustomAlert = function (title, message, iconClass = "alert") {
 
     okBtn.addEventListener("click", handleOk);
   });
-};
-
-window.deleteMeetingTemplate = async function (value, text, customSelectInstance) {
-  if (typeof window.closeCreateAgendaModal === "function") {
-    window.closeCreateAgendaModal();
-  }
-  const confirmed = await window.showCustomConfirm(
-    "Delete Template",
-    `Are you sure you want to delete the template '${text}'?`
-  );
-  if (confirmed) {
-    try {
-      const response = await fetch("/agenda/delete_template", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ template_name: text }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        const select = customSelectInstance.select;
-        for (let i = 0; i < select.options.length; i++) {
-          if (select.options[i].text === text) {
-            select.remove(i);
-            break;
-          }
-        }
-        customSelectInstance.refresh();
-      } else {
-        showCustomAlert("Error", "Error deleting template: " + data.message);
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      showCustomAlert("Error", "An error occurred while deleting.");
-    }
-  }
 };
 
