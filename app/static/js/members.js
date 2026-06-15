@@ -327,7 +327,7 @@ function openRemoveUserModal(actionUrl, userName, targetUserId) {
     } else {
       // Normal member deletion mode
       let titleTemplate = deleteModal.getAttribute('data-title-remove-template') || 'Remove "{userName}" from this club?';
-      let msgDescription = deleteModal.getAttribute('data-msg-remove-description') || 'Their contact record will be converted from Member to Guest. If the user has no other club memberships, their account will also be removed.';
+      let msgDescription = deleteModal.getAttribute('data-msg-remove-description') || 'Their contact record will be converted from Member to Guest.';
 
       titleTemplate = titleTemplate.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
       msgDescription = msgDescription.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
@@ -756,6 +756,13 @@ async function fetchRemainingUsers() {
     console.error('Error loading remaining users:', error);
   }
 }
+
+
+
+// Export functions to global window scope so inline onclick handlers can access them
+window.openUserModal = openUserModal;
+window.closeUserModal = closeUserModal;
+window.openRemoveUserModal = openRemoveUserModal;
 
 document.addEventListener('DOMContentLoaded', () => {
   loadUsersAsync();

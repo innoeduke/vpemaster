@@ -616,7 +616,7 @@
   "The following existing users/contacts match the information you entered. Would you like to use one of them instead?": "以下现有的用户/联系人与您输入的信息匹配。您是否想改用其中之一？",
   "The new role will copy the permissions and priority level of the selected template.": "新角色将复制所选模板的权限和优先级。",
   "The new security group will copy the permissions and priority level of the selected template.": "新安全组将复制所选模板的权限和优先级。",
-  "Their contact record will be converted from Member to Guest. If the user has no other club memberships, their account will also be removed.": "该成员的联系人记录将从“成员”转换为“宾客”。如果该用户没有其他俱乐部成员身份，其账号也将被移除。",
+  "Their contact record will be converted from Member to Guest.": "该成员的联系人记录将从“成员”转换为“宾客”。",
   "This is your default pathway": "这是您的默认路径",
   "This role requires VPE approval to be booked.": "此角色在预订前需要 VPE 审批。",
   "Ticket": "门票",
