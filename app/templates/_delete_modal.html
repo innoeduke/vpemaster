@@ -1,15 +1,32 @@
 <div id="deleteModal" class="modal"
-     data-title-cannot-remove="{{ _('Cannot Remove Yourself') }}"
-     data-msg-cannot-remove="{{ _('You cannot remove yourself from the club. Please contact another administrator or the system administrator for assistance.') }}"
-     data-btn-ok="{{ _('OK') }}">
-    <div class="modal-content">
+     data-title-cannot-remove='{{ _("Cannot Remove Yourself") | safe }}'
+     data-msg-cannot-remove='{{ _("You cannot remove yourself from the club. Please contact another administrator or the system administrator for assistance.") | safe }}'
+     data-btn-ok='{{ _("OK") | safe }}'
+     data-title-remove-template='{{ _("Remove \"{userName}\" from this club?") | safe }}'
+     data-msg-remove-description='{{ _("Their contact record will be converted from Member to Guest. If the user has no other club memberships, their account will also be removed.") | safe }}'>
+    <div class="modal-content" style="text-align: center; max-width: 450px; padding: 30px;">
         <span class="close" onclick="closeDeleteModal()">&times;</span>
-        <p id="deleteModalText" style="text-align: center;"></p>
-        <form id="deleteForm" method="POST" action="">
-            <div class="form-actions" style="justify-content: center; gap: 10px;">
-                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
-                <button type="submit" class="btn btn-danger">Delete</button>
+        
+        <!-- Icon container -->
+        <div id="deleteModalIconContainer" style="font-size: 3em; margin-bottom: 15px;">
+            <i id="deleteModalIcon" class="fas fa-user-minus"></i>
+        </div>
+        
+        <!-- Title -->
+        <h3 id="deleteModalTitle" style="margin-bottom: 15px; color: #2d3748; font-weight: 600; line-height: 1.3;"></h3>
+        
+        <!-- Description/Warning Text -->
+        <p id="deleteModalDescription" style="font-size: 0.95em; color: #4a5568; line-height: 1.5; margin-bottom: 25px;"></p>
+        
+        <!-- Action Buttons (Standard Form) -->
+        <form id="deleteForm" method="POST" action="" style="margin: 0;">
+            <div class="form-actions" style="justify-content: center; gap: 12px; border-top: none; padding-top: 0;">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">{{ _('Cancel') }}</button>
+                <button type="submit" class="btn btn-danger">{{ _('Delete') }}</button>
             </div>
         </form>
+        
+        <!-- OK Button (Self deletion forbidden case) -->
+        <button id="deleteModalOkBtn" type="button" class="btn btn-secondary" onclick="closeDeleteModal()" style="display: none; margin: 0 auto;">{{ _('OK') }}</button>
     </div>
 </div>

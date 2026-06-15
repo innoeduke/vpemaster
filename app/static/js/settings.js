@@ -2572,57 +2572,59 @@ window.handleUserSubmit = handleUserSubmit;
 function openRemoveUserModal(actionUrl, userName, targetUserId) {
   const deleteModal = document.getElementById("deleteModal");
   const deleteForm = document.getElementById("deleteForm");
-  const deleteModalText = document.getElementById("deleteModalText");
+  const deleteModalIconContainer = document.getElementById("deleteModalIconContainer");
+  const deleteModalIcon = document.getElementById("deleteModalIcon");
+  const deleteModalTitle = document.getElementById("deleteModalTitle");
+  const deleteModalDescription = document.getElementById("deleteModalDescription");
+  const deleteModalOkBtn = document.getElementById("deleteModalOkBtn");
   
-  if (deleteForm && deleteModal && deleteModalText) {
+  if (userName) {
+    userName = userName.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+  }
+  
+  if (deleteModal && deleteModalTitle && deleteModalDescription) {
     if (targetUserId && typeof CURRENT_USER_ID !== 'undefined' && targetUserId === CURRENT_USER_ID) {
-      const titleCannotRemove = deleteModal.getAttribute('data-title-cannot-remove') || 'Cannot Remove Yourself';
-      const msgCannotRemove = deleteModal.getAttribute('data-msg-cannot-remove') || 'You cannot remove yourself from the club. Please contact another administrator or the system administrator for assistance.';
-      const btnOkText = deleteModal.getAttribute('data-btn-ok') || 'OK';
+      // Self-removal warning mode
+      let titleCannotRemove = deleteModal.getAttribute('data-title-cannot-remove') || 'Cannot Remove Yourself';
+      let msgCannotRemove = deleteModal.getAttribute('data-msg-cannot-remove') || 'You cannot remove yourself from the club. Please contact another administrator or the system administrator for assistance.';
+      let btnOkText = deleteModal.getAttribute('data-btn-ok') || 'OK';
 
-      deleteModalText.innerHTML = `
-        <div style="text-align: center; padding: 10px 0;">
-          <div style="font-size: 3em; color: #dd6b20; margin-bottom: 15px;">
-            <i class="fas fa-exclamation-triangle"></i>
-          </div>
-          <h3 style="margin-bottom: 10px; color: #2d3748;">
-            ${titleCannotRemove}
-          </h3>
-          <p style="font-size: 0.95em; color: #4a5568; line-height: 1.5; margin: 0 10px;">
-            ${msgCannotRemove}
-          </p>
-        </div>
-      `;
-      
-      deleteForm.style.display = "none";
-      
-      let okBtn = document.getElementById("deleteModalOkBtn");
-      if (!okBtn) {
-        okBtn = document.createElement("button");
-        okBtn.id = "deleteModalOkBtn";
-        okBtn.type = "button";
-        okBtn.className = "btn btn-secondary";
-        okBtn.style.margin = "15px auto 0 auto";
-        okBtn.style.display = "block";
-        okBtn.onclick = closeDeleteModal;
-        deleteModalText.appendChild(okBtn);
+      titleCannotRemove = titleCannotRemove.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+      msgCannotRemove = msgCannotRemove.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+      btnOkText = btnOkText.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+
+      if (deleteModalIcon) {
+        deleteModalIcon.className = "fas fa-exclamation-triangle";
+        deleteModalIconContainer.style.color = "#dd6b20"; // warning orange
       }
-      okBtn.textContent = btnOkText;
-      okBtn.style.display = "block";
+      deleteModalTitle.textContent = titleCannotRemove;
+      deleteModalDescription.textContent = msgCannotRemove;
+      
+      if (deleteForm) deleteForm.style.display = "none";
+      if (deleteModalOkBtn) {
+        deleteModalOkBtn.textContent = btnOkText;
+        deleteModalOkBtn.style.display = "block";
+      }
     } else {
-      deleteForm.style.display = "block";
-      deleteForm.action = actionUrl;
+      // Normal member deletion mode
+      let titleTemplate = deleteModal.getAttribute('data-title-remove-template') || 'Remove "{userName}" from this club?';
+      let msgDescription = deleteModal.getAttribute('data-msg-remove-description') || 'Their contact record will be converted from Member to Guest. If the user has no other club memberships, their account will also be removed.';
+
+      titleTemplate = titleTemplate.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+      msgDescription = msgDescription.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+
+      if (deleteModalIcon) {
+        deleteModalIcon.className = "fas fa-user-minus";
+        deleteModalIconContainer.style.color = "#dc3545"; // danger red
+      }
+      deleteModalTitle.textContent = titleTemplate.replace('{userName}', userName);
+      deleteModalDescription.textContent = msgDescription;
       
-      const okBtn = document.getElementById("deleteModalOkBtn");
-      if (okBtn) okBtn.style.display = "none";
-      
-      deleteModalText.innerHTML = `
-        <strong>Remove "${userName}" from this club?</strong><br><br>
-        <span style="font-size: 0.9em; color: #666;">
-          Their contact record will be converted from <em>Member</em> to <em>Guest</em>.<br>
-          If the user has no other club memberships, their account will also be removed.
-        </span>
-      `;
+      if (deleteForm) {
+        deleteForm.style.display = "block";
+        deleteForm.action = actionUrl;
+      }
+      if (deleteModalOkBtn) deleteModalOkBtn.style.display = "none";
     }
     
     deleteModal.style.display = "flex";
