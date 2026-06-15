@@ -77,7 +77,9 @@ function loadMessages(tab, silent=false, page=1) {
 
             list.innerHTML = data.messages.map(msg => {
                 let avatarSrc = msg.avatar_url;
-                if (avatarSrc && avatarSrc.indexOf('/') === -1) {
+                if (msg.sender === 'System') {
+                    avatarSrc = '/static/images/logo.webp';
+                } else if (avatarSrc && avatarSrc.indexOf('/') === -1) {
                     const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'avatars';
                     avatarSrc = `/static/${root}/${avatarSrc}`;
                 }
@@ -89,7 +91,7 @@ function loadMessages(tab, silent=false, page=1) {
                 <div class="msg-item ${!msg.read && isReceived ? 'unread' : ''}" onclick="showDetail(${msg.id})">
                     <div class="msg-avatar-wrap">
                         ${avatarSrc
-                            ? `<img src="${avatarSrc}" class="msg-avatar" alt="" onerror="this.outerHTML='<div class=\\'msg-avatar-placeholder ${memberClass}\\'">${getInitials(party).replace(/'/g, "\\'")}</div>'">`
+                            ? `<img src="${avatarSrc}" class="msg-avatar" alt="" onerror="this.outerHTML='<div class=\\'msg-avatar-placeholder ${memberClass}\\'>${getInitials(party).replace(/'/g, "\\'")}</div>'">`
                             : `<div class="msg-avatar-placeholder ${memberClass}">${getInitials(party)}</div>`
                         }
                     </div>
@@ -144,12 +146,14 @@ function showDetail(id) {
     document.getElementById('detail-time').textContent = msg.timestamp;
     const avatarContainer = document.getElementById('detail-avatar');
     let detailAvatarSrc = msg.avatar_url;
-    if (detailAvatarSrc && detailAvatarSrc.indexOf('/') === -1) {
+    if (msg.sender === 'System') {
+        detailAvatarSrc = '/static/images/logo.webp';
+    } else if (detailAvatarSrc && detailAvatarSrc.indexOf('/') === -1) {
         const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'avatars';
         detailAvatarSrc = `/static/${root}/${detailAvatarSrc}`;
     }
     avatarContainer.innerHTML = detailAvatarSrc
-        ? `<img src="${detailAvatarSrc}" class="msg-avatar" alt="" onerror="this.outerHTML='<div class=\\'msg-avatar-placeholder ${memberClass}\\'">${getInitials(otherParty).replace(/'/g, "\\'")}</div>'">`
+        ? `<img src="${detailAvatarSrc}" class="msg-avatar" alt="" onerror="this.outerHTML='<div class=\\'msg-avatar-placeholder ${memberClass}\\'>${getInitials(otherParty).replace(/'/g, "\\'")}</div>'">`
         : `<div class="msg-avatar-placeholder ${memberClass}">${getInitials(otherParty)}</div>`;
     
 

@@ -80,7 +80,7 @@ def get_inbox():
             'body': m.body,
             'timestamp': m.timestamp.strftime('%Y-%m-%d %H:%M'),
             'read': m.read,
-            'avatar_url': m.sender.full_avatar_url if m.sender else None,
+            'avatar_url': m.sender.full_avatar_url if m.sender else '/static/images/logo.webp',
             'is_member': m.sender_id in member_user_ids if m.sender_id else True
         } for m in messages.items],
         'total': messages.total,
@@ -154,7 +154,7 @@ def get_trash():
             'body': m.body,
             'timestamp': m.timestamp.strftime('%Y-%m-%d %H:%M'),
             'read': m.read,
-            'avatar_url': (m.sender.full_avatar_url if m.sender else None) if m.recipient_id == current_user.id else (m.recipient.full_avatar_url if m.recipient else None),
+            'avatar_url': (m.sender.full_avatar_url if m.sender else '/static/images/logo.webp') if m.recipient_id == current_user.id else (m.recipient.full_avatar_url if m.recipient else None),
             'type': 'inbox' if m.recipient_id == current_user.id else 'sent',
             'is_member': (m.sender_id in member_user_ids if m.sender_id else True) if m.recipient_id == current_user.id else (m.recipient_id in member_user_ids if m.recipient_id else False)
         } for m in messages.items],

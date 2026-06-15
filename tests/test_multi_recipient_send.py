@@ -365,6 +365,37 @@ class MultiRecipientSendTestCase(unittest.TestCase):
         data_self = res_self.get_json()
         self.assertFalse(any(u['name'] == 'alice' for u in data_self))
 
+    def test_system_sender_avatar(self):
+        """Messages with no sender (System messages) should have static logo avatar."""
+        # 1. Create a message from System (sender_id = None)
+        msg = Message(
+            recipient_id=self.recv1.id,
+            subject='System notification',
+            body='You have been assigned an issue.',
+            sender_id=None
+        )
+        db.session.add(msg)
+        db.session.commit()
+
+        # 2. Login as recipient and check inbox
+        self.login(self.recv1, self.club)
+        res = self.client.get('/api/messages/inbox')
+        self.assertEqual(res.status_code, 200)
+        data = res.get_json()
+        self.assertEqual(len(data['messages']), 1)
+        self.assertEqual(data['messages'][0]['sender'], 'System')
+        self.assertEqual(data['messages'][0]['avatar_url'], '/static/images/logo.webp')
+
+        # 3. Check trash inbox avatar for System message
+        msg.deleted_by_recipient = True
+        db.session.commit()
+        res_trash = self.client.get('/api/messages/trash')
+        self.assertEqual(res_trash.status_code, 200)
+        data_trash = res_trash.get_json()
+        self.assertEqual(len(data_trash['messages']), 1)
+        self.assertEqual(data_trash['messages'][0]['sender'], 'System')
+        self.assertEqual(data_trash['messages'][0]['avatar_url'], '/static/images/logo.webp')
+
 
 if __name__ == '__main__':
 
