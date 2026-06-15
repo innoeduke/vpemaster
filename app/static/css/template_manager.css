@@ -25,6 +25,17 @@
   color: var(--text-1, #2b3340);
 }
 
+.tm-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.tm-section-header .tm-section-title {
+  margin-bottom: 0;
+}
+
 .tm-table {
   width: 100%;
   border-collapse: collapse;
@@ -214,6 +225,35 @@
 .tm-editor-table th,
 .tm-editor-table td {
   padding: 0.4rem 0.5rem;
+}
+
+/* Section rows have role/min/max disabled and grayed out */
+.tm-editor-table tr.tm-row-section .tm-role,
+.tm-editor-table tr.tm-row-section .tm-min,
+.tm-editor-table tr.tm-row-section .tm-max {
+  background: var(--surface-2, #f1f3f6);
+  color: var(--text-2, #9aa3b1);
+  border-color: var(--border-1, #e3e6ea);
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+/* Required-field marker in the header */
+.tm-editor-table .tm-required {
+  color: #c9342e;
+  font-weight: 700;
+  margin-left: 2px;
+}
+/* Min/Max are required only for non-section rows — hide the marker on section rows */
+.tm-editor-table tr.tm-row-section .tm-required-nonsection {
+  display: none;
+}
+
+/* Highlight blank required fields */
+.tm-editor-table .tm-invalid {
+  border-color: #c9342e !important;
+  background: #fdf3f2 !important;
+  box-shadow: 0 0 0 2px rgba(201, 52, 46, 0.15) !important;
 }
 
 /* Make the role and number inputs respect their column width */

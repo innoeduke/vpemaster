@@ -57,6 +57,28 @@
         .catch(function (err) { window.alert('Delete failed: ' + err); });
       });
     });
+
+    // New-template modal
+    var newBtn = document.getElementById('tm-new-btn');
+    var modal = document.getElementById('tm-new-modal');
+    var closeBtn = document.getElementById('tm-new-modal-close');
+    var cancelBtn = document.getElementById('tm-new-modal-cancel');
+    if (newBtn && modal) {
+      newBtn.addEventListener('click', function () {
+        modal.style.display = 'block';
+        var input = modal.querySelector('input[name="name"]');
+        if (input) { input.value = ''; setTimeout(function () { input.focus(); }, 50); }
+      });
+      var close = function () { modal.style.display = 'none'; };
+      if (closeBtn) closeBtn.addEventListener('click', close);
+      if (cancelBtn) cancelBtn.addEventListener('click', close);
+      modal.addEventListener('click', function (e) {
+        if (e.target === modal) close();
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modal.style.display === 'block') close();
+      });
+    }
   }
 
   // ---------- Editor page ----------
@@ -69,7 +91,8 @@
   };
 
   function blankRow() {
-    return { type: '', title: '', role: '', owner: '', duration_min: '', duration_max: '', hidden: false };
+    var defaultType = (editor.typeChoices && editor.typeChoices.length) ? editor.typeChoices[0] : '';
+    return { type: defaultType, title: '', role: '', owner: '', duration_min: '', duration_max: '', hidden: false };
   }
 
   function typeOptions(selected) {
@@ -105,15 +128,17 @@
     }
     var html = '';
     editor.rows.forEach(function (row, idx) {
-      var rowClass = row.type === 'Section' ? ' class="tm-row-section"' : '';
+      var isSection = row.type === 'Section';
+      var rowClass = isSection ? ' class="tm-row-section"' : '';
+      var dis = isSection ? ' disabled' : '';
       html += ''
         + '<tr data-idx="' + idx + '"' + rowClass + '>'
         +   '<td class="tm-num-col tm-drag-handle" title="Drag to reorder"><span class="tm-grip"><i class="fas fa-grip-vertical"></i></span> ' + (idx + 1) + '</td>'
         +   '<td class="tm-type-col"><select class="tm-type">' + typeOptions(row.type) + '</select></td>'
         +   '<td class="tm-title-col"><input type="text" class="tm-title" value="' + escapeHtml(row.title) + '"></td>'
-        +   '<td class="tm-role-col"><select class="tm-role">' + roleOptions(row.role) + '</select></td>'
-        +   '<td class="tm-minmax-col"><input type="number" min="0" class="tm-min" value="' + escapeHtml(row.duration_min) + '"></td>'
-        +   '<td class="tm-minmax-col"><input type="number" min="0" class="tm-max" value="' + escapeHtml(row.duration_max) + '"></td>'
+        +   '<td class="tm-role-col"><select class="tm-role"' + dis + '>' + roleOptions(row.role) + '</select></td>'
+        +   '<td class="tm-minmax-col"><input type="number" min="0" class="tm-min" value="' + escapeHtml(row.duration_min) + '"' + dis + '></td>'
+        +   '<td class="tm-minmax-col"><input type="number" min="0" class="tm-max" value="' + escapeHtml(row.duration_max) + '"' + dis + '></td>'
         +   '<td class="tm-check-col"><input type="checkbox" class="tm-hidden"' + (row.hidden ? ' checked' : '') + '></td>'
         +   '<td class="tm-actions-col">'
         +     '<button type="button" class="tm-action-btn tm-move-up" title="Move up" aria-label="Move up"><i class="fas fa-arrow-up"></i></button>'
@@ -139,6 +164,89 @@
     });
   }
 
+  // Validate before save. Returns an array of error messages (empty = ok).
+  function validateRows() {
+    var errors = [];
+    var firstBadIdx = -1;
+    editor.rows.forEach(function (row, idx) {
+      var isSection = row.type === 'Section';
+      var badRequired = [];
+      var badRange = [];
+
+      if (!row.type || !row.type.trim()) badRequired.push('Type');
+      if (!row.title || !row.title.trim()) badRequired.push('Title');
+
+      if (!isSection) {
+        var minVal = parseInt(row.duration_min, 10);
+        var maxVal = parseInt(row.duration_max, 10);
+        var hasMin = !isNaN(minVal) && row.duration_min !== '' && row.duration_min != null;
+        var hasMax = !isNaN(maxVal) && row.duration_max !== '' && row.duration_max != null;
+
+        if (!hasMin) badRequired.push('Min');
+        if (!hasMax) badRequired.push('Max');
+
+        if (hasMin && hasMax && minVal > maxVal) {
+          badRange.push('Min cannot be greater than Max');
+        }
+      }
+
+      var rowErrors = [];
+      if (badRequired.length) {
+        var verb = badRequired.length > 1 ? ' are required' : ' is required';
+        rowErrors.push(badRequired.join(', ') + verb);
+      }
+      if (badRange.length) {
+        rowErrors.push(badRange.join(', '));
+      }
+
+      if (rowErrors.length) {
+        if (firstBadIdx < 0) firstBadIdx = idx;
+        errors.push('Row ' + (idx + 1) + ': ' + rowErrors.join('; '));
+      }
+    });
+    return { errors: errors, firstBadIdx: firstBadIdx };
+  }
+
+  function clearInvalidMarkers() {
+    var tbody = document.getElementById('tm-rows-body');
+    if (!tbody) return;
+    tbody.querySelectorAll('.tm-invalid').forEach(function (el) {
+      el.classList.remove('tm-invalid');
+    });
+  }
+
+  function markInvalidRow(idx) {
+    var tbody = document.getElementById('tm-rows-body');
+    if (!tbody) return;
+    var tr = tbody.querySelector('tr[data-idx="' + idx + '"]');
+    if (!tr) return;
+    var row = editor.rows[idx];
+    var isSection = row.type === 'Section';
+    if (!row.type || !row.type.trim()) {
+      var sel = tr.querySelector('.tm-type');
+      if (sel) sel.classList.add('tm-invalid');
+    }
+    if (!row.title || !row.title.trim()) {
+      var ti = tr.querySelector('.tm-title');
+      if (ti) ti.classList.add('tm-invalid');
+    }
+    if (!isSection) {
+      var minVal = parseInt(row.duration_min, 10);
+      var maxVal = parseInt(row.duration_max, 10);
+      var hasMin = !isNaN(minVal) && row.duration_min !== '' && row.duration_min != null;
+      var hasMax = !isNaN(maxVal) && row.duration_max !== '' && row.duration_max != null;
+
+      if (!hasMin || (hasMin && hasMax && minVal > maxVal)) {
+        var mn = tr.querySelector('.tm-min');
+        if (mn) mn.classList.add('tm-invalid');
+      }
+      if (!hasMax || (hasMin && hasMax && minVal > maxVal)) {
+        var mx = tr.querySelector('.tm-max');
+        if (mx) mx.classList.add('tm-invalid');
+      }
+    }
+  }
+
   function wireEditorEvents() {
     var tbody = document.getElementById('tm-rows-body');
     if (!tbody) return;
@@ -149,9 +257,18 @@
       var idx = parseInt(tr.getAttribute('data-idx'), 10);
       if (isNaN(idx) || !editor.rows[idx]) return;
       var row = editor.rows[idx];
-      if (e.target.classList.contains('tm-title')) row.title = e.target.value;
-      else if (e.target.classList.contains('tm-min')) row.duration_min = e.target.value;
-      else if (e.target.classList.contains('tm-max')) row.duration_max = e.target.value;
+      if (e.target.classList.contains('tm-title')) {
+        row.title = e.target.value;
+        if (row.title && row.title.trim()) e.target.classList.remove('tm-invalid');
+      }
+      else if (e.target.classList.contains('tm-min')) {
+        row.duration_min = e.target.value;
+        if (row.duration_min !== '' && row.duration_min != null) e.target.classList.remove('tm-invalid');
+      }
+      else if (e.target.classList.contains('tm-max')) {
+        row.duration_max = e.target.value;
+        if (row.duration_max !== '' && row.duration_max != null) e.target.classList.remove('tm-invalid');
+      }
     });
 
     tbody.addEventListener('change', function (e) {
@@ -167,9 +284,46 @@
         } else {
           tr.classList.remove('tm-row-section');
         }
+        // Toggle the disabled state of role/min/max when type changes
+        var disable = row.type === 'Section';
+        var roleEl = tr.querySelector('.tm-role');
+        var minEl = tr.querySelector('.tm-min');
+        var maxEl = tr.querySelector('.tm-max');
+        if (roleEl) roleEl.disabled = disable;
+        if (minEl) minEl.disabled = disable;
+        if (maxEl) maxEl.disabled = disable;
+        if (row.type) e.target.classList.remove('tm-invalid');
       }
       else if (e.target.classList.contains('tm-role')) row.role = e.target.value;
       else if (e.target.classList.contains('tm-hidden')) row.hidden = e.target.checked;
+    });
+
+    // `input` fires on <select> in modern browsers too; some setups
+    // (custom dropdowns, assistive tech) only fire `input`. Handle both.
+    tbody.addEventListener('input', function (e) {
+      if (!e.target.classList.contains('tm-type')) return;
+      var tr = e.target.closest('tr');
+      if (!tr) return;
+      var idx = parseInt(tr.getAttribute('data-idx'), 10);
+      if (isNaN(idx) || !editor.rows[idx]) return;
+      var row = editor.rows[idx];
+      console.log('[TemplateManager] type input row', idx, ':', row.type, '->', e.target.value);
+      if (row.type !== e.target.value) {
+        row.type = e.target.value;
+        if (row.type === 'Section') {
+          tr.classList.add('tm-row-section');
+        } else {
+          tr.classList.remove('tm-row-section');
+        }
+        var disable = row.type === 'Section';
+        var roleEl = tr.querySelector('.tm-role');
+        var minEl = tr.querySelector('.tm-min');
+        var maxEl = tr.querySelector('.tm-max');
+        if (roleEl) roleEl.disabled = disable;
+        if (minEl) minEl.disabled = disable;
+        if (maxEl) maxEl.disabled = disable;
+        if (row.type) e.target.classList.remove('tm-invalid');
+      }
     });
 
     tbody.addEventListener('click', function (e) {
@@ -208,8 +362,26 @@
     var saveBtn = document.getElementById('tm-save');
     if (saveBtn) {
       saveBtn.addEventListener('click', function () {
+        clearInvalidMarkers();
+        var validation = validateRows();
+        if (validation.errors.length) {
+          var status = document.getElementById('tm-save-status');
+          if (status) {
+            status.hidden = false;
+            status.textContent = 'Cannot save: ' + validation.errors[0] + (validation.errors.length > 1 ? ' (+' + (validation.errors.length - 1) + ' more)' : '');
+            status.className = 'tm-status tm-status-error';
+          }
+          markInvalidRow(validation.firstBadIdx);
+          var tbody = document.getElementById('tm-rows-body');
+          var tr = tbody && tbody.querySelector('tr[data-idx="' + validation.firstBadIdx + '"]');
+          if (tr) tr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
+
         saveBtn.disabled = true;
         var status = document.getElementById('tm-save-status');
+        var rowsToSave = collectRows();
+        console.log('[TemplateManager] saving', rowsToSave.length, 'rows:', rowsToSave);
         if (status) { status.hidden = false; status.textContent = 'Saving…'; status.className = 'tm-status tm-status-info'; }
         fetch(editor.saveUrl, {
           method: 'POST',
@@ -217,7 +389,7 @@
             'Content-Type': 'application/json',
             'X-CSRFToken': getCsrfToken(),
           },
-          body: JSON.stringify({ rows: collectRows() }),
+          body: JSON.stringify({ rows: rowsToSave }),
           credentials: 'same-origin',
         })
         .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
@@ -225,7 +397,9 @@
           saveBtn.disabled = false;
           if (res.ok && res.body.success) {
             if (status) { status.textContent = 'Saved.'; status.className = 'tm-status tm-status-success'; }
-            window.setTimeout(function () { window.location.assign(editor.listUrl); }, 400);
+            var url = new URL(editor.listUrl, window.location.origin);
+            url.searchParams.set('_', Date.now().toString());
+            window.setTimeout(function () { window.location.replace(url.toString()); }, 400);
           } else {
             if (status) { status.textContent = 'Save failed: ' + ((res.body && res.body.message) || 'unknown error'); status.className = 'tm-status tm-status-error'; }
           }
@@ -240,6 +414,7 @@
 
   function initEditorPage() {
     var rows = readJson('tm-rows-data');
+    console.log('[TemplateManager] initEditorPage, rows from server:', rows ? rows.length : 0);
     editor.rows = Array.isArray(rows) ? rows.map(function (r) {
       return {
         type: r.type || '',

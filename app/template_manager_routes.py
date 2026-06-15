@@ -5,7 +5,8 @@ edit, delete, copy-from-seed, and export-from-meeting for the current club's
 meeting templates. All operations are scoped to ``session['current_club_id']``.
 """
 from flask import (
-    Blueprint, abort, jsonify, redirect, render_template, request, url_for,
+    Blueprint, abort, jsonify, make_response, redirect, render_template,
+    request, url_for,
 )
 
 from . import db
@@ -21,6 +22,14 @@ from .services.meeting_template_service import (
 
 
 template_bp = Blueprint('template_manager_bp', __name__)
+
+
+def _no_cache(response):
+    """Disable browser and bfcache so the editor always shows fresh server state."""
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 
 def _redirect_with_notice(notice=None, error=None, **extra):
@@ -40,9 +49,6 @@ def list_templates():
     """List the current club's templates with create actions."""
     club_id = get_current_club_id()
     templates = tpl_service.list_templates(club_id)
-    seeds = tpl_service.list_seed_templates()
-    existing_names = {t.filename for t in templates}
-    available_seeds = [s for s in seeds if s.filename not in existing_names]
 
     meetings = []
     if request.args.get('show_export'):
@@ -54,38 +60,34 @@ def list_templates():
             .all()
         )
 
-    return render_template(
+    return _no_cache(make_response(render_template(
         'template_manager/list.html',
         templates=templates,
-        available_seeds=available_seeds,
         meetings=meetings,
         show_export_form=bool(request.args.get('show_export')),
         notice=request.args.get('notice'),
         error=request.args.get('error'),
-    )
+    )))
 
 
-@template_bp.route('/meetings/templates/new', methods=['GET'])
+@template_bp.route('/meetings/templates/new', methods=['POST'])
 @authorized_club_required
 @club_permission_required(Permissions.MEETING_MANAGE)
-def create_from_seed():
-    """Copy a global seed template into the current club's templates dir."""
+def create_blank():
+    """Create a blank template (header row only) and redirect to the editor."""
     club_id = get_current_club_id()
-    seed_filename = request.args.get('seed', '').strip()
-    new_name = request.args.get('name', '').strip()
-    if not seed_filename or not new_name:
-        return _redirect_with_notice(error='Seed template and new name are required.')
+    name = (request.form.get('name') or '').strip()
+    if not name:
+        return _redirect_with_notice(error='Template name is required.')
 
     try:
-        filename = tpl_service.create_from_seed(club_id, seed_filename, new_name)
-    except TemplateNotFound:
-        return _redirect_with_notice(error='Seed template not found.')
+        filename = tpl_service.create_blank(club_id, name)
     except TemplateNameInvalid as exc:
         return _redirect_with_notice(error=str(exc))
     except TemplateError as exc:
         return _redirect_with_notice(error=str(exc))
 
-    return redirect(url_for('template_manager_bp.edit_template', name=filename, notice='Template created from seed.'))
+    return redirect(url_for('template_manager_bp.edit_template', name=filename, notice='Template created. Add sessions in the editor.'))
 
 
 @template_bp.route('/meetings/templates/export', methods=['POST'])
@@ -136,14 +138,14 @@ def edit_template(name):
 
     roles = [r.name for r in MeetingRole.get_all_for_club(club_id)]
 
-    return render_template(
+    return _no_cache(make_response(render_template(
         'template_manager/editor.html',
         template_name=name,
         rows=payload['rows'],
         type_choices=type_choices,
         roles=roles,
         notice=request.args.get('notice'),
-    )
+    )))
 
 
 @template_bp.route('/meetings/templates/edit/<path:name>', methods=['POST'])

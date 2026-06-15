@@ -10,7 +10,6 @@ import csv
 import logging
 import os
 import re
-import shutil
 from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Dict, Optional
@@ -20,7 +19,6 @@ from flask import current_app
 logger = logging.getLogger(__name__)
 
 TEMPLATES_SUBDIR = 'templates'
-GLOBAL_SEED_CLUB_ID = 0
 
 CSV_HEADER = [
     'Type', 'Title', 'Role', 'Owner', 'Duration_Min', 'Duration_Max', 'Hidden'
@@ -59,12 +57,6 @@ def _static_root() -> str:
 def _club_dir(club_id: int) -> str:
     """Return (and create) the templates directory for the given club."""
     path = os.path.join(_static_root(), 'club_resources', str(club_id), TEMPLATES_SUBDIR)
-    os.makedirs(path, exist_ok=True)
-    return path
-
-
-def _seed_dir() -> str:
-    path = os.path.join(_static_root(), 'club_resources', str(GLOBAL_SEED_CLUB_ID), TEMPLATES_SUBDIR)
     os.makedirs(path, exist_ok=True)
     return path
 
@@ -108,23 +100,6 @@ def _safe_join(club_id: int, filename: str) -> str:
     return target
 
 
-def seed_club_from_global(club_id: int) -> None:
-    """Copy the global seed templates into the club's templates dir on first use."""
-    club_dir = _club_dir(club_id)
-    if os.listdir(club_dir):
-        return
-
-    seed = _seed_dir()
-    if not os.path.exists(seed):
-        return
-
-    for item in os.listdir(seed):
-        src = os.path.join(seed, item)
-        dst = os.path.join(club_dir, item)
-        if os.path.isfile(src) and item.endswith('.csv') and not os.path.exists(dst):
-            shutil.copy2(src, dst)
-
-
 def _filename_to_display(filename: str) -> str:
     stem = filename[:-4] if filename.lower().endswith('.csv') else filename
     return stem.replace('_', ' ').title()
@@ -132,7 +107,6 @@ def _filename_to_display(filename: str) -> str:
 
 def list_templates(club_id: int) -> List[TemplateInfo]:
     """List the templates available to ``club_id`` (in display order)."""
-    seed_club_from_global(club_id)
     club_dir = _club_dir(club_id)
     results: List[TemplateInfo] = []
     try:
@@ -166,31 +140,6 @@ def list_templates(club_id: int) -> List[TemplateInfo]:
 def get_template_filename_map(club_id: int) -> Dict[str, str]:
     """Return ``{display_name: filename}`` for legacy callers (chat, CLI)."""
     return {t.display_name: t.filename for t in list_templates(club_id)}
-
-
-def list_seed_templates() -> List[TemplateInfo]:
-    """List the global seed templates (club id 0)."""
-    seed = _seed_dir()
-    results: List[TemplateInfo] = []
-    if not os.path.exists(seed):
-        return results
-    for filename in sorted(os.listdir(seed)):
-        if not filename.endswith('.csv') or filename.startswith('.'):
-            continue
-        full = os.path.join(seed, filename)
-        if not os.path.isfile(full):
-            continue
-        with open(full, 'r', encoding='utf-8') as f:
-            row_count = max(0, sum(1 for _ in f) - 1)
-        results.append(TemplateInfo(
-            filename=filename,
-            display_name=_filename_to_display(filename),
-            row_count=row_count,
-            mtime=os.path.getmtime(full),
-            mtime_display=datetime.fromtimestamp(os.path.getmtime(full)).strftime('%Y-%m-%d %H:%M'),
-        ))
-    results.sort(key=lambda t: t.display_name.lower())
-    return results
 
 
 def get_template(club_id: int, filename: str) -> Dict:
@@ -275,18 +224,14 @@ def delete_template(club_id: int, filename: str) -> None:
     os.remove(path)
 
 
-def create_from_seed(club_id: int, seed_filename: str, new_name: str) -> str:
-    """Copy a global seed template into the club's templates dir."""
-    seed_path = os.path.join(_seed_dir(), sanitize_filename(seed_filename))
-    if not os.path.exists(seed_path):
-        raise TemplateNotFound(seed_filename)
-
+def create_blank(club_id: int, new_name: str) -> str:
+    """Create a new blank template (header row only) in the club's templates dir."""
     target_name = sanitize_filename(new_name)
     target = _safe_join(club_id, target_name)
     if os.path.exists(target):
         raise TemplateNameInvalid(f"Template '{target_name}' already exists")
 
-    shutil.copy2(seed_path, target)
+    save_template_to_path(target, [])
     return target_name
 
 

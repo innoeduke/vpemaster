@@ -20,14 +20,19 @@
   {% endif %}
 
   <section class="tm-section">
-    <h2 class="tm-section-title">{{ _('Meeting Templates') }}</h2>
+    <div class="tm-section-header">
+      <h2 class="tm-section-title">{{ _('Meeting Templates') }}</h2>
+      <button type="button" class="btn btn-primary" id="tm-new-btn">
+        <i class="fas fa-plus"></i> {{ _('New') }}
+      </button>
+    </div>
 
     {% if templates %}
     <table class="tm-table">
       <thead>
         <tr>
           <th>{{ _('Name') }}</th>
-          <th class="tm-num-col">{{ _('Sessions') }}</th>
+          <th class="tm-num-col">{{ _('#Sessions') }}</th>
           <th class="tm-date-col">{{ _('Updated') }}</th>
           <th class="tm-actions-col">{{ _('Actions') }}</th>
         </tr>
@@ -59,34 +64,7 @@
       </tbody>
     </table>
     {% else %}
-    <p class="tm-empty">{{ _('No templates yet. Create one from a seed template or export from an existing meeting.') }}</p>
-    {% endif %}
-  </section>
-
-  <section class="tm-section">
-    <h2 class="tm-section-title">{{ _('Create from Seed Template') }}</h2>
-    {% if available_seeds %}
-    <form method="get" action="{{ url_for('template_manager_bp.create_from_seed') }}" class="tm-form">
-      <label class="tm-field">
-        <span>{{ _('Seed') }}</span>
-        <select name="seed" required>
-          {% for s in available_seeds %}
-          <option value="{{ s.filename }}">{{ s.display_name }} ({{ s.row_count }} sessions)</option>
-          {% endfor %}
-        </select>
-      </label>
-      <label class="tm-field">
-        <span>{{ _('New template name') }}</span>
-        <input type="text" name="name" required pattern="[A-Za-z0-9 _\-]+"
-               title="{{ _('Letters, numbers, spaces, underscores, and hyphens only') }}"
-               placeholder="{{ _('e.g. My Club Keynote') }}">
-      </label>
-      <button type="submit" class="btn btn-primary">
-        <i class="fas fa-plus"></i> {{ _('Create') }}
-      </button>
-    </form>
-    {% else %}
-    <p class="tm-empty">{{ _('All seed templates are already in this club.') }}</p>
+    <p class="tm-empty">{{ _('No templates yet. Click "New" to create one, or export an existing meeting.') }}</p>
     {% endif %}
   </section>
 
@@ -134,6 +112,30 @@
 
 <script src="{{ url_for('static', filename='js/template_manager.js') }}"></script>
 <script>
-  window.TemplateManager.initListPage();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', window.TemplateManager.initListPage);
+  } else {
+    window.TemplateManager.initListPage();
+  }
 </script>
+
+<div id="tm-new-modal" class="modal" style="display: none;">
+  <div class="modal-content" style="max-width: 420px;">
+    <span class="close" id="tm-new-modal-close">&times;</span>
+    <h3 style="margin-top: 0;">{{ _('New Template') }}</h3>
+    <form method="post" action="{{ url_for('template_manager_bp.create_blank') }}">
+      <label class="tm-field" style="margin-bottom: 1rem;">
+        <input type="text" name="name" required pattern="[A-Za-z0-9 _\-]+"
+               title="{{ _('Letters, numbers, spaces, underscores, and hyphens only') }}"
+               placeholder="{{ _('Choose a name for this template...') }}" autofocus>
+      </label>
+      <div class="form-actions" style="justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-secondary" id="tm-new-modal-cancel">{{ _('Cancel') }}</button>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-plus"></i> {{ _('Create') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %}
