@@ -248,7 +248,10 @@ def save_template(club_id: int, filename: str, rows: List[Dict]) -> None:
     club_dir = os.path.dirname(path)
     tmp = path + '.tmp'
 
-    with open(tmp, 'w', newline='', encoding='utf-8-sig') as f:
+    # Use plain utf-8 (no BOM). The legacy writer used utf-8-sig; combined
+    # with a utf-8 reader, the BOM caused the header to be re-parsed as a
+    # data row on the next load, growing the file by one row per save.
+    with open(tmp, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         writer.writerow(CSV_HEADER)
         for row in rows or []:
@@ -338,7 +341,7 @@ def export_meeting_logs(club_id: int, logs, new_name: str) -> str:
 def save_template_to_path(path: str, rows: List[Dict]) -> None:
     """Atomic write to an explicit path (used by export from meeting)."""
     tmp = path + '.tmp'
-    with open(tmp, 'w', newline='', encoding='utf-8-sig') as f:
+    with open(tmp, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         writer.writerow(CSV_HEADER)
         for row in rows or []:
