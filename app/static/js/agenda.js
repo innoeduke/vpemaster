@@ -589,6 +589,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const isFinished = window.__meetingFinished;
 
     awards.forEach((award, idx) => {
+      // A "tombstoned" default award (max_winners=0 AND max_votes=0) is one
+      // the user deleted from this meeting. It's still in the array so the
+      // tombstone gets POSTed to the server on save, but we hide its row.
+      if (Number(award.max_winners) === 0 && Number(award.max_votes) === 0) {
+        return;
+      }
       const tr = document.createElement('tr');
       tr.dataset.index = idx;
 
@@ -696,15 +702,21 @@ document.addEventListener("DOMContentLoaded", () => {
       delBtn.type = 'button';
       delBtn.className = 'btn-delete-award';
       delBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
-      delBtn.title = award.is_default ? 'Default awards cannot be deleted' : 'Delete this award';
-      delBtn.disabled = award.is_default;
-      if (!award.is_default) {
-        delBtn.addEventListener('click', () => {
+      delBtn.title = 'Delete this award';
+      delBtn.addEventListener('click', () => {
+        if (award.is_default) {
+          // Tombstone the default for this meeting: zero-out so the row is
+          // hidden, and on save the server stores a disabled MeetingAwardConfig
+          // (max_votes=0, max_winners=0) which the voting page filters out.
+          award.max_winners = 0;
+          award.max_votes = 0;
+          award.winner_ids = [];
+        } else {
           const i = currentAwards.indexOf(award);
           if (i !== -1) currentAwards.splice(i, 1);
-          renderAwardsTable();
-        });
-      }
+        }
+        renderAwardsTable();
+      });
       tdActions.appendChild(delBtn);
       tr.appendChild(tdActions);
 
