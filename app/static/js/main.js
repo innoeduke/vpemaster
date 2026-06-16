@@ -719,6 +719,7 @@ document.addEventListener("DOMContentLoaded", function () {
         method: "POST",
         headers: {
           "X-Requested-With": "XMLHttpRequest",
+          "Accept": "application/json",
         },
       })
         .then((response) => {
@@ -726,18 +727,18 @@ document.addEventListener("DOMContentLoaded", function () {
           if (response.redirected) {
             if (typeof closeDeleteModal === 'function') closeDeleteModal();
             location.reload();
-            return;
+            return null;
           }
-          if (!response.ok) {
-            return response.text().then(text => {
-              throw new Error(`Server returned ${response.status}: ${text.substring(0, 100)}...`);
-            });
-          }
+          // Always try to parse JSON, regardless of HTTP status.
+          // The delete endpoints return 400 with a JSON body when the
+          // target has dependencies — we need the body to surface the
+          // "Deletion Blocked" modal.
           return response.json().catch(() => {
-            throw new Error("Invalid JSON response from server");
+            throw new Error(`Server returned ${response.status} with non-JSON body.`);
           });
         })
         .then((data) => {
+          if (!data) return;
           if (data) {
             if (data.success) {
               if (typeof closeDeleteModal === 'function') closeDeleteModal();

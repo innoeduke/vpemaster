@@ -634,7 +634,10 @@
     // --- Generic Delete Modal Logic ---
     const deleteModal = document.getElementById("deleteModal");
     const deleteForm = document.getElementById("deleteForm");
-    const deleteModalText = document.getElementById("deleteModalText");
+    // The template uses #deleteModalDescription as the text container;
+    // fall back to legacy #deleteModalText if present in any custom partial.
+    const deleteModalText = document.getElementById("deleteModalDescription")
+                         || document.getElementById("deleteModalText");
 
     function openDeleteModal(actionUrl, itemName) {
       if (deleteForm && deleteModal && deleteModalText) {

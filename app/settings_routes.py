@@ -522,7 +522,15 @@ def delete_session_type_logs(id):
 @settings_bp.route('/settings/roles/delete-logs/<int:id>', methods=['POST'])
 @login_required
 def delete_role_logs(id):
-    """Delete all meeting assignments (OwnerMeetingRoles) for a role."""
+    """Clear all references to a role and then delete the role itself.
+
+    Wipes:
+      - OwnerMeetingRoles (per-meeting role assignments)
+      - SessionType.role_id (NULL out the link; role_id is nullable)
+      - RosterRole (per-roster role associations)
+    Then deletes the MeetingRole row, so the user doesn't need a second
+    click after clearing.
+    """
     if not is_authorized(Permissions.SETTINGS_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
     club_id = get_current_club_id()
@@ -530,29 +538,44 @@ def delete_role_logs(id):
         role = db.session.get(MeetingRole, id)
         if not role:
             return jsonify(success=False, message="Role not found"), 404
-        
+
         if role.club_id == GLOBAL_CLUB_ID and club_id != GLOBAL_CLUB_ID:
             return jsonify(success=False, message="Cannot modify assignments for a Global role from this club."), 403
 
         if role.club_id != club_id and club_id != GLOBAL_CLUB_ID:
              return jsonify(success=False, message="Permission denied"), 403
-        
+
         from .models import OwnerMeetingRoles
         from .models.meeting import Meeting
-        
-        query = OwnerMeetingRoles.query.filter_by(role_id=id)
+        from .models.session import SessionType
+        from .models.roster import RosterRole
+
+        # 1. OwnerMeetingRoles — delete the assignment records.
+        om_query = OwnerMeetingRoles.query.filter_by(role_id=id)
         if club_id != GLOBAL_CLUB_ID:
-            query = query.join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id).filter(Meeting.club_id == club_id)
-            
-        assignments = query.all()
-        count = len(assignments)
-        
-        for record in assignments:
-            db.session.delete(record)
-        
+            om_query = om_query.join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id)\
+                .filter(Meeting.club_id == club_id)
+        om_count = om_query.delete(synchronize_session=False)
+
+        # 2. SessionType.role_id — NULL it out (column is nullable).
+        st_count = SessionType.query.filter_by(role_id=id)\
+            .update({SessionType.role_id: None}, synchronize_session=False)
+
+        # 3. RosterRole — delete the association rows.
+        rr_count = RosterRole.query.filter_by(role_id=id)\
+            .delete(synchronize_session=False)
+
+        # 4. Now actually delete the role itself.
+        db.session.delete(role)
+
         db.session.commit()
-        return jsonify(success=True, message=f"Cleared {count} meeting assignment(s) successfully.")
-        
+        return jsonify(
+            success=True,
+            message=(f"Cleared {om_count} meeting assignment(s), "
+                     f"unlinked {st_count} session type(s), "
+                     f"removed {rr_count} roster role(s), and deleted the role."),
+        )
+
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error deleting role logs: {str(e)}")

@@ -79,19 +79,11 @@ function deleteAllBlockingLogs() {
         alert('ID not found.');
         return;
     }
-    
-    const confirmMsg = currentUsageType === 'session'
-        ? 'Are you sure you want to delete ALL session logs of this type? This action cannot be undone.'
-        : 'Are you sure you want to clear ALL meeting assignments for this role? This will unassign the role from all meetings listed below.';
-    
-    if (!confirm(confirmMsg)) {
-        return;
-    }
-    
+
     const endpoint = currentUsageType === 'session'
         ? `/settings/sessions/delete-logs/${currentUsageId}`
         : `/settings/roles/delete-logs/${currentUsageId}`;
-    
+
     fetch(endpoint, {
         method: 'POST',
         headers: {
