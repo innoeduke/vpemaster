@@ -345,6 +345,21 @@
   input:disabled + .slider:before {
     background-color: #f1f5f9;
   }
+
+  /* Club Awards: fill the tab content so the table's right edge lines up with the
+     Add New Award button; cap the Associated Roles column so a very long list of
+     badges still wraps rather than forcing horizontal scroll. */
+  #club-awards-table {
+    width: 100%;
+  }
+  #club-awards-table td.award-roles {
+    max-width: 720px;
+  }
+  #club-awards-table td.award-roles .badge {
+    display: inline-block;
+    max-width: 100%;
+    word-break: break-word;
+  }
 </style>
 {% endblock %}
 
@@ -877,14 +892,14 @@
       <table id="club-awards-table">
         <thead>
           <tr>
-            <th style="width: 80px; text-align: center;">{{ _('Default') }}</th>
+            <th style="text-align: center;">{{ _('Default') }}</th>
             <th>{{ _('Award Name') }}</th>
             <th>{{ _('Category') }}</th>
-            <th style="width: 120px; text-align: center;">{{ _('Max Votes') }}</th>
-            <th style="width: 120px; text-align: center;">{{ _('Max Winners') }}</th>
+            <th style="text-align: center;">{{ _('Max Votes') }}</th>
+            <th style="text-align: center;">{{ _('Max Winners') }}</th>
             <th>{{ _('Associated Roles') }}</th>
             {% if is_authorized(Permissions.SETTINGS_EDIT) %}
-              <th style="width: 150px; text-align: center;">{{ _('Actions') }}</th>
+              <th style="text-align: center;">{{ _('Actions') }}</th>
             {% endif %}
           </tr>
         </thead>
@@ -902,7 +917,7 @@
               <td style="text-align: center;" class="award-max-winners">{{ award.max_winners }}</td>
               <td class="award-roles" data-role-ids="{{ award.role_associations | map(attribute='meeting_role_id') | list | tojson }}">
                 {% if award.role_associations %}
-                  {% for assoc in award.role_associations %}
+                  {% for assoc in award.role_associations | sort(attribute='meeting_role.name', case_sensitive=false) %}
                     <span class="badge" style="background-color: #e2e8f0; color: #1e293b; margin-right: 4px; padding: 4px 8px; border-radius: 4px; font-size: 0.85em;">
                       {{ _(assoc.meeting_role.name) }}
                     </span>

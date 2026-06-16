@@ -247,7 +247,7 @@
         /* Reset: neutralize global .modal-content input/select rules */
         #meetingDetailsModal .mdm-awards-table input,
         #meetingDetailsModal .mdm-awards-table select,
-        #meetingDetailsModal .mdm-awards-table button {
+        #meetingDetailsModal .mdm-awards-table button:not(.ap-trigger) {
             width: auto !important;
             max-width: none !important;
             display: inline-block !important;
@@ -342,21 +342,27 @@
         #meetingDetailsModal .mdm-awards-table td:nth-child(6) {
             text-align: center !important;
         }
-        /* Roles picker button - constrained width */
+        /* Roles picker button - full visual + layout */
         #meetingDetailsModal .mdm-awards-table .ap-trigger {
-            display: block !important;
-            width: 100% !important;
-            max-width: none !important;
+            display: block;
+            width: 100%;
+            max-width: none;
             cursor: pointer;
             text-align: left;
+            padding: 6px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: #fff;
+            font: inherit;
+            color: inherit;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             transition: border-color 0.15s, background-color 0.15s;
         }
         #meetingDetailsModal .mdm-awards-table .ap-trigger:hover {
-            background-color: #f8fafc !important;
-            border-color: #94a3b8 !important;
+            background-color: #f8fafc;
+            border-color: #94a3b8;
         }
         #meetingDetailsModal .mdm-awards-table .winner-selects {
             display: flex !important;
