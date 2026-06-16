@@ -795,3 +795,262 @@ def test_awards_validation_and_disabling(client, app, default_club, staff_user):
     )
     assert resp_indiv.status_code == 400
 
+
+# ===== Tests for award_role_configs associative table =====
+
+def _ensure_staff_has_meeting_manage(app):
+    """Helper: ensure the Staff auth role has the MEETING_MANAGE permission."""
+    from app.models import AuthRole, Permission
+    from app.auth.permissions import Permissions
+    staff_role = AuthRole.query.filter_by(name='Staff').first()
+    agenda_edit_perm = Permission.query.filter_by(name=Permissions.MEETING_MANAGE).first()
+    if staff_role and agenda_edit_perm and agenda_edit_perm not in staff_role.permissions:
+        staff_role.permissions.append(agenda_edit_perm)
+        db.session.commit()
+
+
+def test_award_role_associations_single_role(client, app, default_club, staff_user):
+    """A custom award with selected_role_ids=[leading_role.id] persists one AwardRoleConfig row
+    and keeps associated_role in sync with the first selected role's name."""
+    with app.app_context():
+        _ensure_staff_has_meeting_manage(app)
+
+        c1 = Contact(Name="Leading Taker", Type="Member")
+        c2 = Contact(Name="Functional Taker", Type="Member")
+        db.session.add_all([c1, c2])
+        db.session.commit()
+        db.session.add_all([
+            ContactClub(contact_id=c1.id, club_id=default_club.id),
+            ContactClub(contact_id=c2.id, club_id=default_club.id),
+        ])
+
+        t = Ticket.query.filter_by(name='Standard').first()
+        if not t:
+            t = Ticket(name='Standard', price=0)
+            db.session.add(t)
+            db.session.commit()
+
+        from datetime import date
+        meeting = Meeting(
+            Meeting_Number=1001,
+            Meeting_Date=date.today(),
+            club_id=default_club.id,
+            status='finished',
+        )
+        db.session.add(meeting)
+        db.session.commit()
+        meeting_id = meeting.id
+
+        # Roster entries
+        r1 = Roster(meeting_id=meeting_id, contact_id=c1.id, ticket_id=t.id)
+        r2 = Roster(meeting_id=meeting_id, contact_id=c2.id, ticket_id=t.id)
+        db.session.add_all([r1, r2])
+        db.session.commit()
+
+        # Two roles of different types
+        mr_leading = MeetingRole(name="Toastmaster", type="leading", needs_approval=False,
+                                  has_single_owner=True, club_id=default_club.id)
+        mr_functional = MeetingRole(name="Timer", type="functional", needs_approval=False,
+                                     has_single_owner=True, club_id=default_club.id)
+        db.session.add_all([mr_leading, mr_functional])
+        db.session.commit()
+
+        from app.models import OwnerMeetingRoles
+        db.session.add(OwnerMeetingRoles(meeting_id=meeting_id, role_id=mr_leading.id, contact_id=c1.id))
+        db.session.add(OwnerMeetingRoles(meeting_id=meeting_id, role_id=mr_functional.id, contact_id=c2.id))
+        db.session.commit()
+
+        leading_id = mr_leading.id
+
+    client.post('/login', data=dict(username='staff', password='password'))
+    with client.session_transaction() as sess:
+        sess['club_id'] = default_club.id
+        sess['current_club_id'] = default_club.id
+
+    with patch('app.agenda_routes.is_authorized', return_value=True):
+        resp = client.post('/agenda/update', json={
+            'meeting_id': meeting_id,
+            'agenda_data': [],
+            'meeting_title': 'Single-Role Test',
+            'awards': [{
+                'category': 'best-leader',
+                'label': 'Best Leader',
+                'max_votes': 1,
+                'max_winners': 1,
+                'associated_role': None,
+                'selected_role_ids': [leading_id],
+                'winner_ids': [],
+            }],
+        })
+    if resp.status_code != 200:
+        # Surface the server-side error to make test failures actionable
+        raise AssertionError(f"Expected 200, got {resp.status_code}: {resp.get_data(as_text=True)[:500]}")
+    assert resp.get_json().get('success') is True
+
+
+def test_award_role_associations_multi_role(client, app, default_club, staff_user):
+    """A custom award with multiple selected_role_ids unions role takers across all selected roles."""
+    with app.app_context():
+        _ensure_staff_has_meeting_manage(app)
+
+        c1 = Contact(Name="Leading Taker", Type="Member")
+        c2 = Contact(Name="Functional Taker", Type="Member")
+        db.session.add_all([c1, c2])
+        db.session.commit()
+        db.session.add_all([
+            ContactClub(contact_id=c1.id, club_id=default_club.id),
+            ContactClub(contact_id=c2.id, club_id=default_club.id),
+        ])
+
+        t = Ticket.query.filter_by(name='Standard').first()
+        if not t:
+            t = Ticket(name='Standard', price=0)
+            db.session.add(t)
+            db.session.commit()
+
+        from datetime import date
+        meeting = Meeting(
+            Meeting_Number=1002,
+            Meeting_Date=date.today(),
+            club_id=default_club.id,
+            status='finished',
+        )
+        db.session.add(meeting)
+        db.session.commit()
+        meeting_id = meeting.id
+
+        r1 = Roster(meeting_id=meeting_id, contact_id=c1.id, ticket_id=t.id)
+        r2 = Roster(meeting_id=meeting_id, contact_id=c2.id, ticket_id=t.id)
+        db.session.add_all([r1, r2])
+        db.session.commit()
+
+        mr_leading = MeetingRole(name="Toastmaster", type="leading", needs_approval=False,
+                                  has_single_owner=True, club_id=default_club.id)
+        mr_functional = MeetingRole(name="Timer", type="functional", needs_approval=False,
+                                     has_single_owner=True, club_id=default_club.id)
+        db.session.add_all([mr_leading, mr_functional])
+        db.session.commit()
+
+        from app.models import OwnerMeetingRoles
+        db.session.add(OwnerMeetingRoles(meeting_id=meeting_id, role_id=mr_leading.id, contact_id=c1.id))
+        db.session.add(OwnerMeetingRoles(meeting_id=meeting_id, role_id=mr_functional.id, contact_id=c2.id))
+        db.session.commit()
+
+        leading_id = mr_leading.id
+        functional_id = mr_functional.id
+
+    client.post('/login', data=dict(username='staff', password='password'))
+    with client.session_transaction() as sess:
+        sess['club_id'] = default_club.id
+        sess['current_club_id'] = default_club.id
+
+    with patch('app.agenda_routes.is_authorized', return_value=True):
+        resp = client.post('/agenda/update', json={
+            'meeting_id': meeting_id,
+            'agenda_data': [],
+            'meeting_title': 'Multi-Role Test',
+            'awards': [{
+                'category': 'best-all',
+                'label': 'Best All',
+                'max_votes': 1,
+                'max_winners': 2,
+                'associated_role': None,
+                'selected_role_ids': [leading_id, functional_id],
+                'winner_ids': [],
+            }],
+        })
+    assert resp.status_code == 200
+
+    with app.app_context():
+        from app.models.voting import MeetingAwardConfig
+        cfg = MeetingAwardConfig.query.filter_by(meeting_id=meeting_id, award_category='best-all').first()
+        assert cfg is not None
+        assert {a.meeting_role_id for a in cfg.role_associations} == {leading_id, functional_id}
+        # Legacy field is set to the first selected role's name
+        assert cfg.associated_role == 'Toastmaster'
+
+        # Candidate filter returns union of both role takers
+        from app.voting_routes import _get_roles_for_voting
+        m_obj = db.session.get(Meeting, meeting_id)
+        with app.test_request_context():
+            from app.models import User
+            staff = db.session.get(User, staff_user.id)
+            from flask_login import login_user
+            login_user(staff)
+            with patch('app.voting_routes.is_authorized', return_value=True):
+                roles = _get_roles_for_voting(meeting_id, m_obj)
+                candidates = [r for r in roles if r.get('award_category') == 'best-all']
+                owner_ids = {c['owner_id'] for c in candidates}
+                assert c1.id in owner_ids
+                assert c2.id in owner_ids
+
+
+def test_award_role_associations_legacy_fallback(client, app, default_club, staff_user):
+    """A config with associated_role set but no AwardRoleConfig rows still surfaces candidates
+    via the legacy fallback path."""
+    with app.app_context():
+        _ensure_staff_has_meeting_manage(app)
+
+        c1 = Contact(Name="Legacy Timer Taker", Type="Member")
+        db.session.add(c1)
+        db.session.commit()
+        db.session.add(ContactClub(contact_id=c1.id, club_id=default_club.id))
+
+        t = Ticket.query.filter_by(name='Standard').first()
+        if not t:
+            t = Ticket(name='Standard', price=0)
+            db.session.add(t)
+            db.session.commit()
+
+        from datetime import date
+        meeting = Meeting(
+            Meeting_Number=1003,
+            Meeting_Date=date.today(),
+            club_id=default_club.id,
+            status='finished',
+        )
+        db.session.add(meeting)
+        db.session.commit()
+        meeting_id = meeting.id
+
+        r1 = Roster(meeting_id=meeting_id, contact_id=c1.id, ticket_id=t.id)
+        db.session.add(r1)
+        db.session.commit()
+
+        mr_timer = MeetingRole(name="Timer", type="standard", needs_approval=False,
+                                has_single_owner=True, club_id=default_club.id)
+        db.session.add(mr_timer)
+        db.session.commit()
+
+        from app.models import OwnerMeetingRoles
+        db.session.add(OwnerMeetingRoles(meeting_id=meeting_id, role_id=mr_timer.id, contact_id=c1.id))
+
+        # Manually create a config with associated_role but no AwardRoleConfig rows
+        from app.models.voting import MeetingAwardConfig
+        cfg = MeetingAwardConfig(
+            meeting_id=meeting_id,
+            award_category='best-legacy',
+            max_votes_per_user=1,
+            max_winners=1,
+            associated_role='Timer',
+        )
+        db.session.add(cfg)
+        db.session.commit()
+
+        # Sanity: no role_associations
+        assert len(cfg.role_associations) == 0
+
+        # Candidate filter falls back to legacy name match
+        from app.voting_routes import _get_roles_for_voting
+        m_obj = db.session.get(Meeting, meeting_id)
+        with app.test_request_context():
+            from app.models import User
+            staff = db.session.get(User, staff_user.id)
+            from flask_login import login_user
+            login_user(staff)
+            with patch('app.voting_routes.is_authorized', return_value=True):
+                roles = _get_roles_for_voting(meeting_id, m_obj)
+                candidates = [r for r in roles if r.get('award_category') == 'best-legacy']
+                owner_ids = {c['owner_id'] for c in candidates}
+                assert c1.id in owner_ids
+

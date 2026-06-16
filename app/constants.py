@@ -40,3 +40,12 @@ class RoleID:
     INDIVIDUAL_EVALUATOR = 3
 
 GLOBAL_CLUB_ID = 1
+
+ROLE_TYPES = ('officer', 'leading', 'functional', 'other')
+
+ROLE_TYPE_LABELS = {
+    'officer':    'Officer',
+    'leading':    'Leading',
+    'functional': 'Functional',
+    'other':      'Other',
+}

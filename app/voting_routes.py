@@ -306,17 +306,28 @@ def _get_roles_for_voting(meeting_id, meeting):
         for config in custom_configs:
             cat = config.award_category
             category_has_winner = any(w_cat == cat for w_cat, _ in winner_set)
-            
+
             # Determine candidate list
             candidates_to_use = []
-            if config.associated_role:
+            if config.role_associations:
+                # New path: use the associative table
+                from .models import OwnerMeetingRoles
+                role_ids = [a.meeting_role_id for a in config.role_associations]
+                role_takers = db.session.query(Contact)\
+                    .join(OwnerMeetingRoles, OwnerMeetingRoles.contact_id == Contact.id)\
+                    .filter(OwnerMeetingRoles.meeting_id == meeting.id,
+                            OwnerMeetingRoles.role_id.in_(role_ids))\
+                    .distinct().all()
+                candidates_to_use = role_takers
+            elif config.associated_role:
+                # Legacy fallback: pre-migration data, or awards never re-saved through the picker
                 from .models import OwnerMeetingRoles
                 role_takers = db.session.query(Contact)\
                     .join(OwnerMeetingRoles, OwnerMeetingRoles.contact_id == Contact.id)\
                     .join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
                     .filter(OwnerMeetingRoles.meeting_id == meeting.id,
                             MeetingRole.name == config.associated_role)\
-                    .all()
+                    .distinct().all()
                 candidates_to_use = role_takers
             else:
                 candidates_to_use = roster_contacts

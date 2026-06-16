@@ -667,29 +667,15 @@ document.addEventListener("DOMContentLoaded", () => {
         tdRole.style.color = '#94a3b8';
         tdRole.style.textAlign = 'center';
       } else {
-        const roleSel = document.createElement('select');
-        // Empty default option: Roster (Any)
-        const emptyOpt = document.createElement('option');
-        emptyOpt.value = '';
-        emptyOpt.textContent = '— Roster (Any) —';
-        roleSel.appendChild(emptyOpt);
-
-        const roles = window.__meetingRoles || [];
-        roles.forEach(r => {
-          const opt = document.createElement('option');
-          opt.value = r.name;
-          opt.textContent = r.name;
-          if (award.associated_role === r.name) opt.selected = true;
-          roleSel.appendChild(opt);
-        });
-
-        roleSel.addEventListener('change', () => {
-          award.associated_role = roleSel.value || null;
-          // Dynamically re-populate candidates in Winner(s) column
+        const roleTrigger = document.createElement('button');
+        roleTrigger.type = 'button';
+        roleTrigger.className = 'ap-trigger';
+        roleTrigger.textContent = formatAwardRoleLabel(award);
+        roleTrigger.addEventListener('click', () => openAwardPickerModal(award, roleTrigger, () => {
+          roleTrigger.textContent = formatAwardRoleLabel(award);
           renderWinnerSelects(winnerContainer, award, isFinished);
-        });
-
-        tdRole.appendChild(roleSel);
+        }));
+        tdRole.appendChild(roleTrigger);
       }
       tr.appendChild(tdRole);
 
@@ -748,12 +734,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderWinnerSelects(container, award, isFinished) {
     container.innerHTML = '';
-    
-    // Determine candidate list: if associated_role is specified, use role_candidates, otherwise use default category or roster
+
+    // Determine candidate list: if any roles are selected (new), union their
+    // role_candidates. Else fall back to legacy associated_role name. Else roster.
     let candidates = [];
-    if (!award.is_default && award.associated_role) {
+    const hasNew = !award.is_default && Array.isArray(award.selected_role_ids) && award.selected_role_ids.length > 0;
+    const hasLegacy = !award.is_default && award.associated_role;
+    if (hasNew || hasLegacy) {
       const rc = window.__roleCandidates || {};
-      candidates = rc[award.associated_role] || [];
+      const rolesById = new Map((window.__meetingRoles || []).map(r => [r.id, r]));
+      const seen = new Set();
+      const ids = hasNew ? award.selected_role_ids : [];
+      const roleNames = hasNew
+        ? ids.map(id => (rolesById.get(id) || {}).name).filter(Boolean)
+        : [award.associated_role];
+      roleNames.forEach(name => {
+        (rc[name] || []).forEach(c => {
+          if (!seen.has(c.id)) { seen.add(c.id); candidates.push(c); }
+        });
+      });
     } else {
       candidates = getCandidatesForCategory(award.category);
     }
@@ -805,6 +804,7 @@ document.addEventListener("DOMContentLoaded", () => {
         max_votes: a.max_votes,
         max_winners: a.max_winners,
         associated_role: a.associated_role || null,
+        selected_role_ids: Array.isArray(a.selected_role_ids) ? a.selected_role_ids : [],
         winner_ids: (a.winner_ids || []).filter(id => id !== '' && id !== null && id !== undefined),
       }));
   }
@@ -813,6 +813,264 @@ document.addEventListener("DOMContentLoaded", () => {
   if (window.__awardsInitial) {
     currentAwards = JSON.parse(JSON.stringify(window.__awardsInitial));
     renderAwardsTable();
+  }
+
+  // ===== Award Role Picker Modal =====
+  const AP_ROLE_TYPES = [
+    { value: 'officer',    label: 'Officer',    icon: 'fa-user-tie' },
+    { value: 'leading',    label: 'Leading',    icon: 'fa-flag' },
+    { value: 'functional', label: 'Functional', icon: 'fa-tools' },
+    { value: 'other',      label: 'Other',      icon: 'fa-circle' },
+  ];
+
+  function formatAwardRoleLabel(award) {
+    const rolesById = new Map((window.__meetingRoles || []).map(r => [r.id, r]));
+    const selectedIds = Array.isArray(award.selected_role_ids) ? award.selected_role_ids : [];
+    const names = selectedIds.map(id => (rolesById.get(id) || {}).name).filter(Boolean);
+    if (names.length === 0 && award.associated_role) {
+      // Legacy fallback: show the name directly if it matches a known role
+      const match = (window.__meetingRoles || []).find(r => r.name === award.associated_role);
+      return match ? match.name : award.associated_role;
+    }
+    if (names.length === 0) return 'Select…';
+    if (names.length === 1) return names[0];
+    if (names.length <= 3) return names.join(', ');
+    return names.length + ' roles';
+  }
+
+  let apModal = null;
+  let apCtx = null; // { award, onChange, selected: Set<number> }
+
+  function ensureAwardPickerModal() {
+    if (apModal) return apModal;
+
+    const backdrop = document.createElement('div');
+    backdrop.id = 'award-picker-modal';
+    backdrop.className = 'st-modal-backdrop ap-backdrop';
+    backdrop.style.display = 'none';
+    backdrop.innerHTML = `
+      <div class="st-modal-panel ap-panel" role="dialog" aria-modal="true" aria-label="Select Roles">
+        <div class="st-modal-header">
+          <div>
+            <h2 class="st-modal-title">Select Roles</h2>
+            <p class="st-modal-subtitle">Pick one or more roles for this award. Use the per-type "Select all" to bulk-select.</p>
+          </div>
+          <button type="button" class="st-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="st-modal-body ap-body" id="ap-body"></div>
+        <div class="st-modal-footer">
+          <button type="button" class="st-modal-cancel">Cancel</button>
+          <button type="button" class="st-modal-ok">OK</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(backdrop);
+
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) closeAwardPickerModal(false);
+    });
+    backdrop.querySelector('.st-modal-close').addEventListener('click', () => closeAwardPickerModal(false));
+    backdrop.querySelector('.st-modal-cancel').addEventListener('click', () => closeAwardPickerModal(false));
+    backdrop.querySelector('.st-modal-ok').addEventListener('click', () => closeAwardPickerModal(true));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && backdrop.style.display === 'flex') closeAwardPickerModal(false);
+    });
+
+    apModal = backdrop;
+    return apModal;
+  }
+
+  function rolesOfType(type) {
+    return (window.__meetingRoles || []).filter(r => r.type === type);
+  }
+
+  function iconBadge(iconClass) {
+    const wrap = document.createElement('span');
+    wrap.className = 'ap-type-icon';
+    wrap.innerHTML = '<i class="fas ' + iconClass + '"></i>';
+    return wrap;
+  }
+
+  // Build a single role row with checkbox + name. The change handler updates
+  // the shared selected set, then re-syncs the per-type and top-level "select
+  // all" tri-state checkboxes in place — no DOM rebuild, so clicks register
+  // reliably.
+  function buildRoleRow(role) {
+    const row = document.createElement('label');
+    row.className = 'ap-checkbox-row ap-role-row';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'ap-role-cb';
+    cb.dataset.roleId = String(role.id);
+    cb.addEventListener('change', () => {
+      if (cb.checked) apCtx.selected.add(role.id);
+      else apCtx.selected.delete(role.id);
+      syncAwardPickerTriStates();
+    });
+    row.appendChild(cb);
+    const name = document.createElement('span');
+    name.textContent = role.name;
+    row.appendChild(name);
+    return row;
+  }
+
+  function buildTypeGroup(type, list) {
+    const group = document.createElement('div');
+    group.className = 'st-section ap-section ap-type-group';
+    group.dataset.type = type.value;
+
+    // Section header now hosts the per-type "select all" checkbox (no label).
+    const header = document.createElement('div');
+    header.className = 'st-section-header';
+    const headerInfo = document.createElement('div');
+    headerInfo.className = 'ap-type-header-info';
+    headerInfo.innerHTML = `
+      <div class="st-section-icon ${type.iconClass}"><i class="fas ${type.icon}"></i></div>
+      <div>
+        <div class="st-section-title">${type.label} <span class="ap-count">(${list.length})</span></div>
+        <div class="st-section-desc">${type.desc}</div>
+      </div>
+    `;
+    header.appendChild(headerInfo);
+
+    const groupAll = document.createElement('input');
+    groupAll.type = 'checkbox';
+    groupAll.className = 'ap-type-group-all ap-select-all-inline';
+    groupAll.title = 'Select all ' + type.label;
+    groupAll.setAttribute('aria-label', 'Select all ' + type.label);
+    groupAll.addEventListener('change', () => {
+      list.forEach(r => {
+        if (groupAll.checked) apCtx.selected.add(r.id);
+        else apCtx.selected.delete(r.id);
+      });
+      group.querySelectorAll('.ap-role-cb').forEach(cb => {
+        const id = parseInt(cb.dataset.roleId, 10);
+        cb.checked = apCtx.selected.has(id);
+      });
+      syncAwardPickerTriStates();
+    });
+    header.appendChild(groupAll);
+    group.appendChild(header);
+
+    const listContainer = document.createElement('div');
+    listContainer.className = 'ap-type-group-roles';
+    list.forEach(r => listContainer.appendChild(buildRoleRow(r)));
+    group.appendChild(listContainer);
+
+    return group;
+  }
+
+  function renderAwardPickerBody() {
+    const body = apModal.querySelector('#ap-body');
+    body.innerHTML = '';
+
+    if (!apCtx) return;
+
+    // Top-level "Select all roles" — checkbox with label.
+    const topBar = document.createElement('label');
+    topBar.className = 'ap-top-bar';
+    const topAllCb = document.createElement('input');
+    topAllCb.type = 'checkbox';
+    topAllCb.className = 'ap-top-all ap-select-all-inline';
+    topAllCb.title = 'Select all roles';
+    topAllCb.setAttribute('aria-label', 'Select all roles');
+    topAllCb.addEventListener('change', () => {
+      const allIds = (window.__meetingRoles || []).map(r => r.id);
+      allIds.forEach(id => {
+        if (topAllCb.checked) apCtx.selected.add(id);
+        else apCtx.selected.delete(id);
+      });
+      apModal.querySelectorAll('.ap-role-cb').forEach(cb => {
+        const id = parseInt(cb.dataset.roleId, 10);
+        cb.checked = apCtx.selected.has(id);
+      });
+      syncAwardPickerTriStates();
+    });
+    topBar.appendChild(topAllCb);
+    const topLabel = document.createElement('span');
+    topLabel.className = 'ap-top-label';
+    topLabel.textContent = 'Select all roles';
+    topBar.appendChild(topLabel);
+    body.appendChild(topBar);
+
+    // One section per role type, stacked vertically
+    AP_ROLE_TYPES.forEach(t => {
+      const list = rolesOfType(t.value);
+      if (list.length === 0) return;
+      body.appendChild(buildTypeGroup({
+        value: t.value,
+        label: t.label,
+        icon: t.icon,
+        iconClass: (t.value === 'leading') ? 'st-icon--info' : 'st-icon--media',
+        desc: '',
+      }, list));
+    });
+
+    // Apply initial checked state from the selected set
+    syncAwardPickerTriStates();
+  }
+
+  // Update the per-type "select all" and top-level "select all" tri-states
+  // (checked / unchecked / indeterminate) based on the current selected set.
+  function syncAwardPickerTriStates() {
+    if (!apModal || !apCtx) return;
+    const selected = apCtx.selected;
+
+    // Per-type section "select all"
+    apModal.querySelectorAll('.ap-type-group').forEach(group => {
+      const groupAll = group.querySelector('.ap-type-group-all');
+      if (!groupAll) return;
+      const ids = Array.from(group.querySelectorAll('.ap-role-cb'))
+        .map(cb => parseInt(cb.dataset.roleId, 10));
+      const selectedCount = ids.filter(id => selected.has(id)).length;
+      if (ids.length === 0 || selectedCount === 0) {
+        groupAll.checked = false; groupAll.indeterminate = false;
+      } else if (selectedCount === ids.length) {
+        groupAll.checked = true;  groupAll.indeterminate = false;
+      } else {
+        groupAll.checked = false; groupAll.indeterminate = true;
+      }
+    });
+
+    // Top-level "select all roles"
+    const topAllCb = apModal.querySelector('.ap-top-all');
+    if (topAllCb) {
+      const allIds = (window.__meetingRoles || []).map(r => r.id);
+      const allSelected = allIds.length > 0 && allIds.every(id => selected.has(id));
+      const someSelected = allIds.some(id => selected.has(id));
+      topAllCb.checked = allSelected;
+      topAllCb.indeterminate = !allSelected && someSelected;
+    }
+
+    // OK button enable/disable
+    const okBtn = apModal.querySelector('.st-modal-ok');
+    if (okBtn) okBtn.disabled = selected.size === 0;
+  }
+
+  function openAwardPickerModal(award, triggerBtn, onChange) {
+    ensureAwardPickerModal();
+    const selected = new Set();
+    if (Array.isArray(award.selected_role_ids)) {
+      award.selected_role_ids.forEach(id => selected.add(id));
+    } else if (award.associated_role) {
+      // Legacy fallback: resolve name → id
+      const match = (window.__meetingRoles || []).find(r => r.name === award.associated_role);
+      if (match) selected.add(match.id);
+    }
+    apCtx = { award, onChange, selected };
+    renderAwardPickerBody();
+    apModal.style.display = 'flex';
+  }
+
+  function closeAwardPickerModal(commit) {
+    if (!apModal) return;
+    if (commit && apCtx) {
+      apCtx.award.selected_role_ids = Array.from(apCtx.selected);
+      apCtx.award.associated_role = null;
+      if (typeof apCtx.onChange === 'function') apCtx.onChange();
+    }
+    apModal.style.display = 'none';
+    apCtx = null;
   }
 
   window.refreshAgendaTable = function() {

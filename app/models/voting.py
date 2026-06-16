@@ -59,6 +59,31 @@ class MeetingAwardConfig(db.Model):
         db.UniqueConstraint('meeting_id', 'award_category', name='uq_meeting_award_config'),
     )
 
+
+class AwardRoleConfig(db.Model):
+    __tablename__ = 'award_role_configs'
+    id = db.Column(db.Integer, primary_key=True)
+    award_config_id = db.Column(
+        db.Integer,
+        db.ForeignKey('meeting_award_configs.id', ondelete='CASCADE'),
+        nullable=False, index=True,
+    )
+    meeting_role_id = db.Column(
+        db.Integer,
+        db.ForeignKey('meeting_roles.id', ondelete='CASCADE'),
+        nullable=False, index=True,
+    )
+
+    award_config = db.relationship(
+        'MeetingAwardConfig',
+        backref=db.backref('role_associations', cascade='all, delete-orphan'),
+    )
+    meeting_role = db.relationship('MeetingRole')
+
+    __table_args__ = (
+        db.UniqueConstraint('award_config_id', 'meeting_role_id', name='uq_award_role_config'),
+    )
+
 class MeetingAwardWinner(db.Model):
     __tablename__ = 'meeting_award_winners'
     id = db.Column(db.Integer, primary_key=True)

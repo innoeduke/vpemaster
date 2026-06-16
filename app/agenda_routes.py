@@ -60,18 +60,24 @@ def get_meeting_awards(meeting):
             'max_votes': 1,
             'max_winners': 1,
             'associated_role': None,
+            'selected_role_ids': [],
             'winner_ids': [],
             'is_default': True,
         }
 
     if meeting:
         # 2. Merge in any saved configs (including custom categories)
-        configs = MeetingAwardConfig.query.filter_by(meeting_id=meeting.id).all()
+        from sqlalchemy.orm import joinedload
+        configs = MeetingAwardConfig.query\
+            .options(joinedload(MeetingAwardConfig.role_associations))\
+            .filter_by(meeting_id=meeting.id).all()
         for c in configs:
+            selected_role_ids = [a.meeting_role_id for a in c.role_associations]
             if c.award_category in awards_map:
                 awards_map[c.award_category]['max_votes'] = c.max_votes_per_user
                 awards_map[c.award_category]['max_winners'] = c.max_winners
                 awards_map[c.award_category]['associated_role'] = c.associated_role
+                awards_map[c.award_category]['selected_role_ids'] = selected_role_ids
             else:
                 awards_map[c.award_category] = {
                     'category': c.award_category,
@@ -79,6 +85,7 @@ def get_meeting_awards(meeting):
                     'max_votes': c.max_votes_per_user,
                     'max_winners': c.max_winners,
                     'associated_role': c.associated_role,
+                    'selected_role_ids': selected_role_ids,
                     'winner_ids': [],
                     'is_default': False,
                 }
@@ -96,6 +103,7 @@ def get_meeting_awards(meeting):
                     'max_votes': 1,
                     'max_winners': 1,
                     'associated_role': None,
+                    'selected_role_ids': [],
                     'winner_ids': [w.contact_id],
                     'is_default': False,
                 }
@@ -1037,7 +1045,7 @@ def agenda():
             }
 
     # Fetch meeting roles for the club and candidate mapping for JS
-    meeting_roles = [{'id': r.id, 'name': r.name} for r in MeetingRole.get_all_for_club(club_id)]
+    meeting_roles = [{'id': r.id, 'name': r.name, 'type': r.type} for r in MeetingRole.get_all_for_club(club_id)]
     role_candidates = {}
     if selected_meeting:
         from .models import OwnerMeetingRoles
@@ -1693,7 +1701,7 @@ def update_logs():
         # Otherwise fall back to the legacy per-category keys.
         awards_data = data.get('awards')
         if awards_data is not None:
-            from .models.voting import MeetingAwardConfig
+            from .models.voting import MeetingAwardConfig, AwardRoleConfig
             # Clear all existing configs and winners for this meeting
             MeetingAwardConfig.query.filter_by(meeting_id=meeting.id).delete()
             MeetingAwardWinner.query.filter_by(meeting_id=meeting.id).delete()
@@ -1726,20 +1734,45 @@ def update_logs():
 
                 winner_ids = award.get('winner_ids', [])
 
-                associated_role = award.get('associated_role')
-                if associated_role:
-                    associated_role = associated_role.strip()
-                else:
-                    associated_role = None
+                # selected_role_ids is the new payload field; resolve to ints and
+                # validate against the club's actual role list.
+                raw_role_ids = award.get('selected_role_ids') or []
+                club_meeting_roles = MeetingRole.get_all_for_club(meeting.club_id)
+                valid_role_ids = {r.id: {'id': r.id, 'name': r.name} for r in club_meeting_roles}
+                selected_role_ids = []
+                seen = set()
+                for rid in raw_role_ids:
+                    try:
+                        rid = int(rid)
+                    except (TypeError, ValueError):
+                        continue
+                    if rid in valid_role_ids and rid not in seen:
+                        selected_role_ids.append(rid)
+                        seen.add(rid)
+
+                # Keep associated_role in sync during the transition period.
+                # Prefer the literal value from the payload (legacy path),
+                # else derive it from the first selected role's name.
+                legacy_associated_role = (award.get('associated_role') or '').strip() or None
+                if not legacy_associated_role and selected_role_ids:
+                    legacy_associated_role = valid_role_ids[selected_role_ids[0]]['name']
 
                 # Save config
-                db.session.add(MeetingAwardConfig(
+                config = MeetingAwardConfig(
                     meeting_id=meeting.id,
                     award_category=category,
                     max_votes_per_user=max_votes,
                     max_winners=max_winners,
-                    associated_role=associated_role,
-                ))
+                    associated_role=legacy_associated_role,
+                )
+                db.session.add(config)
+                db.session.flush()  # need config.id for FK
+
+                for role_id in selected_role_ids:
+                    db.session.add(AwardRoleConfig(
+                        award_config_id=config.id,
+                        meeting_role_id=role_id,
+                    ))
 
                 # Save winners (only if max_winners > 0)
                 if max_winners > 0:
@@ -1778,7 +1811,7 @@ def update_logs():
             # Handle Award Configurations (legacy)
             award_configs_data = data.get('award_configs')
             if award_configs_data:
-                from .models.voting import MeetingAwardConfig
+                from .models.voting import MeetingAwardConfig, AwardRoleConfig
                 for category, conf in award_configs_data.items():
                     raw_votes = conf.get('max_votes_per_user', 1)
                     raw_winners = conf.get('max_winners', 1)
