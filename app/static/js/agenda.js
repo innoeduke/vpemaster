@@ -1285,11 +1285,11 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    if (dataToSave.length === 0) {
-      toggleEditMode(false);
-      window.location.reload();
-      return;
-    }
+    // NOTE: do not short-circuit when dataToSave is empty. The Save button on
+    // the Meeting Details modal goes through this same path, and dropping the
+    // POST here would silently discard award deletions / title / meeting_type
+    // edits on meetings with no agenda rows. The backend treats an empty
+    // agenda_data list as a no-op for sessions.
 
     // Collect unified awards data from the awards table
     const awardsPayload = collectAwardsFromTable();
