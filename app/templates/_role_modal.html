@@ -25,17 +25,21 @@
           <fieldset class="modal-frame">
             <legend>{{ _('Type:') }}</legend>
             <div class="radio-group" id="type-radio-group">
-              <label class="radio-item">
+              <label class="radio-item" title="{{ _('Club officer-led roles (ExComm positions such as President, VPE, VPM).') }}">
                 <input type="radio" name="type" value="officer" required>
                 <span>{{ _('Officer') }}</span>
               </label>
-              <label class="radio-item">
+              <label class="radio-item" title="{{ _('Leading roles that anchor a meeting (e.g. Toastmaster, General Evaluator, Topicsmaster).') }}">
                 <input type="radio" name="type" value="leading">
                 <span>{{ _('Leading') }}</span>
               </label>
-              <label class="radio-item">
+              <label class="radio-item" title="{{ _('Functional roles that support the meeting (e.g. Timer, Ah-Counter, Grammarian).') }}">
                 <input type="radio" name="type" value="functional" checked>
                 <span>{{ _('Functional') }}</span>
+              </label>
+              <label class="radio-item" title="{{ _('Placeholder for roles that do not fit Leading or Functional.') }}">
+                <input type="radio" name="type" value="other">
+                <span>{{ _('Other') }}</span>
               </label>
             </div>
           </fieldset>

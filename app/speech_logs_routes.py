@@ -19,7 +19,7 @@ from sqlalchemy import distinct, or_, func
 from sqlalchemy.orm import joinedload
 from datetime import datetime
 import re
-from .constants import ProjectID
+from .constants import ProjectID, GLOBAL_CLUB_ID
 
 speech_logs_bp = Blueprint('speech_logs_bp', __name__)
 
@@ -930,7 +930,7 @@ def _process_band_requirements(level_str, band_reqs, logs_for_level, used_log_id
                 
                 if is_role_match:
                     satisfied = True
-                elif actual_role_name == 'club-specific' or (log.session_type and log.session_type.role and log.session_type.role.type == 'club-specific'):
+                elif actual_role_name == 'club-specific' or (log.session_type and log.session_type.role and log.session_type.role.type == 'functional' and log.session_type.role.club_id != GLOBAL_CLUB_ID):
                     if norm_target == normalize_role_name('Club Specific*'):
                         satisfied = True
                 elif lr.role.lower() == 'speech' and hasattr(log, 'log_type') and (log.log_type == 'speech' or log.log_type == 'presentation'):
