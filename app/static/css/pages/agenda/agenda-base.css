@@ -532,14 +532,11 @@ td.actions-column {
 	/* Maintain standard padding */
 }
 
-/* Flex layout applied to inner wrapper to avoid td display issues */
-.actions-wrapper {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	gap: 2px;
+/* The inner .tm-action-buttons container is centered via its flex layout
+   (see components/tm-action-btn.css), so it spans the cell width. */
+td.actions-column .tm-action-buttons {
 	width: 100%;
-	height: 100%;
+	justify-content: center;
 }
 
 /* Specific overrides for section row */
@@ -548,7 +545,8 @@ td.actions-column {
 	/* Reset font size for icons to match standard rows */
 }
 
-/* Ensure all icons in section row are white */
+/* Ensure all icons in section row are white.
+   (Only applies to .icon-btn; the new .tm-action-btn carries its own color.) */
 .section-row .icon-btn {
 	color: white;
 	opacity: 1;

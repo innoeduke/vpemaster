@@ -3130,15 +3130,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const cell = document.createElement("td");
     cell.className = "actions-column";
 
-    // Create a wrapper for flex layout to avoid breaking table cell borders
+    // Flex container for the row's action buttons
     const wrapper = document.createElement("div");
-    wrapper.className = "actions-wrapper";
+    wrapper.className = "tm-action-buttons";
 
     // --- Visibility Toggle Button (Created but not appended yet) ---
     const toggleBtn = document.createElement("button");
     toggleBtn.innerHTML = isHidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
-    // Use 'is-hidden-state' class for visual cue (opacity) instead of btn-secondary (border/bg)
-    toggleBtn.className = isHidden ? "icon-btn toggle-visibility-btn is-hidden-state" : "icon-btn toggle-visibility-btn";
+    // Use 'is-hidden-state' class for visual cue (opacity) in addition to the tm-action-btn base
+    toggleBtn.className = isHidden
+      ? "tm-action-btn toggle-visibility-btn is-hidden-state"
+      : "tm-action-btn toggle-visibility-btn";
     toggleBtn.type = "button";
     toggleBtn.title = isHidden ? "Show in Agenda" : "Hide in Agenda";
 
@@ -3156,7 +3158,9 @@ document.addEventListener("DOMContentLoaded", () => {
       // Update Icon
       this.innerHTML = newHidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
       // Toggle opacity class
-      this.className = newHidden ? "icon-btn toggle-visibility-btn is-hidden-state" : "icon-btn toggle-visibility-btn";
+      this.className = newHidden
+        ? "tm-action-btn toggle-visibility-btn is-hidden-state"
+        : "tm-action-btn toggle-visibility-btn";
       this.title = newHidden ? "Show in Agenda" : "Hide in Agenda";
     };
     // ----------------------------
@@ -3181,7 +3185,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (isSection) {
       const addSessionBtn = document.createElement("button");
       addSessionBtn.innerHTML = '<i class="fas fa-plus-circle"></i>';
-      addSessionBtn.className = "icon-btn add-session-btn";
+      addSessionBtn.className = "tm-action-btn add-session-btn";
       addSessionBtn.type = "button";
       addSessionBtn.title = "Add Session to Section";
       addSessionBtn.onclick = function () {
@@ -3192,7 +3196,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // The consolidated edit button for non-section rows
       const editDetailsBtn = document.createElement("button");
       editDetailsBtn.innerHTML = '<i class="fas fa-edit"></i>'; // Generic edit icon
-      editDetailsBtn.className = "icon-btn edit-details-btn"; // New class
+      editDetailsBtn.className = "tm-action-btn edit-details-btn"; // New class
       editDetailsBtn.type = "button";
 
       if (shouldShowProjectButton) {
@@ -3249,7 +3253,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         // Create placeholder to maintain alignment
         const placeholder = document.createElement("button");
-        placeholder.className = "icon-btn"; // Use same class for consistent box-model
+        placeholder.className = "tm-action-btn"; // Same class so it has the same box-model
         placeholder.style.visibility = "hidden";
         placeholder.style.pointerEvents = "none";
         // Add the icon so it takes up the exact same width
@@ -3264,7 +3268,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 3. Delete Button (Third Position)
     const deleteBtn = document.createElement("button");
     deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
-    deleteBtn.className = "delete-btn icon-btn";
+    deleteBtn.className = "tm-action-btn tm-action-btn--danger";
     deleteBtn.type = "button";
 
     wrapper.append(deleteBtn);

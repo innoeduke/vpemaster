@@ -60,12 +60,8 @@
 .tm-check-col { text-align: center; width: 70px; }
 .tm-actions-col { width: 90px; white-space: nowrap; }
 
-/* Container for a group of tm-action-btn instances — flex row, snug gap. */
-.tm-action-buttons {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-}
+/* tm-action-btn / tm-action-buttons rules moved to
+   css/components/tm-action-btn.css (shared with settings + agenda). */
 
 .tm-empty {
   color: var(--text-2, #5a6270);
@@ -282,105 +278,8 @@
   padding: 0.25rem;
 }
 
-/* ----------------------------------------------------------------
-   tm-action-btn — polished, label-less icon button for row actions.
-   Aesthetic: refined industrial / precision instrument. Crisp 1px
-   border, layered shadows, warm-neutral palette, rust-red danger
-   variant. Sized to icon + 14px breathing room.
-   ---------------------------------------------------------------- */
-.tm-action-btn {
-  --tm-action-bg: #fafbfc;
-  --tm-action-bg-hover: #eef1f5;
-  --tm-action-bg-active: #e4e8ec;
-  --tm-action-border: #d8dde3;
-  --tm-action-border-hover: #9aa5b1;
-  --tm-action-fg: #4a5563;
-  --tm-action-fg-hover: #1a202c;
-  --tm-action-shadow: 0 1px 0 rgba(16, 24, 40, 0.04),
-                      inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  --tm-action-shadow-hover: 0 1px 2px rgba(16, 24, 40, 0.08),
-                            inset 0 1px 0 rgba(255, 255, 255, 0.7);
-  --tm-action-shadow-active: inset 0 1px 2px rgba(16, 24, 40, 0.1);
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  margin: 0 2px;
-  font: inherit;
-  font-size: 13px;
-  line-height: 1;
-  color: var(--tm-action-fg);
-  background: var(--tm-action-bg);
-  border: 1px solid var(--tm-action-border);
-  border-radius: 6px;
-  box-shadow: var(--tm-action-shadow);
-  cursor: pointer;
-  transition:
-    background-color 160ms ease-out,
-    border-color 160ms ease-out,
-    color 160ms ease-out,
-    box-shadow 120ms ease-out,
-    transform 120ms ease-out;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.tm-action-btn i,
-.tm-action-btn svg {
-  pointer-events: none;
-  display: block;
-}
-
-.tm-action-btn:hover {
-  background: var(--tm-action-bg-hover);
-  border-color: var(--tm-action-border-hover);
-  color: var(--tm-action-fg-hover);
-  box-shadow: var(--tm-action-shadow-hover);
-  transform: translateY(-1px);
-}
-
-.tm-action-btn:active {
-  background: var(--tm-action-bg-active);
-  box-shadow: var(--tm-action-shadow-active);
-  transform: translateY(0);
-}
-
-.tm-action-btn:focus-visible {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-}
-
-/* Destructive variant — warm rust, not alarm-red */
-.tm-action-btn--danger {
-  --tm-action-bg: #b64339;
-  --tm-action-bg-hover: #963228;
-  --tm-action-bg-active: #7d281d;
-  --tm-action-border: #8c2e26;
-  --tm-action-border-hover: #6f231b;
-  --tm-action-fg: #fff8f7;
-  --tm-action-fg-hover: #ffffff;
-  --tm-action-shadow: 0 1px 0 rgba(60, 12, 6, 0.25),
-                      inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  --tm-action-shadow-hover: 0 2px 4px rgba(60, 12, 6, 0.3),
-                            inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  --tm-action-shadow-active: inset 0 2px 4px rgba(40, 6, 2, 0.35);
-}
-
-/* Disabled state (for when validation rules block an action) */
-.tm-action-btn[disabled],
-.tm-action-btn[aria-disabled="true"] {
-  opacity: 0.45;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: var(--tm-action-shadow);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tm-action-btn { transition: none; }
-  .tm-action-btn:hover { transform: none; }
-}
+/* tm-action-btn / tm-action-buttons rules moved to
+   css/components/tm-action-btn.css (shared with settings + agenda). */
 
 .tm-drag-handle {
   cursor: grab;
