@@ -25,7 +25,17 @@ class CustomSelect {
 			this.optionsList.className = 'custom-select-options';
 
 			this.select.hide = true;
-			this.select.style.display = 'none';
+			// Visually hide the native select but keep it focusable so that
+			// HTML5 form validation (e.g. `required`) can still report errors
+			// without the browser throwing "invalid form control is not focusable".
+			this.select.style.position = 'absolute';
+			this.select.style.opacity = '0';
+			this.select.style.pointerEvents = 'none';
+			this.select.style.height = '0';
+			this.select.style.width = '0';
+			this.select.style.border = '0';
+			this.select.style.padding = '0';
+			this.select.style.margin = '0';
 			this.select.parentNode.insertBefore(this.container, this.select.nextSibling);
 			this.container.appendChild(this.trigger);
 			this.container.appendChild(this.optionsList);

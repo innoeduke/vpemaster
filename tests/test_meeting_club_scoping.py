@@ -49,53 +49,54 @@ def test_meeting_creation_club_scoping(app):
         # 3. Create a dummy template CSV
         template_name = "test_template.csv"
         from app.services.meeting_template_service import _club_dir
-        import shutil
-        
-        club1_dir = os.path.join(app.static_folder, 'club_resources', str(club1.id))
-        club2_dir = os.path.join(app.static_folder, 'club_resources', str(club2.id))
-        
+
         club1_templates_dir = _club_dir(club1.id)
         club2_templates_dir = _club_dir(club2.id)
-        
-        for t_dir in [club1_templates_dir, club2_templates_dir]:
-            template_path = os.path.join(t_dir, template_name)
-            with open(template_path, 'w', encoding='utf-8') as f:
-                writer = csv.writer(f)
-                writer.writerow(['Type', 'Title', 'Role', 'Owner', 'Min', 'Max'])
-                writer.writerow(['Club1Only', '', '', '', '5', '10'])
 
-        # 4. Generate logs for Club 1 meeting using Club 1 context
-        from flask import session
-        with app.test_request_context():
-            session['current_club_id'] = club1.id
-            _generate_logs_from_template(meeting1, template_name)
-            
-            logs = SessionLog.query.filter_by(meeting_id=meeting1.id).all()
-            assert len(logs) == 1
-            assert logs[0].Session_Title == "Club1Only"
-            assert logs[0].Type_ID == st1.id
+        template_paths = [
+            os.path.join(club1_templates_dir, template_name),
+            os.path.join(club2_templates_dir, template_name),
+        ]
 
-        # 5. Try generating for Club 2 meeting using Club 2 context but with Club1Only type in template
-        meeting2 = Meeting(Meeting_Number=102, club_id=club2.id, status='unpublished',
-                          Meeting_Date=date(2026, 2, 8), Start_Time=time(19, 0))
-        db.session.add(meeting2)
-        db.session.commit()
-        
-        with app.test_request_context():
-            session['current_club_id'] = club2.id
-            _generate_logs_from_template(meeting2, template_name)
-            
-            logs = SessionLog.query.filter_by(meeting_id=meeting2.id).all()
-            assert len(logs) == 1
-            
-            # Since Club2 doesn't have "Club1Only", it should fallback to 'Generic' or custom
-            generic_id = SessionType.get_id_by_title('Generic', club2.id)
-            assert logs[0].Type_ID == generic_id
-            assert logs[0].Session_Title == "Club1Only"
+        try:
+            for template_path in template_paths:
+                with open(template_path, 'w', encoding='utf-8') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(['Type', 'Title', 'Role', 'Owner', 'Min', 'Max'])
+                    writer.writerow(['Club1Only', '', '', '', '5', '10'])
 
-        # Cleanup
-        os.remove(template_path)
-        if os.path.exists(club1_dir):
-            shutil.rmtree(club1_dir)
-        if os.path.exists(club2_dir):
-            shutil.rmtree(club2_dir)
+            # 4. Generate logs for Club 1 meeting using Club 1 context
+            from flask import session
+            with app.test_request_context():
+                session['current_club_id'] = club1.id
+                _generate_logs_from_template(meeting1, template_name)
+
+                logs = SessionLog.query.filter_by(meeting_id=meeting1.id).all()
+                assert len(logs) == 1
+                assert logs[0].Session_Title == "Club1Only"
+                assert logs[0].Type_ID == st1.id
+
+            # 5. Try generating for Club 2 meeting using Club 2 context but with Club1Only type in template
+            meeting2 = Meeting(Meeting_Number=102, club_id=club2.id, status='unpublished',
+                              Meeting_Date=date(2026, 2, 8), Start_Time=time(19, 0))
+            db.session.add(meeting2)
+            db.session.commit()
+
+            with app.test_request_context():
+                session['current_club_id'] = club2.id
+                _generate_logs_from_template(meeting2, template_name)
+
+                logs = SessionLog.query.filter_by(meeting_id=meeting2.id).all()
+                assert len(logs) == 1
+
+                # Since Club2 doesn't have "Club1Only", it should fallback to 'Generic' or custom
+                generic_id = SessionType.get_id_by_title('Generic', club2.id)
+                assert logs[0].Type_ID == generic_id
+                assert logs[0].Session_Title == "Club1Only"
+        finally:
+            # Cleanup: only remove the CSVs this test created. Do NOT rmtree the
+            # club_resources/<club_id> directories — they may contain real
+            # template uploads / other resources for these club IDs in dev.
+            for template_path in template_paths:
+                if os.path.exists(template_path):
+                    os.remove(template_path)

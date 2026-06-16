@@ -179,15 +179,35 @@ def _get_roles_for_voting(meeting_id, meeting):
     
     # 4. Handle custom awards configurations & disabled awards
     from .models.voting import MeetingAwardConfig, MeetingAwardWinner
+    from .agenda_routes import get_meeting_awards
     configs = MeetingAwardConfig.query.filter_by(meeting_id=meeting.id).all()
     disabled_cats = {c.award_category for c in configs if c.max_votes_per_user == 0 or c.max_winners == 0}
 
+    # The set of award categories that are actually enabled for this meeting.
+    # get_meeting_awards() encapsulates the precedence:
+    #   club.default_awards  ->  fallback DEFAULT_AWARD_CATEGORIES
+    #     overlaid with per-meeting MeetingAwardConfig (including custom awards).
+    # We then drop anything explicitly disabled (max_votes=0 or max_winners=0).
+    # Standard categories (e.g. 'role-taker') that the club has NOT chosen as a
+    # default award will not appear in this set, so we will not render an
+    # accordion for them on the voting page.
+    enabled_cats = {
+        a['category'] for a in get_meeting_awards(meeting)
+        if a['category'] not in disabled_cats
+    }
+
     # Consolidate 'role-taker' category to one row per person
-    # 1. Separate role-takers from others (and filter disabled standard categories)
-    other_roles = [r for r in enriched_roles if r.get('award_category') != 'role-taker' and r.get('award_category') not in disabled_cats]
-    
+    # 1. Separate role-takers from others, dropping categories that aren't
+    #    enabled for this meeting (either disabled, or never chosen as a
+    #    default award for this club).
+    other_roles = [
+        r for r in enriched_roles
+        if r.get('award_category') != 'role-taker'
+        and r.get('award_category') in enabled_cats
+    ]
+
     consolidated_role_takers = []
-    if 'role-taker' not in disabled_cats:
+    if 'role-taker' in enabled_cats:
         # 2. Get all role takers for the meeting using RoleService
         role_takers_map = RoleService.get_role_takers(meeting_id, meeting.club_id)
         
@@ -453,8 +473,11 @@ def _get_voting_page_context(meeting_id):
     has_voting_view_results = is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=selected_meeting)
     
     if is_meeting_date and has_voting_view_results:
-        # Eager load the relation to avoid DetachedInstanceError
+        # Eager load relations we will read after the expunge to avoid
+        # DetachedInstanceError: award_winners (used below) and club (used
+        # by get_meeting_awards inside _get_roles_for_voting).
         _ = selected_meeting.award_winners
+        _ = selected_meeting.club
         # Expunge from session so in-memory changes are never committed
         db.session.expunge(selected_meeting)
         # Override status to 'running' if it's not already 'running' or 'finished'
