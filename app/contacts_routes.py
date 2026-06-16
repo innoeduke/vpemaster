@@ -843,7 +843,7 @@ def _build_contacts_data(per_page=None, offset=0):
     ).join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id)\
      .join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
      .filter(
-        MeetingRole.type.in_(['standard', 'club-specific']),
+        MeetingRole.type.in_(['standard', 'club-specific', 'leading', 'functional']),
         Meeting.club_id == club_id
     )
     lifetime_distinct_roles = lifetime_roles_query.distinct().all()
@@ -889,7 +889,7 @@ def _build_contacts_data(per_page=None, offset=0):
     ).join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id)\
      .join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
      .filter(
-        MeetingRole.type.in_(['standard', 'club-specific']),
+        MeetingRole.type.in_(['standard', 'club-specific', 'leading', 'functional']),
         Meeting.club_id == club_id
     )
     roles_query = apply_date_filter(roles_query, Meeting.Meeting_Date)

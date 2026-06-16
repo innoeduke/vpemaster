@@ -896,41 +896,14 @@ document.addEventListener("DOMContentLoaded", () => {
           if (hiddenInput) hiddenInput.value = "";
         }
 
-        // Logic for Type selector based on Club ID
+        // Show all type options; default to "functional"
         const typeRadios = document.querySelectorAll('input[name="type"]');
-        if (typeof CURRENT_CLUB_ID !== 'undefined') {
-          typeRadios.forEach(radio => {
-            const label = radio.parentElement;
-            if (!label) return;
-
-            if (CURRENT_CLUB_ID === 1) {
-              // Club 1: Hide "club-specific", show others
-              if (radio.value === 'club-specific') {
-                label.style.display = 'none';
-              } else {
-                label.style.display = 'flex';
-              }
-            } else {
-              // Other clubs: Hide "Standard" option (value="standard")
-              // Show all others.
-              if (radio.value === 'standard') {
-                label.style.display = 'none';
-              } else {
-                label.style.display = 'flex';
-              }
-            }
-          });
-
-          // Set default selection based on visibility
-          // For non-club 1, fail safe to 'club-specific' if not editing
-          if (CURRENT_CLUB_ID !== 1) {
-            const clubSpecific = document.querySelector('input[name="type"][value="club-specific"]');
-            if (clubSpecific) clubSpecific.checked = true;
-          } else {
-            const standard = document.querySelector('input[name="type"][value="standard"]');
-            if (standard) standard.checked = true;
-          }
-        }
+        typeRadios.forEach(radio => {
+          const label = radio.parentElement;
+          if (!label) return;
+          label.style.display = 'flex';
+          radio.checked = radio.value === 'functional';
+        });
 
         modal.style.display = "flex";
       }
@@ -1183,9 +1156,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Resolve translated names using existing DOM translations
-    const typeRadio = document.querySelector(`#addRoleForm input[name="type"][value="${roleData.type}"]`);
-    const translatedType = typeRadio ? typeRadio.nextElementSibling.textContent.trim() : roleData.type;
-
     const categoryRadio = document.querySelector(`#addRoleForm input[name="award_category"][value="${roleData.award_category || ''}"]`);
     const translatedCategory = (roleData.award_category && categoryRadio) ? categoryRadio.nextElementSibling.textContent.trim() : "";
 
@@ -1194,13 +1164,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     row.innerHTML = `
       <td>${roleData.id}</td>
-      <td data-field="name" class="role-type-${roleData.type}">
+      <td data-field="name" data-type="${roleData.type}" class="role-type-${roleData.type}">
         <div class="role-name-cell">
           <i class="fas ${typeof resolveRoleIcon === 'function' ? resolveRoleIcon(roleData.icon) : (roleData.icon || 'fa-question-circle')}"></i>
           <span class="role-name-text">${roleData.name}</span>
         </div>
       </td>
-      <td data-field="type" data-type="${roleData.type}">${translatedType}</td>
       <td data-field="award_category" data-category="${roleData.award_category || ''}">${translatedCategory}</td>
       <td data-field="needs_approval">
         <input type="checkbox" name="needs_approval" ${roleData.needs_approval ? "checked" : ""} disabled />
@@ -2083,11 +2052,17 @@ function openEditRoleModal(roleId) {
   // Populate fields
   form.name.value = row.querySelector('[data-field="name"]').textContent.trim();
 
-  // Type Radio Population
-  const typeCell = row.querySelector('[data-field="type"]');
-  const typeValue = typeCell ? (typeCell.dataset.type || typeCell.textContent.trim()) : "";
+  // Type Radio Population (data-type is now on the name cell)
+  const nameCell = row.querySelector('[data-field="name"]');
+  const typeValue = nameCell ? (nameCell.dataset.type || "") : "";
   const typeRadio = form.querySelector(`input[name="type"][value="${typeValue}"]`);
-  if (typeRadio) typeRadio.checked = true;
+  if (typeRadio) {
+    typeRadio.checked = true;
+  } else {
+    // Legacy role with type=standard/club-specific, or unknown value — default to functional
+    const fallback = form.querySelector('input[name="type"][value="functional"]');
+    if (fallback) fallback.checked = true;
+  }
 
   // Award Category Radio Population
   const categoryCell = row.querySelector('[data-field="award_category"]');
@@ -2100,32 +2075,13 @@ function openEditRoleModal(roleId) {
     if (noneRadio) noneRadio.checked = true;
   }
 
-  // Logic for Type selector visibility based on Club ID when EDITING
-  // Consistent with Add logic:
-  // Club 1: All visible
-  // Other: Hide "standard", show others
+  // Show all type radios; do not hide any (no club-id-based hiding anymore)
   const typeRadios = form.querySelectorAll('input[name="type"]');
-  if (typeof CURRENT_CLUB_ID !== 'undefined') {
-    typeRadios.forEach(radio => {
-      const label = radio.parentElement;
-      if (!label) return;
-
-      if (CURRENT_CLUB_ID === 1) {
-        // Club 1: Hide "club-specific", show others
-        if (radio.value === 'club-specific') {
-          label.style.display = 'none';
-        } else {
-          label.style.display = 'flex';
-        }
-      } else {
-        if (radio.value === 'standard') {
-          label.style.display = 'none';
-        } else {
-          label.style.display = 'flex';
-        }
-      }
-    });
-  }
+  typeRadios.forEach(radio => {
+    const label = radio.parentElement;
+    if (!label) return;
+    label.style.display = 'flex';
+  });
 
   form.needs_approval.checked = row.querySelector('[data-field="needs_approval"] input').checked;
   form.has_single_owner.checked = row.querySelector('[data-field="has_single_owner"] input').checked;

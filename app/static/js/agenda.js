@@ -2134,6 +2134,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const ST_GROUP_META = [
     { key: "Officers",                    icon: "fa-user-tie", iconClass: "st-icon--awards", subtitle: "Club officer-led sessions." },
     { key: "Featured",                    icon: "fa-star",     iconClass: "st-icon--featured", subtitle: "Highlighted featured sessions." },
+    { key: "Leading",                     icon: "fa-flag",     iconClass: "st-icon--info",   subtitle: "Leading roles that anchor a meeting." },
+    { key: "Functional",                  icon: "fa-tools",    iconClass: "st-icon--media",  subtitle: "Functional roles that support the meeting." },
     { key: "Standard",                    icon: "fa-cogs",     iconClass: "st-icon--info",   subtitle: "Sessions defined by the super club and shared with all clubs." },
     { key: "Custom",                      icon: "fa-building", iconClass: "st-icon--media",  subtitle: "Custom sessions specific to this club." },
   ];
@@ -2190,6 +2192,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const rg = (t.Role_Group || "").toLowerCase();
     if (rg === "officer") return "Officers";
     if (t.featured)       return "Featured";
+    if (rg === "leading") return "Leading";
+    if (rg === "functional") return "Functional";
     // "Standard" only means truly standard when it comes from the super club
     // (GLOBAL_CLUB_ID). Club-specific types tagged 'standard' belong in Custom.
     if (rg === "standard" && t.club_id === GLOBAL_CLUB_ID) return "Standard";

@@ -196,7 +196,7 @@ def get_dropdown_metadata():
     available_roles = MeetingRole.get_all_for_club(current_club_id)
     
     # Filter for standard/club-specific if needed, though get_all_for_club returns objects
-    available_roles = [r for r in available_roles if r.type in ['standard', 'club-specific']]
+    available_roles = [r for r in available_roles if r.type in ['standard', 'club-specific', 'leading', 'functional']]
     
     grouped_roles = {}
     for r in available_roles:

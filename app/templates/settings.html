@@ -148,6 +148,12 @@
   .role-type-club-specific {
     background-color: #faf5ff !important; /* Soft purple */
   }
+  .role-type-leading {
+    background-color: #ecfdf5 !important; /* Soft mint green */
+  }
+  .role-type-functional {
+    background-color: #f5f5f4 !important; /* Soft stone gray */
+  }
 
   #save-permissions-btn:disabled {
     background-color: #cccccc !important;
@@ -600,12 +606,11 @@
               <tr>
                 <th class="sortable" data-column-index="0">{{ _('ID') }}</th>
                 <th class="sortable" data-column-index="1">{{ _('Name') }}</th>
-                <th class="sortable" data-column-index="2">{{ _('Type') }}</th>
-                <th class="sortable" data-column-index="3">{{ _('Award Category') }}</th>
-                <th class="sortable" data-column-index="4">{{ _('Needs Approval') }}</th>
-                <th class="sortable" data-column-index="5">{{ _('Sole Owner') }}</th>
-                <th class="sortable" data-column-index="6">{{ _('Member Only') }}</th>
-                <th class="sortable" data-column-index="7">{{ _('Ticket') }}</th>
+                <th class="sortable" data-column-index="2">{{ _('Award Category') }}</th>
+                <th class="sortable" data-column-index="3">{{ _('Needs Approval') }}</th>
+                <th class="sortable" data-column-index="4">{{ _('Sole Owner') }}</th>
+                <th class="sortable" data-column-index="5">{{ _('Member Only') }}</th>
+                <th class="sortable" data-column-index="6">{{ _('Ticket') }}</th>
                 <!-- No actions -->
               </tr>
             </thead>
@@ -620,7 +625,6 @@
                     <span class="role-name-text">{{ _(role.name) }}</span>
                   </div>
                 </td>
-                <td>{{ _(role.type) }}</td>
                 <td>{{ _(role.award_category) if role.award_category else '' }}</td>
                 <td><input type="checkbox" {% if role.needs_approval %}checked{% endif %} disabled /></td>
                 <td><input type="checkbox" {% if role.has_single_owner %}checked{% endif %} disabled /></td>
@@ -651,13 +655,12 @@
               <tr>
                 <th class="sortable" data-column-index="0">{{ _('ID') }}</th>
                 <th class="sortable" data-column-index="1">{{ _('Name') }}</th>
-                <th class="sortable" data-column-index="2">{{ _('Type') }}</th>
-                <th class="sortable" data-column-index="3">{{ _('Award Category') }}</th>
-                <th class="sortable" data-column-index="4">{{ _('Needs Approval') }}</th>
-                <th class="sortable" data-column-index="5">{{ _('Sole Owner') }}</th>
-                <th class="sortable" data-column-index="6">{{ _('Member Only') }}</th>
-                <th class="sortable" data-column-index="7">{{ _('Ticket') }}</th>
-                <th data-column-index="8">{{ _('Actions') }}</th>
+                <th class="sortable" data-column-index="2">{{ _('Award Category') }}</th>
+                <th class="sortable" data-column-index="3">{{ _('Needs Approval') }}</th>
+                <th class="sortable" data-column-index="4">{{ _('Sole Owner') }}</th>
+                <th class="sortable" data-column-index="5">{{ _('Member Only') }}</th>
+                <th class="sortable" data-column-index="6">{{ _('Ticket') }}</th>
+                <th data-column-index="7">{{ _('Actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -665,14 +668,13 @@
               {% for role in roles_to_show %}
               <tr data-id="{{ role.id }}">
                 <td>{{ role.id }}</td>
-                <td data-field="name" class="role-type-{{ role.type }}">
+                <td data-field="name" data-type="{{ role.type }}" class="role-type-{{ role.type }}">
                   <div class="role-name-cell">
                     {% set icon_class = role.icon if role.icon and (role.icon[3:] in valid_fa_icons or not valid_fa_icons) else 'fa-question-circle' %}
                     <i class="fas {{ icon_class }}"></i>
                     <span class="role-name-text">{{ _(role.name) }}</span>
                   </div>
                 </td>
-                <td data-field="type" data-type="{{ role.type }}">{{ _(role.type) }}</td>
                 <td data-field="award_category" data-category="{{ role.award_category or '' }}">{{ _(role.award_category) if role.award_category else '' }}</td>
                 <td data-field="needs_approval">
                   <input type="checkbox" name="needs_approval" {% if role.needs_approval %}checked{% endif %} disabled />

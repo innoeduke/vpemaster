@@ -155,7 +155,7 @@ def _search_logs(query_str, can_view_all, current_club_id):
     ).join(SessionType).join(MeetingRole).join(Meeting, SessionLog.meeting_id == Meeting.id).filter(
         MeetingRole.name.isnot(None),
         MeetingRole.name != '',
-        MeetingRole.type.in_(['standard', 'club-specific']),
+        MeetingRole.type.in_(['standard', 'club-specific', 'leading', 'functional']),
         Meeting.club_id == current_club_id
     )
     
@@ -573,7 +573,7 @@ def _fetch_logs_with_filters(filters):
     ).join(SessionType).join(MeetingRole).join(Meeting, SessionLog.meeting_id == Meeting.id).filter(
         MeetingRole.name.isnot(None),
         MeetingRole.name != '',
-        MeetingRole.type.in_(['standard', 'club-specific']),
+        MeetingRole.type.in_(['standard', 'club-specific', 'leading', 'functional']),
         Meeting.club_id == current_club_id
     )
     

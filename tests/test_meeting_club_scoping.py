@@ -48,26 +48,21 @@ def test_meeting_creation_club_scoping(app):
 
         # 3. Create a dummy template CSV
         template_name = "test_template.csv"
-        template_path = os.path.join(app.static_folder, 'club_resources', '0', 'templates', template_name)
-        os.makedirs(os.path.dirname(template_path), exist_ok=True)
-        
-        with open(template_path, 'w', encoding='utf-8') as f:
-            writer = csv.writer(f)
-            writer.writerow(['Type', 'Title', 'Role', 'Owner', 'Min', 'Max'])
-            writer.writerow(['Club1Only', '', '', '', '5', '10'])
-
+        from app.services.meeting_template_service import _club_dir
         import shutil
+        
         club1_dir = os.path.join(app.static_folder, 'club_resources', str(club1.id))
         club2_dir = os.path.join(app.static_folder, 'club_resources', str(club2.id))
-        if os.path.exists(club1_dir):
-            shutil.rmtree(club1_dir)
-        if os.path.exists(club2_dir):
-            shutil.rmtree(club2_dir)
-
-        # Seed club directories so the test template is copied over
-        from app.services.meeting_template_service import list_templates
-        list_templates(club1.id)
-        list_templates(club2.id)
+        
+        club1_templates_dir = _club_dir(club1.id)
+        club2_templates_dir = _club_dir(club2.id)
+        
+        for t_dir in [club1_templates_dir, club2_templates_dir]:
+            template_path = os.path.join(t_dir, template_name)
+            with open(template_path, 'w', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow(['Type', 'Title', 'Role', 'Owner', 'Min', 'Max'])
+                writer.writerow(['Club1Only', '', '', '', '5', '10'])
 
         # 4. Generate logs for Club 1 meeting using Club 1 context
         from flask import session

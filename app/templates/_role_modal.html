@@ -26,16 +26,16 @@
             <legend>{{ _('Type:') }}</legend>
             <div class="radio-group" id="type-radio-group">
               <label class="radio-item">
-                <input type="radio" name="type" value="standard" required>
-                <span>{{ _('Standard') }}</span>
-              </label>
-              <label class="radio-item">
-                <input type="radio" name="type" value="club-specific">
-                <span>{{ _('Club Specific') }}</span>
-              </label>
-              <label class="radio-item">
-                <input type="radio" name="type" value="officer">
+                <input type="radio" name="type" value="officer" required>
                 <span>{{ _('Officer') }}</span>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="type" value="leading">
+                <span>{{ _('Leading') }}</span>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="type" value="functional" checked>
+                <span>{{ _('Functional') }}</span>
               </label>
             </div>
           </fieldset>
