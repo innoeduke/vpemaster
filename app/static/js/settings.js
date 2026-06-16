@@ -2455,8 +2455,7 @@ async function handleAchievementSubmit(e) {
 window.openEditRoleModal = openEditRoleModal;
 window.openEditSessionModal = openEditSessionModal;
 
-
-
+document.addEventListener('DOMContentLoaded', () => {
   // Settings initializations
   setupTableSorting("tickets-table");
   setupTableSorting("global-tickets-table");
