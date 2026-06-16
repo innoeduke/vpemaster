@@ -178,12 +178,12 @@
 }
 
 /* Vertical Button Alignment Fix */
-.page-container .btn {
+.roster-page-container .btn {
 	line-height: 1;
 	border: none !important;
 }
 
-.page-container .btn i {
+.roster-page-container .btn i {
 	vertical-align: middle;
 }
 
@@ -251,55 +251,55 @@
 	height: 40px;
 }
 
-.page-container .form-buttons .btn {
+.roster-page-container .form-buttons .btn {
 	height: 100%;
 	padding: 8px 18px;
 }
 
 @media (min-width: 769px) {
-	.page-container #roster-form .form-buttons .btn-label-text {
+	.roster-page-container #roster-form .form-buttons .btn-label-text {
 		display: none;
 	}
 
-	.page-container #roster-form .form-buttons .btn {
+	.roster-page-container #roster-form .form-buttons .btn {
 		padding: 8px 12px;
 		min-width: 44px;
 		justify-content: center;
 	}
 
-	.page-container .input-type .custom-select-trigger {
+	.roster-page-container .input-type .custom-select-trigger {
 		font-size: 0.72rem;
 		padding: 8px 8px;
 	}
 
-	.page-container .input-type .custom-select-trigger .selected-text {
+	.roster-page-container .input-type .custom-select-trigger .selected-text {
 		font-size: 0.72rem;
 	}
 
-	.page-container .input-type .custom-select-trigger .dropdown-icon {
+	.roster-page-container .input-type .custom-select-trigger .dropdown-icon {
 		margin-left: 6px;
 	}
 
-	.page-container .input-ticket .custom-select-trigger {
+	.roster-page-container .input-ticket .custom-select-trigger {
 		font-size: 0.72rem;
 		padding: 8px 8px;
 	}
 
-	.page-container .input-ticket .custom-select-trigger .selected-text {
+	.roster-page-container .input-ticket .custom-select-trigger .selected-text {
 		font-size: 0.72rem;
 	}
 
-	.page-container .input-ticket .custom-select-trigger .select-item-icon {
+	.roster-page-container .input-ticket .custom-select-trigger .select-item-icon {
 		font-size: 0.72rem;
 		margin-right: 6px;
 	}
 
-	.page-container .input-ticket .custom-select-trigger .dropdown-icon {
+	.roster-page-container .input-ticket .custom-select-trigger .dropdown-icon {
 		margin-left: 6px;
 	}
 }
 
-.page-container .btn {
+.roster-page-container .btn {
 	padding: 8px 24px;
 	height: 44px;
 	font-weight: 700;
@@ -316,17 +316,17 @@
 	box-shadow: 0 4px 6px rgba(119, 36, 50, 0.1);
 }
 
-.page-container .btn-success {
+.roster-page-container .btn-success {
 	background-color: #772432;
 	color: white;
 }
 
-.page-container .btn-success:hover {
+.roster-page-container .btn-success:hover {
 	background-color: #8e2a3d;
 	transform: translateY(-1px);
 }
 
-.page-container .btn-secondary {
+.roster-page-container .btn-secondary {
 	background-color: #6c757d;
 	color: white;
 }
@@ -427,12 +427,12 @@
 	gap: 0;
 }
 
-.page-container .contact-input-container input {
+.roster-page-container .contact-input-container input {
 	border-top-right-radius: 0;
 	border-bottom-right-radius: 0;
 }
 
-.page-container #add-contact-btn {
+.roster-page-container #add-contact-btn {
 	border-top-left-radius: 0;
 	border-bottom-left-radius: 0;
 	width: 40px;

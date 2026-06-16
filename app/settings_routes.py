@@ -119,6 +119,14 @@ def settings():
     merged_tickets = Ticket.get_all_for_club(club_id)
     tickets = [{'id': t.id, 'name': t.name, 'price': t.price, 'type': t.type, 'icon': t.icon, 'color': t.color, 'expired_at': t.expired_at.strftime('%H:%M') if t.expired_at else ''} for t in merged_tickets]
 
+    from app.models.voting import Award, AwardRole
+    from sqlalchemy.orm import joinedload
+    club_awards = Award.query.options(joinedload(Award.role_associations).joinedload(AwardRole.meeting_role))\
+        .filter_by(club_id=club_id).order_by(Award.name.asc()).all()
+    
+    current_club = db.session.get(Club, club_id)
+    default_award_ids = current_club.get_default_awards() or []
+
     return render_template('settings.html',
                           global_session_types=global_session_types,
                           local_session_types=local_session_types,
@@ -139,6 +147,8 @@ def settings():
                           global_tickets=global_tickets,
                           local_tickets=local_tickets,
                           tickets=tickets,
+                          club_awards=club_awards,
+                          default_award_ids=default_award_ids,
                           valid_fa_icons=sorted(get_valid_fa_icons()))
 
 
@@ -1710,6 +1720,186 @@ def toggle_module():
         
         status_str = "enabled" if enabled else "disabled"
         return jsonify(success=True, message=f"Module '{module_name}' has been {status_str}.")
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+
+@settings_bp.route('/api/settings/awards/add', methods=['POST'])
+@login_required
+@authorized_club_required
+def add_award():
+    if not is_authorized(Permissions.SETTINGS_EDIT):
+        return jsonify(success=False, message="Permission denied"), 403
+
+    club_id = get_current_club_id()
+    if not club_id:
+        return jsonify(success=False, message="No club context"), 400
+
+    data = request.json or {}
+    name = data.get('name', '').strip()
+    category = data.get('category', '').strip()
+    raw_votes = data.get('max_votes')
+    raw_winners = data.get('max_winners')
+    selected_role_ids = data.get('selected_role_ids', [])
+
+    if not name or not category:
+        return jsonify(success=False, message="Name and Category are required"), 400
+
+    try:
+        max_winners = max(0, int(raw_winners))
+    except (ValueError, TypeError):
+        max_winners = 1
+    try:
+        max_votes = max(0, int(raw_votes))
+    except (ValueError, TypeError):
+        max_votes = 1
+    max_votes = min(max_votes, max_winners)
+
+    from app.models.voting import Award, AwardRole
+    
+    # Check if category already exists in this club
+    existing = Award.query.filter_by(club_id=club_id, category=category).first()
+    if existing:
+        return jsonify(success=False, message=f"Award with category '{category}' already exists in this club"), 400
+
+    try:
+        award = Award(
+            club_id=club_id,
+            name=name,
+            category=category,
+            max_votes_per_user=max_votes,
+            max_winners=max_winners
+        )
+        db.session.add(award)
+        db.session.flush()
+
+        for role_id in selected_role_ids:
+            db.session.add(AwardRole(award_id=award.id, meeting_role_id=role_id))
+            
+        db.session.commit()
+        return jsonify(success=True, message=f"Award '{name}' added successfully.", award_id=award.id)
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+
+@settings_bp.route('/api/settings/awards/update', methods=['POST'])
+@login_required
+@authorized_club_required
+def update_award():
+    if not is_authorized(Permissions.SETTINGS_EDIT):
+        return jsonify(success=False, message="Permission denied"), 403
+
+    club_id = get_current_club_id()
+    if not club_id:
+        return jsonify(success=False, message="No club context"), 400
+
+    data = request.json or {}
+    award_id = data.get('id')
+    name = data.get('name', '').strip()
+    raw_votes = data.get('max_votes')
+    raw_winners = data.get('max_winners')
+    selected_role_ids = data.get('selected_role_ids', [])
+
+    if not award_id or not name:
+        return jsonify(success=False, message="ID and Name are required"), 400
+
+    try:
+        max_winners = max(0, int(raw_winners))
+    except (ValueError, TypeError):
+        max_winners = 1
+    try:
+        max_votes = max(0, int(raw_votes))
+    except (ValueError, TypeError):
+        max_votes = 1
+    max_votes = min(max_votes, max_winners)
+
+    from app.models.voting import Award, AwardRole
+    
+    award = Award.query.filter_by(id=award_id, club_id=club_id).first()
+    if not award:
+        return jsonify(success=False, message="Award not found"), 404
+
+    try:
+        award.name = name
+        award.max_votes_per_user = max_votes
+        award.max_winners = max_winners
+
+        # Update role associations
+        AwardRole.query.filter_by(award_id=award.id).delete()
+        for role_id in selected_role_ids:
+            db.session.add(AwardRole(award_id=award.id, meeting_role_id=role_id))
+
+        db.session.commit()
+        return jsonify(success=True, message=f"Award '{name}' updated successfully.")
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+
+@settings_bp.route('/api/settings/awards/delete/<int:award_id>', methods=['POST'])
+@login_required
+@authorized_club_required
+def delete_award(award_id):
+    if not is_authorized(Permissions.SETTINGS_EDIT):
+        return jsonify(success=False, message="Permission denied"), 403
+
+    club_id = get_current_club_id()
+    if not club_id:
+        return jsonify(success=False, message="No club context"), 400
+
+    from app.models.voting import Award
+    award = Award.query.filter_by(id=award_id, club_id=club_id).first()
+    if not award:
+        return jsonify(success=False, message="Award not found"), 404
+
+    try:
+        db.session.delete(award)
+        db.session.commit()
+        return jsonify(success=True, message="Award deleted successfully.")
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+
+@settings_bp.route('/api/settings/awards/default/save', methods=['POST'])
+@login_required
+@authorized_club_required
+def save_default_awards():
+    if not is_authorized(Permissions.SETTINGS_EDIT):
+        return jsonify(success=False, message="Permission denied"), 403
+
+    club_id = get_current_club_id()
+    if not club_id:
+        return jsonify(success=False, message="No club context"), 400
+
+    data = request.json or {}
+    default_award_ids = data.get('default_award_ids', [])
+
+    if not isinstance(default_award_ids, list):
+        return jsonify(success=False, message="default_award_ids must be a list"), 400
+
+    from app.models.voting import Award
+    validated_ids = []
+    for aid in default_award_ids:
+        try:
+            aid_int = int(aid)
+            award = Award.query.filter_by(id=aid_int, club_id=club_id).first()
+            if award:
+                validated_ids.append(aid_int)
+        except (ValueError, TypeError):
+            pass
+
+    from app.models.club import Club
+    current_club = db.session.get(Club, club_id)
+    if not current_club:
+        return jsonify(success=False, message="Club not found"), 404
+
+    try:
+        current_club.set_default_awards(validated_ids)
+        db.session.commit()
+        return jsonify(success=True, message="Default awards updated successfully.")
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500

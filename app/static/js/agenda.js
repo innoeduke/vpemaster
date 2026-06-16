@@ -614,6 +614,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // 2. Max Winners
       const tdMaxWinners = document.createElement('td');
+      tdMaxWinners.style.textAlign = 'center';
       const maxWinnersInput = document.createElement('input');
       maxWinnersInput.type = 'number';
       maxWinnersInput.min = '0';
@@ -621,6 +622,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // 3. Max Votes
       const tdMaxVotes = document.createElement('td');
+      tdMaxVotes.style.textAlign = 'center';
       const maxVotesInput = document.createElement('input');
       maxVotesInput.type = 'number';
       maxVotesInput.min = '0';
@@ -689,6 +691,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // 5. Delete button
       const tdActions = document.createElement('td');
+      tdActions.style.textAlign = 'center';
       const delBtn = document.createElement('button');
       delBtn.type = 'button';
       delBtn.className = 'btn-delete-award';

@@ -11,7 +11,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-container"
+<div class="page-container roster-page-container"
     data-club-short-name="{{ club.short_name if club and club.short_name else '' }}"
     data-meeting-number="{{ selected_meeting.Meeting_Number if selected_meeting else '' }}"
     data-meeting-date="{{ selected_meeting.Meeting_Date.strftime('%Y-%m-%d') if selected_meeting and selected_meeting.Meeting_Date else '' }}"

@@ -614,6 +614,84 @@ def test_unified_awards_saving(client, app, default_club, staff_user):
             assert 'Best Dresser Roles' not in html_voting
 
 
+def test_unified_awards_deletion(client, app, default_club, staff_user):
+    """Verify that omitting a custom award from the unified awards payload deletes it from the database for this meeting."""
+    with app.app_context():
+        # Ensure staff role has MEETING_MANAGE permission
+        from app.models import AuthRole, Permission
+        from app.auth.permissions import Permissions
+        staff_role = AuthRole.query.filter_by(name='Staff').first()
+        agenda_edit_perm = Permission.query.filter_by(name=Permissions.MEETING_MANAGE).first()
+        if staff_role and agenda_edit_perm and agenda_edit_perm not in staff_role.permissions:
+            staff_role.permissions.append(agenda_edit_perm)
+            db.session.commit()
+
+        # Create meeting
+        from datetime import date
+        meeting = Meeting(
+            Meeting_Number=998,
+            Meeting_Date=date.today(),
+            club_id=default_club.id,
+            status='finished',
+        )
+        db.session.add(meeting)
+        db.session.commit()
+        meeting_id = meeting.id
+
+        # Pre-populate a custom award config and winner
+        from app.models.voting import MeetingAwardConfig, MeetingAwardWinner, Award
+        award_obj = Award(club_id=default_club.id, name="Temp Custom", category="temp-custom")
+        db.session.add(award_obj)
+        db.session.commit()
+
+        cfg = MeetingAwardConfig(meeting_id=meeting_id, award_id=award_obj.id, award_category="temp-custom", max_votes_per_user=1, max_winners=1)
+        winner = MeetingAwardWinner(meeting_id=meeting_id, award_id=award_obj.id, award_category="temp-custom", contact_id=1)
+        db.session.add_all([cfg, winner])
+        db.session.commit()
+
+    # Authenticate client
+    client.post('/login', data=dict(
+        username='staff',
+        password='password'
+    ))
+    with client.session_transaction() as sess:
+        sess['club_id'] = default_club.id
+        sess['current_club_id'] = default_club.id
+
+    # Post update omitting temp-custom
+    with patch('app.agenda_routes.is_authorized', return_value=True):
+        resp = client.post(
+            '/agenda/update',
+            json={
+                'meeting_id': meeting_id,
+                'agenda_data': [],
+                'meeting_title': 'Deleted Awards Theme',
+                'awards': [
+                    # Keep speaker but omit temp-custom
+                    {
+                        'category': 'speaker',
+                        'label': 'Best Speaker',
+                        'max_votes': 1,
+                        'max_winners': 1,
+                        'winner_ids': []
+                    }
+                ]
+            }
+        )
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data.get('success') is True
+
+        with app.app_context():
+            from app.models.voting import MeetingAwardConfig, MeetingAwardWinner
+            # Verify temp-custom config and winner are deleted
+            cfg_check = MeetingAwardConfig.query.filter_by(meeting_id=meeting_id, award_category="temp-custom").first()
+            winner_check = MeetingAwardWinner.query.filter_by(meeting_id=meeting_id, award_category="temp-custom").first()
+            assert cfg_check is None
+            assert winner_check is None
+
+
 def test_awards_validation_and_disabling(client, app, default_club, staff_user):
     """Verify that updating awards enforces max_votes <= max_winners, allows 0 to disable, hides from voting page, and blocks votes."""
     with app.app_context():
@@ -1053,4 +1131,81 @@ def test_award_role_associations_legacy_fallback(client, app, default_club, staf
                 candidates = [r for r in roles if r.get('award_category') == 'best-legacy']
                 owner_ids = {c['owner_id'] for c in candidates}
                 assert c1.id in owner_ids
+
+
+def test_candidate_role_name_on_voting_page(client, app, default_club, staff_user):
+    """Verify that candidates on the voting page display their actual meeting role name when available,
+    and fallback to 'Candidate' when they have no role in the meeting."""
+    with app.app_context():
+        _ensure_staff_has_meeting_manage(app)
+
+        c1 = Contact(Name="Has Role Candidate", Type="Member")
+        c2 = Contact(Name="No Role Candidate", Type="Member")
+        db.session.add_all([c1, c2])
+        db.session.commit()
+        db.session.add(ContactClub(contact_id=c1.id, club_id=default_club.id))
+        db.session.add(ContactClub(contact_id=c2.id, club_id=default_club.id))
+
+        t = Ticket.query.filter_by(name='Standard').first()
+        if not t:
+            t = Ticket(name='Standard', price=0)
+            db.session.add(t)
+            db.session.commit()
+
+        from datetime import date
+        meeting = Meeting(
+            Meeting_Number=1004,
+            Meeting_Date=date.today(),
+            club_id=default_club.id,
+            status='finished',
+        )
+        db.session.add(meeting)
+        db.session.commit()
+        meeting_id = meeting.id
+
+        # Add both to roster so they are candidates
+        r1 = Roster(meeting_id=meeting_id, contact_id=c1.id, ticket_id=t.id)
+        r2 = Roster(meeting_id=meeting_id, contact_id=c2.id, ticket_id=t.id)
+        db.session.add_all([r1, r2])
+        db.session.commit()
+
+        # c1 has role "Timer"
+        mr_timer = MeetingRole(name="Timer", type="standard", needs_approval=False,
+                                has_single_owner=True, club_id=default_club.id)
+        db.session.add(mr_timer)
+        db.session.commit()
+
+        from app.models import OwnerMeetingRoles
+        db.session.add(OwnerMeetingRoles(meeting_id=meeting_id, role_id=mr_timer.id, contact_id=c1.id))
+        db.session.commit()
+
+        # Create a config with no associations, so it defaults to roster_contacts
+        from app.models.voting import MeetingAwardConfig
+        cfg = MeetingAwardConfig(
+            meeting_id=meeting_id,
+            award_category='best-custom',
+            max_votes_per_user=1,
+            max_winners=1,
+        )
+        db.session.add(cfg)
+        db.session.commit()
+
+        from app.voting_routes import _get_roles_for_voting
+        m_obj = db.session.get(Meeting, meeting_id)
+        with app.test_request_context():
+            from app.models import User
+            staff = db.session.get(User, staff_user.id)
+            from flask_login import login_user
+            login_user(staff)
+            with patch('app.voting_routes.is_authorized', return_value=True):
+                roles = _get_roles_for_voting(meeting_id, m_obj)
+                candidates = [r for r in roles if r.get('award_category') == 'best-custom']
+                
+                # Check that c1 has role 'Timer' and c2 has role 'Candidate'
+                c1_entry = next(c for c in candidates if c['owner_id'] == c1.id)
+                c2_entry = next(c for c in candidates if c['owner_id'] == c2.id)
+                
+                assert c1_entry['role'] == 'Timer'
+                assert c2_entry['role'] == 'Candidate'
+
 

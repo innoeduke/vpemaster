@@ -22,6 +22,7 @@ class Club(db.Model):
     founded_date = db.Column(db.Date, nullable=True)
     status = db.Column(db.String(50), nullable=False, default='active')
     current_excomm_id = db.Column(db.Integer, db.ForeignKey('excomm.id', use_alter=True, name='fk_club_current_excomm'), nullable=True)
+    default_awards = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
@@ -97,6 +98,20 @@ class Club(db.Model):
             'founded_date': self.founded_date.isoformat() if self.founded_date else None,
             'status': self.status,
             'current_excomm_id': self.current_excomm_id,
+            'default_awards': self.get_default_awards(),
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
+
+    def get_default_awards(self):
+        if not self.default_awards:
+            return None
+        try:
+            import json
+            return json.loads(self.default_awards)
+        except Exception:
+            return None
+
+    def set_default_awards(self, awards_list):
+        import json
+        self.default_awards = json.dumps(awards_list)

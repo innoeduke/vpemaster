@@ -3,7 +3,9 @@
 {% block title %}Settings{% endblock %}
 
 {% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/template_manager.css') }}">
 <style>
+
   #roles-permissions .permissions-matrix-container {
     padding: 20px 0;
   }
@@ -374,6 +376,9 @@
       </button>
       <button class="nav-item" onclick="openTab(event, 'roles-permissions')">
         {{ _('Permissions') }}
+      </button>
+      <button class="nav-item" onclick="openTab(event, 'awards-settings')">
+        {{ _('Awards') }}
       </button>
       <button class="nav-item" onclick="openTab(event, 'audit-log')">
         {{ _('Audit Log') }}
@@ -853,6 +858,87 @@
     </div>
   </div>
 
+  <div id="awards-settings" class="tab-content" style="display: none;">
+    <div class="settings-header">
+      <h2>{{ _('Club Awards Management') }}</h2>
+      {% if is_authorized(Permissions.SETTINGS_EDIT) %}
+        <div class="button-group" style="display: flex; gap: 10px; align-items: center;">
+          <button id="save-defaults-btn" class="btn btn-outline" onclick="saveDefaultAwards()">
+            <i class="fas fa-save"></i> {{ _('Save Default Awards') }}
+          </button>
+          <button id="add-award-btn" class="btn btn-primary" onclick="openAwardModal()">
+            <i class="fas fa-plus"></i> {{ _('Add New Award') }}
+          </button>
+        </div>
+      {% endif %}
+    </div>
+    
+    <div class="table-container">
+      <table id="club-awards-table">
+        <thead>
+          <tr>
+            <th style="width: 80px; text-align: center;">{{ _('Default') }}</th>
+            <th>{{ _('Award Name') }}</th>
+            <th>{{ _('Category') }}</th>
+            <th style="width: 120px; text-align: center;">{{ _('Max Votes') }}</th>
+            <th style="width: 120px; text-align: center;">{{ _('Max Winners') }}</th>
+            <th>{{ _('Associated Roles') }}</th>
+            {% if is_authorized(Permissions.SETTINGS_EDIT) %}
+              <th style="width: 150px; text-align: center;">{{ _('Actions') }}</th>
+            {% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for award in club_awards %}
+            <tr data-award-id="{{ award.id }}">
+              <td style="text-align: center;">
+                <input type="checkbox" class="default-award-checkbox" value="{{ award.id }}" 
+                       {% if award.id in default_award_ids %}checked{% endif %}
+                       {% if not is_authorized(Permissions.SETTINGS_EDIT) %}disabled{% endif %}>
+              </td>
+              <td class="award-name">{{ award.name }}</td>
+              <td class="award-category">{{ award.category }}</td>
+              <td style="text-align: center;" class="award-max-votes">{{ award.max_votes_per_user }}</td>
+              <td style="text-align: center;" class="award-max-winners">{{ award.max_winners }}</td>
+              <td class="award-roles" data-role-ids="{{ award.role_associations | map(attribute='meeting_role_id') | list | tojson }}">
+                {% if award.role_associations %}
+                  {% for assoc in award.role_associations %}
+                    <span class="badge" style="background-color: #e2e8f0; color: #1e293b; margin-right: 4px; padding: 4px 8px; border-radius: 4px; font-size: 0.85em;">
+                      {{ _(assoc.meeting_role.name) }}
+                    </span>
+                  {% endfor %}
+                {% else %}
+                  <span style="color: #94a3b8; font-style: italic;">{{ _('No roles associated (default to roster)') }}</span>
+                {% endif %}
+              </td>
+              {% if is_authorized(Permissions.SETTINGS_EDIT) %}
+                <td style="text-align: center;">
+                  <div class="tm-action-buttons">
+                    <button type="button" class="tm-action-btn edit-award-btn" onclick="openAwardModal({{ award.id }})" title="{{ _('Edit') }}">
+                      <i class="fas fa-pen"></i>
+                    </button>
+                    <button type="button" class="tm-action-btn tm-action-btn--danger delete-award-btn" onclick="deleteAward({{ award.id }})" title="{{ _('Delete') }}">
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
+                  </div>
+                </td>
+              {% endif %}
+            </tr>
+          {% endfor %}
+          {% if not club_awards %}
+            <tr>
+              <td colspan="7" style="text-align: center; color: #94a3b8; font-style: italic;">
+                {{ _('No awards configured for this club.') }}
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+    
+
+  </div>
+
   <div id="audit-log" class="tab-content">
     <div class="settings-header">
       <h2>{{ _('Permission Audit Log') }}</h2>
@@ -900,6 +986,62 @@
       style="width: 90%; display: block; text-decoration: none; height: 40px; line-height: 40px; margin: 0 auto; font-family: 'Montserrat', sans-serif; font-weight: 600;">
       {{ _('Return to Agenda') }}
     </a>
+  </div>
+</div>
+
+<!-- Award Edit/Add Modal -->
+<div id="award-edit-modal" class="st-modal-backdrop ap-backdrop" style="display: none;">
+  <div class="st-modal-panel ap-panel" style="max-width: 750px;">
+    <div class="st-modal-header">
+      <div>
+        <h2 class="st-modal-title" id="award-modal-title">{{ _('Add/Edit Club Award') }}</h2>
+        <p class="st-modal-subtitle">{{ _('Configure the details and associate roles for this award.') }}</p>
+      </div>
+      <button type="button" class="st-modal-close" onclick="closeAwardModal()" aria-label="Close">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <form id="award-edit-form" style="display: flex; flex-direction: column; overflow: hidden; margin: 0; width: 100%;">
+      <input type="hidden" id="edit-award-id" name="id">
+      
+      <div class="st-modal-body ap-body" style="max-height: 60vh; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding: 20px;">
+        <!-- Award Details Section -->
+        <div class="st-section ap-section" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px;">
+          <div class="form-group-row" style="display: flex; gap: 20px;">
+            <div class="form-group compact-form" style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+              <label for="edit-award-name" class="required" style="font-weight: 600; font-size: 13px; color: #475569; text-align: left; display: block; margin: 0;">{{ _('Award Name:') }}</label>
+              <input type="text" id="edit-award-name" name="name" required class="form-control" style="width: 100%; border-radius: 8px; padding: 8px 12px; border: 1px solid #cbd5e1; font-family: 'Inter', sans-serif; font-size: 14px; box-sizing: border-box;" placeholder="{{ _('e.g. Best Evaluator') }}">
+            </div>
+            <div class="form-group compact-form" style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+              <label for="edit-award-category" class="required" style="font-weight: 600; font-size: 13px; color: #475569; text-align: left; display: block; margin: 0;">{{ _('Category Slug:') }}</label>
+              <input type="text" id="edit-award-category" name="category" required class="form-control" style="width: 100%; border-radius: 8px; padding: 8px 12px; border: 1px solid #cbd5e1; font-family: 'Inter', sans-serif; font-size: 14px; box-sizing: border-box;" placeholder="{{ _('e.g. evaluator') }}" 
+                     pattern="[a-z0-9-]+" title="{{ _('Lowercase letters, numbers, and hyphens only') }}">
+            </div>
+          </div>
+          
+          <div class="form-group-row" style="display: flex; gap: 20px;">
+            <div class="form-group compact-form" style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+              <label for="edit-award-max-winners" class="required" style="font-weight: 600; font-size: 13px; color: #475569; text-align: left; display: block; margin: 0;">{{ _('Max Winners:') }}</label>
+              <input type="number" id="edit-award-max-winners" name="max_winners" min="1" required class="form-control" style="width: 100%; border-radius: 8px; padding: 8px 12px; border: 1px solid #cbd5e1; font-family: 'Inter', sans-serif; font-size: 14px; box-sizing: border-box;" value="1">
+            </div>
+            <div class="form-group compact-form" style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+              <label for="edit-award-max-votes" class="required" style="font-weight: 600; font-size: 13px; color: #475569; text-align: left; display: block; margin: 0;">{{ _('Max Votes per User:') }}</label>
+              <input type="number" id="edit-award-max-votes" name="max_votes" min="1" required class="form-control" style="width: 100%; border-radius: 8px; padding: 8px 12px; border: 1px solid #cbd5e1; font-family: 'Inter', sans-serif; font-size: 14px; box-sizing: border-box;" value="1">
+            </div>
+          </div>
+        </div>
+
+        <!-- Role Selection Section (Populated dynamically) -->
+        <div id="award-roles-container" style="display: flex; flex-direction: column; gap: 14px;">
+          <!-- Will be populated dynamically by JS in ap-body style -->
+        </div>
+      </div>
+      
+      <div class="st-modal-footer" style="padding: 16px 28px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px; background: #f8fafc; margin: 0; width: 100%; box-sizing: border-box;">
+        <button type="button" class="st-modal-cancel" onclick="closeAwardModal()">{{ _('Cancel') }}</button>
+        <button type="submit" class="st-modal-ok">{{ _('OK') }}</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -980,6 +1122,7 @@
 <script src="{{ url_for('static', filename='js/autocomplete.js') }}"></script>
 <script src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>
 <script src="{{ url_for('static', filename='js/settings_excomm.js') }}"></script>
+<script src="{{ url_for('static', filename='js/settings_awards.js') }}"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     // Check if mobile (width < 768px matches typical tablet/mobile breakpoint)

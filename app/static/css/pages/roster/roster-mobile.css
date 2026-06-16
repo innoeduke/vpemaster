@@ -112,17 +112,17 @@
     /* Reset desktop flex-basis which becomes height in column mode */
   }
 
-  .page-container .form-buttons {
+  .roster-page-container .form-buttons {
     width: 100%;
     margin-top: 5px;
     height: auto !important;
   }
 
-  .page-container .btn {
+  .roster-page-container .btn {
     width: 100%;
   }
 
-  .page-container .filter-right {
+  .roster-page-container .filter-right {
     display: flex;
     flex-direction: row;
     gap: 10px;
@@ -131,12 +131,12 @@
     justify-content: space-between;
   }
 
-  .page-container .filter-right .trend-btn {
+  .roster-page-container .filter-right .trend-btn {
     flex: 1;
     margin: 0 !important;
   }
 
-  .page-container .filter-right .action-icon-btn {
+  .roster-page-container .filter-right .action-icon-btn {
     width: 44px;
     min-width: 44px;
     margin: 0 !important;

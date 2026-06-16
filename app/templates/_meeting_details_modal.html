@@ -244,6 +244,26 @@
         }
 
         /* --- Awards table --- */
+        /* Reset: neutralize global .modal-content input/select rules */
+        #meetingDetailsModal .mdm-awards-table input,
+        #meetingDetailsModal .mdm-awards-table select,
+        #meetingDetailsModal .mdm-awards-table button {
+            width: auto !important;
+            max-width: none !important;
+            display: inline-block !important;
+            height: auto !important;
+            min-height: 0 !important;
+            font-size: 13px !important;
+            font-family: "Inter", sans-serif !important;
+            font-weight: 400 !important;
+            padding: 6px 8px !important;
+            box-sizing: border-box !important;
+            margin: 0 !important;
+            border: 1px solid #cbd5e0 !important;
+            border-radius: 6px !important;
+            color: #1e293b !important;
+            background: #fff !important;
+        }
         #meetingDetailsModal .mdm-awards-table-wrap {
             overflow-x: auto;
         }
@@ -251,8 +271,10 @@
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
+            border: none !important;
             font-size: 13px;
             font-family: "Inter", sans-serif;
+            table-layout: fixed !important;
         }
         #meetingDetailsModal .mdm-awards-table thead th {
             text-align: left;
@@ -278,102 +300,111 @@
             color: #1e293b;
             white-space: nowrap;
         }
+        /* Award name text input - full column width */
         #meetingDetailsModal .mdm-awards-table .award-name-input {
-            width: 100%;
-            padding: 6px 8px;
-            border: 1px solid #cbd5e0;
-            border-radius: 6px;
-            font-size: 13px;
-            font-family: "Inter", sans-serif;
-            color: #1e293b;
-            background: #fff;
+            width: 100% !important;
         }
         #meetingDetailsModal .mdm-awards-table .award-name-input:focus {
             outline: none;
-            border-color: #772432;
+            border-color: #772432 !important;
             box-shadow: 0 0 0 2px rgba(119, 36, 50, 0.12);
         }
+        /* Number inputs - fixed narrow width, center-aligned text */
         #meetingDetailsModal .mdm-awards-table input[type="number"] {
-            width: 60px;
-            padding: 6px 8px;
-            border: 1px solid #cbd5e0;
-            border-radius: 6px;
-            font-size: 13px;
-            font-family: "Inter", sans-serif;
-            text-align: center;
-            color: #1e293b;
-            background: #fff;
+            width: 56px !important;
+            text-align: center !important;
         }
         #meetingDetailsModal .mdm-awards-table input[type="number"]:focus {
             outline: none;
-            border-color: #772432;
+            border-color: #772432 !important;
             box-shadow: 0 0 0 2px rgba(119, 36, 50, 0.12);
         }
+        /* Winner selects - full column width */
         #meetingDetailsModal .mdm-awards-table select {
-            width: 100%;
-            padding: 6px 8px;
-            border: 1px solid #cbd5e0;
-            border-radius: 6px;
-            font-size: 13px;
-            font-family: "Inter", sans-serif;
-            color: #1e293b;
-            background: #fff;
-            min-width: 120px;
+            width: 100% !important;
+            display: block !important;
+            min-width: 0 !important;
         }
         #meetingDetailsModal .mdm-awards-table select:focus {
             outline: none;
-            border-color: #772432;
+            border-color: #772432 !important;
             box-shadow: 0 0 0 2px rgba(119, 36, 50, 0.12);
         }
         #meetingDetailsModal .mdm-awards-table select:disabled {
-            background: #f1f5f9;
-            color: #94a3b8;
+            background: #f1f5f9 !important;
+            color: #94a3b8 !important;
             cursor: not-allowed;
-            border-color: #e2e8f0;
+            border-color: #e2e8f0 !important;
+        }
+        /* Center-align the Max Winners, Max Votes, and Delete columns */
+        #meetingDetailsModal .mdm-awards-table td:nth-child(2),
+        #meetingDetailsModal .mdm-awards-table td:nth-child(3),
+        #meetingDetailsModal .mdm-awards-table td:nth-child(6) {
+            text-align: center !important;
+        }
+        /* Roles picker button - constrained width */
+        #meetingDetailsModal .mdm-awards-table .ap-trigger {
+            display: block !important;
+            width: 100% !important;
+            max-width: none !important;
+            cursor: pointer;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: border-color 0.15s, background-color 0.15s;
+        }
+        #meetingDetailsModal .mdm-awards-table .ap-trigger:hover {
+            background-color: #f8fafc !important;
+            border-color: #94a3b8 !important;
         }
         #meetingDetailsModal .mdm-awards-table .winner-selects {
-            display: flex;
+            display: flex !important;
             flex-direction: column;
             gap: 6px;
         }
+        /* Delete button - icon only, minimal size */
         #meetingDetailsModal .mdm-awards-table .btn-delete-award {
-            background: none;
-            border: none;
-            color: #94a3b8;
+            background: none !important;
+            border: none !important;
+            color: #94a3b8 !important;
             cursor: pointer;
-            padding: 4px 6px;
-            border-radius: 6px;
-            font-size: 13px;
+            padding: 4px 6px !important;
+            font-size: 13px !important;
+            width: auto !important;
             transition: color 0.15s, background 0.15s;
         }
         #meetingDetailsModal .mdm-awards-table .btn-delete-award:hover {
-            color: #dc2626;
-            background: rgba(220, 38, 38, 0.08);
+            color: #dc2626 !important;
+            background: rgba(220, 38, 38, 0.08) !important;
         }
         #meetingDetailsModal .mdm-awards-table .btn-delete-award:disabled {
-            color: #e2e8f0;
+            color: #e2e8f0 !important;
             cursor: not-allowed;
-            background: none;
+            background: none !important;
         }
         #meetingDetailsModal .mdm-add-award-btn {
-            display: inline-flex;
+            display: inline-flex !important;
             align-items: center;
             gap: 6px;
             margin-top: 10px;
-            padding: 7px 14px;
-            font-size: 12.5px;
-            font-weight: 600;
-            color: #772432;
-            background: rgba(119, 36, 50, 0.06);
-            border: 1px dashed rgba(119, 36, 50, 0.3);
-            border-radius: 7px;
+            padding: 7px 14px !important;
+            font-size: 12.5px !important;
+            font-weight: 600 !important;
+            color: #772432 !important;
+            background: rgba(119, 36, 50, 0.06) !important;
+            border: 1px dashed rgba(119, 36, 50, 0.3) !important;
+            border-radius: 7px !important;
             cursor: pointer;
             transition: background 0.15s, border-color 0.15s;
-            font-family: "Inter", sans-serif;
+            font-family: "Inter", sans-serif !important;
+            width: auto !important;
+            height: auto !important;
+            min-height: 0 !important;
         }
         #meetingDetailsModal .mdm-add-award-btn:hover {
-            background: rgba(119, 36, 50, 0.12);
-            border-color: rgba(119, 36, 50, 0.5);
+            background: rgba(119, 36, 50, 0.12) !important;
+            border-color: rgba(119, 36, 50, 0.5) !important;
         }
 
         /* --- Responsive --- */
@@ -385,7 +416,7 @@
             #meetingDetailsModal .mdm-grid--three { grid-template-columns: 1fr; }
             #meetingDetailsModal .mdm-section { padding: 16px; }
             #meetingDetailsModal .mdm-awards-table { font-size: 12px; }
-            #meetingDetailsModal .mdm-awards-table input[type="number"] { width: 48px; }
+            #meetingDetailsModal .mdm-awards-table input[type="number"] { width: 48px !important; }
         }
     </style>
 
@@ -489,12 +520,12 @@
           <table class="mdm-awards-table" id="awards-table">
             <thead>
               <tr>
-                <th>Award Name</th>
-                <th style="width:80px">Max Winners</th>
-                <th style="width:80px">Max Votes</th>
-                <th>Roles</th>
-                <th>Winner(s)</th>
-                <th style="width:44px"></th>
+                <th style="width: 22%;">Award Name</th>
+                <th style="width: 11%; text-align: center; white-space: normal;">Max<br>Winners</th>
+                <th style="width: 11%; text-align: center; white-space: normal;">Max<br>Votes</th>
+                <th style="width: 26%;">Roles</th>
+                <th style="width: 24%;">Winner(s)</th>
+                <th style="width: 6%; text-align: center;"></th>
               </tr>
             </thead>
             <tbody id="awards-table-body">

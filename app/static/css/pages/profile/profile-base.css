@@ -123,7 +123,7 @@
 }
 
 /* --- Global Button Refinement --- */
-.btn {
+.profile-container .btn {
 	padding: 10px 24px;
 	border-radius: 8px;
 	font-weight: 600;
@@ -137,32 +137,22 @@
 	min-width: 100px;
 }
 
-.btn-primary,
-.btn-success {
+.profile-container .btn-primary {
 	background-color: #772432;
 	color: white;
 }
 
-.btn-primary:hover,
-.btn-success:hover {
+.profile-container .btn-primary:hover {
 	background-color: #5a1b26;
 	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.btn-success {
-	background-color: #4CAF50;
-}
-
-.btn-success:hover {
-	background-color: #43A047;
-}
-
-.btn-warning {
+.profile-container .btn-warning {
 	background-color: #ff9800;
 	color: white;
 }
 
-.btn-warning:hover {
+.profile-container .btn-warning:hover {
 	background-color: #f57c00;
 }
 

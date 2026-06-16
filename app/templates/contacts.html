@@ -2,6 +2,7 @@
 head_extra %}
  
 {% endblock %} {% block content %}
+<div class="contacts-container">
 <h1><i class="fas fa-address-book"></i> {{ _('Contacts') }}</h1>
  
 <div class="contact-action-bar">
@@ -255,8 +256,10 @@ head_extra %}
   </div>
 </div>
 
-{% include '_contact_modal.html' %} {% include '_duplicate_modal.html' %} {%
-include '_merge_modal.html' %}
+</div>
+
+{% include '_contact_modal.html' %} {% include '_duplicate_modal.html' %} {% include '_merge_modal.html' %}
+
 <script id="contacts-data" type="application/json">
   {{ initial_contacts|tojson }}
 </script>

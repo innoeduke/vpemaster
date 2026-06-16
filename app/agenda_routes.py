@@ -53,14 +53,48 @@ def get_meeting_awards(meeting):
 
     # 1. Seed with defaults
     awards_map = {}
-    for d in DEFAULT_AWARD_CATEGORIES:
+    
+    # Get club-specific defaults if configured, otherwise fall back to global
+    default_categories = []
+    club_defaults = None
+    if meeting and meeting.club:
+        default_award_ids = meeting.club.get_default_awards()
+        if default_award_ids:
+            from .models.voting import Award
+            # Fetch default awards from DB
+            club_defaults = Award.query.filter(Award.id.in_(default_award_ids)).all()
+            
+    if club_defaults:
+        for a in club_defaults:
+            role_ids = [ra.meeting_role_id for ra in a.role_associations]
+            default_categories.append({
+                'category': a.category,
+                'label': a.name,
+                'award_id': a.id,
+                'max_votes': a.max_votes_per_user,
+                'max_winners': a.max_winners,
+                'selected_role_ids': role_ids
+            })
+    else:
+        for d in DEFAULT_AWARD_CATEGORIES:
+            default_categories.append({
+                'category': d['category'],
+                'label': d['label'],
+                'award_id': None,
+                'max_votes': 1,
+                'max_winners': 1,
+                'selected_role_ids': []
+            })
+        
+    for d in default_categories:
         awards_map[d['category']] = {
             'category': d['category'],
             'label': d['label'],
-            'max_votes': 1,
-            'max_winners': 1,
+            'award_id': d['award_id'],
+            'max_votes': d['max_votes'],
+            'max_winners': d['max_winners'],
             'associated_role': None,
-            'selected_role_ids': [],
+            'selected_role_ids': d['selected_role_ids'],
             'winner_ids': [],
             'is_default': True,
         }
@@ -78,10 +112,13 @@ def get_meeting_awards(meeting):
                 awards_map[c.award_category]['max_winners'] = c.max_winners
                 awards_map[c.award_category]['associated_role'] = c.associated_role
                 awards_map[c.award_category]['selected_role_ids'] = selected_role_ids
+                if c.award_id:
+                    awards_map[c.award_category]['award_id'] = c.award_id
             else:
                 awards_map[c.award_category] = {
                     'category': c.award_category,
                     'label': c.award_category.replace('-', ' ').replace('_', ' ').title(),
+                    'award_id': c.award_id,
                     'max_votes': c.max_votes_per_user,
                     'max_winners': c.max_winners,
                     'associated_role': c.associated_role,
@@ -95,11 +132,14 @@ def get_meeting_awards(meeting):
         for w in winners:
             if w.award_category in awards_map:
                 awards_map[w.award_category]['winner_ids'].append(w.contact_id)
+                if w.award_id:
+                    awards_map[w.award_category]['award_id'] = w.award_id
             else:
                 # A winner exists for a category with no config yet — create entry
                 awards_map[w.award_category] = {
                     'category': w.award_category,
                     'label': w.award_category.replace('-', ' ').replace('_', ' ').title(),
+                    'award_id': w.award_id,
                     'max_votes': 1,
                     'max_winners': 1,
                     'associated_role': None,
@@ -109,7 +149,7 @@ def get_meeting_awards(meeting):
                 }
 
     # 4. Return as ordered list: defaults first (in order), then extras alphabetically
-    default_cats = [d['category'] for d in DEFAULT_AWARD_CATEGORIES]
+    default_cats = [d['category'] for d in default_categories]
     result = [awards_map[cat] for cat in default_cats if cat in awards_map]
     extras = sorted(
         [a for a in awards_map.values() if a['category'] not in default_cats],
@@ -1690,10 +1730,29 @@ def update_logs():
             # Delete existing winners for this category
             MeetingAwardWinner.query.filter_by(meeting_id=meeting.id, award_category=category).delete()
             
+            from .models.voting import Award
+            award_obj = Award.query.filter_by(club_id=meeting.club_id, category=category).first()
+            if not award_obj:
+                name = category.replace('-', ' ').replace('_', ' ').title()
+                award_obj = Award(
+                    club_id=meeting.club_id,
+                    name=name,
+                    category=category,
+                    max_votes_per_user=1,
+                    max_winners=1
+                )
+                db.session.add(award_obj)
+                db.session.flush()
+
             for contact_id in contact_ids:
                 if contact_id:
                     # Insert the new winner
-                    new_winner = MeetingAwardWinner(meeting_id=meeting.id, award_category=category, contact_id=contact_id)
+                    new_winner = MeetingAwardWinner(
+                        meeting_id=meeting.id,
+                        award_category=category,
+                        award_id=award_obj.id,
+                        contact_id=contact_id
+                    )
                     db.session.add(new_winner)
 
         # ---- Unified Awards Handling ----
@@ -1701,7 +1760,7 @@ def update_logs():
         # Otherwise fall back to the legacy per-category keys.
         awards_data = data.get('awards')
         if awards_data is not None:
-            from .models.voting import MeetingAwardConfig, AwardRoleConfig
+            from .models.voting import MeetingAwardConfig, AwardRoleConfig, Award, AwardRole
             # Clear all existing configs and winners for this meeting
             MeetingAwardConfig.query.filter_by(meeting_id=meeting.id).delete()
             MeetingAwardWinner.query.filter_by(meeting_id=meeting.id).delete()
@@ -1757,10 +1816,37 @@ def update_logs():
                 if not legacy_associated_role and selected_role_ids:
                     legacy_associated_role = valid_role_ids[selected_role_ids[0]]['name']
 
+                # Find or create the Award in the club's Award table
+                award_obj = None
+                raw_aid = award.get('award_id')
+                if raw_aid:
+                    try:
+                        award_obj = db.session.get(Award, int(raw_aid))
+                    except (ValueError, TypeError):
+                        pass
+                
+                if not award_obj:
+                    award_obj = Award.query.filter_by(club_id=meeting.club_id, category=category).first()
+                
+                if not award_obj:
+                    award_obj = Award(
+                        club_id=meeting.club_id,
+                        name=award.get('label') or category.replace('-', ' ').title(),
+                        category=category,
+                        max_votes_per_user=max_votes,
+                        max_winners=max_winners
+                    )
+                    db.session.add(award_obj)
+                    db.session.flush()
+                    for role_id in selected_role_ids:
+                        db.session.add(AwardRole(award_id=award_obj.id, meeting_role_id=role_id))
+                    db.session.flush()
+
                 # Save config
                 config = MeetingAwardConfig(
                     meeting_id=meeting.id,
                     award_category=category,
+                    award_id=award_obj.id,
                     max_votes_per_user=max_votes,
                     max_winners=max_winners,
                     associated_role=legacy_associated_role,
@@ -1785,6 +1871,7 @@ def update_logs():
                             db.session.add(MeetingAwardWinner(
                                 meeting_id=meeting.id,
                                 award_category=category,
+                                award_id=award_obj.id,
                                 contact_id=contact_id,
                             ))
         else:
@@ -1811,7 +1898,7 @@ def update_logs():
             # Handle Award Configurations (legacy)
             award_configs_data = data.get('award_configs')
             if award_configs_data:
-                from .models.voting import MeetingAwardConfig, AwardRoleConfig
+                from .models.voting import MeetingAwardConfig, AwardRoleConfig, Award
                 for category, conf in award_configs_data.items():
                     raw_votes = conf.get('max_votes_per_user', 1)
                     raw_winners = conf.get('max_winners', 1)
@@ -1825,14 +1912,30 @@ def update_logs():
                         max_votes = 1
                     max_votes = min(max_votes, max_winners)
                     
+                    award_obj = Award.query.filter_by(club_id=meeting.club_id, category=category).first()
+                    if not award_obj:
+                        name = category.replace('-', ' ').replace('_', ' ').title()
+                        award_obj = Award(
+                            club_id=meeting.club_id,
+                            name=name,
+                            category=category,
+                            max_votes_per_user=max_votes,
+                            max_winners=max_winners
+                        )
+                        db.session.add(award_obj)
+                        db.session.flush()
+                    award_id = award_obj.id
+
                     existing_config = MeetingAwardConfig.query.filter_by(meeting_id=meeting.id, award_category=category).first()
                     if existing_config:
                         existing_config.max_votes_per_user = max_votes
                         existing_config.max_winners = max_winners
+                        existing_config.award_id = award_id
                     else:
                         new_config = MeetingAwardConfig(
                             meeting_id=meeting.id,
                             award_category=category,
+                            award_id=award_id,
                             max_votes_per_user=max_votes,
                             max_winners=max_winners
                         )

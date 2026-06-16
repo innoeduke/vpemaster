@@ -303,6 +303,21 @@ def _get_roles_for_voting(meeting_id, meeting):
             for cid, cat, count in counts:
                 vote_counts[(cid, cat)] = count
                 
+        # Prefetch roles for candidates in this meeting
+        from .models import OwnerMeetingRoles
+        contact_meeting_roles = db.session.query(Contact.id, MeetingRole.name)\
+            .join(OwnerMeetingRoles, OwnerMeetingRoles.contact_id == Contact.id)\
+            .join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
+            .filter(OwnerMeetingRoles.meeting_id == meeting.id,
+                    MeetingRole.type != 'officer').all()
+        
+        contact_role_names = {}
+        for c_id, r_name in contact_meeting_roles:
+            if c_id not in contact_role_names:
+                contact_role_names[c_id] = []
+            if r_name not in contact_role_names[c_id]:
+                contact_role_names[c_id].append(r_name)
+
         for config in custom_configs:
             cat = config.award_category
             category_has_winner = any(w_cat == cat for w_cat, _ in winner_set)
@@ -311,7 +326,6 @@ def _get_roles_for_voting(meeting_id, meeting):
             candidates_to_use = []
             if config.role_associations:
                 # New path: use the associative table
-                from .models import OwnerMeetingRoles
                 role_ids = [a.meeting_role_id for a in config.role_associations]
                 role_takers = db.session.query(Contact)\
                     .join(OwnerMeetingRoles, OwnerMeetingRoles.contact_id == Contact.id)\
@@ -321,7 +335,6 @@ def _get_roles_for_voting(meeting_id, meeting):
                 candidates_to_use = role_takers
             elif config.associated_role:
                 # Legacy fallback: pre-migration data, or awards never re-saved through the picker
-                from .models import OwnerMeetingRoles
                 role_takers = db.session.query(Contact)\
                     .join(OwnerMeetingRoles, OwnerMeetingRoles.contact_id == Contact.id)\
                     .join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
@@ -338,8 +351,12 @@ def _get_roles_for_voting(meeting_id, meeting):
                 owner_id = contact.id
                 is_winner = (cat, owner_id) in winner_set
                 
+                # Use role name if available for candidates, otherwise "Candidate"
+                assigned_roles = contact_role_names.get(owner_id, [])
+                role_display_name = ", ".join(assigned_roles) if assigned_roles else 'Candidate'
+
                 custom_role_entry = {
-                    'role': 'Candidate',
+                    'role': role_display_name,
                     'icon': 'fa-award',
                     'session_id': None,
                     'owner_id': owner_id,

@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components/meeting_filter.css') }}">
 {% endblock %}
 {% block content %}
+<div class="profile-container">
 
 <div class="tabs-container" style="max-width: 700px; margin: 0 auto; margin-top: 40px;">
   <div class="nav-tabs">
@@ -178,6 +179,8 @@
   </form>
 </div>
 {% endif %}
+
+</div>
 
 <script>
   function validateAvatar(input) {

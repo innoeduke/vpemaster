@@ -4,33 +4,30 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-height: 30px;
-  /* Reduced for mobile */
-  padding: 4px 12px;
-  /* Reduced for mobile */
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
   margin: 0;
   color: white;
   text-align: center;
-  border-radius: 6px;
+  border-radius: 999px;
   text-decoration: none;
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 0.82rem;
   font-weight: 600;
+  letter-spacing: 0.02em;
   min-width: 100px;
   box-sizing: border-box;
   vertical-align: middle;
-  transition: all 0.2s ease;
+  transition: transform 0.18s ease, background 0.18s ease,
+              color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
   white-space: nowrap;
   line-height: 1.2;
 }
 
-@media (min-width: 769px) {
-  .btn {
-    min-height: 38px;
-    padding: 8px 20px;
-  }
+.btn:active {
+  transform: translateY(0);
 }
 
 .btn:disabled {
@@ -42,8 +39,23 @@
 }
 
 /* Modifier classes for button colors */
-.btn-primary {
-  background-color: #772432;
+.btn-primary,
+.btn-success {
+  background: linear-gradient(180deg, #8c2a3c 0%, #5a1a26 100%);
+  color: #ffffff;
+  border-color: #5a1a26;
+  box-shadow: 0 2px 6px rgba(119, 36, 50, 0.24),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.btn-primary:hover,
+.btn-success:hover {
+  background: linear-gradient(180deg, #9a3145 0%, #6b1f2e 100%);
+  border-color: #6b1f2e;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(119, 36, 50, 0.32),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .btn-secondary {
@@ -61,11 +73,6 @@
   background-color: #004165;
 }
 
-.btn-success {
-  color: white;
-  background-color: #4caf50;
-}
-
 .btn-warning {
   color: white;
   background-color: #f0ad4e;
@@ -77,13 +84,18 @@
 }
 
 .btn-outline {
-  background-color: transparent;
-  border: 1px solid #6c757d;
-  color: #6c757d;
+  background: #ffffff;
+  color: #772432;
+  border-color: rgba(119, 36, 50, 0.22);
+  box-shadow: 0 1px 2px rgba(43, 11, 22, 0.04);
 }
 
 .btn-outline:hover {
-  background-color: #f8f9fa;
+  background: #fbf4f5;
+  color: #5a1a26;
+  border-color: rgba(119, 36, 50, 0.42);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(119, 36, 50, 0.12);
 }
 
 .btn-sm {
