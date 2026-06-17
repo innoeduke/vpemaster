@@ -623,17 +623,89 @@ document.addEventListener("DOMContentLoaded", () => {
         tdName.className = 'award-name-cell';
         tdName.textContent = award.label;
       } else {
-        const nameInput = document.createElement('input');
-        nameInput.type = 'text';
-        nameInput.className = 'award-name-input';
-        nameInput.value = award.label;
-        nameInput.placeholder = 'Award name';
-        nameInput.addEventListener('input', () => {
-          award.label = nameInput.value;
-          // Also update category key for custom awards
-          award.category = nameInput.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        // The four default categories are auto-included in every meeting.
+        // Hide them from the picker to avoid duplicates.
+        const DEFAULT_CATS = new Set(['speaker', 'evaluator', 'table-topic', 'role-taker']);
+        const allClubAwards = window.__clubAwards || [];
+        const pickerAwards = allClubAwards.filter(a => !DEFAULT_CATS.has(a.category));
+
+        // Track which award_ids are already used by other custom rows in this
+        // meeting, so we don't offer duplicates to the user.
+        const takenIds = new Set();
+        (currentAwards || []).forEach(other => {
+          if (other !== award && !other.is_default && other.award_id) {
+            takenIds.add(other.award_id);
+          }
         });
-        tdName.appendChild(nameInput);
+
+        const nameSelect = document.createElement('select');
+        nameSelect.className = 'award-name-select';
+
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Select award…';
+        nameSelect.appendChild(placeholder);
+
+        pickerAwards.forEach(a => {
+          const opt = document.createElement('option');
+          opt.value = String(a.id);
+          opt.textContent = a.name;
+          if (takenIds.has(a.id)) opt.disabled = true;
+          nameSelect.appendChild(opt);
+        });
+
+        // If this row has a saved award_id, pre-select it (even if the user
+        // is the only row using it, the entry may be re-shown on render).
+        if (award.award_id) {
+          const matchOpt = Array.from(nameSelect.options).find(
+            o => o.value === String(award.award_id)
+          );
+          if (matchOpt) {
+            matchOpt.selected = true;
+          } else {
+            // Legacy: award_id is set but award no longer in club list.
+            // Add a synthetic option so the user can see the saved name.
+            const legacyOpt = document.createElement('option');
+            legacyOpt.value = String(award.award_id);
+            legacyOpt.textContent = award.label + ' (legacy)';
+            legacyOpt.selected = true;
+            nameSelect.insertBefore(legacyOpt, nameSelect.firstChild.nextSibling);
+          }
+        }
+
+        nameSelect.addEventListener('change', () => {
+          const chosenId = parseInt(nameSelect.value, 10);
+          if (!chosenId) {
+            // Reset to an empty row
+            award.award_id = null;
+            award.label = '';
+            award.category = '';
+            award.max_votes = 1;
+            award.max_winners = 1;
+            award.selected_role_ids = [];
+            award.associated_role = null;
+            award.winner_ids = [];
+            return;
+          }
+          const chosen = pickerAwards.find(a => a.id === chosenId);
+          if (!chosen) return;
+          award.award_id = chosen.id;
+          award.label = chosen.name;
+          award.category = chosen.category;
+          award.max_votes = chosen.max_votes;
+          award.max_winners = chosen.max_winners;
+          award.selected_role_ids = Array.isArray(chosen.selected_role_ids)
+            ? [...chosen.selected_role_ids] : [];
+          award.associated_role = null;
+          // Reset winners since the award changed; max_winners change is
+          // handled by the inputs below on the next render.
+          award.winner_ids = [];
+          // Re-render so max_winners / max_votes inputs pick up new values
+          // and the role trigger label refreshes.
+          renderAwardsTable();
+        });
+
+        tdName.appendChild(nameSelect);
       }
       tr.appendChild(tdName);
 
@@ -750,18 +822,20 @@ document.addEventListener("DOMContentLoaded", () => {
       addBtn.parentNode.replaceChild(newBtn, addBtn);
       newBtn.addEventListener('click', () => {
         currentAwards.push({
+          award_id: null,
           category: '',
           label: '',
           max_votes: 1,
           max_winners: 1,
           associated_role: null,
+          selected_role_ids: [],
           winner_ids: [],
           is_default: false,
         });
         renderAwardsTable();
-        // Focus the new name input
-        const lastInput = tbody.querySelector('tr:last-child .award-name-input');
-        if (lastInput) lastInput.focus();
+        // Focus the new name select
+        const lastSelect = tbody.querySelector('tr:last-child .award-name-select');
+        if (lastSelect) lastSelect.focus();
       });
     }
   }
@@ -833,6 +907,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return awards
       .filter(a => a.category || a.label) // skip empty rows
       .map(a => ({
+        award_id: a.award_id || null,
         category: a.category || a.label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
         label: a.label,
         max_votes: a.max_votes,
@@ -973,13 +1048,20 @@ document.addEventListener("DOMContentLoaded", () => {
     groupAll.title = 'Select all ' + type.label;
     groupAll.setAttribute('aria-label', 'Select all ' + type.label);
     groupAll.addEventListener('change', () => {
+      const roleIds = new Set(list.map(r => r.id));
       list.forEach(r => {
         if (groupAll.checked) apCtx.selected.add(r.id);
         else apCtx.selected.delete(r.id);
       });
-      group.querySelectorAll('.ap-role-cb').forEach(cb => {
+      // Mirror the working top-level "Select all roles" pattern: scope the
+      // checkbox update to the role ids that belong to this type. This is
+      // more reliable than walking `group.querySelectorAll('.ap-role-cb')`
+      // in case the role rows are not yet attached or have been moved.
+      apModal.querySelectorAll('.ap-role-cb').forEach(cb => {
         const id = parseInt(cb.dataset.roleId, 10);
-        cb.checked = apCtx.selected.has(id);
+        if (roleIds.has(id)) {
+          cb.checked = apCtx.selected.has(id);
+        }
       });
       syncAwardPickerTriStates();
     });

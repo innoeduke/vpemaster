@@ -342,6 +342,14 @@
         #meetingDetailsModal .mdm-awards-table td:nth-child(6) {
             text-align: center !important;
         }
+        /* Action column: flex-center the delete button (inline-block alone
+           can leave it visually off-center inside a narrow cell). */
+        #meetingDetailsModal .mdm-awards-table td:nth-child(6) > .btn-delete-award {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
         /* Roles picker button - full visual + layout */
         #meetingDetailsModal .mdm-awards-table .ap-trigger {
             display: block;
@@ -559,6 +567,7 @@
       <!-- Serialize awards data and voting candidates for JS -->
       <script>
         window.__awardsInitial = {{ awards | tojson }};
+        window.__clubAwards = {{ club_awards | tojson }};
         window.__votingCandidates = {{ voting_candidates | tojson }};
         window.__meetingFinished = {{ 'true' if selected_meeting and selected_meeting.status == 'finished' else 'false' }};
         window.__meetingRoles = {{ meeting_roles | tojson }};

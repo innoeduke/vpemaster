@@ -1102,6 +1102,26 @@ def agenda():
     # --- Unified Awards List ---
     awards = get_meeting_awards(selected_meeting)
 
+    # All club awards for the "Add Award" picker
+    from .models.voting import Award, AwardRole
+    from sqlalchemy.orm import joinedload
+    club_award_rows = Award.query \
+        .options(joinedload(Award.role_associations)) \
+        .filter_by(club_id=club_id) \
+        .order_by(Award.name.asc()) \
+        .all()
+    club_awards = [
+        {
+            'id': a.id,
+            'name': a.name,
+            'category': a.category,
+            'max_votes': a.max_votes_per_user,
+            'max_winners': a.max_winners,
+            'selected_role_ids': [ra.meeting_role_id for ra in a.role_associations],
+        }
+        for a in club_award_rows
+    ]
+
     # --- Render Template ---
     # Serialize ProjectID as a dictionary for safe JSON conversion in template
     project_id_dict = {
@@ -1130,6 +1150,7 @@ def agenda():
                            voting_candidates=voting_candidates,
                            award_configs=award_configs,
                            awards=awards,
+                           club_awards=club_awards,
                            meeting_roles=meeting_roles,
                            role_candidates=role_candidates)
 
