@@ -3370,7 +3370,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 3. Delete Button (Third Position)
     const deleteBtn = document.createElement("button");
     deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
-    deleteBtn.className = "tm-action-btn tm-action-btn--danger";
+    deleteBtn.className = "tm-action-btn tm-action-btn--danger delete-btn";
     deleteBtn.type = "button";
 
     wrapper.append(deleteBtn);

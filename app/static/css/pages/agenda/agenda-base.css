@@ -477,8 +477,8 @@ select[multiple].edit-mode-field option:checked {
 
 #edit-mode-buttons {
 	position: sticky;
-	top: 0;
-	z-index: 1100;
+	top: 60px;
+	z-index: 1000;
 	width: 100%;
 	box-sizing: border-box;
 	display: flex;
@@ -1017,7 +1017,7 @@ td.actions-column .tm-action-buttons {
 #agenda-content #logs-table .col-view-duration-header,
 #agenda-content #logs-table tbody td.col-view-duration {
 	text-align: center;
-	vertical-align: top;
+	vertical-align: middle;
 }
 
 /* Section Row Overrides */
@@ -1105,6 +1105,13 @@ a.owner-link:hover {
 
 .table-container .autocomplete-container {
 	flex-grow: 1;
+	height: 30px;
+}
+
+.table-container .autocomplete-container .owner-search-input {
+	width: 100% !important;
+	min-width: 0;
+	box-sizing: border-box !important;
 }
 
 .autocomplete-items {
@@ -1172,14 +1179,16 @@ a.owner-link:hover {
 	color: #dc3545;
 }
 
-.owner-search-input {
+#agenda-content .owner-search-input {
 	border: 1px solid #ccc !important;
 	border-radius: 4px !important;
-	padding: 4px 8px !important;
-	font-size: 0.9em !important;
+	padding: 2px 8px !important;
+	font-size: 0.8rem !important;
 	width: 100% !important;
 	box-sizing: border-box !important;
 	height: 30px !important;
+	min-height: 30px !important;
+	max-height: 30px !important;
 }
 
 .owner-search-input:focus {
