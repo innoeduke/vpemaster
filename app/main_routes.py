@@ -84,8 +84,32 @@ def calendar():
     ).order_by(Meeting.Meeting_Date.asc()).first()
     next_meeting_id = next_meeting.id if next_meeting else None
 
+    # 5. Tally meetings by type for KPI chips (sorted by count desc, first-seen breaks ties)
+    raw_counts = OrderedDict()
+    for m in meetings:
+        type_key = m.type or 'Keynote Speech'
+        raw_counts[type_key] = raw_counts.get(type_key, 0) + 1
+    meeting_type_counts = OrderedDict(
+        sorted(raw_counts.items(), key=lambda kv: (-kv[1], list(raw_counts).index(kv[0])))
+    )
+
+    # 6. Map each meeting type to a FontAwesome icon for the KPI tile
+    type_icons = {
+        'Keynote Speech':     'fa-microphone',
+        'Speech Marathon':    'fa-running',
+        'Speech Contest':     'fa-trophy',
+        'Panel Discussion':   'fa-users',
+        'Debate':             'fa-comments',
+        'Pecha Kucha':        'fa-stopwatch',
+        'Gavel Passing':      'fa-gavel',
+        'Club Election':      'fa-vote-yea',
+    }
+
     return render_template('calendar.html',
                          meetings_by_month=meetings_by_month,
+                         meeting_type_counts=meeting_type_counts,
+                         type_icons=type_icons,
+                         total_meetings=len(meetings),
                          start_date=start_date,
                          end_date=end_date,
                          current_term=current_term,

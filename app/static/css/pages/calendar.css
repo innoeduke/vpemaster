@@ -362,15 +362,157 @@
 
 .calendar-page-container .filter-row-premium {
     display: flex;
-    justify-content: flex-start;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
     align-items: center;
+    gap: 20px;
 }
 
 .calendar-page-container .filter-left {
+    flex: 0 0 auto;
     display: flex;
     align-items: center;
     gap: 15px;
+    min-width: 0;
 }
+
+.calendar-page-container .filter-right {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+/* Calendar KPI tiles (right end of filter row) — color-block stat strip */
+.calendar-kpis {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    justify-content: flex-end;
+    gap: 10px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    padding-bottom: 4px;
+}
+
+.kpi-tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: space-between;
+    min-width: 170px;
+    padding: 10px 14px;
+    color: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+    cursor: default;
+    isolation: isolate;
+}
+
+/* Subtle diagonal sheen overlay for a designed, textured look */
+.kpi-tile::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.08) 100%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+.kpi-tile:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18), inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+    filter: saturate(1.08) brightness(1.04);
+}
+
+.kpi-tile .kpi-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+}
+
+.kpi-tile .kpi-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.kpi-tile .kpi-icon {
+    font-size: 0.9rem;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
+    flex: 0 0 auto;
+}
+
+.kpi-tile .kpi-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.kpi-tile .kpi-count {
+    font-family: 'Montserrat', 'Inter', sans-serif;
+    font-size: 1.55rem;
+    font-weight: 800;
+    line-height: 1;
+    color: #ffffff;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.025em;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
+    flex: 0 0 auto;
+    text-align: right;
+}
+
+.kpi-tile .kpi-bar {
+    margin-top: 8px;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.22);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.kpi-tile .kpi-bar > span {
+    display: block;
+    height: 100%;
+    background: #ffffff;
+    border-radius: 2px;
+    transform-origin: left center;
+    animation: kpi-bar-grow 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes kpi-bar-grow {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+}
+
+
+/* Per-type color blocks */
+.kpi-tile.type-keynote-speech    { background-color: #0369a1; }
+.kpi-tile.type-speech-marathon   { background-color: #b45309; }
+.kpi-tile.type-speech-contest    { background-color: #be185d; }
+.kpi-tile.type-panel-discussion  { background-color: #6d28d9; }
+.kpi-tile.type-debate            { background-color: #c2410c; }
+.kpi-tile.type-pecha-kucha       { background-color: #475569; }
+.kpi-tile.type-gavel-passing     { background-color: #15803d; }
+.kpi-tile.type-club-election     { background-color: #a21caf; }
 
 /* Responsive */
 @media (max-width: 1024px) {
@@ -473,5 +615,43 @@
     .calendar-page-container .date-input-wrapper .filter-label {
         font-size: 0.7rem;
         margin-bottom: 4px;
+    }
+    .calendar-page-container .filter-row-premium {
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+    }
+    .calendar-page-container .filter-left {
+        flex: 0 0 auto;
+    }
+    .calendar-page-container .filter-right {
+        flex: 1 1 auto;
+        min-width: 0;
+        justify-content: flex-end;
+    }
+    .calendar-kpis {
+        justify-content: flex-start;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 6px;
+        scrollbar-width: thin;
+    }
+    .kpi-tile {
+        flex: 0 0 auto;
+        min-width: 150px;
+        padding: 8px 12px;
+    }
+    .kpi-tile .kpi-icon {
+        font-size: 0.8rem;
+    }
+    .kpi-tile .kpi-label {
+        font-size: 0.6rem;
+        letter-spacing: 0.5px;
+    }
+    .kpi-tile .kpi-count {
+        font-size: 1.3rem;
+    }
+    .kpi-tile .kpi-bar {
+        margin-top: 6px;
     }
 }

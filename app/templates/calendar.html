@@ -27,6 +27,20 @@
                     </div>
                 </form>
             </div>
+            <div class="filter-right">
+                <div class="calendar-kpis" aria-label="{{ _('Meeting type summary') }}">
+                    {% for type_name, count in meeting_type_counts.items() %}
+                    {% set pct = (count * 100 / total_meetings) if total_meetings else 0 %}
+                    <div class="kpi-tile type-{{ type_name|lower|replace(' ', '-') }}" title="{{ count }} {{ type_name }}">
+                        <div class="kpi-row">
+                            <div class="kpi-left"><i class="fas {{ type_icons.get(type_name, 'fa-calendar-day') }} kpi-icon" aria-hidden="true"></i><span class="kpi-label">{{ type_name }}</span></div>
+                            <div class="kpi-count">{{ count }}</div>
+                        </div>
+                        <div class="kpi-bar"><span style="width: {{ '%.0f' | format(pct) }}%"></span></div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
     </div>
 
