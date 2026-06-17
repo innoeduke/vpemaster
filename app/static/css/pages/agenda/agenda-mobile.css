@@ -233,10 +233,6 @@
   }
 
   .action-group .action-icon-btn,
-  .action-group #jpg-btn,
-  .action-group #role-guide-btn,
-  .action-group #xlsx-btn,
-  .action-group #ppt-btn,
   .action-group #share-btn {
     width: 32px;
     height: 32px;
@@ -252,11 +248,6 @@
 
   .action-group #create-btn,
   .action-group #edit-btn {
-    display: none;
-  }
-
-  .action-group #xlsx-btn,
-  .action-group #ppt-btn {
     display: none;
   }
 

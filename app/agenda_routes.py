@@ -18,7 +18,7 @@ import os
 import openpyxl
 from openpyxl.styles import Font, Alignment
 from io import BytesIO
-from .utils import derive_credentials, get_project_code, get_meetings_by_status
+from .utils import derive_credentials, get_project_code, get_meetings_by_status, process_meeting_poster
 from .tally_sync import sync_participants_to_tally
 from .services.role_service import RoleService
 from .club_context import get_current_club_id, filter_by_club, authorized_club_required
@@ -2307,3 +2307,107 @@ def sync_tally(meeting_id):
         return jsonify(success=True)
     except Exception as e:
         return jsonify(success=False, message=str(e)), 500
+
+
+def _meeting_poster_abs_path(poster_url):
+    """Resolve a stored poster_url to an absolute on-disk path inside static/.
+
+    Returns None if the path would escape the static folder (defence against
+    traversal in the stored value).
+    """
+    static_root = os.path.realpath(current_app.static_folder)
+    candidate = os.path.realpath(os.path.join(static_root, poster_url))
+    if os.path.commonpath([static_root, candidate]) != static_root:
+        return None
+    return candidate
+
+
+@agenda_bp.route('/agenda/poster/<int:meeting_id>/upload', methods=['POST'])
+@login_required
+@authorized_club_required
+def upload_meeting_poster(meeting_id):
+    """Upload (or replace) the poster image for a meeting. Converts to WebP."""
+    meeting = db.session.get(Meeting, meeting_id)
+    if not meeting:
+        return jsonify(success=False, message="Meeting not found"), 404
+
+    club_id = get_current_club_id()
+    if club_id and meeting.club_id != club_id:
+        return jsonify(success=False, message="Meeting not found"), 404
+
+    if not is_authorized(Permissions.MEETING_MANAGE, meeting=meeting):
+        return jsonify(success=False, message="Permission denied"), 403
+
+    if 'poster' not in request.files:
+        return jsonify(success=False, message="No file part"), 400
+
+    file = request.files['poster']
+    if not file or not file.filename:
+        return jsonify(success=False, message="No selected file"), 400
+
+    if not file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
+        return jsonify(success=False, message="Unsupported image format. Use PNG, JPG or WEBP."), 400
+
+    club = meeting.club or db.session.get(Club, meeting.club_id)
+    if not club:
+        return jsonify(success=False, message="Club not found"), 404
+
+    # Remove any previous poster file so a renamed club abbreviation doesn't leave orphans.
+    if meeting.poster_url:
+        old_path = _meeting_poster_abs_path(meeting.poster_url)
+        if old_path and os.path.isfile(old_path):
+            try:
+                os.remove(old_path)
+            except OSError as e:
+                current_app.logger.warning("Could not remove old poster %s: %s", old_path, e)
+
+    poster_url = process_meeting_poster(file, club, meeting)
+    if not poster_url:
+        return jsonify(success=False, message="Error processing image"), 500
+
+    try:
+        meeting.poster_url = poster_url
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+    return jsonify(
+        success=True,
+        message="Poster uploaded",
+        poster_url=url_for('static', filename=poster_url),
+    )
+
+
+@agenda_bp.route('/agenda/poster/<int:meeting_id>/delete', methods=['POST'])
+@login_required
+@authorized_club_required
+def delete_meeting_poster(meeting_id):
+    """Remove the poster for a meeting (file + DB column)."""
+    meeting = db.session.get(Meeting, meeting_id)
+    if not meeting:
+        return jsonify(success=False, message="Meeting not found"), 404
+
+    club_id = get_current_club_id()
+    if club_id and meeting.club_id != club_id:
+        return jsonify(success=False, message="Meeting not found"), 404
+
+    if not is_authorized(Permissions.MEETING_MANAGE, meeting=meeting):
+        return jsonify(success=False, message="Permission denied"), 403
+
+    if meeting.poster_url:
+        abs_path = _meeting_poster_abs_path(meeting.poster_url)
+        if abs_path and os.path.isfile(abs_path):
+            try:
+                os.remove(abs_path)
+            except OSError as e:
+                current_app.logger.warning("Could not remove poster %s: %s", abs_path, e)
+
+    try:
+        meeting.poster_url = None
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+    return jsonify(success=True, message="Poster removed")

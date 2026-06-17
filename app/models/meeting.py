@@ -23,6 +23,7 @@ class Meeting(db.Model):
 
     media_id = db.Column(db.Integer, db.ForeignKey('Media.id', use_alter=True))
     ge_mode = db.Column(db.Integer, default=0)
+    poster_url = db.Column(db.String(500), nullable=True)
     status = db.Column(db.Enum('unpublished', 'not started', 'running', 'finished', 'cancelled', name='meeting_status'),
                        default='unpublished', nullable=False)
     nps = db.Column(db.Float, nullable=True)

@@ -9,11 +9,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const addRowButton = document.getElementById("add-row-btn");
   const createButton = document.getElementById("create-btn");
   const meetingFilter = document.getElementById("meeting-filter");
-  const xlsxButton = document.getElementById("xlsx-btn");
-  const jpgButton = document.getElementById("jpg-btn");
-  const pptButton = document.getElementById("ppt-btn");
   const actionBtn = document.getElementById("action-btn");
   const actionMenu = document.getElementById("action-menu");
+  const posterFileInput = document.getElementById("poster-file-input");
   const tableContainer = document.getElementById("table-container");
   const meetingStatusBtn = document.getElementById("meeting-status-btn");
   const tableBody = document.querySelector("#logs-table tbody");
@@ -352,9 +350,6 @@ document.addEventListener("DOMContentLoaded", () => {
       addRowButton.addEventListener("click", addNewRow);
     }
 
-    if (xlsxButton) {
-      xlsxButton.addEventListener("click", exportAgenda);
-    }
     if (createButton) {
       createButton.addEventListener("click", () => {
         const createAgendaModal = document.getElementById("createAgendaModal");
@@ -362,12 +357,6 @@ document.addEventListener("DOMContentLoaded", () => {
           createAgendaModal.style.display = "flex";
         }
       });
-    }
-    if (pptButton) {
-      pptButton.addEventListener("click", downloadPPT);
-    }
-    if (jpgButton) {
-      jpgButton.addEventListener("click", exportAgendaJPG);
     }
 
     // --- Action Button Logic ---
@@ -388,6 +377,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const actionXlsx = document.getElementById("action-xlsx-opt");
       const actionPpt = document.getElementById("action-ppt-opt");
       const actionJpg = document.getElementById("action-jpg-opt");
+      const actionRoleGuide = document.getElementById("action-role-guide-opt");
+      const actionPoster = document.getElementById("action-poster-opt");
+      const actionPosterDelete = document.getElementById("action-poster-delete-opt");
 
       if (actionNew)
         actionNew.addEventListener("click", () => {
@@ -417,6 +409,30 @@ document.addEventListener("DOMContentLoaded", () => {
           exportAgendaJPG();
           actionMenu.classList.remove("show");
         });
+      if (actionRoleGuide)
+        actionRoleGuide.addEventListener("click", () => {
+          // The element is an <a target="_blank">; let the default
+          // navigation happen and just close the menu.
+          actionMenu.classList.remove("show");
+        });
+      if (actionPoster && posterFileInput)
+        actionPoster.addEventListener("click", () => {
+          posterFileInput.value = "";
+          posterFileInput.click();
+          actionMenu.classList.remove("show");
+        });
+      if (actionPosterDelete)
+        actionPosterDelete.addEventListener("click", () => {
+          actionMenu.classList.remove("show");
+          deleteMeetingPoster();
+        });
+    }
+
+    if (posterFileInput) {
+      posterFileInput.addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) uploadMeetingPoster(file);
+      });
     }
     if (tableBody) {
       tableBody.addEventListener("click", (event) => {
@@ -2127,10 +2143,20 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Show a loading state on the button
-    const originalHTML = jpgButton.innerHTML;
-    jpgButton.disabled = true;
-    jpgButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    // Show a loading state on the toolbar action button (the menu trigger).
+    const spinnerHost = actionBtn || document.body;
+    const originalHTML = spinnerHost === actionBtn ? actionBtn.innerHTML : null;
+    if (actionBtn) {
+      actionBtn.disabled = true;
+      actionBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    }
+
+    const restoreButton = () => {
+      if (actionBtn && originalHTML !== null) {
+        actionBtn.disabled = false;
+        actionBtn.innerHTML = originalHTML;
+      }
+    };
 
     // Add the export mode class for A4-friendly styling
     agendaContent.classList.add("jpg-export-mode");
@@ -2162,19 +2188,79 @@ document.addEventListener("DOMContentLoaded", () => {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            // Restore button
-            jpgButton.disabled = false;
-            jpgButton.innerHTML = originalHTML;
+            restoreButton();
           }, "image/jpeg", 0.95);
         }).catch((err) => {
           console.error("JPG export error:", err);
           agendaContent.classList.remove("jpg-export-mode");
-          jpgButton.disabled = false;
-          jpgButton.innerHTML = originalHTML;
+          restoreButton();
           showCustomAlert("Export Error", "Failed to export agenda as image. Please try again.");
         });
       }, 100);
     });
+  }
+
+  async function uploadMeetingPoster(file) {
+    if (!posterFileInput) return;
+    const meetingId = posterFileInput.dataset.meetingId;
+    if (!meetingId) return;
+
+    const formData = new FormData();
+    formData.append("poster", file);
+
+    const originalHTML = actionBtn ? actionBtn.innerHTML : null;
+    if (actionBtn) {
+      actionBtn.disabled = true;
+      actionBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    }
+
+    try {
+      const res = await fetch(`/agenda/poster/${meetingId}/upload`, {
+        method: "POST",
+        body: formData,
+        credentials: "same-origin",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        const msg = data && data.message ? data.message : "Upload failed.";
+        showCustomAlert("Upload Error", msg);
+        return;
+      }
+      // Reload so the menu reflects the new "Remove Poster" entry.
+      window.location.reload();
+    } catch (err) {
+      console.error("Poster upload error:", err);
+      showCustomAlert("Upload Error", "Could not upload poster. Please try again.");
+    } finally {
+      if (actionBtn && originalHTML !== null) {
+        actionBtn.disabled = false;
+        actionBtn.innerHTML = originalHTML;
+      }
+    }
+  }
+
+  async function deleteMeetingPoster() {
+    if (!posterFileInput) return;
+    const meetingId = posterFileInput.dataset.meetingId;
+    if (!meetingId) return;
+    if (!window.confirm("Remove the poster for this meeting?")) return;
+
+    try {
+      const res = await fetch(`/agenda/poster/${meetingId}/delete`, {
+        method: "POST",
+        credentials: "same-origin",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        const msg = data && data.message ? data.message : "Delete failed.";
+        showCustomAlert("Delete Error", msg);
+        return;
+      }
+      window.location.reload();
+    } catch (err) {
+      console.error("Poster delete error:", err);
+      showCustomAlert("Delete Error", "Could not remove poster. Please try again.");
+    }
   }
 
   function updateProjectSpeakers() {

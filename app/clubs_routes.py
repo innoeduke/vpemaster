@@ -99,7 +99,7 @@ def list_clubs():
         next_meetings = Meeting.query.filter(
             Meeting.club_id.in_(club_ids),
             Meeting.Meeting_Date >= datetime.now().date(),
-            Meeting.status != 'cancelled'
+            Meeting.status.in_(['unpublished', 'not started', 'running'])
         ).order_by(Meeting.Meeting_Date.asc()).all()
         
     next_meeting_by_club = {}

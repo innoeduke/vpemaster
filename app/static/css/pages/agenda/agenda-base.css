@@ -444,6 +444,37 @@ select[multiple].edit-mode-field option:checked {
 	font-size: 0.88rem;
 }
 
+/* Agenda toolbar overflow menu — always visible (replaces the print/
+   role-guide/xlsx/ppt icon row). Uses .tm-action-btn for the toggle so
+   it visually pairs with edit-mode row actions on the same page. */
+.action-bar-right .agenda-actions-dropdown {
+	display: inline-flex;
+	align-items: center;
+}
+
+.action-bar-right .agenda-actions-dropdown .tm-action-btn {
+	width: 36px;
+	height: 36px;
+	border-radius: 999px;
+}
+
+.action-menu-item--danger {
+	color: #b64339;
+}
+
+.action-menu-item--danger i {
+	color: #b64339;
+}
+
+.action-menu-item--danger:hover {
+	background-color: #fdf2f1;
+	color: #963228;
+}
+
+.action-menu-item--danger:hover i {
+	color: #963228;
+}
+
 #edit-mode-buttons {
 	position: sticky;
 	top: 0;

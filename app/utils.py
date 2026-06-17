@@ -1100,6 +1100,48 @@ def process_club_logo(file, club_id):
         print(f"Error processing logo for club {club_id}: {e}")
         return None
 
+
+def process_meeting_poster(file, club, meeting):
+    """
+    Process an uploaded meeting poster: accept PNG/JPG/JPEG/WEBP, fit within
+    1200x1200 preserving aspect ratio, save as WebP under
+    club_resources/<club_id>/poster/<club_abbr>_poster_<meeting_number>.webp.
+    Returns the relative URL to store in Meeting.poster_url, or None on error.
+
+    club_abbr resolves to club.short_name (sanitized) when set, else club.club_no,
+    else a "club_<id>" fallback. Filename uses Meeting_Number, which is the
+    per-club counter; if a meeting is ever renumbered the existing file becomes
+    stale (acceptable trade-off).
+    """
+    from PIL import Image
+    from werkzeug.utils import secure_filename
+    import os
+
+    try:
+        img = Image.open(file)
+
+        if img.mode not in ("RGB", "RGBA"):
+            img = img.convert("RGBA")
+
+        img.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
+
+        raw_abbr = (club.short_name or club.club_no or "").strip()
+        abbr = secure_filename(raw_abbr) or f"club_{club.id}"
+
+        filename = f"{abbr}_poster_{meeting.Meeting_Number}.webp"
+        upload_folder = os.path.join(
+            current_app.root_path, 'static', 'club_resources', str(club.id), 'poster'
+        )
+        os.makedirs(upload_folder, exist_ok=True)
+        file_path = os.path.join(upload_folder, filename)
+        img.save(file_path, "WEBP", quality=85)
+
+        return f"club_resources/{club.id}/poster/{filename}"
+    except Exception as e:
+        print(f"Error processing poster for club {club.id} meeting {meeting.id}: {e}")
+        return None
+
+
 def get_terms():
     """
     Generate a list of half-year terms (e.g. '2025 Jan-Jun', '2025 Jul-Dec').
