@@ -79,16 +79,19 @@
   }
 
   /* --- Action Bar: 2-row CSS Grid on mobile ---
-     Row 1 (3:1): [ meeting-filter ][ action-bar-right (icons) ]
-     Row 2 (1:2): [ empty ][ status-group (right 2/3) ]
-     Only .action-bar-left uses display:contents — its children (filter, status)
-     become grid items. .action-bar-right stays a normal grid item. */
+     Row 1: meeting filter, full width (spans all columns).
+     Row 2: 3 content-width cells, right-aligned —
+       [ status display ][ status button ][ ellipsis menu ]
+     A leading 1fr column eats remaining space so row-2 items pack right.
+     .action-bar-left and .status-group both use display:contents so their
+     children become direct grid items. */
   .action-bar {
     display: grid;
-    grid-template-columns: 3fr 1fr;
+    grid-template-columns: 1fr auto auto auto;
+    grid-template-rows: auto auto;
     gap: 10px 8px;
     padding: 0 5px;
-    align-items: start;
+    align-items: center;
   }
 
   .action-bar-left {
@@ -101,11 +104,12 @@
     z-index: 1;
   }
 
-  /* Row 1, col 1: meeting filter */
+  /* Row 1: meeting filter spans the full grid width */
   .action-bar-left-content {
-    grid-column: 1;
+    grid-column: 1 / -1;
     grid-row: 1;
-    min-width: 0; /* prevent grid blowout on narrow screens */
+    min-width: 0;
+    width: 100%;
     overflow: visible;
   }
 
@@ -190,9 +194,6 @@
   }
 
   /* Status pill — inherit desktop sizing (padding: 6px 14px, min-height: 34px) */
-  .meeting-status-display {
-    white-space: nowrap;
-  }
 
   .action-bar .button-group {
     margin-top: 0;
@@ -200,31 +201,37 @@
     max-width: 100%;
   }
 
-  /* Row 1, col 2: right side stays a normal flex row for icon buttons */
+  /* Row 2, col 4: ellipsis menu (action-bar-right wraps it) — content width.
+     !important on placement to harden against any leaking page-level rules. */
   .action-bar-right {
-    grid-column: 2;
-    grid-row: 1;
+    grid-column: 4 !important;
+    grid-row: 2 !important;
     min-width: 0;
     width: auto;
-    flex-wrap: nowrap;
+    display: flex;
+    align-items: center;
     justify-content: flex-end;
   }
 
-  /* Row 2: status group spans both columns, right-aligned, content-width.
-     No display/sizing overrides — inherits inline-flex from base .button-group.
-     justify-self:end prevents grid stretch, so it shrink-wraps to content. */
+  /* Row 2: status-group children become individual grid items
+     ([status display][status button]) — content-width, right-aligned. */
   .action-bar-left .status-group,
   .status-group {
-    grid-column: 1 / 3;
-    grid-row: 2;
-    justify-self: end;
-    width: max-content;
+    display: contents !important;
     padding-left: 0 !important;
     border-left: none !important;
   }
 
+  .meeting-status-display {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    white-space: nowrap;
+  }
+
   .action-bar-left .status-group #meeting-status-btn,
   .status-group #meeting-status-btn {
+    grid-column: 3 !important;
+    grid-row: 2 !important;
     width: 100px !important;
     min-width: 100px !important;
     flex-grow: 0 !important;

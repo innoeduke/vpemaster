@@ -374,6 +374,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const actionNew = document.getElementById("action-new-opt");
       const actionEdit = document.getElementById("action-edit-opt");
+      const actionDetails = document.getElementById("action-details-opt");
       const actionXlsx = document.getElementById("action-xlsx-opt");
       const actionPpt = document.getElementById("action-ppt-opt");
       const actionJpg = document.getElementById("action-jpg-opt");
@@ -392,6 +393,11 @@ document.addEventListener("DOMContentLoaded", () => {
       if (actionEdit)
         actionEdit.addEventListener("click", () => {
           toggleEditMode(true);
+          actionMenu.classList.remove("show");
+        });
+      if (actionDetails)
+        actionDetails.addEventListener("click", () => {
+          openMeetingDetailsModal();
           actionMenu.classList.remove("show");
         });
       if (actionXlsx)
@@ -466,17 +472,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const viewDetailsBtn = document.getElementById("view-details-btn");
+    function openMeetingDetailsModal() {
+      const currentStatus = meetingStatusBtn ? meetingStatusBtn.dataset.currentStatus : '';
+      const isFinished = (currentStatus === 'finished');
+      // Update the global finished flag and render the awards table
+      window.__meetingFinished = isFinished;
+      // Deep copy the initial awards state when opening the modal
+      currentAwards = JSON.parse(JSON.stringify(window.__awardsInitial || []));
+      renderAwardsTable();
+      document.getElementById("meetingDetailsModal").style.display = "flex";
+    }
     if (viewDetailsBtn) {
-      viewDetailsBtn.addEventListener("click", () => {
-        const currentStatus = meetingStatusBtn ? meetingStatusBtn.dataset.currentStatus : '';
-        const isFinished = (currentStatus === 'finished');
-        // Update the global finished flag and render the awards table
-        window.__meetingFinished = isFinished;
-        // Deep copy the initial awards state when opening the modal
-        currentAwards = JSON.parse(JSON.stringify(window.__awardsInitial || []));
-        renderAwardsTable();
-        document.getElementById("meetingDetailsModal").style.display = "flex";
-      });
+      viewDetailsBtn.addEventListener("click", openMeetingDetailsModal);
     }
 
     const saveDetailsBtn = document.getElementById("save-meeting-details-btn");

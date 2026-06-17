@@ -130,16 +130,20 @@
   }
 
   /* Mobile: show all buttons, hide the ellipsis menu */
-  .button-group .desktop-only-btn {
+  .contact-action-bar .button-group .desktop-only-btn,
+  .member-action-bar .button-group .desktop-only-btn {
     display: inline-flex !important;
   }
 
-  .button-group .mobile-only-item,
-  .button-group .action-dropdown {
+  .contact-action-bar .button-group .mobile-only-item,
+  .contact-action-bar .button-group .action-dropdown,
+  .member-action-bar .button-group .mobile-only-item,
+  .member-action-bar .button-group .action-dropdown {
     display: none !important;
   }
 
-  .button-group .btn {
+  .contact-action-bar .button-group .btn,
+  .member-action-bar .button-group .btn {
     flex: 1;
   }
 

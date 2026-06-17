@@ -5,6 +5,15 @@
 
 @media (min-width: 1025px) {
 
+	/* Vertical separator between the left cluster (filter + status) and the
+	   right cluster (Edit / New / ⋯). Same hairline color as the existing
+	   filter-vs-status divider in agenda-base.css. */
+	.action-bar-right {
+		margin-left: 4px;
+		padding-left: 12px;
+		border-left: 1px solid rgba(119, 36, 50, 0.14);
+	}
+
 	/* Desktop-specific styles to keep buttons on one row */
 	.action-bar-right #view-mode-buttons {
 		display: flex;
