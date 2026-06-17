@@ -1325,6 +1325,7 @@ document.addEventListener("DOMContentLoaded", () => {
         agenda_data: dataToSave,
         ge_mode: geStyleSelect ? parseInt(geStyleSelect.value) : null,
         meeting_date: document.getElementById("edit-meeting-date").value,
+        start_time: document.getElementById("edit-start-time")?.value || null,
         meeting_title: document.getElementById("edit-meeting-title").value,
         subtitle: document.getElementById("edit-subtitle").value,
         meeting_type: document.getElementById("edit-meeting-type").value,
