@@ -471,7 +471,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    const viewDetailsBtn = document.getElementById("view-details-btn");
     function openMeetingDetailsModal() {
       const currentStatus = meetingStatusBtn ? meetingStatusBtn.dataset.currentStatus : '';
       const isFinished = (currentStatus === 'finished');
@@ -481,9 +480,6 @@ document.addEventListener("DOMContentLoaded", () => {
       currentAwards = JSON.parse(JSON.stringify(window.__awardsInitial || []));
       renderAwardsTable();
       document.getElementById("meetingDetailsModal").style.display = "flex";
-    }
-    if (viewDetailsBtn) {
-      viewDetailsBtn.addEventListener("click", openMeetingDetailsModal);
     }
 
     const saveDetailsBtn = document.getElementById("save-meeting-details-btn");

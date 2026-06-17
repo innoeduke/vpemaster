@@ -202,7 +202,6 @@
     {% if is_authorized(Permissions.MEETING_MANAGE, meeting=selected_meeting) %}
     <div class="button-group" id="edit-mode-buttons" style="display: none;">
         <button id="cancel-edit-btn" class="btn btn-secondary">{{ _('Cancel') }}</button>
-        <button id="view-details-btn" class="btn btn-primary" data-meeting-type="{{ selected_meeting.type or '' }}">{{ _('Details') }}</button>
         <button id="add-row-btn" class="btn btn-primary">{{ _('+Section') }}</button>
         <button id="edit-logs-btn" class="btn btn-primary">{{ _('Save') }}</button>
     </div>
@@ -212,7 +211,7 @@
         <table id="logs-table">
             <thead>
                 <tr class="non-edit-mode-header">
-                    <th><i class="fas fa-clock"></i></th>
+                    <th class="col-start-time-header"><i class="fas fa-clock"></i></th>
                     <th><i class="fas fa-file-alt"></i> {{ _('Session') }}</th>
                     <th><i class="fas fa-user"></i> {{ _('Owner') }}</th>
                     <th class="col-view-duration-header"><i class="fas fa-hourglass-half"></i> {{ _("Min'") }}</th>
@@ -264,7 +263,7 @@
                         </div>
                     </td>
                     {% else %}
-                    <td class="non-edit-mode-cell">{{ log_dict.Start_Time_str }}</td>
+                    <td class="non-edit-mode-cell col-start-time">{{ log_dict.Start_Time_str }}</td>
                     <td class="non-edit-mode-cell col-session">
                         <div class="speech-tooltip-wrapper">
                             {% set cleaned_title = log_dict.Session_Title|replace('"', '') if log_dict.Session_Title
