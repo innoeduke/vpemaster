@@ -7,6 +7,7 @@ from flask import current_app
 from sqlalchemy import event
 
 from .base import db
+from ..constants import GLOBAL_CLUB_ID
 
 
 user_favorite_clubs = db.Table(
@@ -433,6 +434,11 @@ class User(UserMixin, db.Model):
         """
         from .user_club import UserClub
 
+        # Sysadmin is restricted to the super club (GLOBAL_CLUB_ID) and must
+        # not be marked as a member of any normal club.
+        if self.is_sysadmin and club_id and club_id != GLOBAL_CLUB_ID:
+            return
+
         # Reset all clubs for this user to is_home=False
         UserClub.query.filter_by(user_id=self.id).update({'is_home': False})
 
@@ -669,8 +675,13 @@ class User(UserMixin, db.Model):
              if not club_id:
                  default_club = Club.query.first()
                  club_id = default_club.id if default_club else None
-        
+
         if not club_id:
+            return None
+
+        # Sysadmin is restricted to the super club (GLOBAL_CLUB_ID). Skip
+        # linking them to a contact/UserClub in any normal club.
+        if self.is_sysadmin and club_id != GLOBAL_CLUB_ID:
             return None
 
         # Name construction
@@ -792,8 +803,13 @@ class User(UserMixin, db.Model):
              if not club_id:
                   default_club = Club.query.first()
                   club_id = default_club.id if default_club else None
-        
+
         if not club_id:
+            return
+
+        # Sysadmin is restricted to the super club (GLOBAL_CLUB_ID) and must
+        # not be assigned a role in any normal club.
+        if self.is_sysadmin and club_id != GLOBAL_CLUB_ID:
             return
 
         target_role_id = role_id

@@ -1042,7 +1042,7 @@
                         </button>
                         
                         <div class="membership-actions-wrapper">
-                            {% if current_user.is_authenticated %}
+                            {% if current_user.is_authenticated and not current_user.is_sysadmin %}
                             {% if not is_member %}
                                 {% if club.id in pending_club_ids %}
                                     <button class="btn-cancel-request" onclick="cancelJoinRequest(this, {{ club.id }})">
@@ -1215,7 +1215,7 @@
                                 {% endif %}
                                 
                                 <div class="membership-actions-wrapper">
-                                    {% if current_user.is_authenticated %}
+                                    {% if current_user.is_authenticated and not current_user.is_sysadmin %}
                                     {% if not is_member %}
                                         {% if club.id in pending_club_ids %}
                                             <button class="btn-cancel-request" onclick="cancelJoinRequest(this, {{ club.id }})" style="margin: 0; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; height: 30px; flex-shrink: 0;">

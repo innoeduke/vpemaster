@@ -52,28 +52,36 @@ class CreateAdminLogicTestCase(unittest.TestCase):
         self.assertEqual(uc.club_role_level, self.role_admin.level, "UserClub role level should match SysAdmin level")
 
     def test_create_admin_creates_gossip_club(self):
-        """Test creating admin creates a Gossip club if none exists."""
+        """Test creating admin creates the super club if none exists.
+
+        The sysadmin account is restricted to the super club (id=1,
+        club_no='000001'). When no clubs exist and the operator runs
+        ``create-admin`` for the sysadmin account, the CLI seeds the
+        super club rather than a generic 'Gossip' fallback.
+        """
+        from app.constants import GLOBAL_CLUB_ID
         # Ensure no clubs
         Club.query.delete()
         db.session.commit()
-        
+
         # Run command without specifying club
         result = self.runner.invoke(args=['create-admin', '--username', 'sysadmin', '--email', 'admin2@test.com', '--password', 'password', '--password', 'password'])
-        
+
         if result.exit_code != 0:
             print(result.output)
-            
+
         self.assertEqual(result.exit_code, 0)
-        
-        # Check Gossip Club created
-        club = Club.query.filter_by(club_name='Gossip').first()
-        self.assertIsNotNone(club, "Gossip club should be created")
-        
-        # Check User linked to Gossip Club
+
+        # The super club (id=GLOBAL_CLUB_ID) must be created when no club exists.
+        club = db.session.get(Club, GLOBAL_CLUB_ID)
+        self.assertIsNotNone(club, "Super club should be created for sysadmin")
+        self.assertEqual(club.club_no, '000001')
+
+        # Check User linked to the super club
         user = User.query.filter_by(username='sysadmin').first()
         self.assertIsNotNone(user)
         self.assertTrue(user.is_sysadmin)
-        
+
         uc = UserClub.query.filter_by(user_id=user.id, club_id=club.id).first()
         self.assertIsNotNone(uc)
         self.assertEqual(uc.club_role_level, self.role_admin.level)

@@ -624,6 +624,11 @@ def respond_home_proposal():
 @clubs_bp.route('/clubs/<int:club_id>/request_join', methods=['POST'])
 @login_required
 def request_join_club(club_id):
+    # Sysadmin is restricted to the super club only; refuse any join attempt
+    # before we look up the club to give a clear error.
+    if current_user.is_sysadmin:
+        return jsonify({'success': False, 'error': 'The sysadmin account is restricted to the super club.'}), 400
+
     club = db.session.get(Club, club_id)
     if not club:
         return jsonify({'success': False, 'error': 'Club not found'}), 404
@@ -698,12 +703,16 @@ def respond_join_request():
     from app.models import User, Club, UserClub
     requestor = db.session.get(User, requestor_id)
     target_club = db.session.get(Club, target_club_id)
-    
+
     if not requestor or not target_club:
         return jsonify({'success': False, 'error': 'User or Club no longer exists'}), 404
-        
+
+    # Sysadmin must not be approved into a normal club.
+    if requestor.is_sysadmin:
+        return jsonify({'success': False, 'error': 'The sysadmin account is restricted to the super club.'}), 400
+
     response_subject = f"Join Request Response: {target_club.club_name}"
-    
+
     if action == 'approve':
         # Check if already a member
         uc = UserClub.query.filter_by(user_id=requestor_id, club_id=target_club_id).first()
@@ -749,6 +758,10 @@ def respond_join_request():
 @clubs_bp.route('/clubs/<int:club_id>/request_quit', methods=['POST'])
 @login_required
 def request_quit_club(club_id):
+    # Sysadmin cannot quit clubs because it isn't a member of normal clubs.
+    if current_user.is_sysadmin:
+        return jsonify({'success': False, 'error': 'The sysadmin account is restricted to the super club.'}), 400
+
     club = db.session.get(Club, club_id)
     if not club:
         return jsonify({'success': False, 'error': 'Club not found'}), 404
@@ -824,10 +837,14 @@ def respond_quit_request():
     from app.models import User, Club, UserClub
     requestor = db.session.get(User, requestor_id)
     target_club = db.session.get(Club, target_club_id)
-    
+
     if not requestor or not target_club:
         return jsonify({'success': False, 'error': 'User or Club no longer exists'}), 404
-        
+
+    # Sysadmin is not a member of normal clubs; nothing to quit.
+    if requestor.is_sysadmin:
+        return jsonify({'success': False, 'error': 'The sysadmin account is restricted to the super club.'}), 400
+
     response_subject = f"Quit Request Response: {target_club.club_name}"
     
     if action == 'approve':
@@ -907,7 +924,9 @@ def enter_club(club_id):
 
     # Only create a UserClub record for logged-in users. Guests browse without
     # a stored membership — the session-stored club context is all that's needed.
-    if current_user.is_authenticated:
+    # Sysadmin bypasses membership creation entirely: it must remain a member
+    # of the super club only, but can still browse any club via session context.
+    if current_user.is_authenticated and not current_user.is_sysadmin:
         from app.models import UserClub
         uc = UserClub.query.filter_by(user_id=current_user.id, club_id=club_id).first()
         if not uc:
@@ -932,6 +951,10 @@ def enter_club(club_id):
 @clubs_bp.route('/clubs/<int:club_id>/cancel_join', methods=['POST'])
 @login_required
 def cancel_join_request(club_id):
+    # Sysadmin cannot have pending join requests to cancel.
+    if current_user.is_sysadmin:
+        return jsonify({'success': False, 'error': 'The sysadmin account is restricted to the super club.'}), 400
+
     club = db.session.get(Club, club_id)
     if not club:
         return jsonify({'success': False, 'error': 'Club not found'}), 404
@@ -965,6 +988,10 @@ def cancel_join_request(club_id):
 @clubs_bp.route('/clubs/<int:club_id>/cancel_quit', methods=['POST'])
 @login_required
 def cancel_quit_request(club_id):
+    # Sysadmin cannot have pending quit requests to cancel.
+    if current_user.is_sysadmin:
+        return jsonify({'success': False, 'error': 'The sysadmin account is restricted to the super club.'}), 400
+
     club = db.session.get(Club, club_id)
     if not club:
         return jsonify({'success': False, 'error': 'Club not found'}), 404

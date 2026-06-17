@@ -45,24 +45,39 @@ def create_admin(username, email, password, contact_name, club_no):
 
         # Validate Club or Create Gossip
         club_obj = None
-        if club_no:
+        if is_sysadmin_account:
+            # The sysadmin account must live in the super club only (id=1,
+            # club_no='000001'). Override any operator-supplied --club-no and
+            # look up the super club specifically.
+            from app.constants import GLOBAL_CLUB_ID
+            club_obj = Club.query.filter_by(id=GLOBAL_CLUB_ID).first()
+        elif club_no:
             club_obj = Club.query.filter_by(club_no=club_no).first()
             if not club_obj:
                click.echo(f"⚠️  Warning: Club with number '{club_no}' not found. Falling back to default logic.", err=True)
-        
+
         if not club_obj:
             club_obj = Club.query.first()
-            
+
         if not club_obj:
-            # Create Gossip club if no clubs exist
-            click.echo("ℹ️ No clubs found. Creating default 'Gossip' club...", err=True)
+            # No clubs at all — create the super club (for sysadmin) or the
+            # legacy Gossip fallback (for any other admin).
+            click.echo("ℹ️ No clubs found. Creating default club...", err=True)
             from datetime import date
-            club_obj = Club(
-                club_name='Gossip',
-                club_no='000000',
-                district='00',
-                founded_date=date.today()
-            )
+            if is_sysadmin_account:
+                club_obj = Club(
+                    club_name='Super Club',
+                    club_no='000001',
+                    district='00',
+                    founded_date=date.today(),
+                )
+            else:
+                club_obj = Club(
+                    club_name='Gossip',
+                    club_no='000000',
+                    district='00',
+                    founded_date=date.today(),
+                )
             db.session.add(club_obj)
             db.session.flush()
 

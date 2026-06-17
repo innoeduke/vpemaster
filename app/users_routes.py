@@ -704,6 +704,10 @@ def respond_join():
     club = db.session.get(Club, club_id)
     
     if action == 'join':
+        # Sysadmin must not be added to a normal club via an invitation.
+        if current_user.is_sysadmin:
+            return jsonify({'success': False, 'error': 'The sysadmin account is restricted to the super club.'}), 400
+
         # Add to club
         if not UserClub.query.filter_by(user_id=current_user.id, club_id=club_id).first():
             # Ensure contact and linkage exists
