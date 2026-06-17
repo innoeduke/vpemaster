@@ -278,8 +278,16 @@ def _get_roles_for_voting(meeting_id, meeting):
             }
             consolidated_role_takers.append(role_entry)
 
-    standard_cats = {'speaker', 'evaluator', 'table-topic', 'role-taker', 'debater', 'lucky_draw', 'lucky-draw-winner'}
-    custom_configs = [c for c in configs if c.award_category not in standard_cats and c.award_category not in disabled_cats]
+    # A custom MeetingAwardConfig should only be surfaced through the custom
+    # path when the standard session-driven path has nothing for that category.
+    # A hardcoded standard_cats set would wrongly drop a user-added custom
+    # "Debater" award (its category collides with the built-in 'debater').
+    enriched_cats = {r.get('award_category') for r in enriched_roles if r.get('award_category')}
+    custom_configs = [
+        c for c in configs
+        if c.award_category not in enriched_cats
+        and c.award_category not in disabled_cats
+    ]
     
     custom_roles = []
     if custom_configs:
@@ -325,18 +333,22 @@ def _get_roles_for_voting(meeting_id, meeting):
                 
         # Prefetch roles for candidates in this meeting
         from .models import OwnerMeetingRoles
-        contact_meeting_roles = db.session.query(Contact.id, MeetingRole.name)\
+        contact_meeting_roles = db.session.query(Contact.id, MeetingRole.id, MeetingRole.name)\
             .join(OwnerMeetingRoles, OwnerMeetingRoles.contact_id == Contact.id)\
             .join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
             .filter(OwnerMeetingRoles.meeting_id == meeting.id,
                     MeetingRole.type != 'officer').all()
-        
+
+        # contact_role_names: contact_id -> ordered list of role names
+        # contact_role_ids:   contact_id -> set of role ids
         contact_role_names = {}
-        for c_id, r_name in contact_meeting_roles:
-            if c_id not in contact_role_names:
-                contact_role_names[c_id] = []
+        contact_role_ids = {}
+        for c_id, r_id, r_name in contact_meeting_roles:
+            contact_role_names.setdefault(c_id, [])
+            contact_role_ids.setdefault(c_id, set())
             if r_name not in contact_role_names[c_id]:
                 contact_role_names[c_id].append(r_name)
+            contact_role_ids[c_id].add(r_id)
 
         for config in custom_configs:
             cat = config.award_category
@@ -344,13 +356,14 @@ def _get_roles_for_voting(meeting_id, meeting):
 
             # Determine candidate list
             candidates_to_use = []
+            config_role_ids = None  # None = no filter (legacy / roster fallback)
             if config.role_associations:
                 # New path: use the associative table
-                role_ids = [a.meeting_role_id for a in config.role_associations]
+                config_role_ids = {a.meeting_role_id for a in config.role_associations}
                 role_takers = db.session.query(Contact)\
                     .join(OwnerMeetingRoles, OwnerMeetingRoles.contact_id == Contact.id)\
                     .filter(OwnerMeetingRoles.meeting_id == meeting.id,
-                            OwnerMeetingRoles.role_id.in_(role_ids))\
+                            OwnerMeetingRoles.role_id.in_(config_role_ids))\
                     .distinct().all()
                 candidates_to_use = role_takers
             elif config.associated_role:
@@ -370,9 +383,17 @@ def _get_roles_for_voting(meeting_id, meeting):
                     continue
                 owner_id = contact.id
                 is_winner = (cat, owner_id) in winner_set
-                
-                # Use role name if available for candidates, otherwise "Candidate"
-                assigned_roles = contact_role_names.get(owner_id, [])
+
+                # Show only the role names that are actually associated with this
+                # award — not every role the contact took in the meeting.
+                if config_role_ids is not None:
+                    contact_ids = contact_role_ids.get(owner_id, set())
+                    assigned_roles = [
+                        r_name for c_id, r_id, r_name in contact_meeting_roles
+                        if c_id == owner_id and r_id in config_role_ids
+                    ]
+                else:
+                    assigned_roles = contact_role_names.get(owner_id, [])
                 role_display_name = ", ".join(assigned_roles) if assigned_roles else 'Candidate'
 
                 custom_role_entry = {

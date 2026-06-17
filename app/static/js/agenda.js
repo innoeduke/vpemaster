@@ -1011,6 +1011,11 @@ document.addEventListener("DOMContentLoaded", () => {
     cb.type = 'checkbox';
     cb.className = 'ap-role-cb';
     cb.dataset.roleId = String(role.id);
+    // Reflect any pre-selected role from apCtx so the checkbox matches the
+    // group tri-state computed by syncAwardPickerTriStates().
+    if (apCtx && apCtx.selected && apCtx.selected.has(role.id)) {
+      cb.checked = true;
+    }
     cb.addEventListener('change', () => {
       if (cb.checked) apCtx.selected.add(role.id);
       else apCtx.selected.delete(role.id);

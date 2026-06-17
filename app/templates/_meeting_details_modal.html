@@ -269,12 +269,11 @@
         }
         #meetingDetailsModal .mdm-awards-table {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            border: none !important;
+            border-collapse: collapse;
+            border: 1px solid #e2e8f0;
             font-size: 13px;
             font-family: "Inter", sans-serif;
-            table-layout: fixed !important;
+            table-layout: fixed;
         }
         #meetingDetailsModal .mdm-awards-table thead th {
             text-align: left;
@@ -283,12 +282,13 @@
             color: #475569;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            padding: 8px 10px;
+            padding: 10px 12px;
+            background: #f8fafc;
             border-bottom: 1px solid #e2e8f0;
             white-space: nowrap;
         }
         #meetingDetailsModal .mdm-awards-table tbody td {
-            padding: 8px 10px;
+            padding: 10px 12px;
             border-bottom: 1px solid #f1f5f9;
             vertical-align: middle;
         }
@@ -309,15 +309,24 @@
             border-color: #772432 !important;
             box-shadow: 0 0 0 2px rgba(119, 36, 50, 0.12);
         }
-        /* Number inputs - fixed narrow width, center-aligned text */
+        /* Number inputs - narrow width to fit inside the Max Winners/Votes columns */
         #meetingDetailsModal .mdm-awards-table input[type="number"] {
-            width: 56px !important;
+            width: 40px !important;
             text-align: center !important;
         }
         #meetingDetailsModal .mdm-awards-table input[type="number"]:focus {
             outline: none;
             border-color: #772432 !important;
             box-shadow: 0 0 0 2px rgba(119, 36, 50, 0.12);
+        }
+        /* Hide the up/down spinner buttons on number inputs to save space */
+        #meetingDetailsModal .mdm-awards-table input[type="number"]::-webkit-outer-spin-button,
+        #meetingDetailsModal .mdm-awards-table input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        #meetingDetailsModal .mdm-awards-table input[type="number"] {
+            -moz-appearance: textfield;
         }
         /* Winner selects - full column width */
         #meetingDetailsModal .mdm-awards-table select {
@@ -546,12 +555,12 @@
           <table class="mdm-awards-table" id="awards-table">
             <thead>
               <tr>
-                <th style="width: 22%;">Award Name</th>
-                <th style="width: 11%; text-align: center; white-space: normal;">Max<br>Winners</th>
-                <th style="width: 11%; text-align: center; white-space: normal;">Max<br>Votes</th>
-                <th style="width: 26%;">Roles</th>
-                <th style="width: 24%;">Winner(s)</th>
-                <th style="width: 6%; text-align: center;"></th>
+                <th style="width: 24%;">Award Name</th>
+                <th style="width: 9%; text-align: center; white-space: normal;">Max<br>Winners</th>
+                <th style="width: 9%; text-align: center; white-space: normal;">Max<br>Votes</th>
+                <th style="width: 22%;">Roles</th>
+                <th style="width: 28%;">Winner(s)</th>
+                <th style="width: 8%; text-align: center;"></th>
               </tr>
             </thead>
             <tbody id="awards-table-body">
