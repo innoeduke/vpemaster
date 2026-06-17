@@ -625,20 +625,21 @@ body.modal-open {
 }
 
 .calendar-page-container .filter-left {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    min-width: 0;
-}
-
-.calendar-page-container .filter-right {
     flex: 1 1 auto;
     min-width: 0;
     display: flex;
     justify-content: flex-start;
     align-items: stretch;
     gap: 10px;
+}
+
+.calendar-page-container .filter-right {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 15px;
+    min-width: 0;
 }
 
 /* Calendar KPI tiles (right end of filter row) — color-block stat strip */
@@ -771,7 +772,8 @@ body.modal-open {
     border: 1px solid #cbd5e1;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
     min-width: 130px;
-    flex: 0 0 auto;
+    max-width: max-content;
+    flex: 0 0 auto !important;
 }
 
 .kpi-tile-total::before {
