@@ -636,8 +636,9 @@ body.modal-open {
     flex: 1 1 auto;
     min-width: 0;
     display: flex;
-    justify-content: flex-end;
-    align-items: center;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 10px;
 }
 
 /* Calendar KPI tiles (right end of filter row) — color-block stat strip */
@@ -645,12 +646,20 @@ body.modal-open {
     display: flex;
     flex-wrap: nowrap;
     align-items: stretch;
-    justify-content: flex-end;
+    justify-content: flex-start;
     gap: 10px;
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: thin;
-    padding-bottom: 4px;
+    padding: 0 4px 4px 0;
+    flex: 1 1 auto;
+    min-width: 0;
+    scroll-padding-left: 0;
 }
+
+
+/* Per-type color blocks */
+.kpi-tile.type-keynote-speech    { background-color: #0369a1; }
 
 .kpi-tile {
     position: relative;
@@ -751,6 +760,56 @@ body.modal-open {
     border-radius: 2px;
     transform-origin: left center;
     animation: kpi-bar-grow 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Grand Total — white, clean, fixed in place (lives outside the scroll container).
+   NOTE: these rules MUST come after the base .kpi-tile rules so they win the cascade
+   for text color (the base rules set color: #ffffff for icon/label/count). */
+.kpi-tile-total {
+    background: #ffffff;
+    color: #0f172a;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    min-width: 130px;
+    flex: 0 0 auto;
+}
+
+.kpi-tile-total::before {
+    display: none;
+}
+
+.kpi-tile-total .kpi-icon {
+    color: #004165;
+    text-shadow: none;
+    font-size: 0.95rem;
+}
+
+.kpi-tile-total .kpi-label {
+    color: #0f172a !important;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    opacity: 1;
+}
+
+.kpi-tile-total .kpi-count {
+    color: #004165 !important;
+    text-shadow: none;
+    font-size: 1.55rem;
+    letter-spacing: -0.03em;
+    font-weight: 800;
+    opacity: 1;
+}
+
+.kpi-tile-total .kpi-bar {
+    display: none;
+}
+
+.kpi-tile-total:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 6px 14px rgba(15, 23, 42, 0.12),
+        0 1px 2px rgba(15, 23, 42, 0.06);
+    filter: none;
 }
 
 @keyframes kpi-bar-grow {
@@ -882,6 +941,13 @@ body.modal-open {
         flex: 0 0 auto;
         min-width: 135px;
         padding: 8px 12px;
+    }
+    .kpi-tile-total {
+        min-width: 118px;
+        padding: 8px 10px;
+    }
+    .kpi-tile-total .kpi-count {
+        font-size: 1.3rem;
     }
     .kpi-tile .kpi-icon {
         font-size: 0.75rem;
