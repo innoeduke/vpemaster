@@ -1706,6 +1706,26 @@ def update_logs():
                         success=False,
                         message=f"Meeting #{n} already exists in this club.",
                     ), 400
+                
+                # Rename the poster file if it exists
+                if meeting.poster_url:
+                    old_path = _meeting_poster_abs_path(meeting.poster_url)
+                    if old_path and os.path.isfile(old_path):
+                        club = meeting.club or db.session.get(Club, meeting.club_id)
+                        from werkzeug.utils import secure_filename
+                        raw_abbr = (club.short_name or club.club_no or "").strip()
+                        abbr = secure_filename(raw_abbr) or f"club_{club.id}"
+                        new_filename = f"{abbr}_poster_{n}.webp"
+                        new_relative_path = f"club_resources/{club.id}/poster/{new_filename}"
+                        new_path = os.path.realpath(os.path.join(current_app.root_path, 'static', new_relative_path))
+                        
+                        try:
+                            os.makedirs(os.path.dirname(new_path), exist_ok=True)
+                            os.rename(old_path, new_path)
+                            meeting.poster_url = new_relative_path
+                        except OSError as e:
+                            current_app.logger.warning("Could not rename poster file from %s to %s: %s", old_path, new_path, e)
+                
                 meeting.Meeting_Number = n
 
         if new_meeting_title is not None:

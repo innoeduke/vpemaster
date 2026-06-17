@@ -167,6 +167,8 @@
         justify-content: space-between;
         position: relative;
         transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        aspect-ratio: 9 / 16;
+        overflow: hidden;
     }
 
     .club-card:hover {
@@ -183,11 +185,11 @@
         display: flex;
         align-items: center;
         gap: 15px;
-        margin-bottom: 18px;
+        margin-bottom: 0;
         position: relative;
         border-bottom: 1px solid #eef2f7;
         padding-bottom: 15px;
-    }
+     }
 
     .club-logo-wrapper {
         width: 56px;
@@ -344,6 +346,9 @@
     .club-card-body {
         margin-bottom: 20px;
         flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
     }
 
     .info-item {
@@ -374,9 +379,13 @@
     .next-meeting-box {
         background: #f8fafc;
         border-radius: 12px;
-        padding: 14px;
+        padding: 14px 0;
         border: 1px solid #edf2f7;
         margin-top: 15px;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
     }
 
     .next-meeting-box.has-meeting {
@@ -393,6 +402,8 @@
         margin-bottom: 8px;
         text-transform: uppercase;
         letter-spacing: 0.05em;
+        padding-left: 14px;
+        padding-right: 14px;
     }
 
     .next-meeting-header i {
@@ -403,6 +414,9 @@
         display: flex;
         flex-direction: column;
         gap: 4px;
+        flex-shrink: 0;
+        padding-left: 14px;
+        padding-right: 14px;
     }
 
     .meeting-date-time {
@@ -445,16 +459,25 @@
         font-size: 0.85rem;
         color: #a0aec0;
         font-style: italic;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+        padding-left: 14px;
+        padding-right: 14px;
     }
 
     .club-card-poster {
         display: block;
         width: 100%;
-        aspect-ratio: 9 / 16;
+        flex: 1;
+        min-height: 0;
         object-fit: cover;
-        border-radius: 6px;
+        object-position: center;
+        border-radius: 0;
         margin: 0 0 10px;
         background: #e2e8f0;
+        cursor: pointer;
     }
 
     .club-table-poster {
@@ -464,6 +487,7 @@
         border-radius: 4px;
         flex-shrink: 0;
         background: #e2e8f0;
+        cursor: pointer;
     }
 
     .next-meeting-row-table {
@@ -1055,42 +1079,6 @@
                 </div>
                 
                 <div class="club-card-body">
-                    <div class="club-card-badges-row" style="display: flex; gap: 8px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;">
-                        <button class="btn-follow-badge {% if is_favorite %}followed{% endif %}" onclick="toggleFavorite(this, {{ club.id }})" style="margin-bottom: 0;">
-                            {% if is_favorite %}
-                                <i class="fas fa-minus"></i> {{ _('Unfollow') }}
-                            {% else %}
-                                <i class="fas fa-plus"></i> {{ _('Follow') }}
-                            {% endif %}
-                        </button>
-                        
-                        <div class="membership-actions-wrapper">
-                            {% if current_user.is_authenticated and not current_user.is_sysadmin %}
-                            {% if not is_member %}
-                                {% if club.id in pending_club_ids %}
-                                    <button class="btn-cancel-request" onclick="cancelJoinRequest(this, {{ club.id }})">
-                                        <i class="fas fa-times-circle"></i> {{ _('Cancel Request') }}
-                                    </button>
-                                {% else %}
-                                    <button class="btn-join" onclick="requestJoinClub(this, {{ club.id }})">
-                                        <i class="fas fa-user-plus"></i> {{ _('Join') }}
-                                    </button>
-                                {% endif %}
-                            {% else %}
-                                {% if club.id in pending_quit_club_ids %}
-                                    <button class="btn-cancel-request" onclick="cancelQuitRequest(this, {{ club.id }})">
-                                        <i class="fas fa-times-circle"></i> {{ _('Cancel Quit') }}
-                                    </button>
-                                {% else %}
-                                    <button class="btn-quit" onclick="requestQuitClub(this, {{ club.id }})">
-                                        <i class="fas fa-user-minus"></i> {{ _('Quit') }}
-                                    </button>
-                                {% endif %}
-                            {% endif %}
-                            {% endif %}
-                        </div>
-                    </div>
-
                     <!-- Next Meeting Box -->
                     <div class="next-meeting-box {% if next_meeting %}has-meeting{% endif %}">
                         <div class="next-meeting-header">
@@ -1098,7 +1086,7 @@
                         </div>
                         {% if next_meeting %}
                         {% if next_meeting.poster_url %}
-                        <img class="club-card-poster" src="{{ url_for('static', filename=next_meeting.poster_url) }}" alt="{{ next_meeting.Meeting_Title or _('Meeting poster') }}" loading="lazy">
+                        <img class="club-card-poster" src="{{ url_for('static', filename=next_meeting.poster_url) }}" alt="{{ next_meeting.Meeting_Title or _('Meeting poster') }}" loading="lazy" onclick="openPosterModal(this.src)">
                         {% endif %}
                         <div class="next-meeting-content">
                             <div class="meeting-date-time">
@@ -1215,7 +1203,7 @@
                             {% if next_meeting %}
                             <div class="next-meeting-row-table">
                                 {% if next_meeting.poster_url %}
-                                <img class="club-table-poster" src="{{ url_for('static', filename=next_meeting.poster_url) }}" alt="{{ next_meeting.Meeting_Title or _('Meeting poster') }}" loading="lazy">
+                                <img class="club-table-poster" src="{{ url_for('static', filename=next_meeting.poster_url) }}" alt="{{ next_meeting.Meeting_Title or _('Meeting poster') }}" loading="lazy" onclick="openPosterModal(this.src)">
                                 {% endif %}
                                 <div>
                                     <span style="font-weight: 600; color: #2d3748; font-size: 0.9rem;">{{ next_meeting.Meeting_Date.strftime('%Y-%m-%d') }} ({{ next_meeting.Meeting_Date.strftime('%a').lower() }})</span>
@@ -1396,6 +1384,12 @@
         </div>
     </div>
 </div>
+
+<!-- Full Poster Modal -->
+<div id="posterModal" class="modal" onclick="closePosterModal()" style="display: none; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.85); z-index: 2000; position: fixed; top: 0; left: 0; width: 100%; height: 100%;">
+    <span class="close" style="position: absolute; right: 25px; top: 15px; color: white; font-size: 40px; cursor: pointer; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">&times;</span>
+    <img id="modalPosterImg" style="max-width: 90%; max-height: 90%; width: auto; height: auto; object-fit: contain; border-radius: 8px; box-shadow: 0 5px 25px rgba(0,0,0,0.5);">
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -1429,6 +1423,83 @@
         // Load saved view preference or default to grid
         const savedView = localStorage.getItem('club_directory_view') || 'grid';
         setView(savedView);
+
+        // Dynamic next-meeting-box theme color from poster
+        function applyPosterThemeColors() {
+            const posters = document.querySelectorAll('.club-card-poster');
+            posters.forEach(img => {
+                const box = img.closest('.next-meeting-box');
+                if (!box) return;
+
+                const extractAndApply = () => {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 10;
+                        canvas.height = 10;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, 10, 10);
+                        
+                        // Sample top corners, top-center, and mid-left to target the poster's background color
+                        const samples = [
+                            ctx.getImageData(1, 1, 1, 1).data,
+                            ctx.getImageData(8, 1, 1, 1).data,
+                            ctx.getImageData(5, 1, 1, 1).data,
+                            ctx.getImageData(1, 5, 1, 1).data
+                        ];
+                        
+                        let r = 0, g = 0, b = 0, count = 0;
+                        for (const s of samples) {
+                            if (s[3] > 0) { // check alpha
+                                r += s[0];
+                                g += s[1];
+                                b += s[2];
+                                count++;
+                            }
+                        }
+                        
+                        if (count > 0) {
+                            r = Math.round(r / count);
+                            g = Math.round(g / count);
+                            b = Math.round(b / count);
+                            
+                            // If the color is extremely dark/black, use the Toastmasters true blue theme color
+                            if (r < 20 && g < 20 && b < 20) {
+                                r = 0; g = 65; b = 101;
+                            }
+                            
+                            box.style.background = `rgba(${r}, ${g}, ${b}, 0.08)`;
+                            box.style.borderColor = `rgba(${r}, ${g}, ${b}, 0.15)`;
+                        }
+                    } catch (e) {
+                        console.warn('Could not extract theme color from poster:', e);
+                    }
+                };
+
+                if (img.complete) {
+                    extractAndApply();
+                } else {
+                    img.addEventListener('load', extractAndApply);
+                }
+            });
+        }
+        applyPosterThemeColors();
+
+        // Full poster modal helpers
+        window.openPosterModal = function(src) {
+            const modal = document.getElementById('posterModal');
+            const img = document.getElementById('modalPosterImg');
+            if (modal && img) {
+                img.src = src;
+                modal.style.display = 'flex';
+            }
+        };
+
+        window.closePosterModal = function() {
+            const modal = document.getElementById('posterModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        };
 
         // Auto-submit search on typing with debounce
         const searchInput = document.querySelector('.search-input');

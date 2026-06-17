@@ -121,3 +121,101 @@ def test_data_import_service_updates_excomm(app, default_club):
         assert meeting.excomm_id == excomm.id
 
         db.session.rollback()
+
+
+def test_meeting_renumbering_renames_poster(app, default_club, client, monkeypatch):
+    import os
+    from app.models import User, AuthRole, UserClub, Contact, Meeting
+    from app.auth.permissions import Permissions
+    from datetime import date
+    from flask import json
+    
+    # 1. Create a sysadmin user
+    with app.app_context():
+        role = AuthRole.query.filter_by(name=Permissions.SYSADMIN).first()
+        if not role:
+            role = AuthRole(name=Permissions.SYSADMIN, level=100)
+            db.session.add(role)
+            db.session.commit()
+            
+        user = User.query.filter_by(username='sysadmin').first()
+        if not user:
+            user = User(username='sysadmin', email='sysadmin@example.com')
+            user.set_password('password')
+            db.session.add(user)
+            db.session.commit()
+        
+        contact = Contact.query.filter_by(Email=user.email).first()
+        if not contact:
+            contact = Contact(Name='SysAdmin Test', Email=user.email)
+            db.session.add(contact)
+            db.session.commit()
+        
+        user_club = UserClub.query.filter_by(user_id=user.id, club_id=default_club.id).first()
+        if not user_club:
+            user_club = UserClub(user_id=user.id, club_id=default_club.id, club_role_level=role.level, contact_id=contact.id, is_home=True)
+            db.session.add(user_club)
+            db.session.commit()
+        
+        # Setup test club with abbreviation/short name
+        default_club.short_name = "shanghai-leadership"
+        db.session.add(default_club)
+        db.session.commit()
+        
+        meeting = Meeting(
+            Meeting_Number=978,
+            club_id=default_club.id,
+            Meeting_Date=date(2026, 6, 17),
+            poster_url=f"club_resources/{default_club.id}/poster/shanghai-leadership_poster_978.webp"
+        )
+        db.session.add(meeting)
+        db.session.commit()
+
+        meeting_id = meeting.id
+        user_id = user.id
+        club_id = default_club.id
+
+    # 2. Mock file system operations
+    rename_calls = []
+    def mock_rename(src, dst):
+        rename_calls.append((src, dst))
+        
+    def mock_isfile(path):
+        if "shanghai-leadership_poster_978.webp" in path:
+            return True
+        return False
+        
+    monkeypatch.setattr(os, "rename", mock_rename)
+    monkeypatch.setattr(os.path, "isfile", mock_isfile)
+    monkeypatch.setattr(os, "makedirs", lambda path, exist_ok=False: None)
+
+    # 3. Request update logs route using the client
+    with client.session_transaction() as sess:
+        sess['_user_id'] = str(user_id)
+        sess['_fresh'] = True
+        sess['current_club_id'] = club_id
+
+    response = client.post(
+        '/agenda/update',
+        data=json.dumps({
+            'meeting_id': meeting_id,
+            'meeting_number': '979'
+        }),
+        content_type='application/json'
+    )
+    
+    assert response.status_code == 200
+    assert response.json.get('success') is True
+    
+    # Verify file was renamed on disk
+    assert len(rename_calls) == 1
+    src, dst = rename_calls[0]
+    assert "shanghai-leadership_poster_978.webp" in src
+    assert "shanghai-leadership_poster_979.webp" in dst
+
+    # Verify meeting poster_url was updated in the DB
+    with app.app_context():
+        updated_meeting = Meeting.query.get(meeting_id)
+        assert updated_meeting.Meeting_Number == 979
+        assert updated_meeting.poster_url == f"club_resources/{club_id}/poster/shanghai-leadership_poster_979.webp"
+
