@@ -14,18 +14,25 @@
     <div class="filters-control premium">
         <div class="filter-row-premium">
             <div class="filter-left">
-                <form method="GET" action="{{ url_for('main_bp.calendar') }}" id="calendar-date-filter-form" class="date-filter-form">
-                    <div class="date-filter-group">
-                        <div class="date-input-wrapper">
-                            <label class="filter-label" for="start_date">{{ _('Start Date:') }}</label>
-                            <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date or (current_term['start'] if current_term else '') }}" onchange="updateDateSelection()">
+                <button type="button" class="date-range-btn" id="date-range-btn" title="{{ _('Change date range') }}">
+                    <i class="fas fa-calendar-alt date-range-icon" aria-hidden="true"></i>
+                    <span class="date-range-label">{{ range_label or _('Date Range') }}</span>
+                    <i class="fas fa-chevron-down date-range-caret" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="filter-right">
+                <div class="calendar-kpis" aria-label="{{ _('Meeting type summary') }}">
+                    {% for type_name, count in meeting_type_counts.items() %}
+                    {% set pct = (count * 100 / total_meetings) if total_meetings else 0 %}
+                    <div class="kpi-tile type-{{ type_name|lower|replace(' ', '-') }}" title="{{ count }} {{ type_name }}">
+                        <div class="kpi-row">
+                            <div class="kpi-left"><i class="fas {{ type_icons.get(type_name, 'fa-calendar-day') }} kpi-icon" aria-hidden="true"></i><span class="kpi-label">{{ type_name }}</span></div>
+                            <div class="kpi-count">{{ count }}</div>
                         </div>
-                        <div class="date-input-wrapper">
-                            <label class="filter-label" for="end_date">{{ _('End Date:') }}</label>
-                            <input type="date" id="end_date" name="end_date" class="form-control" value="{{ end_date or (current_term['end'] if current_term else '') }}" onchange="updateDateSelection()">
-                        </div>
+                        <div class="kpi-bar"><span style="width: {{ '%.0f' | format(pct) }}%"></span></div>
                     </div>
-                </form>
+                    {% endfor %}
+                </div>
             </div>
         </div>
     </div>
@@ -102,14 +109,81 @@
         </div>
     </div>
 </div>
+
+<div class="date-range-modal" id="date-range-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="date-range-modal-title">
+    <div class="date-range-backdrop" data-close-modal></div>
+    <div class="date-range-card">
+        <div class="date-range-header">
+            <h3 id="date-range-modal-title"><i class="fas fa-calendar-alt"></i> {{ _('Select Date Range') }}</h3>
+            <button type="button" class="date-range-close" data-close-modal aria-label="{{ _('Close') }}">&times;</button>
+        </div>
+        <form method="GET" action="{{ url_for('main_bp.calendar') }}" class="date-range-form" id="date-range-form">
+            <div class="date-range-fields">
+                <div class="month-picker">
+                    <label for="modal-start-month">{{ _('Start Month') }}</label>
+                    <input type="month" id="modal-start-month" name="start_month" value="{{ start_month }}" max="{{ end_month }}" required>
+                </div>
+                <div class="month-picker-arrow" aria-hidden="true">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="month-picker">
+                    <label for="modal-end-month">{{ _('End Month') }}</label>
+                    <input type="month" id="modal-end-month" name="end_month" value="{{ end_month }}" min="{{ start_month }}" required>
+                </div>
+            </div>
+            <p class="date-range-hint">{{ _('Choose the start and end months for the calendar view.') }}</p>
+            <div class="date-range-actions">
+                <button type="button" class="btn-modal btn-modal-secondary" data-close-modal>{{ _('Cancel') }}</button>
+                <button type="submit" class="btn-modal btn-modal-primary">{{ _('Apply') }}</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // --- Date Filter Logic ---
-    function updateDateSelection() {
-        const form = document.getElementById('calendar-date-filter-form');
-        if (form) form.submit();
-    }
+    (function () {
+        const modal = document.getElementById('date-range-modal');
+        const btn = document.getElementById('date-range-btn');
+        if (!modal || !btn) return;
+
+        const open = () => {
+            modal.hidden = false;
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('modal-open');
+        };
+        const close = () => {
+            modal.hidden = true;
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('modal-open');
+        };
+
+        btn.addEventListener('click', open);
+        modal.querySelectorAll('[data-close-modal]').forEach((el) => {
+            el.addEventListener('click', close);
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modal.hidden) close();
+        });
+
+        // Keep start <= end and end >= start as the user changes values
+        const startEl = document.getElementById('modal-start-month');
+        const endEl = document.getElementById('modal-end-month');
+        if (startEl && endEl) {
+            startEl.addEventListener('change', () => {
+                if (startEl.value && (!endEl.value || endEl.value < startEl.value)) {
+                    endEl.value = startEl.value;
+                }
+                endEl.min = startEl.value || '';
+            });
+            endEl.addEventListener('change', () => {
+                if (endEl.value && (!startEl.value || startEl.value > endEl.value)) {
+                    startEl.value = endEl.value;
+                }
+                startEl.max = endEl.value || '';
+            });
+        }
+    })();
 </script>
 {% endblock %}
