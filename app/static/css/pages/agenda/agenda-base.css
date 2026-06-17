@@ -701,16 +701,16 @@ td.actions-column .tm-action-buttons {
 
 /* Column Widths for Edit Mode */
 #logs-table .edit-mode-header th:nth-child(1) {
-	width: 8%;
-	min-width: 45px;
+	width: 6%;
+	min-width: 32px;
 }
 
 #logs-table .edit-mode-header th:nth-child(2) {
-	width: 12%;
+	width: 11%;
 }
 
 #logs-table .edit-mode-header th:nth-child(3) {
-	width: 21%;
+	width: 20%;
 }
 
 #logs-table .edit-mode-header th:nth-child(4) {
@@ -722,10 +722,21 @@ td.actions-column .tm-action-buttons {
 }
 
 .edit-mode-active .col-no {
-	min-width: 45px;
+	min-width: 32px; !important;
 	text-align: center;
-	white-space: nowrap;
 	position: relative;
+	padding-left: 4px !important;
+	padding-right: 4px !important;
+}
+
+.edit-mode-active td.col-no {
+	white-space: nowrap;
+}
+
+.edit-mode-active td.col-duration-min,
+.edit-mode-active td.col-duration-max {
+	padding-left: 6px !important;
+	padding-right: 6px !important;
 }
 
 .info-popover {
@@ -777,11 +788,11 @@ td.actions-column .tm-action-buttons {
 }
 
 #logs-table .edit-mode-header th:nth-child(6) {
-	width: 5%;
+	width: 7%;
 }
 
 #logs-table .edit-mode-header th:nth-child(7) {
-	width: 5%;
+	width: 7%;
 }
 
 #logs-table .edit-mode-header th:nth-child(8) {
@@ -1000,7 +1011,9 @@ td.actions-column .tm-action-buttons {
 	border-right: 1px solid #f1f5f9;
 }
 
-/* Duration column alignment for View Mode */
+/* Time and Duration column alignment for View Mode */
+#agenda-content #logs-table .col-start-time-header,
+#agenda-content #logs-table tbody td.col-start-time,
 #agenda-content #logs-table .col-view-duration-header,
 #agenda-content #logs-table tbody td.col-view-duration {
 	text-align: center;

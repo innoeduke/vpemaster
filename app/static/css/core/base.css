@@ -633,6 +633,7 @@ h1 {
     transition: background-color 0.2s;
     white-space: nowrap;
     text-align: left;
+    text-decoration: none;
 }
 
 .action-menu-item:hover {

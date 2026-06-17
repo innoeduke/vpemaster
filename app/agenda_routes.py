@@ -1966,6 +1966,20 @@ def update_logs():
             except (ValueError, TypeError):
                 pass
 
+        # Update Start Time. Accept "HH:MM" or "HH:MM:SS"; reject anything else
+        # silently rather than 500-ing on bad input.
+        new_start_time = data.get('start_time')
+        if new_start_time:
+            parsed = None
+            for fmt in ('%H:%M', '%H:%M:%S'):
+                try:
+                    parsed = datetime.strptime(new_start_time, fmt).time()
+                    break
+                except (ValueError, TypeError):
+                    continue
+            if parsed is not None:
+                meeting.Start_Time = parsed
+
         # Commit changes to the meeting object before processing logs
         db.session.commit()
 

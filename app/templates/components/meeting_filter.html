@@ -23,7 +23,7 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
         {% elif status == 'running' %}{% set status_icon = '🔴' %}
         {% elif status == 'finished' %}{% set status_icon = '✅' %}
         {% elif status == 'cancelled' %}{% set status_icon = '🚫' %}{% endif %}
-        {% set ns.selected_text = '#' ~ num ~ ' - ' ~ (date.strftime('%B %d, %Y') if date else 'No Date') %}
+        {% set ns.selected_text = '#' ~ num ~ ' - ' ~ (date.strftime('%b %d, %Y') if date else 'No Date') %}
     {% endif %}
 {% endfor %}
 
@@ -79,7 +79,7 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
                         {% set status_icon = '🚫' %}{% set status_label = 'Cancelled' %}
                     {% endif %}
                     
-                    {% set item_text = '#' ~ num ~ ' - ' ~ (date.strftime('%B %d, %Y') if date else 'No Date') %}
+                    {% set item_text = '#' ~ num ~ ' - ' ~ (date.strftime('%b %d, %Y') if date else 'No Date') %}
                     
                     <div class="autocomplete-result-item" data-value="{{ val }}" data-text="{{ item_text }}">
                         <span class="status-icon" title="{{ status_label }}">{{ status_icon }}</span>

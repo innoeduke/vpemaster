@@ -160,6 +160,9 @@
                             {% if can_edit %}
                             <div class="action-menu-item mobile-only-item" id="action-edit-opt"><i class="fas fa-edit"></i> {{ _('Edit') }}</div>
                             {% endif %}
+                            {% if can_edit %}
+                            <div class="action-menu-item" id="action-details-opt"><i class="fas fa-sliders-h"></i> {{ _('Meeting Details') }}</div>
+                            {% endif %}
                             <div class="action-menu-item" id="action-jpg-opt"><i class="fas fa-print"></i> {{ _('Export as Image') }}</div>
                             <a class="action-menu-item" id="action-role-guide-opt" href="{{ url_for('static', filename='files/club-meeting-roles-resource-library.pdf') }}" target="_blank" rel="noopener"><i class="fas fa-book-open"></i> {{ _('View Role Guide') }}</a>
                             {% if can_edit and is_module_enabled('Data/Slides Export') %}
@@ -169,22 +172,24 @@
                             <div class="action-menu-item" id="action-ppt-opt"><i class="fas fa-file-powerpoint"></i> {{ _('Download PPT') }}</div>
                             {% endif %}
                             {% if can_edit %}
-                            <div class="action-menu-item" id="action-poster-opt"><i class="fas fa-image"></i> {{ _('Upload Poster') }}</div>
                             {% if selected_meeting.poster_url %}
                             <div class="action-menu-item action-menu-item--danger" id="action-poster-delete-opt"><i class="fas fa-trash-alt"></i> {{ _('Remove Poster') }}</div>
+                            {% else %}
+                            <div class="action-menu-item" id="action-poster-opt"><i class="fas fa-image"></i> {{ _('Upload Poster') }}</div>
                             {% endif %}
                             {% endif %}
                         </div>
                     </div>
-                    {% if can_edit %}
-                    <input type="file" id="poster-file-input" accept="image/png,image/jpeg,image/webp" data-meeting-id="{{ selected_meeting.id }}" hidden>
-                    {% endif %}
                     {% endif %}
                 </div>
             </div>
 
         </div>
     </div>
+
+    {% if selected_meeting and is_authorized(Permissions.MEETING_MANAGE, meeting=selected_meeting) %}
+    <input type="file" id="poster-file-input" accept="image/png,image/jpeg,image/webp" data-meeting-id="{{ selected_meeting.id }}" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
+    {% endif %}
 
     {% if notice_image %}
     <div class="notice-image-container">
@@ -197,7 +202,6 @@
     {% if is_authorized(Permissions.MEETING_MANAGE, meeting=selected_meeting) %}
     <div class="button-group" id="edit-mode-buttons" style="display: none;">
         <button id="cancel-edit-btn" class="btn btn-secondary">{{ _('Cancel') }}</button>
-        <button id="view-details-btn" class="btn btn-primary" data-meeting-type="{{ selected_meeting.type or '' }}">{{ _('Details') }}</button>
         <button id="add-row-btn" class="btn btn-primary">{{ _('+Section') }}</button>
         <button id="edit-logs-btn" class="btn btn-primary">{{ _('Save') }}</button>
     </div>
@@ -207,7 +211,7 @@
         <table id="logs-table">
             <thead>
                 <tr class="non-edit-mode-header">
-                    <th><i class="fas fa-clock"></i></th>
+                    <th class="col-start-time-header"><i class="fas fa-clock"></i></th>
                     <th><i class="fas fa-file-alt"></i> {{ _('Session') }}</th>
                     <th><i class="fas fa-user"></i> {{ _('Owner') }}</th>
                     <th class="col-view-duration-header"><i class="fas fa-hourglass-half"></i> {{ _("Min'") }}</th>
@@ -259,7 +263,7 @@
                         </div>
                     </td>
                     {% else %}
-                    <td class="non-edit-mode-cell">{{ log_dict.Start_Time_str }}</td>
+                    <td class="non-edit-mode-cell col-start-time">{{ log_dict.Start_Time_str }}</td>
                     <td class="non-edit-mode-cell col-session">
                         <div class="speech-tooltip-wrapper">
                             {% set cleaned_title = log_dict.Session_Title|replace('"', '') if log_dict.Session_Title

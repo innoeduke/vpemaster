@@ -486,6 +486,18 @@
                    value="{{ selected_meeting.Subtitle or '' }}"
                    placeholder="e.g. Suhail's story">
           </div>
+        </div>
+        <div class="mdm-grid mdm-grid--three" style="margin-top: 14px;">
+          <div class="mdm-field">
+            <label for="edit-start-time">Start Time</label>
+            <input type="time"
+                   id="edit-start-time"
+                   class="edit-mode-field"
+                   value="{{ selected_meeting.Start_Time.strftime('%H:%M') if selected_meeting and selected_meeting.Start_Time else '' }}">
+            <small class="mdm-hint">
+              <i class="fas fa-info-circle"></i>Session times roll forward from here.
+            </small>
+          </div>
           <div class="mdm-field">
             <label for="edit-meeting-type">Meeting Type</label>
             <select id="edit-meeting-type" class="edit-mode-field">
