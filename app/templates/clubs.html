@@ -1219,8 +1219,8 @@
                                 {% endif %}
                                 <div>
                                     <span style="font-weight: 600; color: #2d3748; font-size: 0.9rem;">{{ next_meeting.Meeting_Date.strftime('%Y-%m-%d') }} ({{ next_meeting.Meeting_Date.strftime('%a').lower() }})</span>
-                                    {% if next_meeting.Start_Time %}
-                                    <span class="text-muted small">@ {{ next_meeting.Start_Time.strftime('%H:%M') }}</span>
+                                    {% if club.meeting_time %}
+                                    <span class="text-muted small">@ {{ club.meeting_time.strftime('%H:%M') }}</span>
                                     {% endif %}
                                     <div style="font-size: 0.8em; color: #718096; margin-top: 2px;">{{ next_meeting.type }}</div>
                                 </div>
