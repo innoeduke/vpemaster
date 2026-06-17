@@ -188,10 +188,32 @@
                             {% set ticket_info = entry.ticket %}
                             {% set icon_color = ticket_info.color or '#6c757d' %}
                             {% set icon_class = ticket_info.icon or 'fa-ticket-alt' %}
-                            <span class="ticket-badge {% if entry.order_number is none and entry.ticket and entry.ticket.expired_at and now > datetime.combine(selected_meeting.Meeting_Date, entry.ticket.expired_at) %}ticket-expired{% endif %}"
-                                  data-type="{{ entry.ticket.type if entry.ticket else '' }}">
-                                <i class="fas {{ icon_class }}" style="color: {{ icon_color }};" title="{{ entry.ticket.name if entry.ticket else '' }}"></i>
-                                {{ _(entry.ticket.name.split('(')[0].strip()) if entry.ticket else '' }}
+                            {% set is_unpaid_early_bird = entry.order_number is none and ticket_info.name == 'Early-bird' %}
+                            {% set is_meeting_finished = selected_meeting.status == 'finished' %}
+                            {% set early_bird_expired = ticket_info.expired_at and now > datetime.combine(selected_meeting.Meeting_Date, ticket_info.expired_at) %}
+                            {% if is_unpaid_early_bird and is_meeting_finished %}
+                                {% set display_name = 'Unpaid' %}
+                                {% set display_icon = 'fa-times-circle' %}
+                                {% set display_color = '#800000' %}
+                            {% elif is_unpaid_early_bird and early_bird_expired %}
+                                {% set walk_in_ticket = tickets_map.get('Walk-in') if tickets_map else none %}
+                                {% set display_name = 'Walk-in' %}
+                                {% set display_icon = walk_in_ticket.icon if walk_in_ticket and walk_in_ticket.icon else icon_class %}
+                                {% set display_color = walk_in_ticket.color if walk_in_ticket and walk_in_ticket.color else icon_color %}
+                            {% else %}
+                                {% set display_name = ticket_info.name.split('(')[0].strip() %}
+                                {% set display_icon = icon_class %}
+                                {% set display_color = icon_color %}
+                            {% endif %}
+                            {% if is_unpaid_early_bird %}
+                                {% set show_expired_class = early_bird_expired or is_meeting_finished %}
+                            {% else %}
+                                {% set show_expired_class = entry.order_number is none and ticket_info.expired_at and early_bird_expired %}
+                            {% endif %}
+                            <span class="ticket-badge {% if show_expired_class %}ticket-expired{% endif %}"
+                                  data-type="{{ ticket_info.type }}">
+                                <i class="fas {{ display_icon }}" style="color: {{ display_color }};" title="{{ display_name }}"></i>
+                                {{ _(display_name) }}
                             </span>
                             {% else %}
                             &mdash;

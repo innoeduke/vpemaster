@@ -1786,6 +1786,19 @@ def update_logs():
             MeetingAwardConfig.query.filter_by(meeting_id=meeting.id).delete()
             MeetingAwardWinner.query.filter_by(meeting_id=meeting.id).delete()
 
+            # Deduplicate by category — a corrupted/legacy client payload can
+            # contain the same category twice (e.g. a default "Debater" plus a
+            # user-added custom "Debater" sharing the same award category key).
+            # The (meeting_id, award_category) unique constraint on
+            # meeting_award_configs would otherwise reject the second INSERT.
+            # Keep the LAST occurrence so the most recent user edits win.
+            seen_cats = {}
+            for award in awards_data:
+                cat = (award.get('category') or '').strip()
+                if cat:
+                    seen_cats[cat] = award
+            awards_data = list(seen_cats.values())
+
             for award in awards_data:
                 category = award.get('category', '').strip()
                 if not category:
