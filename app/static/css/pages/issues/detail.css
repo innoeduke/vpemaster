@@ -1,0 +1,112 @@
+
+    .issue-detail-page { padding: 20px 0; max-width: 1400px; margin: 0 auto; }
+    .issue-detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 280px;
+        gap: 20px;
+    }
+    @media (max-width: 768px) {
+        .issue-detail-grid { grid-template-columns: 1fr; }
+    }
+    .issue-main, .issue-sidebar {
+        background: #fff;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .issue-header {
+        display: flex; align-items: center; gap: 10px;
+        flex-wrap: wrap; margin-bottom: 12px;
+    }
+    .issue-id { color: #888; font-weight: 400; font-size: 0.7em; }
+    .issue-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 15px; }
+    .issue-badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 0.75em; font-weight: 600; color: #fff; text-transform: uppercase; letter-spacing: 0.04em; }
+    .badge-type-bug { background: #c0392b; }
+    .badge-type-feature { background: #2c7a7b; }
+    .badge-type-task { background: #4a5568; }
+    .badge-prio-high { background: #c0392b; }
+    .badge-prio-medium { background: #d69e2e; }
+    .badge-prio-low { background: #718096; }
+    .badge-status-open { background: #3182ce; }
+    .badge-status-in_progress { background: #d69e2e; }
+    .badge-status-closed { background: #38a169; }
+    .badge-status-rejected { background: #718096; }
+    .badge-status-cancelled { background: #a0aec0; }
+    .issue-description {
+        white-space: pre-wrap; background: #f7f8fa; padding: 15px;
+        border-radius: 6px; border-left: 3px solid #772432; margin: 15px 0;
+        font-size: 0.95em; line-height: 1.5;
+    }
+    .issue-sidebar h3 {
+        font-size: 0.95em; color: #555; margin: 0 0 12px 0;
+        text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;
+    }
+    .issue-sidebar .field { margin-bottom: 14px; }
+    .issue-sidebar .field-label { font-size: 0.8em; color: #888; margin-bottom: 3px; }
+    .issue-sidebar .field-value { font-size: 0.95em; color: #222; }
+    .issue-sidebar hr { border: none; border-top: 1px solid #eef0f3; margin: 18px 0; }
+
+    .comment-thread { margin-top: 25px; }
+    .comment { background: #f7f8fa; padding: 12px 15px; border-radius: 6px; margin-bottom: 10px; }
+    .comment-meta { font-size: 0.8em; color: #888; margin-bottom: 6px; }
+    .comment-meta strong { color: #555; }
+    .comment-body { white-space: pre-wrap; line-height: 1.45; font-size: 0.95em; }
+    .comment-form { margin-top: 15px; }
+    .comment-form textarea { width: 100%; min-height: 80px; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-family: inherit; font-size: 0.95em; box-sizing: border-box; }
+    .locked-notice {
+        margin-top: 15px; padding: 10px 15px; background: #fef3c7; color: #92400e;
+        border-radius: 6px; font-size: 0.9em; border-left: 3px solid #d69e2e;
+    }
+
+    .edit-form { margin-top: 20px; padding-top: 20px; border-top: 1px solid #eef0f3; }
+    .edit-form h3 { font-size: 0.95em; color: #555; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em; }
+    .edit-form .form-group { margin-bottom: 12px; }
+    .edit-form .form-group label,
+    .edit-form .custom-select-label {
+        font-family: Arial, sans-serif;
+        font-weight: 600;
+        font-size: 0.95em;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    .edit-form .custom-select-trigger,
+    .edit-form .autocomplete-result-item {
+        font-family: 'Gotham', 'Montserrat', 'Inter', sans-serif;
+    }
+    .edit-form input[type="text"], .edit-form textarea {
+        width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 4px;
+        font-family: inherit; font-size: 0.95em; box-sizing: border-box;
+    }
+    .edit-form textarea { min-height: 120px; resize: vertical; }
+    .edit-form .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+    @media (max-width: 900px) { .edit-form .form-row { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 600px) { .edit-form .form-row { grid-template-columns: 1fr; } }
+
+    .back-link { display: inline-block; margin-bottom: 15px; color: #555; text-decoration: none; }
+    .back-link:hover { color: #772432; }
+
+    /* Buttons in the detail page */
+    .issue-detail-page .btn {
+        font-family: "Montserrat", sans-serif;
+        font-size: 0.82em !important;
+        font-weight: 600 !important;
+        padding: 4px 12px !important;
+        height: 30px !important;
+        min-height: 30px !important;
+        border-radius: 6px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-sizing: border-box !important;
+        line-height: normal !important;
+        box-shadow: none !important;
+    }
+    .issue-detail-page .btn i { font-size: 0.9em; margin-right: 6px; }
+    .btn-close-issue {
+        background-color: #1f883d !important;
+        color: white !important;
+        border: none !important;
+    }
+    .btn-close-issue:hover {
+        background-color: #1a6f30 !important;
+    }

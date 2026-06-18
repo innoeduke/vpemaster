@@ -40,18 +40,7 @@
         </div>
         {% endfor %}
       </div>
-      <script>
-        document.addEventListener('DOMContentLoaded', () => {
-          const flashes = document.querySelectorAll('.flash-messages .flash');
-          flashes.forEach(flash => {
-            setTimeout(() => {
-              flash.style.opacity = '0';
-              flash.style.transform = 'translateY(20px)';
-              flash.addEventListener('transitionend', () => flash.remove());
-            }, 3000);
-          });
-        });
-      </script>
+      <script defer src="{{ url_for('static', filename='js/auth/register_init.js') }}"></script>
       {% endif %}
       {% endwith %}
 

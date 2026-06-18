@@ -111,13 +111,7 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/template_manager.js') }}"></script>
-<script>
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', window.TemplateManager.initListPage);
-  } else {
-    window.TemplateManager.initListPage();
-  }
-</script>
+<script defer src="{{ url_for('static', filename='js/template_manager_init.js') }}"></script>
 
 <div id="tm-new-modal" class="modal" style="display: none;">
   <div class="modal-content" style="max-width: 420px;">

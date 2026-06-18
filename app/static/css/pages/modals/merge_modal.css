@@ -1,0 +1,38 @@
+#mergeContactModal {
+    z-index: 1005;
+}
+
+#secondaryContactsList {
+    list-style: none;
+    padding: 0 !important;
+    margin: 0;
+}
+
+#secondaryContactsList li {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#secondaryContactsList li:hover {
+    background: #eff6ff;
+    border-color: #004165;
+    color: #004165;
+}
+
+#secondaryContactsList li strong {
+    color: #0f172a;
+}
+
+#secondaryContactsList li:hover strong {
+    color: #004165;
+}

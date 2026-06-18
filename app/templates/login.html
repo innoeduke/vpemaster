@@ -39,18 +39,7 @@
         </div>
         {% endfor %}
       </div>
-      <script>
-        document.addEventListener('DOMContentLoaded', () => {
-          const flashes = document.querySelectorAll('.flash-messages .flash');
-          flashes.forEach(flash => {
-            setTimeout(() => {
-              flash.style.opacity = '0';
-              flash.style.transform = 'translateY(20px)';
-              flash.addEventListener('transitionend', () => flash.remove());
-            }, 3000);
-          });
-        });
-      </script>
+      <script defer src="{{ url_for('static', filename='js/login_init.js') }}"></script>
       {% endif %}
       {% endwith %}
       <form action="{{ url_for('auth_bp.login') }}{% if request.args.get('next') %}?next={{ request.args.get('next') }}{% endif %}" method="post" class="login-form">
@@ -94,25 +83,9 @@
   </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const signUpLink = document.getElementById('sign-up-link');
-      const usernameInput = document.getElementById('username');
-
-      // Sign Up: pre-fill the register page with whatever the user has typed.
-      // The link's href is a fallback; we override it at click time so the
-      // current username value travels with the navigation.
-      if (signUpLink && usernameInput) {
-        signUpLink.addEventListener('click', function (e) {
-          e.preventDefault();
-          const username = usernameInput.value.trim();
-          const base = "{{ url_for('auth_bp.register') }}";
-          window.location.href = username
-            ? base + "?username=" + encodeURIComponent(username)
-            : base;
-        });
-      }
-    });
+    window.LOGIN_REGISTER_URL = "{{ url_for('auth_bp.register') }}";
   </script>
+  <script defer src="{{ url_for('static', filename='js/login_signup.js') }}"></script>
 </body>
 
 </html>

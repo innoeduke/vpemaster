@@ -461,28 +461,7 @@
     <script defer src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>
     <script defer src="{{ url_for('static', filename='vendor/js/html2canvas.min.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/agenda.js') }}?v={{ 'js/agenda.js' | static_version }}"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Initialize custom selects for New Meeting form
-            new CustomSelect('meeting_type');
-            new CustomSelect('ge_mode');
-        });
-
-        function dismissAgendaMessage(elementId) {
-            const el = document.getElementById(elementId);
-            if (el) {
-                el.style.display = 'none';
-                localStorage.setItem('dismissed_' + elementId, 'true');
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function () {
-            const pathwaysBox = document.getElementById('pathways-info-box');
-            if (pathwaysBox && !localStorage.getItem('dismissed_pathways-info-box')) {
-                pathwaysBox.style.display = 'block';
-            }
-        });
-    </script>
+    <script defer src="{{ url_for('static', filename='js/agenda.js') }}"></script>
     <div id="custom-modal" class="custom-modal">
         <div class="custom-modal-content">
             <div id="custom-modal-icon" class="custom-modal-icon"></div>

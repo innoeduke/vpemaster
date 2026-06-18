@@ -288,6 +288,12 @@
   font-weight: 500;
 }
 
+.modal-subtitle {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 5px;
+}
+
 optgroup {
   font-weight: 700;
   color: #004165;

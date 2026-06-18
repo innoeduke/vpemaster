@@ -64,8 +64,6 @@
     {{ url_for('template_manager_bp.list_templates')|tojson }}
   </script>
   <script src="{{ url_for('static', filename='js/template_manager.js') }}"></script>
-  <script>
-    window.TemplateManager.initEditorPage();
-  </script>
+  <script defer src="{{ url_for('static', filename='js/template_manager_init.js') }}"></script>
 </div>
 {% endblock %}

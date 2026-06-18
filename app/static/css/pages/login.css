@@ -118,6 +118,22 @@ h6 {
   letter-spacing: 0.01em;
 }
 
+/* Lock the submit button to maroon — defends against any legacy/stale
+   .btn-success green rule bleeding through via cached bundles. */
+#submit-btn.btn-primary,
+.login-form .btn-primary {
+  background: linear-gradient(180deg, #8c2a3c 0%, #5a1a26 100%) !important;
+  border-color: #5a1a26 !important;
+  color: #ffffff !important;
+}
+
+#submit-btn.btn-primary:hover,
+.login-form .btn-primary:hover {
+  background: linear-gradient(180deg, #9a3145 0%, #6b1f2e 100%) !important;
+  border-color: #6b1f2e !important;
+  color: #ffffff !important;
+}
+
 .alert-container {
   width: 100%;
   max-width: 400px;

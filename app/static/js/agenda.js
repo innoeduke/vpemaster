@@ -3593,3 +3593,25 @@ window.showCustomAlert = function (title, message, iconClass = "alert") {
   });
 };
 
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize custom selects for New Meeting form
+            new CustomSelect('meeting_type');
+            new CustomSelect('ge_mode');
+        });
+
+        function dismissAgendaMessage(elementId) {
+            const el = document.getElementById(elementId);
+            if (el) {
+                el.style.display = 'none';
+                localStorage.setItem('dismissed_' + elementId, 'true');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const pathwaysBox = document.getElementById('pathways-info-box');
+            if (pathwaysBox && !localStorage.getItem('dismissed_pathways-info-box')) {
+                pathwaysBox.style.display = 'block';
+            }
+        });
+    

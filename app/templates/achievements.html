@@ -72,9 +72,5 @@
     </table>
 </div>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        setupTableSorting("achievementsTable");
-    });
-</script>
+<script defer src="{{ url_for('static', filename='js/achievements_init.js') }}"></script>
 {% endblock %}

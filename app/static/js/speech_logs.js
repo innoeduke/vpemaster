@@ -343,3 +343,29 @@ window.addEventListener('resize', function () {
   // Simple debounce or check
   adjustTableForIpad();
 });
+
+    function toggleLevel(level) {
+        const logsContainer = document.getElementById('logs-' + level);
+        const progressSummary = document.getElementById('progress-' + level);
+        const caret = document.getElementById('caret-' + level);
+
+        const isHidden = !logsContainer || logsContainer.style.display === 'none';
+
+        if (logsContainer) {
+            if (isHidden) {
+                logsContainer.style.display = 'grid';
+                if (progressSummary) progressSummary.style.display = 'flex';
+                if (caret) {
+                    caret.classList.remove('fa-chevron-right');
+                    caret.classList.add('fa-chevron-down');
+                }
+            } else {
+                logsContainer.style.display = 'none';
+                if (progressSummary) progressSummary.style.display = 'none';
+                if (caret) {
+                    caret.classList.remove('fa-chevron-down');
+                    caret.classList.add('fa-chevron-right');
+                }
+            }
+        }
+    }

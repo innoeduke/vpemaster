@@ -2648,3 +2648,15 @@ function openEditTicketModal(id, name, type, price, iconValue, color, expiredAt)
 }
 
 
+
+  document.addEventListener('DOMContentLoaded', function () {
+    // Check if mobile (width < 768px matches typical tablet/mobile breakpoint)
+    if (window.innerWidth < 768) {
+      const modal = document.getElementById('mobile-settings-warning-modal');
+      modal.style.display = 'flex';
+
+      // Prevent scrolling on body
+      document.body.style.overflow = 'hidden';
+    }
+
+  });

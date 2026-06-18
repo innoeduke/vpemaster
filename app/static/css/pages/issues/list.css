@@ -1,0 +1,302 @@
+
+    .issue-list-page { padding: 20px 0; width: 100%; max-width: 1400px; margin: 0 auto; }
+    .issue-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.72em; font-weight: 600; color: #fff; text-transform: uppercase; letter-spacing: 0.04em; }
+    .badge-type-bug { background: #c0392b; }
+    .badge-type-feature { background: #2c7a7b; }
+    .badge-type-task { background: #4a5568; }
+    .badge-prio-high { background: #c0392b; }
+    .badge-prio-medium { background: #d69e2e; }
+    .badge-prio-low { background: #718096; }
+    .badge-status-open { background: #3182ce; }
+    .badge-status-in_progress { background: #d69e2e; }
+    .badge-status-closed { background: #38a169; }
+    .badge-status-rejected { background: #718096; }
+    .badge-status-cancelled { background: #a0aec0; }
+    
+    /* Subdued, consistent Filter + Reset buttons in the filter bar. */
+    .filter-action-btn {
+        background: transparent;
+        color: #772432;
+        border: 1px solid #772432;
+        font-weight: 600;
+        box-shadow: none;
+        padding: 4px 12px;
+        min-height: 30px !important;
+        height: 30px !important;
+        font-size: 0.82em;
+        border-radius: 6px;
+        line-height: 1.4;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+    }
+    .filter-action-btn:hover {
+        background: #e5e7eb;
+        color: #772432;
+    }
+    .filter-action-btn:focus {
+        outline: none;
+        background: rgba(0, 0, 0, 0.06);
+    }
+    .filter-action-btn:focus:hover {
+        background: #e5e7eb;
+        color: #772432;
+    }
+    .filter-action-btn i {
+        display: inline-block;
+        border-radius: 50%;
+        padding: 0;
+        margin: 0;
+        color: inherit;
+        transition: background-color 0.15s, padding 0.15s, margin 0.15s;
+    }
+    .filter-action-btn:hover i {
+        padding: 4px 6px;
+        margin: -4px -6px;
+        background: rgba(119, 36, 50, 0.12);
+    }
+    .filter-action-btn:focus i {
+        padding: 4px 6px;
+        margin: -4px -6px;
+        background: rgba(119, 36, 50, 0.1);
+    }
+    .filter-action-btn:focus:hover i {
+        background: rgba(119, 36, 50, 0.12);
+    }
+
+    /* Maroon New Issue button in Tracker sidebar */
+    .msg-sidebar .msg-compose-btn {
+        background-color: #772432 !important;
+    }
+    .msg-sidebar .msg-compose-btn:hover {
+        background-color: #5f1c28 !important;
+    }
+
+    /* Custom tweaks for filters inside the new header layout */
+    .msg-header .issue-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        background: transparent;
+        box-shadow: none;
+        padding: 0;
+        margin-bottom: 0;
+        margin-left: auto;
+    }
+    .msg-header .issue-filters .form-group {
+        margin-bottom: 0;
+        min-width: 110px;
+        max-width: 140px;
+        flex: 1 1 auto;
+    }
+    .msg-header .issue-filters .custom-select-label {
+        display: none; /* Hide labels inside the header to keep it compact */
+    }
+    .msg-header .issue-filters .custom-select-trigger {
+        font-family: 'Inter', sans-serif;
+        padding: 4px 10px !important;
+        min-height: 30px !important;
+        height: 30px !important;
+        font-size: 0.82em !important;
+        border-radius: 6px;
+        box-sizing: border-box;
+        display: flex !important;
+        align-items: center !important;
+        line-height: 1.2 !important;
+    }
+    .msg-header .issue-filters .custom-select-trigger .selected-text {
+        font-size: inherit !important;
+    }
+
+    /* Grid layout for list container */
+    #issues-list-container {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr)); /* Force equal 1:1 columns */
+        gap: 1.25rem;
+        align-content: start;
+        overflow-y: hidden !important; /* Do not allow scrolling and pagination to exist together */
+    }
+    
+    /* Issue Card Optimized Layout (3:1 Aspect Ratio) */
+    .msg-item.issue-card-row {
+        aspect-ratio: 3 / 1;
+        height: auto;
+        box-sizing: border-box;
+        padding: 1.15rem 1.4rem;
+        margin-bottom: 0; /* Let grid gap manage spacing */
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+        min-width: 0; /* Prevents overflow from breaking grid columns */
+    }
+    
+    .msg-item.issue-card-row .msg-content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+        padding-right: 0;
+        gap: 0.75rem; /* Clean gap between rows */
+    }
+    
+    .issue-title-area {
+        display: flex;
+        align-items: flex-start;
+        flex: 1;
+        min-width: 0; /* Important for wrapping inside flexbox */
+        margin-right: 12px;
+    }
+    
+    .issue-id-badge {
+        background: #edf2f7;
+        color: #4a5568;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.78em;
+        font-weight: 700;
+        margin-right: 8px;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+    
+    .issue-title-text {
+        color: #2d3748;
+        font-weight: 700;
+        font-size: 0.95em;
+        line-height: 1.35;
+        word-wrap: break-word;
+        word-break: break-word;
+    }
+    
+    .issue-badges-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 0;
+    }
+    
+    .issue-badge-group {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    
+    .issue-club-info {
+        display: flex;
+        align-items: center;
+        font-size: 0.85em;
+        color: #718096; /* Gray matching the icon */
+        font-weight: 700;
+    }
+    
+    .issue-club-info i {
+        margin-right: 4px;
+        color: #718096; /* Gray matching the icon */
+    }
+    
+    .issue-description-preview {
+        font-size: 0.85em;
+        color: #718096;
+        margin: 0;
+        line-height: 1.45;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        flex-grow: 1;
+    }
+    
+    .issue-card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid #edf2f7;
+        padding-top: 0.6rem;
+        margin: 0;
+        font-size: 0.78em;
+        color: #718096;
+    }
+    
+    .issue-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .issue-meta-item i {
+        color: #a0aec0;
+    }
+    
+    .issue-meta-item strong {
+        color: #4a5568;
+    }
+    
+    /* Make pagination clean in the footer */
+    .msg-main .pagination-container {
+        margin: 0 1.5rem 1.5rem 1.5rem;
+        background-color: #fff;
+        border: 1px solid var(--msg-border);
+        box-shadow: none;
+    }
+
+    /* Support responsive/mobile layout for issues msg-layout */
+    @media (max-width: 768px) {
+        .msg-layout {
+            flex-direction: column;
+            height: auto;
+            margin: 10px;
+        }
+        .msg-sidebar {
+            width: 100%;
+            border-right: none;
+            border-bottom: 1px solid var(--msg-border);
+            padding: 1rem;
+        }
+        .msg-nav-container {
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .msg-nav-item {
+            flex: 1 1 calc(50% - 8px);
+            margin-bottom: 0;
+        }
+        .msg-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+            padding: 1rem;
+            height: auto;
+        }
+        .msg-header .issue-filters {
+            width: 100%;
+            margin-left: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .msg-header .issue-filters .form-group {
+            max-width: none;
+        }
+        .msg-header .issue-filters .custom-select-trigger {
+            height: 30px !important;
+            min-height: 30px !important;
+            padding: 4px 10px !important;
+        }
+        .msg-header .issue-filters #reset-btn {
+            grid-column: span 2;
+            width: 100%;
+        }
+        #issues-list-container {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        .msg-item.issue-card-row {
+            aspect-ratio: auto;
+            min-height: 140px;
+        }
+    }

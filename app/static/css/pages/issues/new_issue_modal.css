@@ -1,0 +1,67 @@
+
+#newIssueModal .modal-content {
+    max-width: 480px;
+    width: 90%;
+    padding: 22px 24px;
+    font-size: 0.88em;
+    text-align: left;
+    font-family: 'Gotham', 'Montserrat', 'Inter', sans-serif;
+}
+#newIssueModal .new-issue-modal-title {
+    margin: 0 0 14px 0;
+    text-align: center;
+    font-size: 1.4em;
+}
+#newIssueModal .new-issue-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+#newIssueModal .new-issue-actions {
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+}
+#newIssueModal .new-issue-error {
+    display: none;
+    margin-bottom: 10px;
+}
+#newIssueModal .new-issue-success {
+    display: none;
+    text-align: center;
+    padding: 20px;
+}
+#newIssueModal .new-issue-success i {
+    color: #28a745;
+    font-size: 3em;
+    margin-bottom: 15px;
+}
+#newIssueModal .form-group { margin-bottom: 12px; }
+#newIssueModal .form-group label,
+#newIssueModal .custom-select-label {
+    font-family: Arial, sans-serif;
+    font-size: 0.95em;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+    text-align: left;
+    display: block;
+}
+#newIssueModal .form-control,
+#newIssueModal .custom-select-trigger {
+    padding: 6px 10px;
+    font-size: 0.95em;
+    text-align: left;
+}
+#newIssueModal .btn {
+    font-size: 0.9em;
+    padding: 0.5em 1em;
+    line-height: 1.4;
+}
+#newIssueModal .btn i { font-size: 0.9em; }
+#newIssueModal .autocomplete-result-item,
+#newIssueModal .autocomplete-result-item span,
+#newIssueModal .custom-select-trigger .selected-text {
+    font-family: 'Gotham', 'Montserrat', 'Inter', sans-serif;
+}
+#newIssueModal textarea { resize: vertical; }

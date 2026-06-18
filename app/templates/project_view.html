@@ -143,14 +143,5 @@
 {% block speech_log_scripts %}
  {{ super() }}
  <script src="{{ url_for('static', filename='js/components/custom_select_adapter.js') }}"></script>
- <script>
-     document.addEventListener('DOMContentLoaded', function() {
-         const pSelect = document.getElementById('pathway');
-         const form = document.getElementById('speech-logs-filter-form');
-
-         if (pSelect) {
-             new CustomSelectAdapter(pSelect);
-         }
-     });
- </script>
+ <script defer src="{{ url_for('static', filename='js/project_view_init.js') }}"></script>
 {% endblock %}
