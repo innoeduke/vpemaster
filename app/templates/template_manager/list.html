@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/_button_macros.html" import btn %}
 
 {% block title %}{{ _('Templates') }}{% endblock %}
 
@@ -22,9 +23,9 @@
   <section class="tm-section">
     <div class="tm-section-header">
       <h2 class="tm-section-title">{{ _('Meeting Templates') }}</h2>
-      <button type="button" class="btn btn-primary" id="tm-new-btn">
+      {% call btn('new', id='tm-new-btn') %}
         <i class="fas fa-plus"></i> {{ _('New') }}
-      </button>
+      {% endcall %}
     </div>
 
     {% if templates %}
@@ -73,10 +74,9 @@
 
     {% if not show_export_form %}
     <p>
-      <a class="btn btn-secondary"
-         href="{{ url_for('template_manager_bp.list_templates', show_export=1) }}">
+      {% call btn('secondary', tag='a', href=url_for('template_manager_bp.list_templates', show_export=1)) %}
         <i class="fas fa-file-export"></i> {{ _('Show meetings to export from') }}
-      </a>
+      {% endcall %}
     </p>
     {% else %}
     <form method="post" action="{{ url_for('template_manager_bp.export_from_meeting') }}" class="tm-form">
@@ -98,13 +98,12 @@
                title="{{ _('Letters, numbers, spaces, underscores, and hyphens only') }}"
                placeholder="{{ _('e.g. Keynote from Meeting 42') }}">
       </label>
-      <button type="submit" class="btn btn-primary">
+      {% call btn('save', type='submit') %}
         <i class="fas fa-file-export"></i> {{ _('Export') }}
-      </button>
-      <a class="btn btn-secondary"
-         href="{{ url_for('template_manager_bp.list_templates') }}">
+      {% endcall %}
+      {% call btn('close', tag='a', href=url_for('template_manager_bp.list_templates')) %}
         {{ _('Cancel') }}
-      </a>
+      {% endcall %}
     </form>
     {% endif %}
   </section>
@@ -124,10 +123,10 @@
                placeholder="{{ _('Choose a name for this template...') }}" autofocus>
       </label>
       <div class="form-actions" style="justify-content: flex-end; gap: 10px;">
-        <button type="button" class="btn btn-secondary" id="tm-new-modal-cancel">{{ _('Cancel') }}</button>
-        <button type="submit" class="btn btn-primary">
+        {% call btn('close', id='tm-new-modal-cancel') %}{{ _('Cancel') }}{% endcall %}
+        {% call btn('new', type='submit') %}
           <i class="fas fa-plus"></i> {{ _('Create') }}
-        </button>
+        {% endcall %}
       </div>
     </form>
   </div>

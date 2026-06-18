@@ -1,6 +1,6 @@
 {# Reusable Button Macros #}
 
-{% macro btn(variant='primary', size=none, tag='button', href=none, type=none, class='', id=none, disabled=false, title=none, **attrs) -%}
+{% macro btn(variant='primary', size=none, tag='button', href=none, type=none, class='', id=none, disabled=false, title=none, attrs={}) -%}
     {% set variant_map = {
         'primary': 'btn-primary',
         'success': 'btn-success',
@@ -10,17 +10,19 @@
         'warning': 'btn-warning',
         'cancel': 'btn-cancel',
         'outline': 'btn-outline',
-        'save': 'btn-primary',
-        'new': 'btn-primary',
-        'delete': 'btn-danger',
+        'save': 'btn-save',
+        'new': 'btn-save',
+        'delete': 'btn-delete',
         'edit': 'btn-outline',
-        'search': 'btn-info',
-        'reset': 'btn-secondary',
+        'search': 'btn-save',
+        'export': 'btn-save',
+        'reset': 'btn-delete',
         'close': 'btn-cancel',
     } %}
-    {% set classes = ['btn', variant_map.get(variant, 'btn-primary')] %}
-    {% if size == 'sm' %}{% do classes.append('btn-sm') %}{% endif %}
-    {% if class %}{% do classes.append(class) %}{% endif %}
+    {% set variant_class = variant_map.get(variant, 'btn-primary') %}
+    {% set classes = ['btn', variant_class] %}
+    {% if size == 'sm' %}{% set classes = classes + ['btn-sm'] %}{% endif %}
+    {% if class %}{% set classes = classes + [class] %}{% endif %}
     {% set class_str = classes|join(' ') %}
     {% if tag == 'a' %}
         <a class="{{ class_str }}" href="{{ href or '#' }}"{% if id %} id="{{ id }}"{% endif %}{% if title %} title="{{ title }}"{% endif %}{% if disabled %} disabled{% endif %}{% for k, v in attrs.items() %} {{ k|replace('_', '-') }}="{{ v }}"{% endfor %}>{{ caller() }}</a>
@@ -30,9 +32,9 @@
 {%- endmacro %}
 
 
-{% macro icon_btn(class='', id=none, disabled=false, title=none, tag='button', href=none, **attrs) -%}
+{% macro icon_btn(class='', id=none, disabled=false, title=none, tag='button', href=none, attrs={}) -%}
     {% set classes = ['icon-btn'] %}
-    {% if class %}{% do classes.append(class) %}{% endif %}
+    {% if class %}{% set classes = classes + [class] %}{% endif %}
     {% set class_str = classes|join(' ') %}
     {% if tag == 'a' %}
         <a class="{{ class_str }}" href="{{ href or '#' }}"{% if id %} id="{{ id }}"{% endif %}{% if title %} title="{{ title }}"{% endif %}{% if disabled %} disabled{% endif %}{% for k, v in attrs.items() %} {{ k|replace('_', '-') }}="{{ v }}"{% endfor %}>{{ caller() }}</a>
