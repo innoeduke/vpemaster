@@ -8,7 +8,7 @@
     .clubs-container {
         max-width: 1200px;
         margin: 0 auto;
-        padding: 30px 20px;
+        padding: 30px 0;
     }
 
     .clubs-header {
@@ -36,20 +36,22 @@
 
     /* Search styling */
     .search-form {
-        display: inline-block;
+        display: block;
+        width: 100% !important;
     }
 
     .search-container {
         position: relative;
-        width: 300px;
+        width: 100% !important;
     }
 
-    .search-input {
-        padding-left: 35px;
-        padding-right: 30px;
+    input.search-input {
+        width: 100%;
+        padding-left: 40px !important;
+        padding-right: 30px !important;
         border-radius: 8px;
         border: 1px solid #dee2e6;
-        height: 42px;
+        height: 42px !important;
         transition: all 0.2s;
     }
 
@@ -65,6 +67,7 @@
         transform: translateY(-50%);
         color: #adb5bd;
         pointer-events: none;
+        z-index: 1;
     }
 
     .clear-search {
@@ -835,14 +838,118 @@
             width: 100%;
         }
         .search-form, .search-container {
-            width: 100%;
+            display: block;
+            width: 100% !important;
         }
         .btn-create {
             width: 100%;
             justify-content: center;
         }
         .view-toggle-container {
-            justify-content: center;
+            display: none;
+        }
+
+        /* === Deck-of-Cards (mobile only) === */
+        #clubs-grid-view.clubs-grid--deck {
+            display: block;
+            position: relative;
+            width: 100%;
+            height: 70vh;
+            min-height: 480px;
+            margin-bottom: 30px;
+        }
+        #clubs-grid-view.clubs-grid--deck .club-card {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: min(360px, 92vw);
+            transform-origin: center top;
+            -webkit-tap-highlight-color: transparent;
+        }
+        @media (prefers-reduced-motion: no-preference) {
+            #clubs-grid-view.clubs-grid--deck .club-card {
+                transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+                            opacity 0.35s ease;
+                will-change: transform, opacity;
+            }
+        }
+        #clubs-grid-view.clubs-grid--deck .club-card[data-stack-index="0"] {
+            transform: translate(-50%, 0) scale(1);
+            opacity: 1;
+            z-index: 100;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+        #clubs-grid-view.clubs-grid--deck .club-card[data-stack-index="1"] {
+            transform: translate(-50%, 14px) scale(0.96);
+            opacity: 0.85;
+            z-index: 90;
+            pointer-events: none;
+        }
+        #clubs-grid-view.clubs-grid--deck .club-card[data-stack-index="2"] {
+            transform: translate(-50%, 28px) scale(0.92);
+            opacity: 0.7;
+            z-index: 80;
+            pointer-events: none;
+        }
+        #clubs-grid-view.clubs-grid--deck .club-card[data-stack-index="3"] {
+            transform: translate(-50%, 42px) scale(0.88);
+            opacity: 0.55;
+            z-index: 70;
+            pointer-events: none;
+        }
+        #clubs-grid-view.clubs-grid--deck .club-card[data-stack-index="4"],
+        #clubs-grid-view.clubs-grid--deck .club-card[data-stack-index="5"],
+        #clubs-grid-view.clubs-grid--deck .club-card[data-stack-index="6"],
+        #clubs-grid-view.clubs-grid--deck .club-card[data-stack-index="7"],
+        #clubs-grid-view.clubs-grid--deck .club-card[data-stack-index="8"],
+        #clubs-grid-view.clubs-grid--deck .club-card[data-stack-index="9"],
+        #clubs-grid-view.clubs-grid--deck .club-card[data-stack-index="10"],
+        #clubs-grid-view.clubs-grid--deck .club-card[data-stack-index="11"] {
+            transform: translate(-50%, 56px) scale(0.84);
+            opacity: 0;
+            z-index: 60;
+            pointer-events: none;
+        }
+        @media (prefers-reduced-motion: no-preference) {
+            #clubs-grid-view.clubs-grid--deck .club-card.club-card--flying {
+                transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+                            opacity 0.35s ease;
+            }
+        }
+        #clubs-grid-view.clubs-grid--deck .club-card.club-card--flying {
+            transform: translate(-50%, -120%) scale(0.95) rotate(-6deg);
+            opacity: 0;
+        }
+        @media (prefers-reduced-motion: no-preference) {
+            #clubs-grid-view.clubs-grid--deck .club-card[data-stack-index="0"]:active {
+                transform: translate(-50%, 0) scale(0.97);
+                transition: transform 0.1s ease;
+            }
+        }
+        #clubs-grid-view.clubs-grid--deck .deck-counter {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            background: rgba(0, 65, 101, 0.85);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 10px;
+            letter-spacing: 0.04em;
+            z-index: 2;
+            pointer-events: none;
+        }
+        #clubs-grid-view.clubs-grid--deck .deck-hint {
+            position: absolute;
+            bottom: 8px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #718096;
+            pointer-events: none;
         }
     }
 
@@ -1062,7 +1169,7 @@
             {% set is_favorite = club.id in user_favorites %}
             {% set next_meeting = next_meeting_by_club.get(club.id) %}
             
-            <div class="club-card {% if is_home %}home-club-highlight{% endif %}" data-club-id="{{ club.id }}">
+            <div class="club-card {% if is_home %}home-club-highlight{% endif %}" data-club-id="{{ club.id }}" tabindex="0">
                 <div class="club-card-header">
                     <div class="club-logo-wrapper">
                         <img src="{{ url_for('static', filename=club.effective_logo_url) }}" alt="Club Logo" class="club-card-logo">
@@ -1401,28 +1508,166 @@
         const gridView = document.getElementById('clubs-grid-view');
         const tableView = document.getElementById('clubs-table-view');
 
+        // --- Deck-of-cards (mobile) ---
+        const DECK_MQ = window.matchMedia('(max-width: 768px)');
+        let deckCards = [];
+        let deckActive = false;
+        let deckSafetyTimer = null;
+
         function setView(view) {
-            if (view === 'grid') {
+            const isDeck = view === 'deck';
+
+            if (isDeck) {
+                btnGrid.classList.remove('active');
+                btnTable.classList.remove('active');
+                tableView.style.display = 'none';
+                gridView.style.display = 'block';
+                gridView.classList.add('clubs-grid--deck');
+            } else if (view === 'grid') {
                 btnGrid.classList.add('active');
                 btnTable.classList.remove('active');
+                gridView.classList.remove('clubs-grid--deck');
                 gridView.style.display = 'grid';
                 tableView.style.display = 'none';
                 localStorage.setItem('club_directory_view', 'grid');
             } else {
                 btnGrid.classList.remove('active');
                 btnTable.classList.add('active');
+                gridView.classList.remove('clubs-grid--deck');
                 gridView.style.display = 'none';
                 tableView.style.display = 'block';
                 localStorage.setItem('club_directory_view', 'table');
+            }
+
+            if (isDeck) {
+                initDeck();
+            } else {
+                teardownDeck();
+            }
+        }
+
+        function rebuildDeckCards() {
+            deckCards = Array.from(gridView.querySelectorAll('.club-card'));
+            deckCards.forEach((card, i) => card.setAttribute('data-stack-index', i));
+        }
+
+        function updateDeckCounter() {
+            if (deckCards.length === 0) return;
+            deckCards.forEach((card, i) => {
+                let counter = card.querySelector('.deck-counter');
+                if (i === 0) {
+                    if (!counter) {
+                        counter = document.createElement('span');
+                        counter.className = 'deck-counter';
+                        card.appendChild(counter);
+                    }
+                    counter.textContent = (i + 1) + ' / ' + deckCards.length;
+                } else if (counter) {
+                    counter.remove();
+                }
+            });
+        }
+
+        function initDeck() {
+            if (deckActive) return;
+            deckActive = true;
+            rebuildDeckCards();
+            updateDeckCounter();
+
+            let hint = document.getElementById('deck-hint');
+            if (!hint) {
+                hint = document.createElement('div');
+                hint.id = 'deck-hint';
+                hint.className = 'deck-hint';
+                hint.textContent = '{{ _("Tap the card to see the next one") }}';
+                gridView.appendChild(hint);
+            }
+            hint.style.display = deckCards.length > 0 ? '' : 'none';
+
+            gridView.addEventListener('click', onDeckClick);
+        }
+
+        function teardownDeck() {
+            if (!deckActive) return;
+            deckActive = false;
+            gridView.removeEventListener('click', onDeckClick);
+            if (deckSafetyTimer) {
+                clearTimeout(deckSafetyTimer);
+                deckSafetyTimer = null;
+            }
+            deckCards.forEach(card => card.removeAttribute('data-stack-index'));
+            deckCards = [];
+            const hint = document.getElementById('deck-hint');
+            if (hint) hint.style.display = 'none';
+            gridView.querySelectorAll('.deck-counter').forEach(el => el.remove());
+        }
+
+        function onDeckClick(e) {
+            if (!deckActive || deckCards.length <= 1) return;
+
+            const top = deckCards[0];
+            if (!top || !top.contains(e.target)) return;
+
+            const interactive = e.target.closest(
+                'button, a, input, select, textarea, [role="button"], ' +
+                '.club-card-poster, .btn-favorite, .btn-follow-badge, ' +
+                '.btn-join, .btn-quit, .btn-cancel-request, .btn-card-admin, ' +
+                '.btn-enter, [data-bs-toggle], [data-bs-target]'
+            );
+            if (interactive) return;
+
+            // If mid-animation, snap the previous cycle to its end before starting a new one
+            if (deckSafetyTimer) {
+                clearTimeout(deckSafetyTimer);
+                deckSafetyTimer = null;
+                top.classList.remove('club-card--flying');
+            }
+
+            top.classList.add('club-card--flying');
+
+            const onTransitionEnd = (ev) => {
+                if (ev.propertyName !== 'transform') return;
+                top.removeEventListener('transitionend', onTransitionEnd);
+                if (deckSafetyTimer) {
+                    clearTimeout(deckSafetyTimer);
+                    deckSafetyTimer = null;
+                }
+                top.classList.remove('club-card--flying');
+                deckCards.push(deckCards.shift());
+                deckCards.forEach((card, i) => card.setAttribute('data-stack-index', i));
+                updateDeckCounter();
+            };
+            top.addEventListener('transitionend', onTransitionEnd);
+            deckSafetyTimer = setTimeout(() => {
+                top.removeEventListener('transitionend', onTransitionEnd);
+                top.classList.remove('club-card--flying');
+                deckCards.push(deckCards.shift());
+                deckCards.forEach((card, i) => card.setAttribute('data-stack-index', i));
+                updateDeckCounter();
+                deckSafetyTimer = null;
+            }, 500);
+        }
+
+        function applyDeckOrSavedView() {
+            if (DECK_MQ.matches) {
+                setView('deck');
+            } else {
+                const saved = localStorage.getItem('club_directory_view') || 'grid';
+                setView(saved);
             }
         }
 
         btnGrid.addEventListener('click', () => setView('grid'));
         btnTable.addEventListener('click', () => setView('table'));
 
-        // Load saved view preference or default to grid
-        const savedView = localStorage.getItem('club_directory_view') || 'grid';
-        setView(savedView);
+        // Initial render + react to viewport changes
+        applyDeckOrSavedView();
+        if (DECK_MQ.addEventListener) {
+            DECK_MQ.addEventListener('change', applyDeckOrSavedView);
+        } else if (DECK_MQ.addListener) {
+            // Safari < 14 fallback
+            DECK_MQ.addListener(applyDeckOrSavedView);
+        }
 
         // Dynamic next-meeting-box theme color from poster
         function applyPosterThemeColors() {
