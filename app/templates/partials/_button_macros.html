@@ -1,0 +1,42 @@
+{# Reusable Button Macros #}
+
+{% macro btn(variant='primary', size=none, tag='button', href=none, type=none, class='', id=none, disabled=false, title=none, **attrs) -%}
+    {% set variant_map = {
+        'primary': 'btn-primary',
+        'success': 'btn-success',
+        'secondary': 'btn-secondary',
+        'danger': 'btn-danger',
+        'info': 'btn-info',
+        'warning': 'btn-warning',
+        'cancel': 'btn-cancel',
+        'outline': 'btn-outline',
+        'save': 'btn-primary',
+        'new': 'btn-primary',
+        'delete': 'btn-danger',
+        'edit': 'btn-outline',
+        'search': 'btn-info',
+        'reset': 'btn-secondary',
+        'close': 'btn-cancel',
+    } %}
+    {% set classes = ['btn', variant_map.get(variant, 'btn-primary')] %}
+    {% if size == 'sm' %}{% do classes.append('btn-sm') %}{% endif %}
+    {% if class %}{% do classes.append(class) %}{% endif %}
+    {% set class_str = classes|join(' ') %}
+    {% if tag == 'a' %}
+        <a class="{{ class_str }}" href="{{ href or '#' }}"{% if id %} id="{{ id }}"{% endif %}{% if title %} title="{{ title }}"{% endif %}{% if disabled %} disabled{% endif %}{% for k, v in attrs.items() %} {{ k|replace('_', '-') }}="{{ v }}"{% endfor %}>{{ caller() }}</a>
+    {% else %}
+        <button class="{{ class_str }}" type="{{ type or 'button' }}"{% if id %} id="{{ id }}"{% endif %}{% if title %} title="{{ title }}"{% endif %}{% if disabled %} disabled{% endif %}{% for k, v in attrs.items() %} {{ k|replace('_', '-') }}="{{ v }}"{% endfor %}>{{ caller() }}</button>
+    {% endif %}
+{%- endmacro %}
+
+
+{% macro icon_btn(class='', id=none, disabled=false, title=none, tag='button', href=none, **attrs) -%}
+    {% set classes = ['icon-btn'] %}
+    {% if class %}{% do classes.append(class) %}{% endif %}
+    {% set class_str = classes|join(' ') %}
+    {% if tag == 'a' %}
+        <a class="{{ class_str }}" href="{{ href or '#' }}"{% if id %} id="{{ id }}"{% endif %}{% if title %} title="{{ title }}"{% endif %}{% if disabled %} disabled{% endif %}{% for k, v in attrs.items() %} {{ k|replace('_', '-') }}="{{ v }}"{% endfor %}>{{ caller() }}</a>
+    {% else %}
+        <button class="{{ class_str }}" type="button"{% if id %} id="{{ id }}"{% endif %}{% if title %} title="{{ title }}"{% endif %}{% if disabled %} disabled{% endif %}{% for k, v in attrs.items() %} {{ k|replace('_', '-') }}="{{ v }}"{% endfor %}>{{ caller() }}</button>
+    {% endif %}
+{%- endmacro %}
