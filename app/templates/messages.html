@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/_button_macros.html" import btn %}
 
 {% block title %}Messages{% endblock %}
 
@@ -89,9 +90,9 @@
                 <button class="btn btn-success" id="detail-restore-btn" onclick="restoreMessage(currentMessageId)" style="display: none;">
                     <i class="fas fa-trash-restore"></i> Restore
                 </button>
-                <button class="btn btn-danger" id="detail-delete-btn" onclick="deleteCurrentMessage()">
+                {% call btn('delete', id='detail-delete-btn', attrs={'onclick': 'deleteCurrentMessage()'}) %}
                     <i class="fas fa-trash-alt"></i> Delete
-                </button>
+                {% endcall %}
             </div>
             <button class="btn btn-secondary" onclick="closeMessageDetailModal()">Close</button>
         </div>
@@ -110,7 +111,7 @@
         </div>
         <div class="confirm-actions">
             <button class="btn btn-secondary" onclick="closeDeleteConfirmModal()">Cancel</button>
-            <button class="btn btn-danger" onclick="confirmDeleteMessage()">Delete</button>
+            {% call btn('delete', attrs={'onclick': 'confirmDeleteMessage()'}) %}Delete{% endcall %}
         </div>
     </div>
 </div>
@@ -127,7 +128,7 @@
         </div>
         <div class="confirm-actions">
             <button class="btn btn-secondary" onclick="closeEmptyTrashConfirmModal()">Cancel</button>
-            <button class="btn btn-danger" onclick="confirmEmptyTrash()">Empty Trash</button>
+            {% call btn('delete', attrs={'onclick': 'confirmEmptyTrash()'}) %}Empty Trash{% endcall %}
         </div>
     </div>
 </div>

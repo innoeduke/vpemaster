@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/_button_macros.html" import btn %}
 
 {% block title %}{{ _('Uploaded Files') }} - {{ link.title }}{% endblock %}
 
@@ -74,9 +75,10 @@
                 <a href="{{ url_for('uploads_bp.download_file', code=link.code, filename=file.name) }}" class="btn btn-secondary" title="{{ _('Download file') }}">
                     <i class="fas fa-download"></i>
                 </a>
-                <button class="btn btn-danger" onclick="deleteSingleFile('{{ file.name }}')" title="{{ _('Delete file') }}">
+                {% set onclick_val = "deleteSingleFile('" ~ file.name ~ "')" %}
+                {% call btn('delete', title=_('Delete file'), attrs={'onclick': onclick_val}) %}
                     <i class="fas fa-trash-alt"></i>
-                </button>
+                {% endcall %}
             </div>
         </div>
         {% endfor %}
@@ -94,9 +96,9 @@
         {% endif %}
     </span>
     <button class="btn btn-secondary" onclick="deselectAll()" style="padding: 6px 12px; font-size: 0.85rem;">{{ _('Deselect All') }}</button>
-    <button class="btn btn-danger" onclick="deleteSelectedFiles()" style="padding: 6px 12px; font-size: 0.85rem; background-color: #d63031; border: none;">
+    {% call btn('delete', attrs={'onclick': 'deleteSelectedFiles()', 'style': 'padding: 6px 12px; font-size: 0.85rem; background-color: #d63031; border: none;'}) %}
         <i class="fas fa-trash-alt"></i> {{ _('Delete Selected') }}
-    </button>
+    {% endcall %}
 </div>
 
 <!-- Progressive Download Progress Overlay -->

@@ -1,3 +1,4 @@
+{% from "partials/_button_macros.html" import btn %}
 <div id="speechEditModal" class="modal">
   <div class="modal-content speech-edit-modal">
     <!-- Header -->
@@ -224,8 +225,8 @@
 
       <!-- Footer -->
       <div class="sem-footer">
-        <button type="button" class="btn btn-speech-cancel" onclick="closeEditDetailsModal()">Cancel</button>
-        <button type="submit" class="btn btn-speech-save">Save</button>
+        {% call btn('cancel', attrs={'onclick': 'closeEditDetailsModal()'}) %}Cancel{% endcall %}
+        {% call btn('save', type='submit') %}Save{% endcall %}
       </div>
     </form>
   </div>

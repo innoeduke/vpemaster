@@ -1,3 +1,4 @@
+{% from "partials/_button_macros.html" import btn %}
 <!-- Compose Modal (Brand-aligned: navy #004165, Inter, refined) -->
 <div class="compose-modal" id="composeModal">
     <div class="compose-modal-content">
@@ -36,7 +37,7 @@
             <div class="compose-footer">
                 <span class="compose-footer-hint" id="compose_footer_hint">Add at least one recipient.</span>
                 <div class="compose-footer-actions">
-                    <button type="button" class="btn-cancel" onclick="closeComposeModal()">Cancel</button>
+                    {% call btn('cancel', attrs={'onclick': 'closeComposeModal()'}) %}Cancel{% endcall %}
                     <button type="submit" class="btn-send">
                         <span>Send</span>
                         <span class="send-arrow"><i class="fas fa-arrow-right"></i></span>

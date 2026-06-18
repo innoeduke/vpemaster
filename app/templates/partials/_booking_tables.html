@@ -1,3 +1,4 @@
+{% from "partials/_button_macros.html" import btn %}
 {# Macro to render a single role row in the table #}
 {% macro render_role_row(role, status, is_admin_view, contacts, current_user_contact_id) %}
 <tr data-session-id="{{ role.session_id }}" data-role="{{ role.role }}" 
@@ -165,8 +166,7 @@
         {% else %}
         {% if role.owner_id %}
         {% if role.owner_id == current_user_contact_id %}
-        <button class="btn btn-cancel"
-            onclick="bookOrCancelRole('{{ role.session_id }}', 'cancel', '{{ role.role }}')">{{ _('Cancel') }}</button>
+        {% call btn('cancel', attrs={'onclick': "bookOrCancelRole('" + role.session_id + "', 'cancel', '" + role.role + "')"}) %}{{ _('Cancel') }}{% endcall %}
         {% else %}
         {% set waitlist_ids = role.waitlist|map(attribute='id')|list %}
         {% if current_user_contact_id in waitlist_ids %}

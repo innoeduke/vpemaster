@@ -1,3 +1,4 @@
+{% from "partials/_button_macros.html" import btn %}
 <!-- Add/Edit User Modal -->
 <div id="userModal" class="planner-modal">
   <div class="planner-modal-content planner-modal-medium">
@@ -70,8 +71,8 @@
         {% endif %}
       </div>
       <div class="planner-modal-footer">
-        <button type="button" class="btn btn-speech-cancel" onclick="closeUserModal()">{{ _('Cancel') }}</button>
-        <button type="submit" class="btn btn-speech-save" id="user-submit-btn">{{ _('Save') }}</button>
+        {% call btn('cancel', attrs={'onclick': 'closeUserModal()'}) %}{{ _('Cancel') }}{% endcall %}
+        {% call btn('save', type='submit', id='user-submit-btn') %}{{ _('Save') }}{% endcall %}
       </div>
     </form>
   </div>

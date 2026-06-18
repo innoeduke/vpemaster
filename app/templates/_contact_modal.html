@@ -1,3 +1,4 @@
+{% from "partials/_button_macros.html" import btn %}
 <div id="contactModal" class="modal">
   <div class="modal-content">
     <div class="modal-header">
@@ -135,8 +136,8 @@
         </div>
 
         <div class="form-actions">
-          <button type="button" class="btn btn-speech-cancel" onclick="closeContactModal()">{{ _('Cancel') }}</button>
-          <button type="submit" class="btn btn-speech-save">{{ _('Save') }}</button>
+          {% call btn('cancel', attrs={'onclick': 'closeContactModal()'}) %}{{ _('Cancel') }}{% endcall %}
+          {% call btn('save', type='submit') %}{{ _('Save') }}{% endcall %}
         </div>
       </div>
     </form>

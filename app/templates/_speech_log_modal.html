@@ -1,3 +1,4 @@
+{% from "partials/_button_macros.html" import btn %}
 <div id="speechLogModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeSpeechLogModal()">&times;</span>
@@ -22,8 +23,8 @@
                 </tr>
             </table>
             <div class="form-actions">
-                <button type="button" class="btn btn-success" onclick="saveProjectDetails()">Save</button>
-                <button type="button" class="btn btn-danger" onclick="closeSpeechLogModal()">Cancel</button>
+                {% call btn('save', attrs={'onclick': 'saveProjectDetails()'}) %}Save{% endcall %}
+                {% call btn('danger', attrs={'onclick': 'closeSpeechLogModal()'}) %}Cancel{% endcall %}
             </div>
         </form>
     </div>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/_button_macros.html" import btn %}
 
 {% block title %}Settings{% endblock %}
 
@@ -500,9 +501,9 @@
         <button id="save-permissions-btn" class="btn btn-primary" title="{{ _('Export current matrix to club resources folder (app/static/club_resources/<club_id>/permissions.json)') }}">
           {{ _('Save as Default') }}
         </button>
-        <button id="reset-permissions-btn" class="btn btn-danger" title="{{ _('Reset matrix to the default (club JSON if present, otherwise global JSON)') }}" disabled>
+        {% call btn('delete', id='reset-permissions-btn', disabled=true, title=_('Reset matrix to the default (club JSON if present, otherwise global JSON)')) %}
           {{ _('Reset to Default') }}
-        </button>
+        {% endcall %}
       </div>
     </div>
     <div class="permissions-matrix-container">

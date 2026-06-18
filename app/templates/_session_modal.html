@@ -1,3 +1,4 @@
+{% from "partials/_button_macros.html" import btn %}
 <div id="addSessionModal" class="modal">
   <div class="modal-content">
     <span class="close" onclick="closeModal('addSessionModal')">&times;</span>
@@ -64,8 +65,8 @@
       </fieldset>
 
       <div class="form-actions" style="margin-top: 40px;">
-        <button type="button" class="btn btn-danger" onclick="closeModal('addSessionModal')">{{ _('Cancel') }}</button>
-        <button type="submit" id="session-modal-submit" class="btn btn-success">{{ _('Save') }}</button>
+        {% call btn('danger', attrs={'onclick': "closeModal('addSessionModal')"}) %}{{ _('Cancel') }}{% endcall %}
+        {% call btn('success', id='session-modal-submit', type='submit') %}{{ _('Save') }}{% endcall %}
       </div>
     </form>
   </div>

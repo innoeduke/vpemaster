@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "components/meeting_filter.html" import render_meeting_filter %}
+{% from "partials/_button_macros.html" import btn %}
 
 {% block title %}{{ _('Meeting Agenda') }}{% endblock %}
 
@@ -143,11 +144,11 @@
                     {% set can_view_unpublished = is_authorized(Permissions.MEETING_VIEW_ALL) %}
 
                     {% if can_edit %}
-                    <button id="edit-btn" class="btn btn-primary">{{ _('Edit') }}</button>
+                    {% call btn('primary', id='edit-btn') %}{{ _('Edit') }}{% endcall %}
                     {% endif %}
 
                     {% if is_authorized(Permissions.MEETING_CREATE) %}
-                    <button id="create-btn" class="btn btn-success">{{ _('New') }}</button>
+                    {% call btn('success', id='create-btn') %}{{ _('New') }}{% endcall %}
                     {% endif %}
 
                     {% if selected_meeting %}
@@ -201,9 +202,9 @@
     {# Edit Mode Buttons (Only visible if authorized) #}
     {% if is_authorized(Permissions.MEETING_MANAGE, meeting=selected_meeting) %}
     <div class="button-group" id="edit-mode-buttons" style="display: none;">
-        <button id="cancel-edit-btn" class="btn btn-secondary">{{ _('Cancel') }}</button>
-        <button id="add-row-btn" class="btn btn-primary">{{ _('+Section') }}</button>
-        <button id="edit-logs-btn" class="btn btn-primary">{{ _('Save') }}</button>
+        {% call btn('secondary', id='cancel-edit-btn') %}{{ _('Cancel') }}{% endcall %}
+        {% call btn('primary', id='add-row-btn') %}{{ _('+Section') }}{% endcall %}
+        {% call btn('save', id='edit-logs-btn') %}{{ _('Save') }}{% endcall %}
     </div>
     {% endif %}
 
@@ -437,8 +438,8 @@
                     </div>
                 </div>
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-success">{{ _('Create Meeting') }}</button>
-                    <button type="button" class="btn btn-primary" onclick="closeCreateAgendaModal()">{{ _('Cancel') }}</button>
+                    {% call btn('new', type='submit') %}{{ _('Create Meeting') }}{% endcall %}
+                    {% call btn('cancel', attrs={'onclick': 'closeCreateAgendaModal()'}) %}{{ _('Cancel') }}{% endcall %}
                 </div>
             </form>
         </div>
@@ -461,15 +462,14 @@
     <script defer src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>
     <script defer src="{{ url_for('static', filename='vendor/js/html2canvas.min.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/agenda.js') }}?v={{ 'js/agenda.js' | static_version }}"></script>
-    <script defer src="{{ url_for('static', filename='js/agenda.js') }}"></script>
     <div id="custom-modal" class="custom-modal">
         <div class="custom-modal-content">
             <div id="custom-modal-icon" class="custom-modal-icon"></div>
             <div id="custom-modal-title" class="custom-modal-title"></div>
             <div id="custom-modal-message" class="custom-modal-message"></div>
             <div id="custom-modal-actions" class="custom-modal-actions">
-                <button id="custom-modal-cancel" class="custom-modal-btn btn-cancel" style="display: none;">{{ _('Cancel') }}</button>
-                <button id="custom-modal-ok" class="custom-modal-btn btn-confirm">{{ _('OK') }}</button>
+                {% call btn('cancel', id='custom-modal-cancel', class='custom-modal-btn', attrs={'style': 'display: none;'}) %}{{ _('Cancel') }}{% endcall %}
+                {% call btn('ok', id='custom-modal-ok', class='custom-modal-btn btn-confirm') %}{{ _('OK') }}{% endcall %}
             </div>
         </div>
     </div>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/_button_macros.html" import btn %}
 {% from "partials/_profile_macros.html" import profile_section, field_row, field_row_pair %}
 {% from "components/custom_select.html" import render_custom_select %}
 {% block title %}User Profile{% endblock %}
@@ -127,7 +128,7 @@
     </div>
     {% if can_edit_profile %}
     <div class="form-actions" style="margin-top: 10px">
-      <button type="submit" id="update-profile-btn" class="btn btn-primary" disabled>Update Profile</button>
+      {% call btn('primary', id='update-profile-btn', type='submit', disabled=true) %}Update Profile{% endcall %}
     </div>
     {% endif %}
   </form>
@@ -167,7 +168,7 @@
           Reset to "toastmasters"
       </button>
       {% endif %}
-      <button type="submit" class="btn btn-success">Save</button>
+      {% call btn('success', type='submit') %}Save{% endcall %}
     </div>
   </form>
 </div>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/_button_macros.html" import btn %}
 
 {% block title %}{{ _('Club Directory') }}{% endblock %}
 
@@ -367,7 +368,7 @@
             </div>
         </div>
         <div class="delete-modal-footer">
-            <button type="button" class="btn-cancel" data-bs-dismiss="modal">{{ _('Keep Club') }}</button>
+            {% call btn('cancel', attrs={'data-bs-dismiss': 'modal'}) %}{{ _('Keep Club') }}{% endcall %}
             <form action="{{ url_for('clubs_bp.delete_club', club_id=club.id) }}" method="POST" style="margin: 0;">
                 <button type="submit" class="btn-delete-confirm">{{ _('Delete Permanently') }}</button>
             </form>

@@ -1,3 +1,4 @@
+{% from "partials/_button_macros.html" import btn %}
 <!-- Plan Modal -->
 <div id="planModal" class="planner-modal">
     <div class="planner-modal-content">
@@ -61,10 +62,9 @@
                 <textarea id="notes" class="planner-form-control" rows="3"></textarea>
             </div>
             <div class="planner-modal-footer">
-                <button type="button" class="planner-btn planner-btn-secondary" onclick="closeModal()">{{ _('Cancel') }}</button>
-                <button type="submit" id="save-plan-btn" class="planner-btn planner-btn-primary">{{ _('Draft Box') }}</button>
-                <button type="button" id="book-btn" class="planner-btn planner-btn-success" style="display: none;"
-                    onclick="bookPlan()">{{ _('Book') }}</button>
+                {% call btn('cancel', class='planner-btn', attrs={'onclick': 'closeModal()'}) %}{{ _('Cancel') }}{% endcall %}
+                {% call btn('save', id='save-plan-btn', class='planner-btn', type='submit') %}{{ _('Draft Box') }}{% endcall %}
+                {% call btn('save', id='book-btn', class='planner-btn', attrs={'style': 'display: none;', 'onclick': 'bookPlan()'}) %}{{ _('Book') }}{% endcall %}
             </div>
         </form>
     </div>

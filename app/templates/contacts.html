@@ -1,4 +1,4 @@
-{% extends "base.html" %} {% block title %}{{ _('Contacts') }}{% endblock %} {% block
+{% extends "base.html" %} {% from "partials/_button_macros.html" import btn %} {% block title %}{{ _('Contacts') }}{% endblock %} {% block
 head_extra %}
  
 {% endblock %} {% block content %}
@@ -47,13 +47,8 @@ head_extra %}
       </div>
       <div class="button-group">
         {% if is_authorized(Permissions.ROSTER_EDIT) %}
-        <button class="btn btn-success desktop-only-btn" onclick="openContactModal()">
-          {{ _('New') }}
-        </button>
-        <button id="mergeContactsBtn" class="btn btn-warning" onclick="handleMergeClick()" style="display: none"
-          title="{{ _('Select at least 2 contacts to merge') }}">
-          {{ _('Merge') }}
-        </button>
+        {% call btn('success', class='desktop-only-btn', attrs={'onclick': 'openContactModal()'}) %}{{ _('New') }}{% endcall %}
+        {% call btn('warning', id='mergeContactsBtn', title=_('Select at least 2 contacts to merge'), attrs={'onclick': 'handleMergeClick()', 'style': 'display: none'}) %}{{ _('Merge') }}{% endcall %}
         {% endif %}
         
         {% if is_authorized(Permissions.ROSTER_VIEW) %}

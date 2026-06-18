@@ -1,3 +1,4 @@
+{% from "partials/_button_macros.html" import btn %}
 <div id="addRoleModal" class="modal">
   <div class="modal-content role-modal-content">
     <span class="close" onclick="closeModal('addRoleModal')">&times;</span>
@@ -114,8 +115,8 @@
       </div>
 
       <div class="form-actions" style="margin-top: 20px;">
-        <button type="button" class="btn btn-danger" onclick="closeModal('addRoleModal')">{{ _('Cancel') }}</button>
-        <button type="submit" id="role-modal-submit" class="btn btn-success">{{ _('Save') }}</button>
+        {% call btn('danger', attrs={'onclick': "closeModal('addRoleModal')"}) %}{{ _('Cancel') }}{% endcall %}
+        {% call btn('success', id='role-modal-submit', type='submit') %}{{ _('Save') }}{% endcall %}
       </div>
     </form>
   </div>

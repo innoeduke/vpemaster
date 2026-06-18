@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "partials/_profile_macros.html" import profile_section, field_row, field_row_pair, field_row_group %}
+{% from "partials/_button_macros.html" import btn %}
 
 {% block title %}About Club{% endblock %}
 
@@ -15,12 +16,12 @@
         <div class="header-actions" style="display: flex; align-items: center; gap: 12px;">
             {% if is_authorized(Permissions.ROSTER_EDIT) %}
             <div class="button-group">
-                <button id="cancel-club-btn" class="btn btn-danger" style="display: none">
+                {% call btn('cancel', id='cancel-club-btn', attrs={'style': 'display: none'}) %}
                     <i class="fas fa-times"></i> Cancel
-                </button>
-                <button id="edit-club-btn" class="btn btn-info">
+                {% endcall %}
+                {% call btn('edit', id='edit-club-btn') %}
                     <i class="fas fa-edit"></i> Edit
-                </button>
+                {% endcall %}
             </div>
             {% endif %}
             

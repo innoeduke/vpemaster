@@ -1,3 +1,4 @@
+{% from "partials/_button_macros.html" import btn %}
 <div id="meetingDetailsModal" class="modal">
   <div class="modal-content meeting-details-modal">
     <!-- Header -->
@@ -164,8 +165,8 @@
 
     <!-- Footer -->
     <div class="mdm-footer">
-      <button type="button" class="btn btn-speech-cancel" onclick="closeMeetingDetailsModal()">Cancel</button>
-      <button id="save-meeting-details-btn" class="btn btn-speech-save">Save Changes</button>
+      {% call btn('cancel', attrs={'onclick': 'closeMeetingDetailsModal()'}) %}Cancel{% endcall %}
+      {% call btn('save', id='save-meeting-details-btn') %}Save Changes{% endcall %}
     </div>
   </div>
 </div>

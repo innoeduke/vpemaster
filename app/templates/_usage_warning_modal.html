@@ -1,3 +1,4 @@
+{% from "partials/_button_macros.html" import btn %}
 <div id="usageWarningModal" class="modal usage-warning-modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -23,10 +24,10 @@
             <p class="usage-footer">Please reassign or delete these logs before deleting the session type.</p>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-danger" id="deleteAllLogsBtn" onclick="deleteAllBlockingLogs()">
+            {% call btn('delete', id='deleteAllLogsBtn', attrs={'onclick': 'deleteAllBlockingLogs()'}) %}
                 <i class="fas fa-trash-alt"></i> Delete ALL
-            </button>
-            <button type="button" class="btn btn-secondary" onclick="closeUsageWarningModal()">Close</button>
+            {% endcall %}
+            {% call btn('secondary', attrs={'onclick': 'closeUsageWarningModal()'}) %}Close{% endcall %}
         </div>
     </div>
 </div>

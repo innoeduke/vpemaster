@@ -1,3 +1,4 @@
+{% from "partials/_button_macros.html" import btn %}
 <div id="deleteModal" class="modal"
      data-title-cannot-remove='{{ _("Cannot Remove Yourself") | safe }}'
      data-msg-cannot-remove='{{ _("You cannot remove yourself from the club. Please contact another administrator or the system administrator for assistance.") | safe }}'
@@ -21,8 +22,8 @@
         <!-- Action Buttons (Standard Form) -->
         <form id="deleteForm" method="POST" action="" style="margin: 0;">
             <div class="form-actions" style="justify-content: center; gap: 12px; border-top: none; padding-top: 0;">
-                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">{{ _('Cancel') }}</button>
-                <button type="submit" class="btn btn-danger">{{ _('Delete') }}</button>
+                {% call btn('secondary', attrs={'onclick': 'closeDeleteModal()'}) %}{{ _('Cancel') }}{% endcall %}
+                {% call btn('delete', type='submit') %}{{ _('Delete') }}{% endcall %}
             </div>
         </form>
         

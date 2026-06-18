@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "components/custom_select.html" import render_custom_select %}
+{% from "partials/_button_macros.html" import btn %}
 
 {% block title %}{{ _('Planner') }}{% endblock %}
  
@@ -32,7 +33,7 @@
                 </form>
             </div>
             <div class="filter-right">
-                <button class="btn btn-success" id="add-plan-btn"><i class="fas fa-plus"></i> {{ _('New Task') }}</button>
+                {% call btn('new', id='add-plan-btn') %}<i class="fas fa-plus"></i> {{ _('New Task') }}{% endcall %}
             </div>
         </div>
     </div>

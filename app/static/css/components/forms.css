@@ -52,7 +52,7 @@
   background: linear-gradient(180deg, #8c2a3c 0%, #5a1a26 100%);
   color: #ffffff;
   border-color: #5a1a26;
-  box-shadow: 0 2px 6px rgba(119, 36, 50, 0.24),
+  box-shadow: 0 2px 6px rgba(90, 26, 38, 0.26),
               inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
@@ -62,7 +62,7 @@
   border-color: #6b1f2e;
   color: #ffffff;
   transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(119, 36, 50, 0.32),
+  box-shadow: 0 8px 18px rgba(107, 31, 46, 0.34),
               inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
@@ -89,11 +89,35 @@
 .btn.btn-save {
   background: linear-gradient(180deg, #8c2a3c 0%, #5a1a26 100%);
   color: #ffffff;
+  border-color: #5a1a26;
+  box-shadow: 0 2px 6px rgba(90, 26, 38, 0.26),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .btn.btn-save:hover {
   background: linear-gradient(180deg, #9a3145 0%, #6b1f2e 100%);
   color: #ffffff;
+  border-color: #6b1f2e;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(107, 31, 46, 0.34),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.btn.btn-new {
+  background: linear-gradient(180deg, #8c2a3c 0%, #5a1a26 100%);
+  color: #ffffff;
+  border-color: #5a1a26;
+  box-shadow: 0 2px 6px rgba(90, 26, 38, 0.26),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.btn.btn-new:hover {
+  background: linear-gradient(180deg, #9a3145 0%, #6b1f2e 100%);
+  color: #ffffff;
+  border-color: #6b1f2e;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(107, 31, 46, 0.34),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .btn.btn-delete {

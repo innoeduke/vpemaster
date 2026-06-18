@@ -1,3 +1,4 @@
+{% from "partials/_button_macros.html" import btn %}
 <div id="ticket-modal" class="modal" style="display: none;">
   <div class="modal-content" style="max-width: 900px; width: 90%;">
     <span class="close" onclick="closeModal('ticket-modal')">&times;</span>
@@ -69,8 +70,8 @@
       <div class="alert alert-danger" id="ticket-modal-error" style="display: none; margin-bottom: 20px;"></div>
 
       <div class="modal-buttons" style="margin-top: 15px;">
-        <button type="button" class="btn btn-danger" onclick="closeModal('ticket-modal')">{{ _('Cancel') }}</button>
-        <button type="submit" class="btn btn-success" id="ticketModalSubmitBtn">{{ _('Save Ticket') }}</button>
+        {% call btn('danger', attrs={'onclick': "closeModal('ticket-modal')"}) %}{{ _('Cancel') }}{% endcall %}
+        {% call btn('success', id='ticketModalSubmitBtn', type='submit') %}{{ _('Save Ticket') }}{% endcall %}
       </div>
     </form>
   </div>
