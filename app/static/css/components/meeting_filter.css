@@ -98,10 +98,14 @@
 
 .search-input-wrapper .search-icon,
 .custom-select-trigger .select-item-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   color: #888;
-  margin-right: 10px;
   font-size: 0.9em;
-  flex-shrink: 0;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .search-input-wrapper .dropdown-icon,
@@ -127,7 +131,7 @@
   font-size: clamp(0.9rem, 1.5vw, 1rem);
   font-weight: 600;
   color: #333;
-  padding: 0;
+  padding: 0 0 0 22px;
   font-family: inherit;
   text-overflow: ellipsis;
   white-space: nowrap;
