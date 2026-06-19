@@ -57,10 +57,13 @@
 
   :root body .custom-select-trigger::after {
     content: '\f078';
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
     position: absolute;
     right: 12px;
     top: 50%;
     transform: translateY(-50%);
+    pointer-events: none;
   }
 
   :root body .custom-select-trigger.active::after {

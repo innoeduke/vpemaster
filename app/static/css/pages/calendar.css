@@ -678,9 +678,20 @@ body.modal-open {
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
-    transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
-    cursor: default;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease, opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
     isolation: isolate;
+}
+
+/* Dimming/filtering states for KPI tiles */
+.filter-row-premium.has-active-filter .kpi-tile:not(.active-filter) {
+    opacity: 0.45;
+}
+
+.filter-row-premium.has-active-filter .kpi-tile.active-filter {
+    opacity: 1;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.15), inset 0 0 0 1px rgba(255, 255, 255, 0.18);
 }
 
 /* Subtle diagonal sheen overlay for a designed, textured look */
@@ -875,7 +886,8 @@ body.modal-open {
     .calendar-cell:not(.empty-cell) {
         margin-bottom: 0;
     }
-    .calendar-cell.empty-cell {
+    .calendar-cell.empty-cell,
+    .calendar-cell.cell-empty {
         display: none;
     }
     .meeting-card {
@@ -941,49 +953,88 @@ body.modal-open {
         position: relative;
     }
     .calendar-page-container .filter-row-premium {
-        flex-direction: column;
-        align-items: stretch;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-rows: auto auto;
         gap: 12px;
+        align-items: stretch;
     }
     .calendar-page-container .filter-left {
-        flex: 0 0 auto;
-        width: 100%;
+        display: contents;
     }
     .calendar-page-container .filter-right {
-        flex: 0 0 auto;
+        grid-column: 1;
+        grid-row: 1;
         width: 100%;
-        justify-content: flex-start;
+        display: flex;
+        margin: 0;
+    }
+    .calendar-page-container .date-range-btn {
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        justify-content: space-between;
+        padding: 0 12px;
+        height: 38px;
+    }
+    .kpi-tile-total {
+        grid-column: 2;
+        grid-row: 1;
+        width: auto;
+        margin: 0;
+        box-sizing: border-box;
+        min-width: 110px;
+        padding: 8px 12px;
+    }
+    .kpi-tile-total .kpi-count {
+        font-size: 1.35rem;
     }
     .calendar-kpis {
+        grid-column: 1 / span 2;
+        grid-row: 2;
+        width: 100%;
         justify-content: flex-start;
         overflow-x: auto;
         flex-wrap: nowrap;
         padding-bottom: 6px;
         scrollbar-width: thin;
+        gap: 10px;
     }
     .kpi-tile {
         flex: 0 0 auto;
-        min-width: 135px;
-        padding: 8px 12px;
-    }
-    .kpi-tile-total {
-        min-width: 118px;
         padding: 8px 10px;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .kpi-tile-total .kpi-count {
-        font-size: 1.3rem;
+    .kpi-tile:not(.kpi-tile-total) {
+        min-width: 68px;
+        cursor: pointer;
+    }
+    .kpi-tile:not(.kpi-tile-total) .kpi-label {
+        display: none;
+    }
+    .kpi-tile:not(.kpi-tile-total).show-label .kpi-label {
+        display: inline-block;
+        margin-left: 4px;
+        animation: kpi-label-fade-in 0.25s ease forwards;
+    }
+    .kpi-tile:not(.kpi-tile-total).show-label {
+        min-width: 145px;
     }
     .kpi-tile .kpi-icon {
-        font-size: 0.75rem;
-    }
-    .kpi-tile .kpi-label {
-        font-size: 0.55rem;
-        letter-spacing: 0.5px;
+        font-size: 0.85rem;
     }
     .kpi-tile .kpi-count {
-        font-size: 1.2rem;
+        font-size: 1.25rem;
     }
     .kpi-tile .kpi-bar {
         margin-top: 6px;
     }
+    .calendar-row.month-empty {
+        display: none;
+    }
+}
+
+@keyframes kpi-label-fade-in {
+    from { opacity: 0; transform: translateX(-4px); }
+    to { opacity: 1; transform: translateX(0); }
 }

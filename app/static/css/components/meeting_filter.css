@@ -144,6 +144,10 @@
   font-weight: 400;
 }
 
+.custom-select-trigger .selected-content {
+  min-width: 0;
+}
+
 .custom-select-trigger .selected-text {
   white-space: nowrap;
   overflow: hidden;
@@ -151,6 +155,7 @@
   font-weight: 600;
   color: #333;
   flex-grow: 1;
+  min-width: 0;
 }
 
 /* --- 4. Results Dropdown & Items --- */

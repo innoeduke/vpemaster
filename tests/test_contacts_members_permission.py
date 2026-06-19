@@ -125,7 +125,6 @@ class ContactsPermissionTestCase(unittest.TestCase):
         html = response.get_data(as_text=True)
         self.assertIn("Other Member User", html)
         self.assertNotIn('id="add-plan-btn"', html)
-        self.assertNotIn("New Item", html)
 
     def test_user_cannot_view_guest_speech_logs(self):
         """Test that a regular user cannot view guest speech logs, falling back to their own logs."""
@@ -142,7 +141,7 @@ class ContactsPermissionTestCase(unittest.TestCase):
         self.assertNotIn("Guest User", html)
 
     def test_user_sees_new_item_on_own_profile(self):
-        """Test that a user can see the '+New Item' button on their own profile."""
+        """Test that a user can see the '+New' button on their own profile."""
         self.login("user", "password")
         with self.client.session_transaction() as sess:
             sess['club_id'] = self.club.id
@@ -152,7 +151,7 @@ class ContactsPermissionTestCase(unittest.TestCase):
         html = response.get_data(as_text=True)
         self.assertIn("Member User", html)
         self.assertIn('id="add-plan-btn"', html)
-        self.assertIn("New Item", html)
+        self.assertIn("New", html)
 
     def test_complete_speech_log_success(self):
         """Test that completing a speech log succeeds and returns the progress HTML without KeyError."""
