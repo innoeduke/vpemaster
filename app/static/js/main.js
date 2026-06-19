@@ -192,6 +192,13 @@ function openContactModal(contactId) {
              opt.value = "";
              registeredPathsEl.appendChild(opt);
            }
+           if (typeof CustomSelect !== 'undefined') {
+             if (window.customRegisteredPathsSelect) {
+               window.customRegisteredPathsSelect.refresh();
+             } else {
+               window.customRegisteredPathsSelect = new CustomSelect('registered_paths');
+             }
+           }
          }
          document.getElementById("dtm").checked = data.contact.DTM;
         const officerCheckbox = document.getElementById("is_officer");
@@ -344,6 +351,18 @@ function openContactModal(contactId) {
     if (contactTabs) contactTabs.style.display = "none";
     const educationWrapper = document.getElementById("educationFieldsWrapper");
     if (educationWrapper) educationWrapper.style.display = "none";
+
+    const registeredPathsEl = document.getElementById("registered_paths");
+    if (registeredPathsEl) {
+      registeredPathsEl.innerHTML = '';
+      const opt = document.createElement("option");
+      opt.text = (typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN') ? "未注册路径" : "No Paths Registered";
+      opt.value = "";
+      registeredPathsEl.appendChild(opt);
+      if (typeof CustomSelect !== 'undefined' && window.customRegisteredPathsSelect) {
+        window.customRegisteredPathsSelect.refresh();
+      }
+    }
 
     // Hide mentor_id row for new contacts (default is Guest)
     const memberIdRow = document.getElementById("member_id_container");

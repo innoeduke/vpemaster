@@ -220,4 +220,51 @@
   .toggle-connection-btn {
     display: none !important;
   }
+
+  /* Contact Modal Tabs Mobile Refinements */
+  #contactModal .contact-modal-tabs {
+    display: flex !important;
+    align-items: stretch !important;
+    background: #f1f5f9;
+    border-radius: 12px;
+    padding: 4px;
+    gap: 4px;
+    border-bottom: none;
+    margin-bottom: 20px;
+  }
+
+  #contactModal .contact-modal-tabs .nav-item {
+    flex: 1;
+    height: auto !important;
+    min-height: 42px !important;
+    padding: 6px 10px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #4a5568 !important;
+    border-radius: 8px !important;
+    border: none !important;
+    text-align: center !important;
+    background: transparent !important;
+    transition: all 0.2s ease !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.2 !important;
+    margin-bottom: 0 !important;
+  }
+
+  #contactModal .contact-modal-tabs .nav-item.active {
+    background: #fff !important;
+    color: #772432 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+    font-weight: 700 !important;
+  }
+
+  /* Contact Modal Custom Select Mobile Refinements */
+  #contactModal .custom-select-trigger {
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 12px !important;
+    font-size: 13px !important;
+  }
 }

@@ -69,18 +69,18 @@
                 {% if is_authorized(Permissions.ROSTER_VIEW) %}
                 <a href="{{ url_for('auth_bp.profile', contact_id=viewed_contact.id) }}" class="btn-view-control btn-profile-small"
                     title="{{ _('View Profile') }}">
-                    <i class="fas fa-id-card"></i> {{ _('Profile') }}
+                    <i class="fas fa-id-card"></i> <span class="btn-label">{{ _('Profile') }}</span>
                 </a>
                 {% if viewed_contact.user_id and viewed_contact.id != current_user.contact_id %}
-                <a href="{{ url_for('messages.messages', recipient_id=viewed_contact.user_id, recipient_name=viewed_contact.Name, mode='new') }}" 
+                <a href="{{ url_for('messages.messages', recipient_id=viewed_contact.user_id, recipient_name=viewed_contact.Name, mode='new') }}"
                    class="btn-view-control btn-message-small" title="{{ _('Send Message') }}">
-                     <i class="fas fa-envelope"></i> {{ _('Message') }}
+                     <i class="fas fa-envelope"></i> <span class="btn-label">{{ _('Message') }}</span>
                 </a>
                 {% endif %}
                 {% elif current_user.contact_id == viewed_contact.id %}
                 <a href="{{ url_for('auth_bp.profile') }}" class="btn-view-control btn-profile-small"
                     title="{{ _('My Profile') }}">
-                    <i class="fas fa-user-circle"></i> {{ _('Profile') }}
+                    <i class="fas fa-user-circle"></i> <span class="btn-label">{{ _('Profile') }}</span>
                 </a>
                 {% endif %}
             </div>

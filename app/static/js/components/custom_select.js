@@ -4,7 +4,8 @@
  * enhanced select dropdown with support for icons, colors, and search/filtering.
  */
 
-class CustomSelect {
+if (typeof window.CustomSelect === 'undefined') {
+	window.CustomSelect = class CustomSelect {
 	constructor(selectId, options = {}) {
 		this.select = document.getElementById(selectId);
 		if (!this.select) return;
@@ -60,6 +61,15 @@ class CustomSelect {
 			// because roster.js manages option visibility via direct DOM manipulation.
 			this.select.addEventListener('change', () => {
 				this.updateTrigger();
+				this.trigger.style.borderColor = '';
+				this.trigger.style.boxShadow = '';
+			});
+
+			this.select.addEventListener('invalid', (e) => {
+				e.preventDefault();
+				this.trigger.style.borderColor = '#dc3545';
+				this.trigger.style.boxShadow = '0 0 0 3px rgba(220, 53, 69, 0.25)';
+				this.trigger.focus();
 			});
 		}
 
@@ -71,6 +81,10 @@ class CustomSelect {
 		if (!this.select.options.length) {
 			this.trigger.innerHTML = '<span class="custom-select-text">Select...</span>';
 			return;
+		}
+		if (this.select.selectedIndex === -1 && this.select.options.length > 0) {
+			const selectedIdx = Array.from(this.select.options).findIndex(opt => opt.selected);
+			this.select.selectedIndex = selectedIdx !== -1 ? selectedIdx : 0;
 		}
 		const selectedOpt = this.select.options[this.select.selectedIndex];
 		const text = selectedOpt ? selectedOpt.text : 'Select...';
@@ -219,4 +233,5 @@ class CustomSelect {
 		this.select.disabled = false;
 		this.container.classList.remove('disabled');
 	}
+};
 }

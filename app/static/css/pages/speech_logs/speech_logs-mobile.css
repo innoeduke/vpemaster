@@ -197,6 +197,32 @@
 
   .name-credential {
     justify-content: center;
+    flex-wrap: nowrap;
+  }
+
+  /* Profile / Message buttons — always icon-only on mobile so the row
+     never wraps regardless of viewport width. */
+  .header-profile-action {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .header-profile-action .btn-view-control {
+    flex: 0 0 auto;
+    padding: 0 !important;
+    width: 36px !important;
+    min-width: 36px !important;
+    height: 32px !important;
+    justify-content: center;
+  }
+
+  .header-profile-action .btn-label {
+    display: none;
   }
 
   .speech-log-header .header-right {

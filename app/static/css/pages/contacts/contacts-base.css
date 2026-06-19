@@ -581,6 +581,50 @@
   scrollbar-gutter: stable;
 }
 
+/* Custom Select styling inside Contact Modal */
+#contactModal .custom-select-container {
+  width: 100%;
+}
+
+#contactModal .custom-select-trigger {
+  height: 42px;
+  box-sizing: border-box;
+  border: 1.5px solid #e9ecef;
+  background-color: #fff;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #333;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#contactModal .custom-select-trigger:after {
+  content: "\f078";
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+#contactModal .custom-select-container.open .custom-select-trigger {
+  border-color: #772432;
+  box-shadow: 0 0 0 3px rgba(119, 36, 50, 0.1);
+}
+
+#contactModal .custom-select-container.open .custom-select-trigger:after {
+  content: "\f077";
+}
+
+#contactModal .custom-select-options {
+  z-index: 2200;
+}
+
 #contactModal .modal-content {
   margin: 50px auto auto;
   padding: 30px;

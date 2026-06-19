@@ -1044,11 +1044,15 @@ function mountSpeechModeOwnerPicker({
   workingPath,
   repopulatePathway,
 }) {
-  if (!ownerNameElement) return null;
+  const container = pathwaySelectEl.closest('.role-owner-card');
+  const targetElement = ownerNameElement || container?.querySelector(".modal-owner-picker");
+  if (!targetElement) return null;
 
   // Remove any prior picker that may have been mounted on a previous open
-  const existingWrapper = ownerNameElement.parentNode?.querySelector(".modal-owner-picker");
-  if (existingWrapper) existingWrapper.remove();
+  const existingWrapper = targetElement.parentNode?.querySelector(".modal-owner-picker");
+  if (existingWrapper && existingWrapper !== targetElement) {
+    existingWrapper.remove();
+  }
 
   const picker = createModalOwnerPicker({
     initialOwnerId: logData.owner_id || null,
@@ -1091,29 +1095,16 @@ function mountSpeechModeOwnerPicker({
         levelSelectEl.value = defaultLevel;
       }
 
-      // When the owner is removed, reset the title and credential so the
-      // saved record reflects the unassigned state.
+      // When the owner is removed, reset the credential so the
+      // saved record reflects the unassigned state, but keep the session title intact.
       if (!newContact) {
         modalElements.credential.value = "";
-        if (modalElements.sessionType.value === "Evaluation") {
-          if (modalElements.evaluationSpeakerSelect) {
-            modalElements.evaluationSpeakerSelect.value = "";
-          }
-          if (modalElements.evaluationCustomTitle) {
-            modalElements.evaluationCustomTitle.value = "";
-            modalElements.evaluationCustomTitle.disabled = true;
-            modalElements.evaluationCustomTitle.required = false;
-            modalElements.evaluationCustomTitle.placeholder = "";
-          }
-        } else {
-          modalElements.speechTitle.value = modalElements.sessionType.value || "";
-        }
       }
     },
     placeholder: logData.owner_id ? "Change owner..." : "Add owner...",
   });
 
-  ownerNameElement.replaceWith(picker.wrapper);
+  targetElement.replaceWith(picker.wrapper);
   modalElements.ownerPicker = picker;
   return picker;
 }
@@ -1305,19 +1296,39 @@ const SpeechModalSetupManager = {
       }
       if (modalElements.evaluationSpeakerSelect) {
         modalElements.evaluationSpeakerSelect.innerHTML = "";
-        modalElements.evaluationSpeakerSelect.required = true;
+        modalElements.evaluationSpeakerSelect.required = false;
 
         const emptyOpt = document.createElement("option");
         emptyOpt.value = "";
         emptyOpt.textContent = "-- Select Speaker --";
         modalElements.evaluationSpeakerSelect.appendChild(emptyOpt);
 
+        const currentTitle = logData.Session_Title || "";
+        const currentTitleLower = currentTitle.trim().toLowerCase();
+
+        const otherEvaluationTitles = [];
+        document.querySelectorAll('tr[data-id]').forEach(row => {
+          if (row.dataset.id === String(logData.id)) return;
+          const role = row.dataset.role;
+          if (role === "Evaluation" || role === "Individual Evaluator") {
+            const title = row.dataset.sessionTitle;
+            if (title && title.trim() !== "" && title !== "Others") {
+              otherEvaluationTitles.push(title.trim().toLowerCase());
+            }
+          }
+        });
+
         const speakers = logData.available_speakers || [];
         speakers.forEach(name => {
-          const opt = document.createElement("option");
-          opt.value = name;
-          opt.textContent = name;
-          modalElements.evaluationSpeakerSelect.appendChild(opt);
+          const nameLower = name ? name.trim().toLowerCase() : "";
+          const isAssignedElsewhere = otherEvaluationTitles.includes(nameLower);
+
+          if (!isAssignedElsewhere || nameLower === currentTitleLower) {
+            const opt = document.createElement("option");
+            opt.value = name;
+            opt.textContent = name;
+            modalElements.evaluationSpeakerSelect.appendChild(opt);
+          }
         });
 
         const othersOpt = document.createElement("option");
@@ -1325,7 +1336,6 @@ const SpeechModalSetupManager = {
         othersOpt.textContent = "Others";
         modalElements.evaluationSpeakerSelect.appendChild(othersOpt);
 
-        const currentTitle = logData.Session_Title || "";
         const isSpeaker = speakers.includes(currentTitle);
 
         if (isSpeaker) {
@@ -1934,11 +1944,31 @@ function refreshAgendaOwnerCell(agendaRow, ownersData) {
       // No existing row at this position — create one.
       ownerRow = document.createElement("div");
       ownerRow.className = "owner-row";
-      const nameSpan = document.createElement("span");
-      nameSpan.className = "owner-name";
-      nameSpan.textContent = owner.name || "";
-      ownerRow.appendChild(nameSpan);
+      
+      const anyLink = ownerCell.querySelector("a.owner-name");
+      if (anyLink || typeof window.openContactModal === "function") {
+        const nameLink = document.createElement("a");
+        nameLink.href = "javascript:void(0);";
+        nameLink.className = "owner-name owner-link";
+        nameLink.setAttribute("onclick", `openContactModal(${owner.id});`);
+        nameLink.textContent = owner.name || "";
+        ownerRow.appendChild(nameLink);
+      } else {
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "owner-name";
+        nameSpan.textContent = owner.name || "";
+        ownerRow.appendChild(nameSpan);
+      }
       ownerCell.appendChild(ownerRow);
+    } else {
+      // Update existing owner row name and link
+      const nameEl = ownerRow.querySelector(".owner-name");
+      if (nameEl) {
+        nameEl.textContent = owner.name || "";
+        if (nameEl.tagName === "A" && owner.id) {
+          nameEl.setAttribute("onclick", `openContactModal(${owner.id});`);
+        }
+      }
     }
 
     const existingSup = ownerRow.querySelector(".dtm-superscript");
@@ -1958,6 +1988,11 @@ function refreshAgendaOwnerCell(agendaRow, ownersData) {
       ownerRow.appendChild(meta);
     }
   });
+
+  // Remove any extra owner rows if ownersData is smaller than the current rows
+  for (let i = ownersData.length; i < ownerRows.length; i++) {
+    ownerRows[i].remove();
+  }
 
   if (ownersData[0]) {
     agendaRow.dataset.credentials = ownersData[0].credentials || "";

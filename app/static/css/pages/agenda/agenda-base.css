@@ -1311,7 +1311,7 @@ a.owner-link:hover {
 .meeting-status-display {
 	display: inline-flex;
 	padding: 5px 12px;
-	border-radius: 999px;
+	border-radius: 4px;
 	font-family: 'Montserrat', sans-serif;
 	font-size: 0.82rem !important;
 	font-weight: 700;
@@ -1323,6 +1323,7 @@ a.owner-link:hover {
 	min-height: 32px;
 	box-sizing: border-box;
 	white-space: nowrap;
+	border: 3px solid #cbd5e0;
 }
 
 @media (min-width: 769px) {
@@ -1335,19 +1336,16 @@ a.owner-link:hover {
 .status-unpublished {
 	background: #f4eeef;
 	color: #6b4f55;
-	border: 1px solid rgba(119, 36, 50, 0.16);
 }
 
 .status-not-started {
 	background: linear-gradient(180deg, #fff7ea 0%, #fdebd0 100%);
 	color: #7a4f0c;
-	border: 1px solid rgba(196, 137, 18, 0.32);
 }
 
 .status-running {
 	background: linear-gradient(180deg, #ffeef0 0%, #fbdbe0 100%);
 	color: #8c1f2e;
-	border: 1px solid rgba(168, 50, 60, 0.32);
 	box-shadow: 0 0 0 3px rgba(168, 50, 60, 0.08);
 }
 
@@ -1363,13 +1361,11 @@ a.owner-link:hover {
 .status-finished {
 	background: linear-gradient(180deg, #eef7f0 0%, #dcebe0 100%);
 	color: #2e6038;
-	border: 1px solid rgba(63, 122, 78, 0.32);
 }
 
 .status-cancelled {
 	background: #f1eded;
 	color: #6e5454;
-	border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 /* --- Meeting status action button (Publish / Start / Stop / Delete) ---
