@@ -13,7 +13,7 @@
 {% block content %}
 <div class="clubs-container">
     <div class="clubs-header">
-        <h1>{{ _('Club Directory') }}</h1>
+        <h1><i class="fas fa-building"></i> {{ _('Club Directory') }}</h1>
         {% if current_user.is_sysadmin %}
         {% call btn('new', tag='a', href=url_for('clubs_bp.create_club'), class='btn-create') %}
             <i class="fas fa-plus"></i>
@@ -346,9 +346,9 @@
 
 <footer class="app-footer">
   <img src="{{ url_for('static', filename='images/nismsplogo.png') }}" alt="mps-logo"
-    style="width:14px; vertical-align:middle;" />
+    class="app-footer-logo" />
   <a href="https://beian.mps.gov.cn/#/query/webSearch?code=31011202022102" rel="noreferrer"
-    target="_blank">沪公网安备31011202022102号 </a>
+    target="_blank">沪公网安备31011202022102号</a>
   <a href="https://beian.miit.gov.cn" target="_blank">沪ICP备2026004927号-1</a>
 </footer>
 
@@ -472,16 +472,6 @@
             rebuildDeckCards();
             updateDeckCounter();
 
-            let hint = document.getElementById('deck-hint');
-            if (!hint) {
-                hint = document.createElement('div');
-                hint.id = 'deck-hint';
-                hint.className = 'deck-hint';
-                hint.textContent = '{{ _("Tap the card to see the next one") }}';
-                gridView.appendChild(hint);
-            }
-            hint.style.display = deckCards.length > 0 ? '' : 'none';
-
             gridView.addEventListener('click', onDeckClick);
         }
 
@@ -498,8 +488,6 @@
                 card.removeAttribute('data-original-index');
             });
             deckCards = [];
-            const hint = document.getElementById('deck-hint');
-            if (hint) hint.style.display = 'none';
             const counter = document.getElementById('deck-counter');
             if (counter) counter.remove();
         }

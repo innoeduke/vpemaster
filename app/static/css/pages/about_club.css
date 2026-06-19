@@ -114,6 +114,7 @@
                 flex-wrap: wrap;
                 gap: 10px;
                 margin-bottom: 25px;
+                padding-top: 0;
             }
     
             body .about-club-container .settings-header h1 {
