@@ -17,12 +17,26 @@
     /* Reduce padding on mobile */
   }
 
-  /* Premium Filter Row - Stack Vertically */
+  /* Premium Filter Row - Keep on a single row, left-aligned */
   .filter-row-premium {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     width: 100%;
-    gap: 15px;
-    align-items: stretch;
+    gap: 12px;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+
+  /* On mobile, drop the desktop's margin-left:auto so search aligns to the left edge */
+  .filter-row-premium .search-container[style*="margin-left"] {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    flex: 1 1 100%;
+  }
+
+  .filter-row-premium .search-container .search-box,
+  .filter-row-premium .search-container input[type="text"] {
+    width: 100% !important;
   }
 
   .filters-set {
