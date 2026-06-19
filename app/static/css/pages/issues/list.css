@@ -256,12 +256,12 @@
             border-bottom: 1px solid var(--msg-border);
             padding: 1rem;
         }
-        .msg-nav-container {
+        .msg-layout--issues .msg-nav-container {
             flex-direction: row;
             flex-wrap: wrap;
             gap: 8px;
         }
-        .msg-nav-item {
+        .msg-layout--issues .msg-nav-item {
             flex: 1 1 calc(50% - 8px);
             margin-bottom: 0;
         }

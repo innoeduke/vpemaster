@@ -437,6 +437,12 @@
 	margin: 0;
 }
 
+.msg-header-actions {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+
 .msg-refresh-btn {
 	background: transparent;
 	border: 1px solid var(--msg-border);
@@ -468,7 +474,7 @@
 	height: 32px;
 	font-family: 'Inter', sans-serif;
 	font-weight: 600;
-	font-size: 0.75rem;
+	font-size: 0.875rem;
 	cursor: pointer;
 	display: none;
 	align-items: center;
@@ -480,6 +486,11 @@
 	color: var(--msg-warn);
 	border-color: var(--msg-warn);
 	background-color: #fef5f5;
+}
+
+/* Compose button placed inside .msg-header on mobile (hidden on desktop) */
+.msg-compose-btn--header {
+	display: none;
 }
 
 .msg-list-container {
@@ -1128,6 +1139,12 @@
 	.msg-pagination {
 		padding: 0.75rem;
 		gap: 0.25rem;
+		margin-top: 0;
+		/* Pin pagination at the viewport bottom while scrolling the list,
+		   and have it settle at the layout bottom when not scrolling. */
+		position: sticky;
+		bottom: 0;
+		z-index: 2;
 	}
 	.msg-pagination-btn {
 		padding: 0.3rem 0.6rem;

@@ -20,6 +20,10 @@
                         <input type="text" id="recipient_search" class="recipient-chip-input" placeholder="Search for a recipient…" autocomplete="off">
                     </div>
                     <div id="recipient_results"></div>
+                    <div class="compose-recipient-error" id="recipient_error" hidden>
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Add at least one recipient.</span>
+                    </div>
                 </div>
 
                 <div class="compose-form-group">
@@ -35,13 +39,12 @@
             </div>
 
             <div class="compose-footer">
-                <span class="compose-footer-hint" id="compose_footer_hint">Add at least one recipient.</span>
                 <div class="compose-footer-actions">
                     {% call btn('cancel', attrs={'onclick': 'closeComposeModal()'}) %}Cancel{% endcall %}
-                    <button type="submit" class="btn-send">
+                    {% call btn('secondary', type='submit', class='btn-send') %}
                         <span>Send</span>
                         <span class="send-arrow"><i class="fas fa-arrow-right"></i></span>
-                    </button>
+                    {% endcall %}
                 </div>
             </div>
         </form>

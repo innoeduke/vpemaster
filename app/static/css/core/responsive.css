@@ -703,6 +703,14 @@
 }
 
 @media (max-width: 768px) {
+    /* Remove horizontal padding from main-content on mobile only — pages should
+       manage their own left/right gutters. Vertical padding preserved to keep
+       content clear of the fixed page header. */
+    .main-content {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
     .meeting-status-alert {
         width: 100%;
     }

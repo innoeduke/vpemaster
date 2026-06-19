@@ -18,7 +18,7 @@
 
         display: none;
         position: fixed;
-        z-index: 1000;
+        z-index: 1100;
         inset: 0;
         background: rgba(15, 30, 45, 0.45);
         align-items: center;
@@ -364,15 +364,29 @@
         border-top: 1px solid var(--hair);
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: flex-end;
         gap: 12px;
         background: #fafbfc;
     }
 
-    .compose-footer-hint {
+    /* Inline recipient warning */
+    .compose-recipient-error {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 6px;
         font-family: 'Inter', sans-serif;
-        font-size: 0.75rem;
-        color: var(--mute);
+        font-size: 0.8125rem;
+        color: var(--warn);
+    }
+
+    .compose-recipient-error i {
+        font-size: 0.875rem;
+    }
+
+    .compose-recipient-field.has-error {
+        border-color: var(--warn);
+        box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.12);
     }
 
     .compose-footer-actions {
@@ -382,7 +396,7 @@
     }
 
     /* Cancel — ghost */
-    .btn-cancel {
+    .compose-footer-actions .btn-cancel {
         background: transparent;
         border: 1px solid var(--rule);
         color: var(--mute);
@@ -395,14 +409,14 @@
         transition: all 0.15s ease;
     }
 
-    .btn-cancel:hover {
+    .compose-footer-actions .btn-cancel:hover {
         color: var(--ink);
         border-color: #b8c2cc;
         background: #fff;
     }
 
     /* Send — solid brand button */
-    .btn-send {
+    .compose-footer-actions .btn-send {
         background: var(--brand);
         color: #fff;
         border: none;
@@ -418,19 +432,19 @@
         transition: all 0.15s ease;
     }
 
-    .btn-send:hover {
+    .compose-footer-actions .btn-send:hover {
         background: var(--brand-deep);
     }
 
-    .btn-send:hover .send-arrow {
+    .compose-footer-actions .btn-send:hover .send-arrow {
         transform: translateX(2px);
     }
 
-    .btn-send:active {
+    .compose-footer-actions .btn-send:active {
         transform: translateY(1px);
     }
 
-    .btn-send:disabled {
+    .compose-footer-actions .btn-send:disabled {
         opacity: 0.55;
         cursor: not-allowed;
     }
@@ -448,11 +462,12 @@
         .compose-modal {
             padding: 12px;
             align-items: flex-start;
-            padding-top: 24px;
+            /* Clear the fixed page header (60px) plus a small gap */
+            padding-top: 72px;
         }
 
         .compose-modal-content {
-            max-height: 95vh;
+            max-height: calc(100vh - 84px);
         }
 
         .compose-header,
@@ -472,17 +487,7 @@
             gap: 8px;
         }
 
-        .compose-footer-hint {
-            text-align: center;
-        }
-
         .compose-footer-actions {
-            justify-content: space-between;
-        }
-
-        .compose-footer-actions .btn-send,
-        .compose-footer-actions .btn-cancel {
-            flex: 1;
-            justify-content: center;
+            justify-content: flex-end;
         }
     }

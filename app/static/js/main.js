@@ -856,34 +856,44 @@ function renderNumberedPagination(controlsContainer, currentPage, totalPages, on
     </button>
   `;
 
-  const maxVisible = 5;
-  let startPage = Math.max(1, displayCurrentPage - Math.floor(maxVisible / 2));
-  let endPage = Math.min(displayPages, startPage + maxVisible - 1);
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
 
-  if (endPage - startPage + 1 < maxVisible) {
-    startPage = Math.max(1, endPage - maxVisible + 1);
-  }
-
-  if (startPage > 1) {
-    html += `<button class="pagination-btn" data-page="1">1</button>`;
-    if (startPage > 2) {
-      html += `<span class="pagination-info-dot">...</span>`;
-    }
-  }
-
-  for (let p = startPage; p <= endPage; p++) {
+  if (isMobile) {
     html += `
-      <button class="pagination-btn ${p === displayCurrentPage ? 'active' : ''}" data-page="${p}">
-        ${p}
+      <button class="pagination-btn ${displayCurrentPage === 1 ? 'active' : ''}" data-page="${displayCurrentPage}" title="Page ${displayCurrentPage} of ${displayPages}">
+        ${displayCurrentPage} / ${displayPages}
       </button>
     `;
-  }
+  } else {
+    const maxVisible = 5;
+    let startPage = Math.max(1, displayCurrentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(displayPages, startPage + maxVisible - 1);
 
-  if (endPage < displayPages) {
-    if (endPage < displayPages - 1) {
-      html += `<span class="pagination-info-dot">...</span>`;
+    if (endPage - startPage + 1 < maxVisible) {
+      startPage = Math.max(1, endPage - maxVisible + 1);
     }
-    html += `<button class="pagination-btn" data-page="${displayPages}">${displayPages}</button>`;
+
+    if (startPage > 1) {
+      html += `<button class="pagination-btn" data-page="1">1</button>`;
+      if (startPage > 2) {
+        html += `<span class="pagination-info-dot">...</span>`;
+      }
+    }
+
+    for (let p = startPage; p <= endPage; p++) {
+      html += `
+        <button class="pagination-btn ${p === displayCurrentPage ? 'active' : ''}" data-page="${p}">
+          ${p}
+        </button>
+      `;
+    }
+
+    if (endPage < displayPages) {
+      if (endPage < displayPages - 1) {
+        html += `<span class="pagination-info-dot">...</span>`;
+      }
+      html += `<button class="pagination-btn" data-page="${displayPages}">${displayPages}</button>`;
+    }
   }
 
   // Next button

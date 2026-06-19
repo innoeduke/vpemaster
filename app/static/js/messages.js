@@ -6,6 +6,8 @@ let currentPerPage = 10;
 
 document.addEventListener('DOMContentLoaded', () => {
     currentPerPage = getAdaptivePerPage();
+    // Initialize header action button visibility for the current tab
+    syncHeaderActionsForTab(currentTab);
     loadMessages(currentTab, false, 1);
     setInterval(() => loadMessages(currentTab, true, currentPage), 60000);
 
@@ -29,18 +31,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+function syncHeaderActionsForTab(tab) {
+    // Empty Trash button: only visible on Trash tab
+    const emptyTrashBtn = document.getElementById('empty-trash-btn');
+    if (emptyTrashBtn) {
+        emptyTrashBtn.style.display = tab === 'trash' ? 'inline-flex' : 'none';
+    }
+
+    // Header Compose button: hidden on Trash tab
+    const headerComposeBtn = document.getElementById('header-compose-btn');
+    if (headerComposeBtn) {
+        headerComposeBtn.style.display = tab === 'trash' ? 'none' : '';
+    }
+}
+
 function switchTab(tab) {
     currentTab = tab;
     currentPage = 1;
     document.querySelectorAll('.msg-nav-item').forEach(t => t.classList.remove('active'));
     document.getElementById(`tab-${tab}`).classList.add('active');
     document.getElementById('current-view-title').textContent = tab.charAt(0).toUpperCase() + tab.slice(1);
-    
-    // Toggle Empty Trash button visibility
-    const emptyTrashBtn = document.getElementById('empty-trash-btn');
-    if (emptyTrashBtn) {
-        emptyTrashBtn.style.display = tab === 'trash' ? 'inline-flex' : 'none';
-    }
+
+    syncHeaderActionsForTab(tab);
 
     loadMessages(tab, false, 1);
 }

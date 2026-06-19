@@ -11,7 +11,7 @@
     <!-- Sidebar -->
     <div class="msg-sidebar">
         <p class="msg-sidebar-eyebrow">Mailroom</p>
-        <button class="msg-compose-btn" onclick="openComposeModal()">
+        <button class="msg-compose-btn msg-compose-btn--sidebar" onclick="openComposeModal()">
             <span><i class="fas fa-pen-fancy" style="margin-right:8px;"></i>Compose</span>
             <span class="compose-arrow"><i class="fas fa-arrow-right"></i></span>
         </button>
@@ -33,7 +33,10 @@
     <div class="msg-main">
         <div class="msg-header">
             <h2 class="msg-header-title" id="current-view-title">Inbox</h2>
-            <div style="display: flex; gap: 8px; align-items: center;">
+            <div class="msg-header-actions">
+                <button class="msg-compose-btn msg-compose-btn--header" id="header-compose-btn" onclick="openComposeModal()" title="Compose">
+                    <i class="fas fa-pen-fancy"></i> <span>Compose</span>
+                </button>
                 <button class="msg-empty-trash-btn" id="empty-trash-btn" onclick="openEmptyTrashModal()" title="Empty Trash">
                     <i class="fas fa-dumpster"></i> <span>Empty Trash</span>
                 </button>

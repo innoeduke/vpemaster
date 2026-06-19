@@ -9,7 +9,7 @@
         // Reset selection
         selectedRecipients.length = 0;
         renderRecipientChips();
-        updateFooterHint();
+        hideRecipientError();
 
         if (recipientId && recipientName) {
             selectedRecipients.push({ id: recipientId, name: recipientName, home_club: '' });
@@ -46,7 +46,7 @@
             document.getElementById('composeForm').reset();
             selectedRecipients.length = 0;
             renderRecipientChips();
-            updateFooterHint();
+            hideRecipientError();
             document.getElementById('recipient_results').style.display = 'none';
             document.getElementById('char_count').textContent = '0';
             modal.querySelector('.compose-title').textContent = 'New Message';
@@ -76,20 +76,21 @@
         search.placeholder = selectedRecipients.length === 0
             ? 'Search for a recipient…'
             : (selectedRecipients.length === 1 ? 'Add another recipient…' : 'Add more…');
-        updateFooterHint();
+        if (selectedRecipients.length > 0) hideRecipientError();
     }
 
-    function updateFooterHint() {
-        const hint = document.getElementById('compose_footer_hint');
-        if (!hint) return;
-        const n = selectedRecipients.length;
-        if (n === 0) {
-            hint.textContent = 'Add at least one recipient.';
-        } else if (n === 1) {
-            hint.textContent = 'Delivered to one recipient.';
-        } else {
-            hint.textContent = `Delivered to ${n} recipients.`;
-        }
+    function showRecipientError() {
+        const err = document.getElementById('recipient_error');
+        const field = document.getElementById('recipient_field');
+        if (err) err.hidden = false;
+        if (field) field.classList.add('has-error');
+    }
+
+    function hideRecipientError() {
+        const err = document.getElementById('recipient_error');
+        const field = document.getElementById('recipient_field');
+        if (err) err.hidden = true;
+        if (field) field.classList.remove('has-error');
     }
 
     function removeRecipient(idx) {
@@ -222,10 +223,11 @@
     function sendMessage(e) {
         e.preventDefault();
         if (selectedRecipients.length === 0) {
-            alert('Please add at least one recipient.');
+            showRecipientError();
             searchInput.focus();
             return;
         }
+        hideRecipientError();
         const btn = e.target.querySelector('button[type="submit"]');
         const originalText = btn.innerHTML;
         btn.disabled = true;
