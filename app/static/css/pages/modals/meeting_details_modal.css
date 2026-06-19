@@ -218,23 +218,23 @@
             font-size: 14px;
             font-weight: 700;
         }
-        #meetingDetailsModal .mdm-footer .btn-speech-cancel {
+        #meetingDetailsModal .mdm-footer .btn-cancel {
             background: transparent;
             color: #555;
             border: 1px solid #d1d5db;
         }
-        #meetingDetailsModal .mdm-footer .btn-speech-cancel:hover {
+        #meetingDetailsModal .mdm-footer .btn-cancel:hover {
             background: rgba(0, 0, 0, 0.04);
             color: #1e293b;
             border-color: #94a3b8;
         }
-        #meetingDetailsModal .mdm-footer .btn-speech-save {
+        #meetingDetailsModal .mdm-footer .btn-save {
             background-color: #772432;
             color: #fff;
             border: none;
             box-shadow: 0 2px 6px rgba(119, 36, 50, 0.25);
         }
-        #meetingDetailsModal .mdm-footer .btn-speech-save:hover {
+        #meetingDetailsModal .mdm-footer .btn-save:hover {
             background-color: #5e1c27;
             box-shadow: 0 4px 10px rgba(119, 36, 50, 0.32);
             transform: translateY(-1px);
@@ -431,6 +431,10 @@
         @media (max-width: 640px) {
             #meetingDetailsModal .mdm-header,
             #meetingDetailsModal .mdm-footer { padding-left: 18px; padding-right: 18px; }
+            #meetingDetailsModal .mdm-footer .btn-cancel,
+            #meetingDetailsModal .mdm-footer .btn:first-child {
+                margin-left: auto;
+            }
             #meetingDetailsModal .mdm-body { padding: 18px; }
             #meetingDetailsModal .mdm-grid,
             #meetingDetailsModal .mdm-grid--three { grid-template-columns: 1fr; }

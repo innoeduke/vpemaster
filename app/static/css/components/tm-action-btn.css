@@ -44,7 +44,7 @@
   color: var(--tm-action-fg);
   background: var(--tm-action-bg);
   border: 1px solid var(--tm-action-border);
-  border-radius: 6px;
+  border-radius: 50%;
   box-shadow: var(--tm-action-shadow);
   cursor: pointer;
   transition:

@@ -480,8 +480,8 @@
             justify-content: space-between;
         }
 
-        .btn-send,
-        .btn-cancel {
+        .compose-footer-actions .btn-send,
+        .compose-footer-actions .btn-cancel {
             flex: 1;
             justify-content: center;
         }

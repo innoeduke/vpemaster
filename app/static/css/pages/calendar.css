@@ -1,6 +1,6 @@
 /* Calendar Page Styles */
 .calendar-page-container {
-    padding: 20px 0;
+    padding: 0;
     max-width: 100%;
     margin: 0 auto;
 }
@@ -346,13 +346,17 @@
 
 
 
+.calendar-body {
+    background: transparent;
+}
+
 .calendar-grid-container {
     width: 100%;
-    background: white;
+    background: transparent;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    box-shadow: none;
     overflow: hidden;
-    border: 1px solid #e2e8f0;
+    border: none;
 }
 
 /* Calendar page date filter overrides */
@@ -920,17 +924,18 @@ body.modal-open {
         font-size: 0.85rem;
     }
     .calendar-page-container .filter-row-premium {
-        flex-direction: row;
-        align-items: center;
+        flex-direction: column;
+        align-items: stretch;
         gap: 12px;
     }
     .calendar-page-container .filter-left {
         flex: 0 0 auto;
+        width: 100%;
     }
     .calendar-page-container .filter-right {
-        flex: 1 1 auto;
-        min-width: 0;
-        justify-content: flex-end;
+        flex: 0 0 auto;
+        width: 100%;
+        justify-content: flex-start;
     }
     .calendar-kpis {
         justify-content: flex-start;

@@ -286,11 +286,24 @@
   .search-input-wrapper,
   .custom-select-trigger {
     height: var(--mobile-control-height, 36px);
-    padding: 6px 8px;
+    padding: 6px 10px;
     font-size: 0.85rem;
     min-width: 0;
     flex: 1;
     box-shadow: none;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .search-input-wrapper .search-icon,
+  .custom-select-trigger .select-item-icon {
+    position: static;
+    font-size: 0.85rem;
+    color: #888;
+    flex-shrink: 0;
+    line-height: 1;
+    transform: none;
+    top: auto;
   }
 
   .autocomplete-results-dropdown {
@@ -306,6 +319,10 @@
   .autocomplete-search-input,
   .custom-select-trigger .selected-text {
     font-size: 0.85rem;
+  }
+
+  .autocomplete-search-input {
+    padding: 0;
   }
 
   .autocomplete-result-item {
