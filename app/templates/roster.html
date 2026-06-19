@@ -44,11 +44,11 @@
                 {{ render_meeting_filter(all_meetings, selected_meeting_id, label='', data_format='tuple', render_outer_container=False) }}
                 <div class="filter-right">
                     {% if selected_meeting and is_authorized(Permissions.ROSTER_EDIT) and selected_meeting.status in ('not started', 'running') and is_module_enabled('Self Check-In') %}
-                    <button type="button" class="btn trend-btn trend-btn-ghost" id="show-checkin-qr-btn"
+                    <a href="#" role="button" class="btn trend-btn trend-btn-ghost" id="show-checkin-qr-btn"
                             data-meeting-id="{{ selected_meeting.id }}"
                             title="{{ _('Show a QR code guests can scan to check themselves in') }}">
                         <i class="fas fa-qrcode"></i><span class="trend-btn-label">{{ _('Check-In QR') }}</span>
-                    </button>
+                    </a>
                     {% endif %}
                     <a href="{{ url_for('roster_bp.roster_participation_trend') }}" class="btn trend-btn trend-btn-ghost" title="{{ _('View Attendance Trend') }}">
                         <i class="fas fa-chart-line"></i><span class="trend-btn-label">{{ _('Attendance') }}</span>

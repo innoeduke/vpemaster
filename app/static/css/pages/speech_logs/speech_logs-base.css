@@ -950,7 +950,7 @@
 	box-shadow:
 		0 1px 2px rgba(17, 14, 12, 0.04),
 		0 6px 18px rgba(17, 14, 12, 0.06);
-	margin-bottom: 0;
+	margin-bottom: 20px;
 	border-left: 5px solid #772432;
 	position: relative;
 	overflow: hidden;
@@ -1074,11 +1074,10 @@
 
 /* Connected filter bar — visually attached to the header card */
 .speech-log-header + .filters-container {
-	margin-top: -1px;
+	margin-top: 0;
 	background: #ffffff;
 	border: 1px solid #ece8e1;
-	border-top: none;
-	border-radius: 0 0 14px 14px;
+	border-radius: 14px;
 	box-shadow: 0 4px 12px rgba(17, 14, 12, 0.04);
 	padding: 14px 28px;
 }
@@ -2187,7 +2186,7 @@
 	background: #faf9f6;
 	border: 1px solid #ece8e1;
 	border-radius: 999px;
-	padding: 2px 4px 2px 14px;
+	padding: 2px 4px;
 	transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -2200,7 +2199,6 @@
 .speech-logs-filter-bar .toolbar-extras .btn {
 	background: #772432;
 	color: #fff;
-	border-radius: 8px;
 	padding: 6px 14px;
 	font-weight: 600;
 	font-size: 0.85rem;

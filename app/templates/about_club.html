@@ -269,9 +269,8 @@
             isEditing = true;
             document.querySelector('.about-club-container').classList.add('edit-mode');
             editBtn.innerHTML = '<i class="fas fa-save"></i> Save';
-            editBtn.classList.remove('btn-info');
-            editBtn.classList.add('btn-success');
-            editBtn.style.backgroundColor = '';
+            editBtn.classList.remove('btn-outline');
+            editBtn.classList.add('btn-save');
             cancelBtn.style.display = 'inline-block';
 
             const logoEditDiv = document.getElementById('club-logo-edit');
@@ -335,9 +334,8 @@
             isEditing = false;
             document.querySelector('.about-club-container').classList.remove('edit-mode');
             editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
-            editBtn.classList.remove('btn-success');
-            editBtn.classList.add('btn-info');
-            editBtn.style.backgroundColor = '';
+            editBtn.classList.remove('btn-save');
+            editBtn.classList.add('btn-outline');
             cancelBtn.style.display = 'none';
 
             const logoEditDiv = document.getElementById('club-logo-edit');

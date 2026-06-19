@@ -50,7 +50,7 @@
         <h2>{{ _('Excomm Management') }}</h2>
         <div class="button-group">
           <button id="add-excomm-btn" class="btn btn-success" onclick="openExcommModal()">
-            <i class="fas fa-plus"></i> {{ _('Add New') }}
+            <i class="fas fa-plus"></i> {{ _('New') }}
           </button>
         </div>
       </div>
@@ -177,7 +177,7 @@
               {% if club_id != GLOBAL_CLUB_ID %}{{ _('Custom Sessions') }}{% else %}{{ _('Standard Sessions (Repository)') }}{% endif %}
             </h2>
             <div class="button-group">
-              <button id="add-session-btn" class="btn btn-success btn-sm" style="flex-grow: 0;">{{ _('Add New') }}</button>
+              <button id="add-session-btn" class="btn btn-success btn-sm" style="flex-grow: 0;">{{ _('+ New') }}</button>
             </div>
           </div>
           <table id="sessions-table">
@@ -312,7 +312,7 @@
               {% if club_id != GLOBAL_CLUB_ID %}{{ _('Custom Roles') }}{% else %}{{ _('Standard Roles (Repository)') }} {% endif %}
             </h2>
             <div class="button-group">
-              <button id="add-role-btn" class="btn btn-success btn-sm" style="flex-grow: 0;">{{ _('Add New') }}</button>
+              <button id="add-role-btn" class="btn btn-success btn-sm" style="flex-grow: 0;">{{ _('+ New') }}</button>
             </div>
           </div>
           <table id="roles-table">
@@ -381,7 +381,7 @@
       <div class="settings-header">
         <h2>{{ _('Tickets Management') }}</h2>
         <div class="button-group">
-          <button id="add-ticket-btn" class="btn btn-success" style="flex-grow: 0;" onclick="openAddTicketModal()">{{ _('Add New') }}</button>
+          <button id="add-ticket-btn" class="btn btn-success" style="flex-grow: 0;" onclick="openAddTicketModal()"><i class="fas fa-plus"></i>{{ _('New') }}</button>
         </div>
       </div>
       <table id="tickets-table">
@@ -467,7 +467,7 @@
           <h2>{{ _('Security Groups') }}</h2>
           <div class="button-group">
             <button id="add-auth-role-btn" class="btn btn-success" onclick="openAddAuthRoleModal()" title="{{ _('Add custom security group') }}">
-              {{ _('+ New Group') }}
+              <i class="fas fa-plus"></i>{{ _('New') }}
             </button>
           </div>
         </div>
@@ -498,10 +498,10 @@
       <h2>{{ _('Permissions Matrix') }}</h2>
       <div class="button-group">
         <span id="permissions-default-hint" class="text-muted small" style="margin-right: 12px; align-self: center;"></span>
-        <button id="save-permissions-btn" class="btn btn-primary" title="{{ _('Export current matrix to club resources folder (app/static/club_resources/<club_id>/permissions.json)') }}">
+        {% call btn('save', id='save-permissions-btn', title=_('Export current matrix to club resources folder (app/static/club_resources/<club_id>/permissions.json)')) %}
           {{ _('Save as Default') }}
-        </button>
-        {% call btn('delete', id='reset-permissions-btn', disabled=true, title=_('Reset matrix to the default (club JSON if present, otherwise global JSON)')) %}
+        {% endcall %}
+        {% call btn('reset', id='reset-permissions-btn', disabled=true, title=_('Reset matrix to the default (club JSON if present, otherwise global JSON)')) %}
           {{ _('Reset to Default') }}
         {% endcall %}
       </div>
@@ -522,12 +522,12 @@
       <h2>{{ _('Club Awards Management') }}</h2>
       {% if is_authorized(Permissions.SETTINGS_EDIT) %}
         <div class="button-group" style="display: flex; gap: 10px; align-items: center;">
-          <button id="save-defaults-btn" class="btn btn-outline" onclick="saveDefaultAwards()">
-            <i class="fas fa-save"></i> {{ _('Save Default Awards') }}
-          </button>
-          <button id="add-award-btn" class="btn btn-primary" onclick="openAwardModal()">
-            <i class="fas fa-plus"></i> {{ _('Add New Award') }}
-          </button>
+          {% call btn('save', id='save-defaults-btn', attrs={'onclick': 'saveDefaultAwards()'}) %}
+            <i class="fas fa-save"></i> {{ _('Save') }}
+          {% endcall %}
+          {% call btn('new', id='add-award-btn', attrs={'onclick': 'openAwardModal()'}) %}
+            <i class="fas fa-plus"></i> {{ _('New') }}
+          {% endcall %}
         </div>
       {% endif %}
     </div>

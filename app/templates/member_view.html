@@ -240,7 +240,7 @@
             <div class="search-container filter-group-premium">
                 <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" id="global-search-form" style="display: flex; align-items: center; position: relative; width: 100%;">
                     <input type="hidden" name="view_mode" value="search">
-                    <input type="text" name="q" class="search-box" placeholder="{{ _('Search ...') }}" value="{{ request.args.get('q', '') }}" style="width: 100%; max-width: 100%; padding-left: 35px; border-radius: 6px; border: 1px solid #ddd; height: 36px; box-sizing: border-box; font-family: 'Montserrat', sans-serif;">
+                    <input type="text" name="q" class="search-box" placeholder="{{ _('Search ...') }}" value="{{ request.args.get('q', '') }}" style="width: 100%; max-width: 100%; padding-left: 35px; border-radius: 999px; border: 1px solid #ddd; height: 36px; box-sizing: border-box; font-family: 'Montserrat', sans-serif;">
                     <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; pointer-events: none;"></i>
                     {% if request.args.get('q') %}
                     <button type="button" class="clear-search-btn" onclick="window.location.href='{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}'" style="right: 12px;">&times;</button>
@@ -252,7 +252,7 @@
             {% if viewed_contact and current_user.contact_id == viewed_contact.id %}
             <div class="toolbar-extras" style="display: flex; align-items: center; gap: 8px; flex: 0 0 auto;">
                 {% call btn('new', id='add-plan-btn') %}
-                    <i class="fas fa-plus"></i> <span class="btn-text">{{ _('New Item') }}</span>
+                    <i class="fas fa-plus"></i> <span class="btn-text">{{ _('New') }}</span>
                 {% endcall %}
             </div>
             {% endif %}

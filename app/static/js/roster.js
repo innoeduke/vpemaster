@@ -1418,7 +1418,7 @@ function openContactModalWithReferer() {
     if (modal) modal.style.display = "none";
   }
 
-  if (qrBtn) qrBtn.addEventListener("click", openModal);
+  if (qrBtn) qrBtn.addEventListener("click", function(e) { e.preventDefault(); openModal(); });
   if (closeBtn) closeBtn.addEventListener("click", closeModal);
   if (modal) {
     modal.addEventListener("click", function (ev) {

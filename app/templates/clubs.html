@@ -15,10 +15,10 @@
     <div class="clubs-header">
         <h1>{{ _('Club Directory') }}</h1>
         {% if current_user.is_sysadmin %}
-        <a href="{{ url_for('clubs_bp.create_club') }}" class="btn btn-primary btn-create">
+        {% call btn('new', tag='a', href=url_for('clubs_bp.create_club'), class='btn-create') %}
             <i class="fas fa-plus"></i>
             {{ _('Create New Club') }}
-        </a>
+        {% endcall %}
         {% endif %}
     </div>
 
@@ -38,10 +38,10 @@
                 </a>
                 {% endif %}
             </div>
-            <button type="submit" class="btn btn-primary">
+            {% call btn('search', type='submit') %}
                 <i class="fas fa-search"></i>
                 <span>{{ _('Search') }}</span>
-            </button>
+            {% endcall %}
         </form>
         <div class="view-toggles">
             <button id="btn-grid-view" class="view-toggle-btn active">
