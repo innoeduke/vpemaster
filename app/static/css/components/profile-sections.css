@@ -127,7 +127,7 @@
 	padding: 10px 15px;
 	resize: vertical;
 	font-family: inherit;
-	font-weight: 700;
+	font-weight: normal;
 	color: #333;
 	line-height: 1.5;
 }
@@ -141,19 +141,25 @@
 }
 
 /* Custom Select Integration within Profile sections - Increased specificity to remove !important */
-body .profile-section .meeting-autocomplete-container {
+:root body .profile-page-container .profile-section .custom-select-wrapper {
+	width: 100%;
+	min-width: 0;
+}
+
+:root body .profile-page-container .profile-section .meeting-autocomplete-container {
+	display: flex;
 	margin: 10px 15px;
 	width: calc(100% - 30px);
-	max-width: none;
+	max-width: calc(100% - 30px);
 	height: auto;
 }
 
-body .profile-section .custom-select-trigger {
+:root body .profile-page-container .profile-section .custom-select-trigger {
 	margin: 0;
 	width: 100%;
 	max-width: none;
 	height: 44px;
-	padding: 0 15px;
+	padding: 0 35px 0 15px;
 	box-shadow: none;
 	font-size: 15px;
 	box-sizing: border-box;
@@ -171,6 +177,12 @@ body .profile-section .autocomplete-results-dropdown {
 	min-width: 100%;
 	max-width: none;
 	box-sizing: border-box;
+}
+
+body .profile-section .autocomplete-result-item {
+	white-space: normal;
+	word-break: break-word;
+	overflow-wrap: anywhere;
 }
 
 .field-row .note {
@@ -257,19 +269,21 @@ body .profile-section .autocomplete-results-dropdown {
 		font-size: 14px;
 	}
 
-	body .profile-section .meeting-autocomplete-container {
+	:root body .profile-page-container .profile-section .meeting-autocomplete-container {
+		display: flex;
 		margin: 8px 15px 12px;
 		width: calc(100% - 30px);
+		max-width: calc(100% - 30px);
 		height: auto;
 		/* Overrides meeting_filter.css mobile fixed height */
 	}
 
-	body .profile-section .custom-select-trigger {
+	:root body .profile-page-container .profile-section .custom-select-trigger {
 		margin: 0;
 		width: 100%;
 		max-width: none;
 		height: 38px;
-		padding: 0 10px;
+		padding: 0 35px 0 10px;
 		box-shadow: none;
 		font-size: 14px;
 		box-sizing: border-box;

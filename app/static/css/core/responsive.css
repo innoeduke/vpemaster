@@ -136,12 +136,17 @@
         /* Above header-left to receive clicks */
     }
 
-    /* Explicit profile container configuration for mobile/tablet */
-    .profile-container {
+    /* Explicit profile container configuration for mobile/tablet (header user menu only) */
+    .page-header .profile-container {
         position: relative;
         z-index: 1002;
-        margin-left: auto;
-        display: flex;
+        margin-left: 0;
+        display: block;
+    }
+
+    .page-header .profile-menu {
+        right: 0;
+        max-width: calc(100vw - 32px);
     }
 
     .page-header .nav-toggle {

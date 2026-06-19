@@ -8,9 +8,9 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components/meeting_filter.css') }}">
 {% endblock %}
 {% block content %}
-<div class="profile-container">
+<div class="profile-page-container">
 
-<div class="tabs-container" style="max-width: 700px; margin: 0 auto; margin-top: 40px;">
+<div class="tabs-container" style="max-width: 700px; margin: 0 auto;">
   <div class="nav-tabs">
     <button class="nav-item active" onclick="openTab(event, 'basic-info')" id="tab-basic-info">Basic
       Information</button>
@@ -56,7 +56,7 @@
       <!-- Section 1: Basic Information -->
       {% call profile_section("Basic Information") %}
         <!-- Username & Role - side by side at top -->
-        {% call field_row_pair() %}
+        {% call field_row_pair(class='mobile-side-by-side') %}
           {{ field_row("Username", value=user.username ~ (('<sup class="dtm-superscript">DTM</sup>' | safe) if (user.contact and user.contact.DTM) else ''), is_raw=true) }}
           {% set role = user.primary_role %}
           {% set role_class = 'role-' ~ role.award_category if (role and role.award_category) else 'role-other' %}
@@ -66,7 +66,7 @@
         {% endcall %}
 
         <!-- Name row - side by side -->
-        {% call field_row_pair() %}
+        {% call field_row_pair(class='mobile-side-by-side') %}
           {{ field_row("First Name", value=user.first_name, editable=true, id="first_name", can_edit=can_edit_profile) }}
           {{ field_row("Last Name", value=user.last_name, editable=true, id="last_name", can_edit=can_edit_profile) }}
         {% endcall %}
@@ -103,12 +103,12 @@
           {{ field_row("Home Club", value=user.home_club.club_name if user.home_club else none) }}
         {% endif %}
         
-        {% call field_row_pair() %}
+        {% call field_row_pair(class='mobile-side-by-side') %}
           {{ field_row("Member ID", value=user.contact.Member_ID) }}
           {{ field_row("Mentor", value=user.contact.mentor.Name if user.contact.mentor else none) }}
         {% endcall %}
 
-        {% call field_row_pair() %}
+        {% call field_row_pair(class='mobile-side-by-side') %}
           {{ field_row("Credential", value=user.contact.credentials) }}
           {{ field_row("Next Project", value=user.contact.Next_Project) }}
         {% endcall %}
@@ -128,7 +128,7 @@
     </div>
     {% if can_edit_profile %}
     <div class="form-actions" style="margin-top: 10px">
-      {% call btn('primary', id='update-profile-btn', type='submit', disabled=true) %}Update Profile{% endcall %}
+      {% call btn('save', id='update-profile-btn', type='submit', disabled=true) %}Save{% endcall %}
     </div>
     {% endif %}
   </form>
@@ -143,6 +143,7 @@
   <form method="POST" action="{% if is_own_profile %}{{ url_for('auth_bp.profile', tab='password') }}{% else %}{{ url_for('auth_bp.profile', contact_id=user.contact.id, tab='password') }}{% endif %}"
     style="max-width: 700px; margin: 0 auto">
     <input type="hidden" name="action" value="reset_password" />
+    <input type="text" name="username" value="{{ user.username }}" autocomplete="username" style="display: none;" />
     <div class="profile-form">
       <div class="profile-section">
         <div class="field-row editable vertical-value">

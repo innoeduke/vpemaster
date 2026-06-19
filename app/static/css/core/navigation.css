@@ -231,8 +231,8 @@
     /* Hidden on PC by default, can be used for breadcrumbs */
 }
 
-/* Profile Dropdown (Desktop Layout) */
-.profile-container {
+/* Profile Dropdown (Desktop Layout) - header user menu only */
+.page-header .profile-container {
     position: relative;
     z-index: 2000;
     margin-left: auto;
@@ -386,6 +386,8 @@
     font-weight: 600;
     z-index: 2000;
     margin-right: 15px;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .lang-icon {
@@ -399,6 +401,7 @@
     text-decoration: none;
     transition: color 0.2s ease;
     padding: 2px 4px;
+    white-space: nowrap;
 }
 
 .lang-toggle-item:hover {

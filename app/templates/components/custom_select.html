@@ -36,11 +36,11 @@
              aria-controls="{{ select_id }}-results"
              {% if label %}aria-labelledby="{{ select_id }}-label"{% endif %}
              style="cursor: pointer; display: flex; align-items: center; {% if is_disabled %}opacity: 0.6; pointer-events: none;{% endif %}">
-            <div class="selected-content" style="display: flex; align-items: center; gap: 8px; flex-grow: 1; overflow: hidden;">
+            <div class="selected-content" style="display: flex; align-items: center; gap: 8px; flex-grow: 1; overflow: hidden; min-width: 0;">
                 {% if ns.selected_icon %}
                 <i class="{{ ns.selected_icon }} select-item-icon" {% if ns.selected_color %}style="color: {{ ns.selected_color }};"{% endif %}></i>
                 {% endif %}
-                <span class="selected-text" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                <span class="selected-text" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;">
                     {{ ns.selected_text if ns.selected_text else _(placeholder) }}
                 </span>
             </div>
