@@ -6,12 +6,15 @@
 
         const open = () => {
             modal.hidden = false;
-            modal.setAttribute('aria-hidden', 'false');
+            modal.removeAttribute('inert');
             document.body.classList.add('modal-open');
         };
         const close = () => {
+            if (document.activeElement && modal.contains(document.activeElement)) {
+                document.activeElement.blur();
+            }
             modal.hidden = true;
-            modal.setAttribute('aria-hidden', 'true');
+            modal.setAttribute('inert', '');
             document.body.classList.remove('modal-open');
         };
 

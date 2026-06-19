@@ -904,7 +904,7 @@ body.modal-open {
         padding: 12px;
     }
     .date-range-card {
-        max-width: 100%;
+        max-width: 320px;
     }
     .date-range-form {
         padding: 16px;
@@ -921,7 +921,24 @@ body.modal-open {
     }
     .month-picker input[type="month"] {
         height: 40px;
+        line-height: 40px;
         font-size: 0.85rem;
+        vertical-align: middle;
+        text-align: left;
+        padding-right: 32px;
+        position: relative;
+    }
+    .month-picker input[type="month"]::-webkit-calendar-picker-indicator {
+        position: absolute;
+        right: 8px;
+        top: 0;
+        bottom: 0;
+        height: 16px;
+        margin: auto 0;
+        padding: 0;
+    }
+    .month-picker {
+        position: relative;
     }
     .calendar-page-container .filter-row-premium {
         flex-direction: column;
