@@ -1080,10 +1080,6 @@ function mountSpeechModeOwnerPicker({
       if (savedTarget && savedTarget.pathway) {
         defaultPath = savedTarget.pathway;
       }
-      pathwaySelectEl.value = defaultPath;
-      // Fire change so the project select (and level options) update for the new pathway.
-      pathwaySelectEl.dispatchEvent(new Event("change", { bubbles: true }));
-
       if (levelSelectEl) {
         let defaultLevel = "";
         if (defaultPath !== "Non Pathway") {
@@ -1094,6 +1090,10 @@ function mountSpeechModeOwnerPicker({
         }
         levelSelectEl.value = defaultLevel;
       }
+
+      pathwaySelectEl.value = defaultPath;
+      // Fire change so the project select (and level options) update for the new pathway.
+      pathwaySelectEl.dispatchEvent(new Event("change", { bubbles: true }));
 
       // When the owner is removed, reset the credential so the
       // saved record reflects the unassigned state, but keep the session title intact.
