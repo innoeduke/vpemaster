@@ -21,7 +21,10 @@
     </div>
 
     <div class="nav-tabs">
-      <button class="nav-item active" onclick="openTab(event, 'excomm-settings')">
+      <button class="nav-item active" onclick="openTab(event, 'modules-settings')">
+        {{ _('Modules') }}
+      </button>
+      <button class="nav-item" onclick="openTab(event, 'excomm-settings')">
         {{ _('Excomm') }}
       </button>
       <button class="nav-item" onclick="openTab(event, 'agenda-settings')">
@@ -45,7 +48,31 @@
       
     </div>
 
-    <div id="excomm-settings" class="tab-content">
+    <div id="modules-settings" class="tab-content">
+    <div class="settings-header">
+      <h2>{{ _('Functional Modules') }}</h2>
+    </div>
+
+    <div class="table-container">
+      <table id="modules-table">
+        <thead>
+          <tr>
+            <th>{{ _('Module Name') }}</th>
+            <th style="text-align: center;">{{ _('Status') }}</th>
+          </tr>
+        </thead>
+        <tbody id="modules-table-body">
+          <tr>
+            <td colspan="2" class="text-center py-4">
+              <i class="fas fa-spinner fa-spin"></i> {{ _('Loading modules...') }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="excomm-settings" class="tab-content">
       <div class="settings-header">
         <h2>{{ _('Excomm Management') }}</h2>
         <div class="button-group">
@@ -436,32 +463,7 @@
 
   <div id="roles-permissions" class="tab-content">
     <div class="roles-modules-row">
-      <!-- Left Column: Functional Modules -->
-      <div class="modules-column">
-        <div class="settings-header">
-          <h2>{{ _('Functional Modules') }}</h2>
-        </div>
-        
-        <div class="table-container">
-          <table id="modules-table">
-            <thead>
-              <tr>
-                <th>{{ _('Module Name') }}</th>
-                <th style="text-align: center; width: 100px;">{{ _('Status') }}</th>
-              </tr>
-            </thead>
-            <tbody id="modules-table-body">
-              <tr>
-                <td colspan="2" class="text-center py-4">
-                  <i class="fas fa-spinner fa-spin"></i> {{ _('Loading modules...') }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Right Column: Security Groups -->
+      <!-- Security Groups -->
       <div class="roles-column">
         <div class="settings-header">
           <h2>{{ _('Security Groups') }}</h2>

@@ -93,7 +93,18 @@
                       or (is_authorized(Permissions.SETTINGS_VIEW) and current_user.primary_role_name != 'Guest') %}
       {% set has_directory_nav = is_module_enabled('Club Directory') and current_user.is_authenticated %}
       <ul class="nav-links">
+        {# === Club Directory === #}
+        {% if has_directory_nav %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('clubs_bp') %}active{% endif %}">
+          <a href="{{ url_for('clubs_bp.list_clubs') }}" title="{{ _('View club directory') }}">
+            <i class="fas fa-network-wired nav-icon"></i>
+            <span>{{ _('Club Directory') }}</span>
+          </a>
+        </li>
+        {% endif %}
+
         {# === Meetings group === #}
+        {% if has_directory_nav and is_module_enabled('Calendar') and is_authorized(Permissions.MEMBERS_SELF) %}<li class="nav-divider"></li>{% endif %}
         {% if is_module_enabled('Calendar') and is_authorized(Permissions.MEMBERS_SELF) %}
         <li class="{% if request.endpoint and request.endpoint == 'main_bp.calendar' %}active{% endif %}">
           <a href="{{ url_for('main_bp.calendar') }}" title="{{ _('View club calendar') }}">
@@ -212,17 +223,6 @@
             title="{{ _('Configure system and club settings') }}">
             <i class="fas fa-cog nav-icon"></i>
             <span>{{ _('Settings') }}</span>
-          </a>
-        </li>
-        {% endif %}
-
-        {# === Club Directory === #}
-        {% if has_club_nav and has_directory_nav %}<li class="nav-divider"></li>{% endif %}
-        {% if has_directory_nav %}
-        <li class="{% if request.endpoint and request.endpoint.startswith('clubs_bp') %}active{% endif %}">
-          <a href="{{ url_for('clubs_bp.list_clubs') }}" title="{{ _('View club directory') }}">
-            <i class="fas fa-network-wired nav-icon"></i>
-            <span>{{ _('Club Directory') }}</span>
           </a>
         </li>
         {% endif %}

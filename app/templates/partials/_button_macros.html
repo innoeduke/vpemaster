@@ -2,8 +2,8 @@
 
 {% macro btn(variant='primary', size=none, tag='button', href=none, type=none, class='', id=none, disabled=false, title=none, attrs={}) -%}
     {% set variant_map = {
-        'primary': 'btn-primary',
-        'success': 'btn-success',
+        'primary': 'btn-save',
+        'success': 'btn-primary',
         'secondary': 'btn-secondary',
         'danger': 'btn-danger',
         'info': 'btn-info',
@@ -20,7 +20,7 @@
         'close': 'btn-cancel',
         'ok': 'btn-save',
     } %}
-    {% set variant_class = variant_map.get(variant, 'btn-primary') %}
+    {% set variant_class = variant_map.get(variant, 'btn-save') %}
     {% set classes = ['btn', variant_class] %}
     {% if size == 'sm' %}{% set classes = classes + ['btn-sm'] %}{% endif %}
     {% if class %}{% set classes = classes + [class] %}{% endif %}

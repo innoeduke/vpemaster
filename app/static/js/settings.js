@@ -136,6 +136,11 @@ function openTab(evt, tabName) {
       paginator.update();
     }
   }
+
+  // Lazy-load tab data
+  if (tabName === "modules-settings" && typeof loadModules === "function") {
+    loadModules();
+  }
 }
 
 /**
@@ -844,7 +849,7 @@ document.addEventListener("DOMContentLoaded", () => {
     openTab(null, savedTab);
   } else {
     // Default to general if nothing is set
-    openTab(null, "excomm-settings");
+    openTab(null, "modules-settings");
   }
 
   // --- 2. Modal Logic ---
@@ -1977,7 +1982,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const tabName = e.currentTarget
         .getAttribute("onclick")
         .match(/'([^']+)'/)[1];
-      if (tabName === "roles-permissions") {
+      if (tabName === "modules-settings") {
+        loadModules();
+      } else if (tabName === "roles-permissions") {
         loadPermissionsMatrix();
       } else if (tabName === "audit-log") {
         loadAuditLog();
@@ -1987,7 +1994,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initial load if tab is deep-linked
   const activeTab = localStorage.getItem("settings_active_tab");
-  if (activeTab === "roles-permissions") {
+  if (activeTab === "modules-settings") {
+    loadModules();
+  } else if (activeTab === "roles-permissions") {
     loadPermissionsMatrix();
   } else if (activeTab === "audit-log") {
     loadAuditLog();

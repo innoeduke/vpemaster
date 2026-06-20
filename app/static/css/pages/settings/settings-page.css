@@ -353,3 +353,11 @@
     max-width: 100%;
     word-break: break-word;
   }
+
+  /* Functional Modules: fit columns to content (override the global table width:100%) */
+  #modules-table {
+    width: auto;
+  }
+  #modules-settings .table-container {
+    display: inline-block;
+  }

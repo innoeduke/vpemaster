@@ -119,7 +119,7 @@
       </div>
 
       <div class="form-actions" style="margin-top: 20px;">
-        {% call btn('danger', attrs={'onclick': "closeModal('addRoleModal')"}) %}{{ _('Cancel') }}{% endcall %}
+        {% call btn('cancel', attrs={'onclick': "closeModal('addRoleModal')"}) %}{{ _('Cancel') }}{% endcall %}
         {% call btn('success', id='role-modal-submit', type='submit') %}{{ _('Save') }}{% endcall %}
       </div>
     </form>
