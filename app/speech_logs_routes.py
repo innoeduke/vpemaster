@@ -2131,14 +2131,16 @@ def get_speech_log_details(log_id):
 
     # For Evaluation / Individual Evaluator sessions, include the list of
     # available speakers in the meeting so the frontend can render a select.
-    # Only include speakers whose session is valid for project and has a project checked.
+    # Include speakers whose session has a project checked OR is a prepared speech session.
     if role_name in ("Evaluation", "Individual Evaluator") and meeting_id:
         from app.models.project import ProjectID
+        from sqlalchemy import or_
         speaker_logs = SessionLog.query.join(SessionType).filter(
             SessionLog.meeting_id == meeting_id,
-            SessionType.Valid_for_Project == True,
-            SessionLog.Project_ID != None,
-            SessionLog.Project_ID != ProjectID.GENERIC
+            or_(
+                (SessionType.Valid_for_Project == True) & (SessionLog.Project_ID != None) & (SessionLog.Project_ID != ProjectID.GENERIC),
+                SessionType.Title.in_(["Prepared Speech", "Pathway Speech", "Presentation"])
+            )
         ).all()
         
         speaker_names = []
@@ -2150,6 +2152,114 @@ def get_speech_log_details(log_id):
         log_data["available_speakers"] = speaker_names
 
     return jsonify(success=True, log=log_data)
+
+
+@speech_logs_bp.route('/speech_log/presentation_projects', methods=['GET'])
+@login_required
+def get_presentation_projects():
+    """
+    Returns recommended presentation projects for a given contact and level,
+    excluding completed projects (except for current_project_id).
+    """
+    contact_id = request.args.get('contact_id', type=int)
+    level = request.args.get('level', type=int)
+    current_project_id = request.args.get('current_project_id', type=int)
+    
+    if not contact_id:
+        return jsonify(success=False, message="contact_id is required"), 400
+        
+    contact = db.session.get(Contact, contact_id)
+    if not contact:
+        return jsonify(success=False, message="Contact not found"), 404
+        
+    if not level:
+        # Determine owner's target level (active level)
+        level = 1
+        if contact.Current_Path:
+            completed_levels = contact.get_completed_levels(contact.Current_Path)
+            for lvl in range(1, 6):
+                if lvl not in completed_levels:
+                    level = lvl
+                    break
+    if level < 3:
+        level = 3
+
+    # Get all presentation pathway IDs
+    presentation_pathways = Pathway.query.filter_by(type='presentation').all()
+    presentation_pathway_ids = [p.id for p in presentation_pathways]
+    
+    # Get recommended presentation projects for this level
+    recommended_pps = PathwayProject.query.filter(
+        PathwayProject.path_id.in_(presentation_pathway_ids),
+        PathwayProject.level == level
+    ).all()
+    
+    pathway = request.args.get('pathway', type=str)
+    if not pathway:
+        pathway = contact.Current_Path
+        
+    # Get completed project IDs for this contact under this pathway
+    from .models.session import SessionLog, SessionType, OwnerMeetingRoles
+    from .models.roster import MeetingRole
+    from .models.meeting import Meeting
+
+    query_filters = [
+        Meeting.status == 'finished',
+        SessionLog.Project_ID.isnot(None)
+    ]
+    if pathway in (None, '', 'Non Pathway'):
+        query_filters.append(db.or_(
+            OwnerMeetingRoles.target_pathway.is_(None),
+            OwnerMeetingRoles.target_pathway == '',
+            OwnerMeetingRoles.target_pathway == 'Non Pathway'
+        ))
+    else:
+        query_filters.append(OwnerMeetingRoles.target_pathway == pathway)
+
+    query_obj = db.session.query(SessionLog.Project_ID)\
+        .join(Meeting, SessionLog.meeting_id == Meeting.id)\
+        .join(SessionType, SessionLog.Type_ID == SessionType.id)\
+        .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
+        .join(OwnerMeetingRoles, db.and_(
+            OwnerMeetingRoles.contact_id == contact.id,
+            OwnerMeetingRoles.meeting_id == Meeting.id,
+            OwnerMeetingRoles.role_id == MeetingRole.id,
+            db.or_(
+                OwnerMeetingRoles.session_log_id == SessionLog.id,
+                OwnerMeetingRoles.session_log_id.is_(None)
+            )
+        ))\
+        .filter(*query_filters)
+    completed_pids_query = query_obj.all()
+
+    completed_project_ids = {pid[0] for pid in completed_pids_query}
+    
+    projects_data = []
+    seen_project_ids = set()
+    for pp in recommended_pps:
+        if pp.project_id in completed_project_ids and pp.project_id != current_project_id:
+            continue
+        if pp.project_id in seen_project_ids:
+            continue
+        seen_project_ids.add(pp.project_id)
+        project = pp.project
+        if project:
+            projects_data.append({
+                "id": project.id,
+                "Project_Name": project.Project_Name,
+                "Purpose": project.Purpose,
+                "Duration_Min": project.Duration_Min,
+                "Duration_Max": project.Duration_Max,
+                "pathway_name": pp.pathway.name if pp.pathway else "",
+                "pathway_abbr": pp.pathway.abbr if pp.pathway else "",
+                "code": pp.code,
+                "level": pp.level
+            })
+            
+    # Sort projects by Project_Name
+    projects_data.sort(key=lambda x: x["Project_Name"])
+    
+    return jsonify(success=True, target_level=level, projects=projects_data)
 
 
 @speech_logs_bp.route('/speech_log/update/<int:log_id>', methods=['POST'])
@@ -2319,7 +2429,7 @@ def update_speech_log(log_id):
     pathway_val = data.get('pathway')
     primary_owner = log.owners[0] if log.owners else None
     
-    is_prepared_speech = session_type and session_type.Title == 'Prepared Speech'
+    is_prepared_speech = session_type and session_type.Title in ('Prepared Speech', 'Presentation')
     is_project = (session_type and session_type.Valid_for_Project and project_id and project_id != ProjectID.GENERIC) or is_prepared_speech
 
     if is_project:

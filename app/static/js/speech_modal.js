@@ -1528,6 +1528,101 @@ const SpeechModalSetupManager = {
     if (modalElements.standardProjectFields) {
       modalElements.standardProjectFields.style.display = "block";
     }
+
+    if (sessionType === "Presentation") {
+      modalElements.labelPathway.textContent = "Pathway:";
+      modalElements.labelProject.textContent = "Project:";
+      modalElements.labelLevel.textContent = "Level:";
+      modalElements.pathwaySelect.required = true;
+      modalElements.pathwayGenericRow.style.display = "block";
+      modalElements.levelSelectGroup.style.display = "block";
+      modalElements.projectSelectGroup.style.display = "block";
+
+      const picker = mountSpeechModeOwnerPicker({
+        ownerNameElement: document.getElementById("speech-owner-name"),
+        pathwaySelectEl: modalElements.pathwaySelect,
+        levelSelectEl: modalElements.levelSelect,
+        logData,
+        workingPath,
+        repopulatePathway: (newOwnerId, registeredPaths) => {
+          SpeechModalSetupManager.populatePathwayDropdown(
+            modalElements.pathwaySelect,
+            newOwnerId,
+            registeredPaths,
+            logData.owners_data
+          );
+        },
+      });
+
+      if (picker) {
+        const originalOnChange = picker.onChange;
+        picker.onChange = (newOwnerId, newContact) => {
+          const oldOnChange = modalElements.pathwaySelect.onchange;
+          modalElements.pathwaySelect.onchange = null;
+          
+          originalOnChange(newOwnerId, newContact);
+          
+          modalElements.pathwaySelect.onchange = oldOnChange;
+          
+          let levelVal = modalElements.levelSelect.value;
+          if (!levelVal) {
+            modalElements.levelSelect.value = "3";
+            levelVal = "3";
+          }
+          const pathwayVal = modalElements.pathwaySelect.value;
+          fetchPresentationProjects(newOwnerId, levelVal, logData.Project_ID, pathwayVal);
+        };
+      }
+
+      this.populatePathwayDropdown(modalElements.pathwaySelect, logData.owner_id, logData.registered_paths, logData.owners_data);
+
+      let pathwayToSelect = logData.target_pathway;
+      if (!pathwayToSelect) {
+        const contactsList = logData.owners_data || window.allContacts || [];
+        const contact = contactsList.find((c) => c.id == logData.owner_id);
+        pathwayToSelect = (contact && contact.Current_Path) || workingPath || "";
+      }
+      if (!pathwayToSelect) {
+        pathwayToSelect = "Non Pathway";
+      }
+      modalElements.pathwaySelect.value = pathwayToSelect || "";
+
+      // Rebuild levels to 3, 4, 5
+      modalElements.levelSelect.innerHTML = '<option value="">-- Select Level --</option>';
+      for (let i = 3; i <= 5; i++) {
+        modalElements.levelSelect.add(new Option(`Level ${i}`, i));
+      }
+
+      const currentOwnerId = logData.owner_id;
+      let initialLevel = logData.target_level || "";
+      if (initialLevel && (initialLevel < 3 || initialLevel > 5)) {
+        initialLevel = "";
+      }
+
+      if (currentOwnerId) {
+        fetchPresentationProjects(currentOwnerId, initialLevel, logData.Project_ID, pathwayToSelect);
+      } else {
+        modalElements.levelSelect.value = "";
+        modalElements.projectSelect.innerHTML = '<option value="">-- No Owner Selected --</option>';
+      }
+
+      modalElements.levelSelect.onchange = () => {
+        const selectedOwnerId = modalElements.ownerPicker ? modalElements.ownerPicker.getOwnerId() : logData.owner_id;
+        const selectedLevel = modalElements.levelSelect.value;
+        const selectedPathway = modalElements.pathwaySelect.value;
+        fetchPresentationProjects(selectedOwnerId, selectedLevel, logData.Project_ID, selectedPathway);
+      };
+
+      modalElements.pathwaySelect.onchange = () => {
+        const selectedOwnerId = modalElements.ownerPicker ? modalElements.ownerPicker.getOwnerId() : logData.owner_id;
+        const selectedLevel = modalElements.levelSelect.value;
+        const selectedPathway = modalElements.pathwaySelect.value;
+        fetchPresentationProjects(selectedOwnerId, selectedLevel, logData.Project_ID, selectedPathway);
+      };
+
+      return;
+    }
+
     modalElements.pathwaySelect.required = true;
     modalElements.pathwayGenericRow.style.display = "block";
     modalElements.levelSelectGroup.style.display = "block";
@@ -1642,6 +1737,9 @@ const SpeechModalSetupManager = {
 // --- Dynamic Dropdown Helpers ---
 
 function updateDynamicOptions() {
+  if (modalElements.sessionType && modalElements.sessionType.value === "Presentation") {
+    return;
+  }
   const pathway = modalElements.pathwaySelect.value;
   if (pathway === "Non Pathway") {
     // Clear project options — Non Pathway has no projects — but leave the
@@ -1843,6 +1941,11 @@ function buildSavePayload() {
       payload.project_id = isProject ? ProjectID.KEYNOTE_SPEAKER_PROJECT : null;
       payload.pathway = pathwaySelectDropdown.value || "";
       payload.level = levelDropdownValue;
+      break;
+    case "Presentation":
+      payload.project_id = projectSelect.value || null;
+      payload.pathway = pathwaySelect.value;
+      payload.level = modalElements.levelSelect.value || null;
       break;
     case "Evaluation":
     case "Individual Evaluator":
@@ -2293,3 +2396,37 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 });
+
+async function fetchPresentationProjects(ownerId, levelVal, currentProjectId = null, pathwayVal = null) {
+  if (!ownerId) {
+    modalElements.projectSelect.innerHTML = '<option value="">-- No Owner Selected --</option>';
+    return;
+  }
+  let url = `/speech_log/presentation_projects?contact_id=${ownerId}`;
+  if (levelVal) {
+    url += `&level=${levelVal}`;
+  }
+  if (currentProjectId) {
+    url += `&current_project_id=${currentProjectId}`;
+  }
+  if (pathwayVal) {
+    url += `&pathway=${encodeURIComponent(pathwayVal)}`;
+  }
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.success) {
+      modalElements.levelSelect.value = data.target_level;
+      
+      modalElements.projectSelect.innerHTML = '<option value="">-- Select a Presentation Project --</option>';
+      data.projects.forEach(p => {
+        modalElements.projectSelect.add(new Option(`${p.code} - ${p.Project_Name}`, p.id));
+      });
+      if (currentProjectId) {
+        modalElements.projectSelect.value = currentProjectId;
+      }
+    }
+  } catch (err) {
+    console.error("Error fetching presentation projects:", err);
+  }
+}
