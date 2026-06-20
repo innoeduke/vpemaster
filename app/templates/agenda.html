@@ -296,7 +296,8 @@
                                matching the post-update JS render. Falling back
                                to a <span> here would make the code look
                                clickable but do nothing on click. #}
-                            {% if log_dict.project_code_display %}
+                            {# Skip the generic TM1.0 code — non-Pathway speeches don't show it on the agenda. #}
+                            {% if log_dict.project_code_display and log_dict.project_code_display != 'TM1.0' %}
                             {% if log_dict.Project_ID and log_dict.pathway_code %}
                             <a href="{{ url_for('pathways_bp.pathway_library') }}?path={{ log_dict.pathway_code }}&level={{ log_dict.level }}&project_id={{ log_dict.Project_ID }}"
                                 class="project-code-link" title="{{ _('View in Pathways Library') }}">

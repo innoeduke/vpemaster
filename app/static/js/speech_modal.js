@@ -2301,7 +2301,8 @@ function updateAgendaRow(logId, updateResult, payload) {
     // path in agenda.js — so the badge is consistent everywhere a row
     // gets re-rendered. Plain text here would look like a badge but
     // do nothing on click.
-    if (code) {
+    // Skip the generic TM1.0 code — non-Pathway speeches don't show it on the agenda.
+    if (code && code !== '(TM1.0)') {
       wrapper.appendChild(document.createTextNode(' '));
       const aCode = document.createElement('a');
       aCode.className = 'project-code-link';

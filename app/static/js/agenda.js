@@ -1583,7 +1583,8 @@ document.addEventListener("DOMContentLoaded", () => {
         // <span> here would produce a non-clickable badge that looks
         // identical to a clickable one — a silent regression after a
         // post-update re-render.
-        if (log.project_code_display) {
+        // Skip the generic TM1.0 code — non-Pathway speeches don't show it on the agenda.
+        if (log.project_code_display && log.project_code_display !== 'TM1.0') {
           tooltipWrapper.appendChild(document.createTextNode(' ')); // Space
           const aCode = document.createElement('a');
           if (log.Project_ID && log.pathway_code) {
