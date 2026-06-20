@@ -2239,6 +2239,7 @@ td.non-edit-mode-cell.col-session a {
 .st-icon--awards   { background: rgba(119, 36, 50, 0.10);  color: #772432; }
 .st-icon--featured { background: rgba(217, 119, 6, 0.12);  color: #d97706; }
 .st-icon--media    { background: rgba(46, 125, 50, 0.12);  color: #2e7d32; }
+.st-icon--educational { background: rgba(124, 58, 237, 0.10); color: #7c3aed; }
 
 .st-section-title {
 	margin: 0;
