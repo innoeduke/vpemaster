@@ -10,6 +10,7 @@ import csv
 import logging
 import os
 import re
+import shutil
 from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Dict, Optional
@@ -59,6 +60,68 @@ def _club_dir(club_id: int) -> str:
     path = os.path.join(_static_root(), 'club_resources', str(club_id), TEMPLATES_SUBDIR)
     os.makedirs(path, exist_ok=True)
     return path
+
+
+def _seed_dir() -> str:
+    """Return the default-templates source directory (club 0's templates/)."""
+    return os.path.join(_static_root(), 'club_resources', '0', TEMPLATES_SUBDIR)
+
+
+def _has_user_templates(club_dir: str) -> bool:
+    """True if ``club_dir`` already contains any non-hidden CSV template."""
+    try:
+        entries = os.listdir(club_dir)
+    except OSError:
+        return False
+    return any(
+        name.endswith('.csv') and not name.startswith('.')
+        for name in entries
+    )
+
+
+def ensure_default_templates(club_id: int) -> int:
+    """Copy default templates from club 0 if ``club_id`` has none yet.
+
+    Returns the number of files copied (0 when nothing to do — either the
+    club already has templates or the seed source is missing/empty). Called
+    lazily on agenda-page load and Template Manager load so a freshly-created
+    club or one whose templates folder was emptied gets a working default
+    template set out of the box.
+    """
+    if club_id == 0:
+        return 0
+
+    club_dir = _club_dir(club_id)
+    if _has_user_templates(club_dir):
+        return 0
+
+    seed = _seed_dir()
+    if not os.path.isdir(seed):
+        logger.warning("No default template seed dir at %s; club %s left empty", seed, club_id)
+        return 0
+
+    try:
+        entries = os.listdir(seed)
+    except OSError as exc:
+        logger.warning("Could not list seed templates at %s: %s", seed, exc)
+        return 0
+
+    seeded = 0
+    for name in entries:
+        if not name.endswith('.csv') or name.startswith('.'):
+            continue
+        src = os.path.join(seed, name)
+        if not os.path.isfile(src):
+            continue
+        dst = os.path.join(club_dir, name)
+        if os.path.exists(dst):
+            continue
+        try:
+            shutil.copy2(src, dst)
+            seeded += 1
+        except OSError as exc:
+            logger.warning("Could not seed template %s for club %s: %s", name, club_id, exc)
+    return seeded
 
 
 def sanitize_filename(name: str) -> str:

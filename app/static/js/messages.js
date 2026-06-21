@@ -490,10 +490,11 @@ function closeDeleteConfirmModal() {
 // Actual deletion logic
 function confirmDeleteMessage() {
     if (!currentMessageId) return;
-    
+
     // Pass context to ensure correct soft/permanent deletion flags are set
-    const context = currentTab; 
-    const btn = document.querySelector('#deleteConfirmModal .btn-danger');
+    const context = currentTab;
+    const btn = document.querySelector('#deleteConfirmModal .btn-delete');
+    if (!btn) return;
     const originalText = btn.textContent;
     btn.textContent = 'Deleting...';
     btn.disabled = true;
@@ -529,7 +530,8 @@ function closeEmptyTrashConfirmModal() {
 }
 
 function confirmEmptyTrash() {
-    const btn = document.querySelector('#emptyTrashConfirmModal .btn-danger');
+    const btn = document.querySelector('#emptyTrashConfirmModal .btn-delete');
+    if (!btn) return;
     const originalText = btn.textContent;
     btn.textContent = 'Emptying...';
     btn.disabled = true;

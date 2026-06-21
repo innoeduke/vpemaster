@@ -242,6 +242,51 @@ def test_cancel_join_request(client, test_user, admin_user, app):
             assert m.read is True
 
 
+def test_guest_userclub_does_not_block_join(client, test_user, admin_user, app):
+    """A UserClub row with the Guest role is a guest-visit record, not a
+    membership. The /clubs page shows the Join button for these users, and
+    request_join must NOT reject the click with 'already a member' — that
+    would leave the page and the route out of sync."""
+    from app.models import db, Club, UserClub
+    with app.app_context():
+        Club.query.filter(Club.club_no == '777').delete()
+        club = Club(club_no='777', club_name='Guest Visit Club', status='active')
+        db.session.add(club)
+        db.session.commit()
+        club_id = club.id
+
+        guest_role = AuthRole.query.filter_by(name='Guest').first()
+        if not guest_role:
+            guest_role = AuthRole(name='Guest', level=0)
+            db.session.add(guest_role)
+            db.session.flush()
+        # No non-Guest membership for this user in this club.
+        UserClub.query.filter_by(user_id=test_user.id, club_id=club_id).delete()
+        db.session.add(UserClub(
+            user_id=test_user.id, club_id=club_id,
+            auth_role_id=guest_role.id, is_home=False,
+        ))
+        db.session.commit()
+
+    with client.session_transaction() as sess:
+        sess['_user_id'] = str(test_user.id)
+        sess['_fresh'] = True
+
+    # /clubs must render a Join button for this club (template treats Guest
+    # as non-member).
+    response = client.get('/clubs')
+    assert response.status_code == 200
+    assert f'requestJoinClub(this, {club_id})'.encode() in response.data
+    assert f'btn-cancel-request.*onclick="cancelJoinRequest\\(this, {club_id}\\)'.encode() \
+        not in response.data
+
+    # request_join must accept the request rather than returning
+    # 'You are already a member of this club.'.
+    response = client.post(f'/clubs/{club_id}/request_join', json={})
+    assert response.status_code == 200
+    assert response.json['success'] is True
+
+
 def test_request_quit_club_flow(client, test_user, admin_user, app):
     """Test requesting to quit a club and cancelling the request."""
     from app.models import db, Club, UserClub, Message
@@ -260,23 +305,25 @@ def test_request_quit_club_flow(client, test_user, admin_user, app):
         sess['_user_id'] = str(test_user.id)
         sess['_fresh'] = True
         
-    # 1. Send quit request
+    # 1. Send quit request (route still exists for back-end/admin flows, but
+    #    the /clubs page no longer surfaces a Quit button).
     response = client.post(f'/clubs/{club_id}/request_quit', json={})
     assert response.status_code == 200
     assert response.json['success'] is True
     assert 'request to leave the club has been sent' in response.json['message']
-    
-    # Retrieve clubs page and verify "Cancel Quit" button is rendered
+
+    # The clubs page must not render a "Cancel Quit" or "Quit" button.
     response = client.get('/clubs')
     assert response.status_code == 200
-    assert f'cancelQuitRequest(this, {club_id})'.encode() in response.data
-    
+    assert f'cancelQuitRequest(this, {club_id})'.encode() not in response.data
+    assert f'requestQuitClub(this, {club_id})'.encode() not in response.data
+
     # 2. Cancel the quit request
     response = client.post(f'/clubs/{club_id}/cancel_quit', json={})
     assert response.status_code == 200
     assert response.json['success'] is True
     assert 'quit request has been cancelled' in response.json['message'].lower()
-    
+
     # Verify message has been marked as Responded: CANCELLED
     with app.app_context():
         msgs = Message.query.filter(
@@ -286,12 +333,12 @@ def test_request_quit_club_flow(client, test_user, admin_user, app):
         assert len(msgs) > 0
         for m in msgs:
             assert m.read is True
-            
-    # Retrieve clubs page and verify Quit button is back
+
+    # Clubs page still does not render a Quit button.
     response = client.get('/clubs')
     assert response.status_code == 200
     assert f'cancelQuitRequest(this, {club_id})'.encode() not in response.data
-    assert f'requestQuitClub(this, {club_id})'.encode() in response.data
+    assert f'requestQuitClub(this, {club_id})'.encode() not in response.data
 
 
 

@@ -1001,7 +1001,10 @@ def agenda():
 
     # --- Template Data ---
     # Source of truth is the template service (filesystem-based)
-    from .services.meeting_template_service import get_template_filename_map
+    from .services.meeting_template_service import (
+        ensure_default_templates, get_template_filename_map,
+    )
+    ensure_default_templates(club_id)
     meeting_types = get_template_filename_map(club_id)
 
     members = Contact.query.join(ContactClub).filter(

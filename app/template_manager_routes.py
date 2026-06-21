@@ -48,6 +48,7 @@ def _redirect_with_notice(notice=None, error=None, **extra):
 def list_templates():
     """List the current club's templates with create actions."""
     club_id = get_current_club_id()
+    tpl_service.ensure_default_templates(club_id)
     templates = tpl_service.list_templates(club_id)
 
     meetings = []

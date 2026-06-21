@@ -234,22 +234,12 @@
                                     {% if current_user.is_authenticated and not current_user.is_sysadmin %}
                                     {% if not is_member %}
                                         {% if club.id in pending_club_ids %}
-                                            <button class="btn-cancel-request" onclick="cancelJoinRequest(this, {{ club.id }})" style="margin: 0; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; height: 30px; flex-shrink: 0;">
+                                            <button class="btn-cancel-request" onclick="cancelJoinRequest(this, {{ club.id }})">
                                                 <i class="fas fa-times-circle"></i> {{ _('Cancel Request') }}
                                             </button>
                                         {% else %}
-                                            <button class="btn-join" onclick="requestJoinClub(this, {{ club.id }})" style="margin: 0; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; height: 30px; flex-shrink: 0;">
+                                            <button class="btn-join" onclick="requestJoinClub(this, {{ club.id }})">
                                                 <i class="fas fa-user-plus"></i> {{ _('Join') }}
-                                            </button>
-                                        {% endif %}
-                                    {% else %}
-                                        {% if club.id in pending_quit_club_ids %}
-                                            <button class="btn-cancel-request" onclick="cancelQuitRequest(this, {{ club.id }})" style="margin: 0; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; height: 30px; flex-shrink: 0;">
-                                                <i class="fas fa-times-circle"></i> {{ _('Cancel Quit') }}
-                                            </button>
-                                        {% else %}
-                                            <button class="btn-quit" onclick="requestQuitClub(this, {{ club.id }})" style="margin: 0; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; height: 30px; flex-shrink: 0;">
-                                                <i class="fas fa-user-minus"></i> {{ _('Quit') }}
                                             </button>
                                         {% endif %}
                                     {% endif %}
@@ -501,7 +491,7 @@
             const interactive = e.target.closest(
                 'button, a, input, select, textarea, [role="button"], ' +
                 '.club-card-poster, .btn-favorite, .btn-follow-badge, ' +
-                '.btn-join, .btn-quit, .btn-cancel-request, .btn-card-admin, ' +
+                '.btn-join, .btn-cancel-request, .btn-card-admin, ' +
                 '.btn-enter, [data-bs-toggle], [data-bs-target]'
             );
             if (interactive) return;
@@ -730,24 +720,21 @@
         btn.disabled = true;
         const originalHtml = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ _("Sending...") }}';
-        
+
         fetch(`/clubs/${clubId}/request_join`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             }
         })
-        .then(response => {
-            if (!response.ok) throw new Error('Network error');
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
+        .then(response => response.json().then(data => ({status: response.status, data})))
+        .then(({status, data}) => {
+            if (data && data.success) {
                 // Update all instances of actions wrapper for this club
                 document.querySelectorAll(`[data-club-id="${clubId}"] .membership-actions-wrapper`).forEach(wrapper => {
                     if (wrapper.closest('tr')) {
                         // Table row style
-                        wrapper.innerHTML = '<button class="btn-cancel-request" onclick="cancelJoinRequest(this, ' + clubId + ')" style="margin: 0; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; height: 30px; flex-shrink: 0;"><i class="fas fa-times-circle"></i> {{ _("Cancel Request") }}</button>';
+                        wrapper.innerHTML = '<button class="btn-cancel-request" onclick="cancelJoinRequest(this, ' + clubId + ')"><i class="fas fa-times-circle"></i> {{ _("Cancel Request") }}</button>';
                     } else {
                         // Card style
                         wrapper.innerHTML = '<button class="btn-cancel-request" onclick="cancelJoinRequest(this, ' + clubId + ')"><i class="fas fa-times-circle"></i> {{ _("Cancel Request") }}</button>';
@@ -768,29 +755,23 @@
 
     // Cancel Join Request Action (AJAX)
     function cancelJoinRequest(btn, clubId) {
-        if (!confirm('{{ _("Are you sure you want to cancel your join request?") }}')) {
-            return;
-        }
         btn.disabled = true;
         const originalHtml = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ _("Cancelling...") }}';
-        
+
         fetch(`/clubs/${clubId}/cancel_join`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             }
         })
-        .then(response => {
-            if (!response.ok) throw new Error('Network error');
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
+        .then(response => response.json().then(data => ({status: response.status, data})))
+        .then(({status, data}) => {
+            if (data && data.success) {
                 // Replace cancel button with Join button
                 document.querySelectorAll(`[data-club-id="${clubId}"] .membership-actions-wrapper`).forEach(wrapper => {
                     if (wrapper.closest('tr')) {
-                        wrapper.innerHTML = '<button class="btn-join" onclick="requestJoinClub(this, ' + clubId + ')" style="margin: 0; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; height: 30px; flex-shrink: 0;"><i class="fas fa-user-plus"></i> {{ _("Join") }}</button>';
+                        wrapper.innerHTML = '<button class="btn-join" onclick="requestJoinClub(this, ' + clubId + ')"><i class="fas fa-user-plus"></i> {{ _("Join") }}</button>';
                     } else {
                         wrapper.innerHTML = '<button class="btn-join" onclick="requestJoinClub(this, ' + clubId + ')"><i class="fas fa-user-plus"></i> {{ _("Join") }}</button>';
                     }
@@ -847,100 +828,6 @@
             cancelBtn.addEventListener("click", handleCancel);
         });
     };
-
-    // Request to Quit Action (AJAX)
-    async function requestQuitClub(btn, clubId) {
-        const confirmed = await window.showCustomConfirm(
-            '{{ _("Quit Club") }}',
-            '{{ _("Are you sure you want to request to leave this club?") }}'
-        );
-        if (!confirmed) {
-            return;
-        }
-        btn.disabled = true;
-        const originalHtml = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ _("Sending...") }}';
-        
-        fetch(`/clubs/${clubId}/request_quit`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('Network error');
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                // Update all instances of actions wrapper for this club
-                document.querySelectorAll(`[data-club-id="${clubId}"] .membership-actions-wrapper`).forEach(wrapper => {
-                    if (wrapper.closest('tr')) {
-                        // Table row style
-                        wrapper.innerHTML = '<button class="btn-cancel-request" onclick="cancelQuitRequest(this, ' + clubId + ')" style="margin: 0; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; height: 30px; flex-shrink: 0;"><i class="fas fa-times-circle"></i> {{ _("Cancel Quit") }}</button>';
-                    } else {
-                        // Card style
-                        wrapper.innerHTML = '<button class="btn-cancel-request" onclick="cancelQuitRequest(this, ' + clubId + ')"><i class="fas fa-times-circle"></i> {{ _("Cancel Quit") }}</button>';
-                    }
-                });
-            } else {
-                alert(data.error || 'Failed to request quit.');
-                btn.disabled = false;
-                btn.innerHTML = originalHtml;
-            }
-        })
-        .catch(err => {
-            alert('An error occurred while requesting to quit.');
-            btn.disabled = false;
-            btn.innerHTML = originalHtml;
-        });
-    }
-
-    // Cancel Quit Request Action (AJAX)
-    async function cancelQuitRequest(btn, clubId) {
-        const confirmed = await window.showCustomConfirm(
-            '{{ _("Cancel Quit Request") }}',
-            '{{ _("Are you sure you want to cancel your quit request?") }}'
-        );
-        if (!confirmed) {
-            return;
-        }
-        btn.disabled = true;
-        const originalHtml = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ _("Cancelling...") }}';
-        
-        fetch(`/clubs/${clubId}/cancel_quit`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('Network error');
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                // Replace cancel button with Quit button
-                document.querySelectorAll(`[data-club-id="${clubId}"] .membership-actions-wrapper`).forEach(wrapper => {
-                    if (wrapper.closest('tr')) {
-                        wrapper.innerHTML = '<button class="btn-quit" onclick="requestQuitClub(this, ' + clubId + ')" style="margin: 0; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; height: 30px; flex-shrink: 0;"><i class="fas fa-user-minus"></i> {{ _("Quit") }}</button>';
-                    } else {
-                        wrapper.innerHTML = '<button class="btn-quit" onclick="requestQuitClub(this, ' + clubId + ')"><i class="fas fa-user-minus"></i> {{ _("Quit") }}</button>';
-                    }
-                });
-            } else {
-                alert(data.error || 'Failed to cancel request.');
-                btn.disabled = false;
-                btn.innerHTML = originalHtml;
-            }
-        })
-        .catch(err => {
-            alert('An error occurred while cancelling the request.');
-            btn.disabled = false;
-            btn.innerHTML = originalHtml;
-        });
-    }
 
     // Enter Club Action (AJAX)
     function enterClub(btn, clubId) {

@@ -633,9 +633,17 @@ def request_join_club(club_id):
     if not club:
         return jsonify({'success': False, 'error': 'Club not found'}), 404
         
-    # Check if already a member
+    # Check if already a member. A UserClub row with the 'Guest' role is a
+    # guest-visit record, not a membership — see populate_user_memberships
+    # in list_clubs. Mirroring that filter here so a guest visit doesn't
+    # block a real join request.
     from app.models import UserClub
-    uc = UserClub.query.filter_by(user_id=current_user.id, club_id=club_id).first()
+    from app.models.role import Role
+    from sqlalchemy import or_
+    uc = UserClub.query.filter_by(user_id=current_user.id, club_id=club_id) \
+        .outerjoin(Role, UserClub.auth_role_id == Role.id) \
+        .filter(or_(UserClub.auth_role_id.is_(None), Role.name != 'Guest')) \
+        .first()
     if uc:
         return jsonify({'success': False, 'error': 'You are already a member of this club.'}), 400
         
@@ -766,9 +774,15 @@ def request_quit_club(club_id):
     if not club:
         return jsonify({'success': False, 'error': 'Club not found'}), 404
         
-    # Check if a member
+    # Check if a member. A UserClub row with the 'Guest' role is a
+    # guest-visit record, not a membership — guests cannot quit.
     from app.models import UserClub
-    uc = UserClub.query.filter_by(user_id=current_user.id, club_id=club_id).first()
+    from app.models.role import Role
+    from sqlalchemy import or_
+    uc = UserClub.query.filter_by(user_id=current_user.id, club_id=club_id) \
+        .outerjoin(Role, UserClub.auth_role_id == Role.id) \
+        .filter(or_(UserClub.auth_role_id.is_(None), Role.name != 'Guest')) \
+        .first()
     if not uc:
         return jsonify({'success': False, 'error': 'You are not a member of this club.'}), 400
         

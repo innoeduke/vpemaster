@@ -633,29 +633,32 @@
         gap: 6px;
     }
 
-    .btn-join {
-        background-color: transparent !important;
-        border: 1px solid #772432 !important;
-        color: #772432 !important;
-        font-family: inherit !important;
-        font-weight: 600 !important;
-        padding: 5px 12px !important;
-        border-radius: 6px !important;
-        font-size: 0.8rem !important;
-        flex-shrink: 0 !important;
-        justify-content: center !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        gap: 6px !important;
-        cursor: pointer !important;
-        transition: all 0.2s !important;
-        height: 30px !important;
+    .btn-join,
+    .btn-cancel-request {
+        background-color: transparent;
+        border: 1px solid #cbd5e0;
+        color: #718096;
+        font-family: inherit;
+        font-weight: 600;
+        padding: 5px 12px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        flex-shrink: 0;
+        justify-content: center;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        height: 30px;
+        margin: 0;
     }
 
-    .btn-join:hover {
-        background-color: rgba(119, 36, 50, 0.05) !important;
-        border-color: #5d1c27 !important;
-        color: #5d1c27 !important;
+    .btn-join:hover,
+    .btn-cancel-request:hover {
+        background-color: #f7fafc;
+        border-color: #a0aec0;
+        color: #2d3748;
     }
 
     .btn-enter {
@@ -687,56 +690,6 @@
         border: none !important;
         color: #a0aec0 !important;
         cursor: not-allowed;
-    }
-
-    .btn-cancel-request {
-        background-color: transparent !important;
-        border: 1px solid #718096 !important;
-        color: #718096 !important;
-        font-family: inherit !important;
-        font-weight: 600 !important;
-        padding: 5px 12px !important;
-        border-radius: 6px !important;
-        font-size: 0.8rem !important;
-        flex-shrink: 0 !important;
-        justify-content: center !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        gap: 6px !important;
-        cursor: pointer !important;
-        transition: all 0.2s !important;
-        height: 30px !important;
-    }
-
-    .btn-cancel-request:hover {
-        background-color: rgba(113, 128, 150, 0.05) !important;
-        border-color: #4a5568 !important;
-        color: #4a5568 !important;
-    }
-
-    .btn-quit {
-        background-color: transparent !important;
-        border: 1px solid #e53e3e !important;
-        color: #e53e3e !important;
-        font-family: inherit !important;
-        font-weight: 600 !important;
-        padding: 5px 12px !important;
-        border-radius: 6px !important;
-        font-size: 0.8rem !important;
-        flex-shrink: 0 !important;
-        justify-content: center !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        gap: 6px !important;
-        cursor: pointer !important;
-        transition: all 0.2s !important;
-        height: 30px !important;
-    }
-
-    .btn-quit:hover {
-        background-color: rgba(229, 62, 62, 0.05) !important;
-        border-color: #c53030 !important;
-        color: #c53030 !important;
     }
 
     /* Table View styles mapping */

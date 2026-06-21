@@ -9,6 +9,7 @@ from app.agenda_routes import _generate_logs_from_template
 from datetime import date, time
 import os
 import csv
+import uuid
 
 def test_meeting_creation_club_scoping(app):
     with app.app_context():
@@ -46,8 +47,9 @@ def test_meeting_creation_club_scoping(app):
         db.session.add(meeting1)
         db.session.commit()
 
-        # 3. Create a dummy template CSV
-        template_name = "test_template.csv"
+        # 3. Create a dummy template CSV (unique name so cleanup only ever
+        #    touches files this test created, never pre-existing templates).
+        template_name = f"test_template_{uuid.uuid4().hex}.csv"
         from app.services.meeting_template_service import _club_dir
 
         club1_templates_dir = _club_dir(club1.id)

@@ -111,19 +111,19 @@ def test_join_button_hidden_for_sysadmin(login_sysadmin, app, normal_club):
     body = response.data.decode('utf-8')
 
     assert not re.search(
-        r'<button class="btn-join"\s+onclick="requestJoinClub\(this, \d+\)"',
+        r'<button class="[^"]*\bbtn-join\b[^"]*"\s+onclick="requestJoinClub\(this, \d+\)"',
         body,
     )
     assert not re.search(
-        r'<button class="btn-quit"\s+onclick="requestQuitClub\(this, \d+\)"',
+        r'<button class="[^"]*\bbtn-quit\b[^"]*"\s+onclick="requestQuitClub\(this, \d+\)"',
         body,
     )
     assert not re.search(
-        r'<button class="btn-cancel-request"\s+onclick="cancelJoinRequest\(this, \d+\)"',
+        r'<button class="[^"]*\bbtn-cancel-request\b[^"]*"\s+onclick="cancelJoinRequest\(this, \d+\)"',
         body,
     )
     assert not re.search(
-        r'<button class="btn-cancel-request"\s+onclick="cancelQuitRequest\(this, \d+\)"',
+        r'<button class="[^"]*\bbtn-cancel-request\b[^"]*"\s+onclick="cancelQuitRequest\(this, \d+\)"',
         body,
     )
 
@@ -162,7 +162,7 @@ def test_join_button_visible_for_regular_user(client, app, normal_club):
     body = response.data.decode('utf-8')
     import re
     assert re.search(
-        r'<button class="btn-join"\s+onclick="requestJoinClub\(this, \d+\)"',
+        r'<button class="[^"]*\bbtn-join\b[^"]*"\s+onclick="requestJoinClub\(this, \d+\)"',
         body,
     ), "Expected an actual rendered join button for a non-member user"
 
