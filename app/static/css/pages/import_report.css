@@ -225,12 +225,12 @@
   }
   .btn-example:hover { background: #002d47; color: #fff; }
 
-  .btn-primary {
+  .import-report .btn-primary {
     background: #10b981;
     color: #fff;
     border: 1px solid #10b981;
   }
-  .btn-primary:hover { background: #059669; color: #fff; }
+  .import-report .btn-primary:hover { background: #059669; color: #fff; }
 
   /* Premium Upload Form Styles */
   .import-upload-card {
