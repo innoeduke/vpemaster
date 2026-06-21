@@ -67,8 +67,9 @@
 }
 
 #user-settings-table .col-actions {
-  width: 100px;
+  width: 115px;
   text-align: center;
+  white-space: nowrap;
 }
 
 /* --- Members Page Specific Styles --- */

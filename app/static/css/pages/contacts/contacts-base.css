@@ -398,20 +398,11 @@
 
 /* Compact Actions Column */
 #contactsTable .col-actions {
-  width: 110px;
-  min-width: 110px;
+  width: 90px;
+  min-width: 90px;
   padding: 8px 4px;
   text-align: center;
-}
-
-#contactsTable .action-links {
-  gap: 4px;
-  justify-content: center;
-  flex-wrap: nowrap;
-}
-
-#contactsTable .icon-btn {
-  padding: 2px;
+  white-space: nowrap;
 }
 
 /* --- Loading Spinner --- */

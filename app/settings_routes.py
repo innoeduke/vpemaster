@@ -1134,6 +1134,7 @@ def _build_users_data(per_page=None, offset=0):
             'username': user.username or '',
             'contact_name': contact.Name if contact else '',
             'contact_id': contact.id if contact else '',
+            'is_connected': bool(contact.is_connected) if contact else True,
             'avatar_url': contact.Avatar_URL if contact and contact.Avatar_URL else '',
             'email': user.email or '',
             'phone': contact.Phone_Number if contact and contact.Phone_Number else '',

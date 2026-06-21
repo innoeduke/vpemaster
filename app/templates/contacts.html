@@ -201,19 +201,16 @@ head_extra %}
           <td class="col-email"><a href="mailto:{{ contact.Email }}" class="contact-email-link">{{ contact.Email }}</a></td>
           {%- if is_authorized(Permissions.ROSTER_EDIT) -%}
           <td class="col-actions">
-            <div class="action-links">
-              <button class="icon-btn toggle-connection-btn" onclick="toggleConnection({{ contact.id }})" title="{% if contact.is_connected %}Connected{% else %}Disconnected{% endif %}">
-                <i class="fas {{ 'fa-toggle-on' if contact.is_connected else 'fa-toggle-off' }}" style="color: {{ '#28a745' if contact.is_connected else '#6c757d' }}"></i>
-              </button>
-              <button class="icon-btn edit-contact-btn" onclick="openContactModal({{ contact.id }})" title="Edit">
+            <div class="tm-action-buttons">
+              <button class="tm-action-btn edit-contact-btn" onclick="openContactModal({{ contact.id }})" title="Edit">
                 <i class="fas fa-edit"></i>
               </button>
               {%- if contact.Type == 'Guest' -%}
-              <button class="delete-btn icon-btn" onclick="openDeleteModal('/contact/delete/{{ contact.id }}', 'contact')" title="Delete">
+              <button class="tm-action-btn tm-action-btn--danger delete-btn" onclick="openDeleteModal('/contact/delete/{{ contact.id }}', 'contact')" title="Delete">
                 <i class="fas fa-trash-alt"></i>
               </button>
               {%- else -%}
-              <button class="delete-btn icon-btn" disabled title="Only Guest contacts can be deleted. Manage Members via their user account.">
+              <button class="tm-action-btn tm-action-btn--danger delete-btn" disabled title="Only Guest contacts can be deleted. Manage Members via their user account.">
                 <i class="fas fa-trash-alt"></i>
               </button>
               {%- endif -%}

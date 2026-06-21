@@ -216,11 +216,6 @@
     display: none !important;
   }
 
-  /* Hide toggle connection button for all on mobile */
-  .toggle-connection-btn {
-    display: none !important;
-  }
-
   /* Contact Modal Tabs Mobile Refinements */
   #contactModal .contact-modal-tabs {
     display: flex !important;

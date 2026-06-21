@@ -292,14 +292,11 @@ function createContactRow(contact) {
     <td class="col-email"><a href="mailto:${contact.Email}" class="contact-email-link">${contact.Email}</a></td>
     ${hasEditPermission ? `
     <td class="col-actions">
-      <div class="action-links">
-        <button class="icon-btn toggle-connection-btn" onclick="toggleConnection(${contact.id})" title="${contact.is_connected ? 'Connected' : 'Disconnected'}">
-          <i class="fas ${contact.is_connected ? 'fa-toggle-on' : 'fa-toggle-off'}" style="color: ${contact.is_connected ? '#28a745' : '#6c757d'}"></i>
-        </button>
-        <button class="icon-btn edit-contact-btn" onclick="openContactModal(${contact.id})" title="Edit">
+      <div class="tm-action-buttons">
+        <button class="tm-action-btn edit-contact-btn" onclick="openContactModal(${contact.id})" title="Edit">
           <i class="fas fa-edit"></i>
         </button>
-        <button class="delete-btn icon-btn" ${contact.Type !== 'Guest' ? 'disabled title="Only Guest contacts can be deleted. Manage Members via their user account."' : `onclick="openDeleteModal('/contact/delete/${contact.id}', 'contact')" title="Delete"`}>
+        <button class="tm-action-btn tm-action-btn--danger delete-btn" ${contact.Type !== 'Guest' ? 'disabled title="Only Guest contacts can be deleted. Manage Members via their user account."' : `onclick="openDeleteModal('/contact/delete/${contact.id}', 'contact')" title="Delete"`}>
           <i class="fas fa-trash-alt"></i>
         </button>
       </div>
@@ -309,41 +306,6 @@ function createContactRow(contact) {
 
   row.innerHTML = html;
   return row;
-}
-
-/**
- * Toggles the connected status of a contact
- */
-async function toggleConnection(contactId) {
-  try {
-    const response = await fetch(`/contact/toggle_connection/${contactId}`, {
-      method: 'POST',
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest',
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to toggle connection');
-    }
-
-    const data = await response.json();
-    if (data.success) {
-      // Find and update the contact in cache
-      const contact = allContactsCache.find(c => c.id === contactId);
-      if (contact) {
-        contact.is_connected = data.is_connected;
-        // Re-render the table without full reload if possible, but simplest is to just re-render current page
-        renderContactsPage();
-      }
-    } else {
-      alert(data.message || 'Error toggling connection');
-    }
-  } catch (error) {
-    console.error('Error:', error);
-    alert('An error occurred while toggling connection');
-  }
 }
 
 /**

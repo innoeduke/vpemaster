@@ -604,12 +604,18 @@ async function loadUsersAsync() {
           : '';
 
         const escapedName = (user.contact_name || user.username).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const toggleBtnHtml = user.contact_id ? `
+          <button class="tm-action-btn toggle-connection-btn" onclick="toggleConnection(${user.contact_id})" title="${user.is_connected ? (isChinese ? '已连接' : 'Connected') : (isChinese ? '已断开' : 'Disconnected')}">
+            <i class="fas ${user.is_connected ? 'fa-toggle-on' : 'fa-toggle-off'}" style="color: ${user.is_connected ? '#28a745' : '#6c757d'}"></i>
+          </button>
+        ` : '';
         let actionsHtml = `
-          <div class="action-links">
-            <button type="button" class="icon-btn edit-user-btn" onclick="openUserModal('${user.id}', this)" title="${isChinese ? '编辑' : 'Edit'}">
+          <div class="tm-action-buttons">
+            ${toggleBtnHtml}
+            <button type="button" class="tm-action-btn edit-user-btn" onclick="openUserModal('${user.id}', this)" title="${isChinese ? '编辑' : 'Edit'}">
               <i class="fas fa-edit"></i>
             </button>
-            <button class="delete-btn icon-btn" onclick="openRemoveUserModal('/user/delete/${user.id}', '${escapedName}', ${user.id})" title="${isChinese ? '移出俱乐部' : 'Remove from Club'}">
+            <button class="tm-action-btn tm-action-btn--danger delete-btn" onclick="openRemoveUserModal('/user/delete/${user.id}', '${escapedName}', ${user.id})" title="${isChinese ? '移出俱乐部' : 'Remove from Club'}">
               <i class="fas fa-user-minus"></i>
             </button>
           </div>
@@ -727,12 +733,18 @@ async function fetchRemainingUsers() {
         ? `onclick="window.location.href='/speech_logs?speaker_id=${user.contact_id}&view_mode=member'" title="${isChinese ? '查看成员页面' : 'View member page'}"`
         : '';
       const escapedName = (user.contact_name || user.username).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      const toggleBtnHtml = user.contact_id ? `
+        <button class="tm-action-btn toggle-connection-btn" onclick="toggleConnection(${user.contact_id})" title="${user.is_connected ? (isChinese ? '已连接' : 'Connected') : (isChinese ? '已断开' : 'Disconnected')}">
+          <i class="fas ${user.is_connected ? 'fa-toggle-on' : 'fa-toggle-off'}" style="color: ${user.is_connected ? '#28a745' : '#6c757d'}"></i>
+        </button>
+      ` : '';
       const actionsHtml = `
-        <div class="action-links">
-          <button type="button" class="icon-btn edit-user-btn" onclick="openUserModal('${user.id}', this)" title="${isChinese ? '编辑' : 'Edit'}">
+        <div class="tm-action-buttons">
+          ${toggleBtnHtml}
+          <button type="button" class="tm-action-btn edit-user-btn" onclick="openUserModal('${user.id}', this)" title="${isChinese ? '编辑' : 'Edit'}">
             <i class="fas fa-edit"></i>
           </button>
-          <button class="delete-btn icon-btn" onclick="openRemoveUserModal('/user/delete/${user.id}', '${escapedName}', ${user.id})" title="${isChinese ? '移出俱乐部' : 'Remove from Club'}">
+          <button class="tm-action-btn tm-action-btn--danger delete-btn" onclick="openRemoveUserModal('/user/delete/${user.id}', '${escapedName}', ${user.id})" title="${isChinese ? '移出俱乐部' : 'Remove from Club'}">
             <i class="fas fa-user-minus"></i>
           </button>
         </div>
@@ -763,6 +775,54 @@ async function fetchRemainingUsers() {
 window.openUserModal = openUserModal;
 window.closeUserModal = closeUserModal;
 window.openRemoveUserModal = openRemoveUserModal;
+window.toggleConnection = toggleConnection;
+
+/**
+ * Toggles the connected status of a contact linked to this user.
+ * Updates the button icon/title in place without reloading the table.
+ */
+async function toggleConnection(contactId) {
+  try {
+    const response = await fetch(`/contact/toggle_connection/${contactId}`, {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to toggle connection');
+    }
+
+    const data = await response.json();
+    if (data.success) {
+      const isConnected = data.is_connected;
+      const buttons = document.querySelectorAll(
+        `.toggle-connection-btn[onclick="toggleConnection(${contactId})"]`
+      );
+      const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+      const titleText = isConnected
+        ? (isChinese ? '已连接' : 'Connected')
+        : (isChinese ? '已断开' : 'Disconnected');
+      const iconClass = isConnected ? 'fa-toggle-on' : 'fa-toggle-off';
+      const iconColor = isConnected ? '#28a745' : '#6c757d';
+      buttons.forEach(btn => {
+        btn.title = titleText;
+        const icon = btn.querySelector('i');
+        if (icon) {
+          icon.className = `fas ${iconClass}`;
+          icon.style.color = iconColor;
+        }
+      });
+    } else {
+      alert(data.message || 'Error toggling connection');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('An error occurred while toggling connection');
+  }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   loadUsersAsync();

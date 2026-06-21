@@ -122,11 +122,16 @@
               </td>
               <td class="col-project">{{ user.next_project if user.next_project and user.next_project != 'null' else '-' }}</td>
               <td class="col-actions">
-                <div class="action-links">
-                  <button type="button" class="icon-btn edit-user-btn" onclick="openUserModal('{{ user.id }}', this)" title="{{ _('Edit') }}">
+                <div class="tm-action-buttons">
+                  {%- if user.contact_id -%}
+                  <button class="tm-action-btn toggle-connection-btn" onclick="toggleConnection({{ user.contact_id }})" title="{% if user.is_connected %}Connected{% else %}Disconnected{% endif %}">
+                    <i class="fas {{ 'fa-toggle-on' if user.is_connected else 'fa-toggle-off' }}" style="color: {{ '#28a745' if user.is_connected else '#6c757d' }}"></i>
+                  </button>
+                  {%- endif -%}
+                  <button type="button" class="tm-action-btn edit-user-btn" onclick="openUserModal('{{ user.id }}', this)" title="{{ _('Edit') }}">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button class="delete-btn icon-btn" onclick="openRemoveUserModal('/user/delete/{{ user.id }}', '{{ (user.contact_name or user.username)|replace("'", "\\'")|replace('"', '&quot;') }}', {{ user.id }})" title="{{ _('Remove from Club') }}">
+                  <button class="tm-action-btn tm-action-btn--danger delete-btn" onclick="openRemoveUserModal('/user/delete/{{ user.id }}', '{{ (user.contact_name or user.username)|replace("'", "\\'")|replace('"', '&quot;') }}', {{ user.id }})" title="{{ _('Remove from Club') }}">
                     <i class="fas fa-user-minus"></i>
                   </button>
                 </div>
