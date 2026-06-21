@@ -170,20 +170,20 @@
         {% else %}
         {% set waitlist_ids = role.waitlist|map(attribute='id')|list %}
         {% if current_user_contact_id in waitlist_ids %}
-        {% call btn('leave', attrs={'onclick': "leaveWaitlist('" ~ role.session_id ~ "', '" ~ role.role ~ "')"}) %}{{ _('Leave Waitlist') }}{% endcall %}
+        {% call btn('leave', attrs={'onclick': "leaveWaitlist('" ~ role.session_id ~ "', '" ~ role.role ~ "')"}) %}{{ _('Cancel') }}{% endcall %}
         {% else %}
-        {% call btn('join', attrs={'onclick': "joinWaitlist('" ~ role.session_id ~ "', '" ~ role.role ~ "')"}) %}{{ _('Join Waitlist') }}{% endcall %}
+        {% call btn('join', attrs={'onclick': "joinWaitlist('" ~ role.session_id ~ "', '" ~ role.role ~ "')"}) %}{{ _('Request') }}{% endcall %}
         {% endif %}
         {% endif %}
         {% else %}
         {% set waitlist_ids = role.waitlist|map(attribute='id')|list %}
         {% if current_user_contact_id in waitlist_ids %}
-        {% call btn('leave', attrs={'onclick': "leaveWaitlist('" ~ role.session_id ~ "', '" ~ role.role ~ "')"}) %}{{ _('Leave Waitlist') }}{% endcall %}
+        {% call btn('leave', attrs={'onclick': "leaveWaitlist('" ~ role.session_id ~ "', '" ~ role.role ~ "')"}) %}{{ _('Cancel') }}{% endcall %}
         {% else %}
-        {# For shared roles with existing owners, show Join Waitlist instead of Book #}
+        {# For shared roles with existing owners, show Request instead of Book #}
         {% set has_existing_owners = role.all_owners is defined and role.all_owners|length > 0 %}
         {% if role.needs_approval or has_existing_owners %}
-        {% call btn('join', attrs={'onclick': "joinWaitlist('" ~ role.session_id ~ "', '" ~ role.role ~ "')"}) %}{{ _('Join Waitlist') }}{% endcall %}
+        {% call btn('join', attrs={'onclick': "joinWaitlist('" ~ role.session_id ~ "', '" ~ role.role ~ "')"}) %}{{ _('Request') }}{% endcall %}
         {% else %}
         {% call btn('book', attrs={'onclick': "bookOrCancelRole('" ~ role.session_id ~ "', 'book', '" ~ role.role ~ "')"}) %}{{ _('Book') }}{% endcall %}
         {% endif %}

@@ -99,7 +99,7 @@ def _apply_user_filters_and_rules(roles, current_user_contact_id, meeting_id):
         role_label = r['role']
         owner_id = r['owner_id']
         has_single_owner = r.get('has_single_owner', True)
-        
+
         # Contextual population for shared roles
         if not has_single_owner and 'all_owners' in r:
             all_owner_ids = [o['id'] for o in r['all_owners']]
@@ -115,7 +115,7 @@ def _apply_user_filters_and_rules(roles, current_user_contact_id, meeting_id):
             else:
                 # Not an owner, show as available
                 r['owner_id'] = None
-            
+
             # Update owner_id variable for the filtering logic below
             owner_id = r['owner_id']
 
