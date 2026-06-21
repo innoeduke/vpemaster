@@ -40,10 +40,15 @@
   padding: 0.75rem 1rem;
   text-align: left;
   border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
 }
 
 .planner-table td {
   font-size: 0.9rem;
+}
+
+.planner-table td:nth-child(4) {
+  text-align: center;
 }
 
 .planner-table th {
@@ -59,6 +64,8 @@
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 500;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .status-draft {
@@ -227,6 +234,7 @@
   transition: all 0.2s ease;
   border: none;
   font-family: "Inter", sans-serif;
+  border-radius: 999px;
 }
 
 .planner-btn-secondary {

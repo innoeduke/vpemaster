@@ -284,7 +284,7 @@
 </div>
 {% endmacro %}
 
-{% if selected_meeting and notice_image not in ['under_planning.webp', 'not_started.webp'] %}
+{% if selected_meeting and notice_image not in ['under_planning.webp', 'not_started.webp'] and not show_booking_closed_image %}
     {{ render_role_tables(roles, sorted_role_groups, selected_meeting.status, is_admin_view, contacts,
     current_user_contact_id) }}
 {% endif %}

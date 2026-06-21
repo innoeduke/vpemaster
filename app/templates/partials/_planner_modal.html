@@ -4,7 +4,7 @@
     <div class="planner-modal-content">
         <span class="planner-close-modal" onclick="closeModal()"><i class="fas fa-times"></i></span>
         <div class="planner-modal-header">
-            <h3>{{ _('Task Detail') }}</h3>
+            <h3>{{ _('Task Details') }}</h3>
         </div>
         <form id="planForm">
             <input type="hidden" id="plan-id">
@@ -62,9 +62,9 @@
                 <textarea id="notes" class="planner-form-control" rows="3"></textarea>
             </div>
             <div class="planner-modal-footer">
-                {% call btn('cancel', class='planner-btn', attrs={'onclick': 'closeModal()'}) %}{{ _('Cancel') }}{% endcall %}
-                {% call btn('save', id='save-plan-btn', class='planner-btn', type='submit') %}{{ _('Draft Box') }}{% endcall %}
-                {% call btn('save', id='book-btn', class='planner-btn', attrs={'style': 'display: none;', 'onclick': 'bookPlan()'}) %}{{ _('Book') }}{% endcall %}
+                {% call btn('cancel', attrs={'onclick': 'closeModal()'}) %}{{ _('Cancel') }}{% endcall %}
+                {% call btn('new', id='save-plan-btn', type='submit') %}{{ _('Draft Box') }}{% endcall %}
+                {% call btn('book', id='book-btn', attrs={'style': 'display: none;', 'onclick': 'bookPlan()'}) %}{{ _('Book') }}{% endcall %}
             </div>
         </form>
     </div>

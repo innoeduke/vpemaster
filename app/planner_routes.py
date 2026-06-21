@@ -54,6 +54,7 @@ def planner():
     query = Meeting.query.filter(
         Meeting.club_id == club_id,
         Meeting.status != 'unpublished',
+        Meeting.status != 'finished',
         Meeting.Meeting_Date >= func.current_date()
     )
     if date_ranges:

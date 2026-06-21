@@ -71,9 +71,7 @@
                         {% endif %}
                     </td>
                     <td data-label="{{ _('Status') }}">
-                        <span class="status-badge status-{{ plan.status }}">
-                            {{ _(plan.status|capitalize) }}
-                        </span>
+                        <span class="status-badge status-{{ plan.status }}">{{ _(plan.status|capitalize) }}</span>
                     </td>
                     <td data-label="{{ _('Notes') }}">{{ plan.notes or '' }}</td>
                     <td data-label="{{ _('Actions') }}">

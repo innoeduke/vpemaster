@@ -439,8 +439,8 @@
                     </div>
                 </div>
                 <div class="form-actions">
-                    {% call btn('new', type='submit') %}{{ _('Create Meeting') }}{% endcall %}
                     {% call btn('cancel', attrs={'onclick': 'closeCreateAgendaModal()'}) %}{{ _('Cancel') }}{% endcall %}
+                    {% call btn('new', type='submit') %}{{ _('Create Meeting') }}{% endcall %}
                 </div>
             </form>
         </div>

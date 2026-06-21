@@ -356,7 +356,7 @@ function updateBookButtonVisibility() {
 
     const selectedOpt = roleSelect.options[roleSelect.selectedIndex];
     if (selectedOpt && selectedOpt.value) {
-        bookBtn.style.display = 'inline-block';
+        bookBtn.style.display = 'inline-flex';
         bookBtn.innerText = 'Book';
     } else {
         bookBtn.style.display = 'none';
