@@ -442,6 +442,14 @@
   height: 34px;
 }
 
+/* Immediate feedback while waiting for backend response */
+.btn.btn-loading {
+  opacity: 0.6;
+  cursor: wait !important;
+  pointer-events: none;
+  transform: none !important;
+}
+
 .owner-display {
   font-family: "Montserrat", sans-serif;
   font-weight: normal;

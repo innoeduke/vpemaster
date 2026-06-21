@@ -388,7 +388,7 @@ function resetRole(btn, sessionId) {
 
   // To unassign ALL owners, we pass contactId=0 and no previousValue/previousId
   // The backend handle 'assign' with contact_id=0 as "clear all" if no previous_contact_id is sent.
-  assignRole(sessionId, 0, null);
+  assignRole(sessionId, 0, null, btn);
 }
 
 function bookOrCancelRole(sessionId, action, roleLabel) {
@@ -405,6 +405,24 @@ function bookOrCancelRole(sessionId, action, roleLabel) {
   executeBookingAction(sessionId, action, roleLabel);
 }
 
+/**
+ * Mark a button as loading (immediate visual feedback) and run an async action.
+ * On success the page reloads; on failure the button is restored so the user can retry.
+ */
+function withButtonLoading(button, asyncFn) {
+  if (!button) {
+    return asyncFn();
+  }
+  const wasDisabled = button.disabled;
+  button.classList.add('btn-loading');
+  button.disabled = true;
+  return asyncFn().catch((err) => {
+    button.classList.remove('btn-loading');
+    button.disabled = wasDisabled;
+    throw err;
+  });
+}
+
 function executeBookingAction(sessionId, action, roleLabel, projectId = null, title = null, pathway = null) {
   const payload = {
     session_id: sessionId,
@@ -416,7 +434,9 @@ function executeBookingAction(sessionId, action, roleLabel, projectId = null, ti
   if (title) payload.title = title;
   if (pathway) payload.pathway = pathway;
 
-  fetch("/booking/book", {
+  const button = (typeof event !== 'undefined' && event && event.currentTarget) || null;
+
+  withButtonLoading(button, () => fetch("/booking/book", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -427,13 +447,14 @@ function executeBookingAction(sessionId, action, roleLabel, projectId = null, ti
         window.location.reload(true);
       } else {
         alert("Error: " + data.message);
+        if (button) { button.classList.remove('btn-loading'); button.disabled = false; }
       }
     })
     .catch((error) => {
       console.error("executeBookingAction error:", error);
       alert("An error occurred. Please try again.");
-      window.location.reload(true);
-    });
+      if (button) { button.classList.remove('btn-loading'); button.disabled = false; }
+    }));
 }
 
 
@@ -768,7 +789,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 function removeOwner(sessionId, ownerId) {
-  fetch("/booking/book", {
+  const button = (typeof event !== 'undefined' && event && event.currentTarget) || null;
+
+  withButtonLoading(button, () => fetch("/booking/book", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -783,17 +806,20 @@ function removeOwner(sessionId, ownerId) {
         window.location.reload(true);
       } else {
         alert("Error: " + data.message);
+        if (button) { button.classList.remove('btn-loading'); button.disabled = false; }
       }
     })
     .catch((error) => {
       console.error("removeOwner error:", error);
       alert("An error occurred. Please try again.");
-      window.location.reload(true);
-    });
+      if (button) { button.classList.remove('btn-loading'); button.disabled = false; }
+    }));
 }
 
 function removeWaitlist(sessionId, contactId) {
-  fetch("/booking/book", {
+  const button = (typeof event !== 'undefined' && event && event.currentTarget) || null;
+
+  withButtonLoading(button, () => fetch("/booking/book", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -808,20 +834,24 @@ function removeWaitlist(sessionId, contactId) {
         window.location.reload(true);
       } else {
         alert("Error: " + data.message);
+        if (button) { button.classList.remove('btn-loading'); button.disabled = false; }
       }
     })
     .catch((error) => {
       console.error("removeWaitlist error:", error);
       alert("An error occurred. Please try again.");
-      window.location.reload(true);
-    });
+      if (button) { button.classList.remove('btn-loading'); button.disabled = false; }
+    }));
 }
 
-function assignRole(sessionId, contactId, selectElement) {
+function assignRole(sessionId, contactId, selectElement, triggerButton) {
   // For shared roles, we need to know which owner to replace
   const previousContactId = selectElement ? selectElement.dataset.previousId : null;
 
-  fetch("/booking/book", {
+  // Show immediate feedback on whichever element the user clicked (input or reset button)
+  const target = triggerButton || selectElement;
+
+  withButtonLoading(target, () => fetch("/booking/book", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -856,8 +886,12 @@ function assignRole(sessionId, contactId, selectElement) {
             selectElement.classList.remove("unassigned-role");
           }
         }
+        if (target) { target.classList.remove('btn-loading'); target.disabled = false; }
       }
-    });
+    })
+    .catch(() => {
+      if (target) { target.classList.remove('btn-loading'); target.disabled = false; }
+    }));
 }
 
 
@@ -925,7 +959,9 @@ function updateSessionRow(sessionData) {
 
 
 function leaveWaitlist(sessionId, roleLabel) {
-  fetch("/booking/book", {
+  const button = (typeof event !== 'undefined' && event && event.currentTarget) || null;
+
+  withButtonLoading(button, () => fetch("/booking/book", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -940,18 +976,21 @@ function leaveWaitlist(sessionId, roleLabel) {
         window.location.reload(true);
       } else {
         alert("Error: " + data.message);
+        if (button) { button.classList.remove('btn-loading'); button.disabled = false; }
       }
     })
     .catch((error) => {
       console.error("leaveWaitlist error:", error);
       alert("An error occurred. Please try again.");
-      window.location.reload(true);
-    });
+      if (button) { button.classList.remove('btn-loading'); button.disabled = false; }
+    }));
 }
 
 
 function approveWaitlist(sessionId, roleLabel) {
-  fetch("/booking/book", {
+  const button = (typeof event !== 'undefined' && event && event.currentTarget) || null;
+
+  withButtonLoading(button, () => fetch("/booking/book", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -966,13 +1005,14 @@ function approveWaitlist(sessionId, roleLabel) {
         window.location.reload(true);
       } else {
         alert("Error: " + data.message);
+        if (button) { button.classList.remove('btn-loading'); button.disabled = false; }
       }
     })
     .catch((error) => {
       console.error("approveWaitlist error:", error);
       alert("An error occurred. Please try again.");
-      window.location.reload(true);
-    });
+      if (button) { button.classList.remove('btn-loading'); button.disabled = false; }
+    }));
 }
 
 
