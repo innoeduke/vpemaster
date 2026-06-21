@@ -1652,28 +1652,49 @@ def get_modules():
         return jsonify(success=False, message="No club context"), 400
 
     from app.models.club_module import ClubModule
-    
+
     defined_modules = [
         "Core", "Booking", "Voting", "Roster", "Calendar",
         "Chatbot", "Journal", "Club Directory", "Planner", "Lucky Draw", "Upload", "Data/Slides Export",
         "Self Check-In"
     ]
-    
+
+    # Display metadata for modules. Keep the order here = display order in the table.
+    MODULE_DESCRIPTIONS = {
+        "Core": "Core system functions — always enabled.",
+        "Booking": "Members book meeting roles and manage waitlists.",
+        "Voting": "In-meeting voting for best speaker, evaluator, and other awards.",
+        "Roster": "Club member roster with attendance and contact information.",
+        "Calendar": "Calendar view of upcoming and past meetings.",
+        "Chatbot": "AI assistant for answering club and Toastmasters questions.",
+        "Journal": "Personal speech log and Pathways project tracking.",
+        "Club Directory": "Browse and connect with other clubs in the district.",
+        "Planner": "Plan and track Pathways projects and goals.",
+        "Lucky Draw": "Random draw for Table Topics or other selections.",
+        "Upload": "Upload and share files with the club.",
+        "Data/Slides Export": "Export meeting data, slides, and reports.",
+        "Self Check-In": "Members check themselves in to meetings.",
+    }
+
     # Query database for existing settings
     module_records = ClubModule.query.filter_by(club_id=club_id).all()
     enabled_states = {m.module_name: m.is_enabled for m in module_records}
-    
+
+    # Sort alphabetically, but always keep "Core" at the top
+    sorted_modules = sorted(defined_modules, key=lambda n: (n != 'Core', n.lower()))
+
     modules_list = []
-    for name in defined_modules:
+    for name in sorted_modules:
         is_core = (name == 'Core')
         # Default to True if not in database
         enabled = enabled_states.get(name, True) if not is_core else True
         modules_list.append({
             "name": name,
+            "description": MODULE_DESCRIPTIONS.get(name, ""),
             "enabled": enabled,
             "is_core": is_core
         })
-        
+
     return jsonify(success=True, modules=modules_list)
 
 
@@ -1720,6 +1741,87 @@ def toggle_module():
         
         status_str = "enabled" if enabled else "disabled"
         return jsonify(success=True, message=f"Module '{module_name}' has been {status_str}.")
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+
+# --- Booking Rules ---
+
+# Display metadata for rules. Keep the order here = display order in the table.
+RULE_DEFINITIONS = [
+    {
+        "name": "3_week_policy",
+        "display_name": "3-Week Policy",
+        "description": "Hide Prepared Speaker roles from members who have spoken in the last 3 meetings.",
+    },
+]
+
+
+@settings_bp.route('/api/settings/rules', methods=['GET'])
+@login_required
+@authorized_club_required
+def get_rules():
+    if not is_authorized(Permissions.SETTINGS_VIEW):
+        return jsonify(success=False, message="Permission denied"), 403
+
+    club_id = get_current_club_id()
+    if not club_id:
+        return jsonify(success=False, message="No club context"), 400
+
+    from app.models.club_rule import ClubRule
+
+    records = ClubRule.query.filter_by(club_id=club_id).all()
+    states = {r.rule_name: r.is_enabled for r in records}
+
+    rules_list = []
+    for definition in RULE_DEFINITIONS:
+        # Default to True (enabled) when no record exists yet
+        rules_list.append({
+            "name": definition["name"],
+            "display_name": definition["display_name"],
+            "description": definition["description"],
+            "enabled": states.get(definition["name"], True),
+        })
+
+    return jsonify(success=True, rules=rules_list)
+
+
+@settings_bp.route('/api/settings/rules/toggle', methods=['POST'])
+@login_required
+@authorized_club_required
+def toggle_rule():
+    if not is_authorized(Permissions.SETTINGS_EDIT):
+        return jsonify(success=False, message="Permission denied"), 403
+
+    club_id = get_current_club_id()
+    if not club_id:
+        return jsonify(success=False, message="No club context"), 400
+
+    data = request.json or {}
+    rule_name = data.get('rule_name')
+    enabled = data.get('enabled')
+
+    valid_names = {r["name"] for r in RULE_DEFINITIONS}
+    if rule_name not in valid_names:
+        return jsonify(success=False, message="Invalid rule name"), 400
+
+    if not isinstance(enabled, bool):
+        return jsonify(success=False, message="Enabled field must be a boolean"), 400
+
+    from app.models.club_rule import ClubRule
+    try:
+        record = ClubRule.query.filter_by(club_id=club_id, rule_name=rule_name).first()
+        if record:
+            record.is_enabled = enabled
+        else:
+            record = ClubRule(club_id=club_id, rule_name=rule_name, is_enabled=enabled)
+            db.session.add(record)
+
+        db.session.commit()
+
+        status_str = "enabled" if enabled else "disabled"
+        return jsonify(success=True, message=f"Rule '{rule_name}' has been {status_str}.")
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500

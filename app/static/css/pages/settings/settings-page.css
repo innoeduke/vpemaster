@@ -39,17 +39,21 @@
 
   /* Roles & Sessions tabs: side-by-side layout for global + club-specific tables */
   .roles-tables-row,
-  .sessions-tables-row {
+  .sessions-tables-row,
+  .roles-modules-row {
     display: flex;
     gap: 30px;
     align-items: flex-start;
     flex-wrap: wrap;
   }
   .roles-tables-col,
-  .sessions-tables-col {
+  .sessions-tables-col,
+  .modules-tables-col {
     flex: 1 1 480px;
     min-width: 0;
     max-width: 50%;
+    display: flex;
+    flex-direction: column;
   }
 
   /* Roles tab: combined icon + name cell */
@@ -73,7 +77,8 @@
 
   /* Roles & Sessions tabs: modern header & table layout */
   .roles-tables-col .settings-header,
-  .sessions-tables-col .settings-header {
+  .sessions-tables-col .settings-header,
+  .modules-tables-col .settings-header {
     margin-bottom: 0;
     padding: 10px 12px;
     background-color: #f8fafc;
@@ -81,9 +86,12 @@
     border-bottom: none;
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
+    box-sizing: border-box;
+    width: 100%;
   }
   .roles-tables-col table,
-  .sessions-tables-col table {
+  .sessions-tables-col table,
+  .modules-tables-col table {
     border: 1px solid #cbd5e1 !important;
     border-top: none !important;
     border-bottom-left-radius: 8px;
@@ -91,13 +99,17 @@
     margin-top: 0;
     overflow: hidden;
     border-collapse: separate;
+    width: 100%;
+    box-sizing: border-box;
   }
   .roles-tables-col table thead th:first-child,
-  .sessions-tables-col table thead th:first-child {
+  .sessions-tables-col table thead th:first-child,
+  .modules-tables-col table thead th:first-child {
     border-top-left-radius: 0;
   }
   .roles-tables-col table thead th:last-child,
-  .sessions-tables-col table thead th:last-child {
+  .sessions-tables-col table thead th:last-child,
+  .modules-tables-col table thead th:last-child {
     border-top-right-radius: 0;
   }
 
@@ -354,10 +366,22 @@
     word-break: break-word;
   }
 
-  /* Functional Modules: fit columns to content (override the global table width:100%) */
-  #modules-table {
+  /* Functional Modules & Booking Rules: shared column widths (Name, Description, Status) */
+  #modules-table th:nth-child(1),
+  #modules-table td:nth-child(1),
+  #rules-table th:nth-child(1),
+  #rules-table td:nth-child(1) {
+    width: 140px;
+  }
+  #modules-table th:nth-child(2),
+  #modules-table td:nth-child(2),
+  #rules-table th:nth-child(2),
+  #rules-table td:nth-child(2) {
     width: auto;
   }
-  #modules-settings .table-container {
-    display: inline-block;
+  #modules-table th:nth-child(3),
+  #modules-table td:nth-child(3),
+  #rules-table th:nth-child(3),
+  #rules-table td:nth-child(3) {
+    width: 110px;
   }

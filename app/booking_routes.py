@@ -35,15 +35,22 @@ def _apply_user_filters_and_rules(roles, current_user_contact_id, meeting_id):
     # 3-Week Policy speaker rule
     club_id = get_current_club_id()
     contact = current_user.get_contact(club_id) if current_user.is_authenticated else None
-    
-    if contact and contact.Current_Path:
+
+    # Check if the 3-week policy rule is enabled for this club
+    from app.models.club_rule import ClubRule
+    three_week_policy_enabled = True  # default on when no record exists
+    if club_id:
+        record = ClubRule.query.filter_by(club_id=club_id, rule_name='3_week_policy').first()
+        three_week_policy_enabled = record.is_enabled if record else True
+
+    if three_week_policy_enabled and contact and contact.Current_Path:
         # We need the meeting number for the range check, but must scope by club
         meeting = db.session.get(Meeting, meeting_id)
         if not meeting: return roles
-        
+
         selected_meeting_number = meeting.Meeting_Number
         three_meetings_ago = selected_meeting_number - 2
-        
+
         # Updated query to use OwnerMeetingRoles
         recent_speaker_log = db.session.query(SessionLog.id)\
             .join(SessionType)\

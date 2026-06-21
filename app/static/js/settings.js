@@ -138,8 +138,9 @@ function openTab(evt, tabName) {
   }
 
   // Lazy-load tab data
-  if (tabName === "modules-settings" && typeof loadModules === "function") {
-    loadModules();
+  if (tabName === "modules-settings") {
+    if (typeof loadModules === "function") loadModules();
+    if (typeof loadRules === "function") loadRules();
   }
 }
 
@@ -1393,7 +1394,7 @@ function renderModulesTable(modules) {
   if (!tableBody) return;
 
   if (modules.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="2" class="text-center py-4">No modules found.</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4">No modules found.</td></tr>`;
     return;
   }
 
@@ -1403,7 +1404,7 @@ function renderModulesTable(modules) {
     const isDisabled = mod.is_core || (typeof HAS_SETTINGS_EDIT !== 'undefined' && !HAS_SETTINGS_EDIT);
     const checkedAttr = mod.enabled ? 'checked' : '';
     const disabledAttr = isDisabled ? 'disabled' : '';
-    
+
     const toggleHtml = `
       <div class="switch-container">
         <label class="switch">
@@ -1418,6 +1419,7 @@ function renderModulesTable(modules) {
         <td>
           <span style="font-weight: 500;">${isChinese ? translateModuleName(mod.name) : mod.name}</span>
         </td>
+        <td>${mod.description || ''}</td>
         <td>${toggleHtml}</td>
       </tr>
     `;
@@ -1497,6 +1499,99 @@ function toggleModuleState(checkbox) {
 }
 
 window.toggleModuleState = toggleModuleState;
+
+// --- Booking Rules ---
+
+function loadRules() {
+  const tableBody = document.getElementById("rules-table-body");
+  if (!tableBody) return;
+
+  fetch("/api/settings/rules")
+    .then((r) => r.json())
+    .then((data) => {
+      if (!data.success) {
+        tableBody.innerHTML = `<tr><td colspan="3" class="text-center text-danger">${data.message || 'Error loading rules.'}</td></tr>`;
+        return;
+      }
+      renderRulesTable(data.rules);
+    })
+    .catch((e) => {
+      console.error("Rules load error:", e);
+      tableBody.innerHTML = `<tr><td colspan="3" class="text-center text-danger">Error loading rules: ${e.message}</td></tr>`;
+    });
+}
+
+function renderRulesTable(rules) {
+  const tableBody = document.getElementById("rules-table-body");
+  if (!tableBody) return;
+
+  if (rules.length === 0) {
+    tableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4">No rules found.</td></tr>`;
+    return;
+  }
+
+  let html = '';
+  rules.forEach((rule) => {
+    const canEdit = typeof HAS_SETTINGS_EDIT !== 'undefined' && HAS_SETTINGS_EDIT;
+    const checkedAttr = rule.enabled ? 'checked' : '';
+    const disabledAttr = canEdit ? '' : 'disabled';
+
+    const toggleHtml = `
+      <div class="switch-container">
+        <label class="switch">
+          <input type="checkbox" data-rule-name="${rule.name}" ${checkedAttr} ${disabledAttr} onchange="toggleRuleState(this)">
+          <span class="slider"></span>
+        </label>
+      </div>
+    `;
+
+    html += `
+      <tr>
+        <td><span style="font-weight: 500;">${rule.display_name}</span></td>
+        <td>${rule.description}</td>
+        <td>${toggleHtml}</td>
+      </tr>
+    `;
+  });
+
+  tableBody.innerHTML = html;
+}
+
+function toggleRuleState(checkbox) {
+  const ruleName = checkbox.dataset.ruleName;
+  const isEnabled = checkbox.checked;
+
+  checkbox.disabled = true;
+
+  fetch("/api/settings/rules/toggle", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      rule_name: ruleName,
+      enabled: isEnabled
+    })
+  })
+  .then((r) => r.json())
+  .then((data) => {
+    checkbox.disabled = false;
+    if (data.success) {
+      showNotification(data.message || 'Rule updated.', 'success');
+    } else {
+      checkbox.checked = !isEnabled;
+      showNotification(data.message || 'Failed to toggle rule.', 'error');
+    }
+  })
+  .catch((e) => {
+    checkbox.disabled = false;
+    checkbox.checked = !isEnabled;
+    console.error("Toggle rule error:", e);
+    showNotification(e.message || 'Network error occurred.', 'error');
+  });
+}
+
+window.toggleRuleState = toggleRuleState;
 
 
 function renderAuthRolesTable(roles) {
