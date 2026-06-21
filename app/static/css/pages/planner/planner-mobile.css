@@ -223,7 +223,7 @@
   }
 
   /* Button tweaks within card */
-  .action-btns {
+  .tm-action-buttons {
     width: auto;
     gap: 0;
   }

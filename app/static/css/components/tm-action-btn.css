@@ -77,8 +77,10 @@
 }
 
 .tm-action-btn:focus-visible {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
+  outline: none;
+  /* Box-shadow-based ring follows border-radius on every browser,
+     so the focused button reads as a perfect circle. */
+  box-shadow: 0 0 0 3px #3b82f6, var(--tm-action-shadow);
 }
 
 /* Destructive variant — warm rust, not alarm-red */

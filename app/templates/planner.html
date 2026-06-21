@@ -77,12 +77,12 @@
                     </td>
                     <td data-label="{{ _('Notes') }}">{{ plan.notes or '' }}</td>
                     <td data-label="{{ _('Actions') }}">
-                        <div class="action-btns">
-                            <button class="btn-icon btn-edit" title="{{ _('Edit') }}">
+                        <div class="tm-action-buttons">
+                            <button type="button" class="tm-action-btn btn-edit" title="{{ _('Edit') }}" aria-label="{{ _('Edit') }}">
                                 <i class="fas fa-edit"></i>
                             </button>
                             {% if plan.status not in ['completed', 'cancelled', 'obsolete'] %}
-                            <button type="button" class="btn-icon btn-cancel" title="{{ _('Cancel Plan') }}">
+                            <button type="button" class="tm-action-btn plan-cancel-btn" title="{{ _('Cancel Plan') }}" aria-label="{{ _('Cancel Plan') }}">
                                 <i class="fas fa-times-circle"></i>
                             </button>
                             {% endif %}
@@ -123,7 +123,7 @@
     // Event delegation for Edit/Cancel buttons in the table
     document.addEventListener('click', async function(e) {
         const editBtn = e.target.closest('.btn-edit');
-        const cancelBtn = e.target.closest('.btn-cancel');
+        const cancelBtn = e.target.closest('.plan-cancel-btn');
 
         if (editBtn) {
             e.preventDefault();

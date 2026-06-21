@@ -37,15 +37,19 @@
 
 .planner-table th,
 .planner-table td {
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   text-align: left;
   border-bottom: 1px solid #f0f0f0;
+}
+
+.planner-table td {
+  font-size: 0.9rem;
 }
 
 .planner-table th {
   font-weight: 600;
   text-transform: uppercase;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   letter-spacing: 0.5px;
   color: #888;
 }
@@ -82,32 +86,8 @@
   color: #842029;
 }
 
-.action-btns {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.btn-icon {
-  background: none;
-  border: none;
-  color: #aaa;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.2s;
-}
-
-.btn-icon:hover {
-  color: #333;
-}
-
-.btn-edit:hover {
-  color: #004165;
-}
-
-.btn-delete:hover,
-.btn-cancel:hover {
-  color: #dc3545;
-}
+/* Row action buttons use the shared .tm-action-btn / .tm-action-buttons
+   component styles (see css/components/tm-action-btn.css). */
 
 /* --- Premium Light Modal Polish --- */
 .planner-modal {
