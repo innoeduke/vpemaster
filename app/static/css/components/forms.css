@@ -177,6 +177,40 @@
   transform: none;
 }
 
+.btn.btn-book {
+  background: linear-gradient(180deg, #14c08a 0%, #0e8761 100%);
+  color: #ffffff;
+  border-color: #0e8761;
+  box-shadow: 0 2px 6px rgba(14, 135, 97, 0.26),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.btn.btn-book:hover {
+  background: linear-gradient(180deg, #1cd49a 0%, #129e72 100%);
+  color: #ffffff;
+  border-color: #129e72;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(14, 135, 97, 0.34),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.btn.btn-waitlist-join {
+  background: linear-gradient(180deg, #f59e0b 0%, #b56b00 100%);
+  color: #ffffff;
+  border-color: #b56b00;
+  box-shadow: 0 2px 6px rgba(181, 107, 0, 0.26),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.btn.btn-waitlist-join:hover {
+  background: linear-gradient(180deg, #fbaf3f 0%, #c97a0d 100%);
+  color: #ffffff;
+  border-color: #c97a0d;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(181, 107, 0, 0.34),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
 .btn.btn-outline {
   background: #ffffff;
   color: #772432;

@@ -170,27 +170,22 @@
         {% else %}
         {% set waitlist_ids = role.waitlist|map(attribute='id')|list %}
         {% if current_user_contact_id in waitlist_ids %}
-        <button class="btn btn-leave-waitlist"
-            onclick="leaveWaitlist('{{ role.session_id }}', '{{ role.role }}')">{{ _('Leave Waitlist') }}</button>
+        {% call btn('leave', attrs={'onclick': "leaveWaitlist('{{ role.session_id }}', '{{ role.role }}')"}) %}{{ _('Leave Waitlist') }}{% endcall %}
         {% else %}
-        <button class="btn btn-join-waitlist"
-            onclick="joinWaitlist('{{ role.session_id }}', '{{ role.role }}')">{{ _('Join Waitlist') }}</button>
+        {% call btn('join', attrs={'onclick': "joinWaitlist('{{ role.session_id }}', '{{ role.role }}')"}) %}{{ _('Join Waitlist') }}{% endcall %}
         {% endif %}
         {% endif %}
         {% else %}
         {% set waitlist_ids = role.waitlist|map(attribute='id')|list %}
         {% if current_user_contact_id in waitlist_ids %}
-        <button class="btn btn-leave-waitlist"
-            onclick="leaveWaitlist('{{ role.session_id }}', '{{ role.role }}')">{{ _('Leave Waitlist') }}</button>
+        {% call btn('leave', attrs={'onclick': "leaveWaitlist('{{ role.session_id }}', '{{ role.role }}')"}) %}{{ _('Leave Waitlist') }}{% endcall %}
         {% else %}
         {# For shared roles with existing owners, show Join Waitlist instead of Book #}
         {% set has_existing_owners = role.all_owners is defined and role.all_owners|length > 0 %}
         {% if role.needs_approval or has_existing_owners %}
-        <button class="btn btn-join-waitlist"
-            onclick="joinWaitlist('{{ role.session_id }}', '{{ role.role }}')">{{ _('Join Waitlist') }}</button>
+        {% call btn('join', attrs={'onclick': "joinWaitlist('{{ role.session_id }}', '{{ role.role }}')"}) %}{{ _('Join Waitlist') }}{% endcall %}
         {% else %}
-        <button class="btn btn-book"
-            onclick="bookOrCancelRole('{{ role.session_id }}', 'book', '{{ role.role }}')">{{ _('Book') }}</button>
+        {% call btn('book', attrs={'onclick': "bookOrCancelRole('{{ role.session_id }}', 'book', '{{ role.role }}')"}) %}{{ _('Book') }}{% endcall %}
         {% endif %}
         {% endif %}
         {% endif %}

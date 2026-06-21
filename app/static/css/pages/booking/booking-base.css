@@ -434,36 +434,12 @@
 }
 
 /* --- Action Cell --- */
-.booking-table .btn {
-  padding: 8px 15px;
-  border-radius: 6px;
-  color: white;
-  background-color: #6c757d;
+.booking-table .btn.btn-cancel {
   border: none;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-family: "Montserrat", sans-serif;
-  font-weight: bold;
-  font-size: 0.9rem;
-  width: 140px !important;
-  height: 38px;
-  box-sizing: border-box;
-  white-space: nowrap;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-  transition: all 0.2s ease;
-}
-
-.booking-table .btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  filter: brightness(1.1);
-}
-
-.booking-table .btn:active {
-  transform: translateY(1px);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  padding: 0 14px;
+  font-size: 0.82rem;
+  min-width: 100px;
+  height: 34px;
 }
 
 .owner-display {
@@ -490,10 +466,6 @@
   white-space: nowrap;
   box-sizing: border-box;
   justify-content: center;
-}
-
-.booking-table .btn-book {
-  background-color: #10b981;
 }
 
 .btn-booked {
@@ -755,19 +727,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.booking-table .btn-join-waitlist {
-  background-color: #f59e0b;
-}
-
-.booking-table .btn-leave-waitlist {
-  background-color: #d75757;
-}
-
-.booking-table .btn-cancel,
-.assign-cell .btn-cancel {
-  background-color: #6c757d;
 }
 
 /* --- Icon Button --- */
