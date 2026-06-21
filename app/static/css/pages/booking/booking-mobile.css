@@ -194,19 +194,12 @@
 		min-width: 70px;
 	}
 
-	.booking-table .icon-cell .button-group {
+	.booking-table .icon-cell .tm-action-buttons {
 		display: flex;
 		flex-direction: row;
 		gap: 4px;
 		justify-content: flex-end;
 		align-items: center;
-	}
-
-	.booking-table .icon-cell .reset-icon-container {
-		display: flex;
-		flex-direction: row;
-		gap: 4px;
-		width: auto;
 	}
 
 	.booking-table .icon-cell .btn {
@@ -280,13 +273,6 @@
 		min-width: 0;
 		display: block;
 		max-width: 100%;
-	}
-
-	.page-container .btn-reset-role {
-		height: 30px !important;
-		min-height: 0 !important;
-		width: 24px !important;
-		font-size: 0.8em !important;
 	}
 
 	.multi-owner-inputs {

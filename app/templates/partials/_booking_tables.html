@@ -94,7 +94,7 @@
 
             {% if status in ['not started', 'unpublished'] and role.waitlist %}
             {% for user in role.waitlist %}
-            <div class="role-avatar waitlist-avatar {% if can_view_details %}clickable-avatar{% endif %}"
+            <div class="role-avatar waitlist-avatar {% if can_view_details %}clickable-avatar{% endif %} {% if is_admin_view %}admin-avatar{% endif %}"
                 title="{{ user.name }} ({{ _('Waitlist') }})"
                 {% if can_view_details %}
                 onclick="showWaitlistDetails(this)"
@@ -166,7 +166,7 @@
         {% else %}
         {% if role.owner_id %}
         {% if role.owner_id == current_user_contact_id %}
-        {% call btn('cancel', attrs={'onclick': "bookOrCancelRole('" + role.session_id + "', 'cancel', '" + role.role + "')"}) %}{{ _('Cancel') }}{% endcall %}
+        {% call btn('cancel', attrs={'onclick': "bookOrCancelRole('{{ role.session_id }}', 'cancel', '{{ role.role }}')"}) %}{{ _('Cancel') }}{% endcall %}
         {% else %}
         {% set waitlist_ids = role.waitlist|map(attribute='id')|list %}
         {% if current_user_contact_id in waitlist_ids %}
@@ -201,19 +201,18 @@
     {# Action Icons cell #}
     {% if is_admin_view %}
     <td class="icon-cell">
-        <div class="button-group">
-            {% if role.waitlist %}<button class="icon-btn btn-approve-waitlist" title="{{ _('Approve top of waitlist') }}"
+        <div class="tm-action-buttons">
+            {% if role.waitlist %}<button type="button" class="tm-action-btn btn-approve-waitlist"
+                title="{{ _('Approve top of waitlist') }}" aria-label="{{ _('Approve top of waitlist') }}"
                 onclick="approveWaitlist('{{ role.session_id }}', '{{ role.role }}')"><i
                     class="fas fa-user-check"></i></button>{% endif %}
 
-            {# Reset Buttons #}
-            <div class="reset-icon-container">
-                {% set has_owners = (role.all_owners is defined and role.all_owners|length > 0) or role.owner_id %}
-                <button class="icon-btn btn-reset-role" onclick="resetRole(this, '{{ role.session_id }}')"
-                    title="{{ _('Unassign All') }}" style="color: #6c757d; {% if not has_owners %}display: none;{% endif %}">
-                    <i class="fas fa-undo"></i>
-                </button>
-            </div>
+            {% set has_owners = (role.all_owners is defined and role.all_owners|length > 0) or role.owner_id %}
+            <button type="button" class="tm-action-btn btn-reset-role" onclick="resetRole(this, '{{ role.session_id }}')"
+                title="{{ _('Unassign All') }}" aria-label="{{ _('Unassign All') }}"
+                {% if not has_owners %}style="display: none;"{% endif %}>
+                <i class="fas fa-undo"></i>
+            </button>
         </div>
     </td>
     {% endif %}

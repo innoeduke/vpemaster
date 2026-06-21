@@ -477,7 +477,7 @@
   overflow: hidden;
 }
 
-.icon-cell .button-group {
+.icon-cell .tm-action-buttons {
   display: flex;
   flex-direction: row;
   gap: 5px;
@@ -508,11 +508,6 @@
 
 .icon-cell {
   text-align: center;
-}
-
-.icon-cell .icon-btn {
-  padding: 6px 10px;
-  flex-shrink: 0;
 }
 
 .booking-table .assign-cell {
@@ -802,43 +797,6 @@
   width: auto;
   min-width: 0;
   /* Allow it to shrink/grow */
-}
-
-.btn-reset-role {
-  background: none;
-  border: none;
-  color: #6c757d;
-  cursor: pointer;
-  padding: 0 5px;
-  font-size: 1.1em;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 38px;
-  /* Match input height */
-  border-radius: 4px;
-  transition: background-color 0.2s;
-}
-
-.btn-reset-role:hover {
-  background-color: #f8f9fa;
-  color: #343a40;
-}
-
-.reset-icon-container {
-  display: flex;
-  flex-direction: row;
-  gap: 5px;
-  align-items: center;
-  justify-content: center;
-}
-
-.reset-icon-container .btn-reset-role {
-  padding: 0;
-  margin: 0;
-  height: 38px;
-  /* Match input height */
 }
 
 /* --- Admin Recommendation Badges --- */
