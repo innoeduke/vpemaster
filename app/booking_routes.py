@@ -658,6 +658,11 @@ def book_or_assign_role():
 
     user, current_user_contact_id = get_current_user_info()
 
+    try:
+        session_id = int(session_id)
+    except (TypeError, ValueError):
+        return jsonify(success=False, message="Session not found."), 404
+
     log = db.session.get(SessionLog, session_id)
     if not log:
         return jsonify(success=False, message="Session not found."), 404
