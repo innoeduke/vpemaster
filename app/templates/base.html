@@ -698,7 +698,7 @@
     {% endif %}
   </script>
 
-  {% if is_module_enabled('Chatbot') and current_user.is_authenticated and (is_authorized(Permissions.CHAT_AI) or is_authorized(Permissions.CHAT_COMMANDS)) %}
+  {% if is_module_enabled('Chatbot') and current_user.is_authenticated and (is_authorized(Permissions.CHAT_AI) or is_authorized(Permissions.CHAT_COMMANDS)) and not in_club_directory %}
     {% include 'partials/_chat_widget.html' %}
     <script defer src="{{ url_for('static', filename='js/chat.js') }}?v={{ 'js/chat.js' | static_version }}"></script>
   {% endif %}
