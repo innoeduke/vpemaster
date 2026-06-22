@@ -541,52 +541,62 @@ function handleMeetingStatusToggle(button) {
 	const currentStatus = button.dataset.currentStatus;
 
 	if (!meetingId) {
-		alert("No meeting selected.");
+		showCustomAlert("No Selection", "No meeting selected.");
 		return;
 	}
 
+	let confirmTitle = "";
 	let confirmMessage = "";
 	if (currentStatus === "unpublished") {
-		confirmMessage = "Please make sure the meeting theme and structure are finalized before publishing.\n\nPublishing opens booking roles and speeches to all members. Do you want to proceed?";
+		confirmTitle = "Publish Meeting";
+		confirmMessage = "<strong>Publishing opens booking roles and speeches to all members.</strong> Please make sure the meeting theme and structure are finalized before publishing. Do you want to proceed?";
 	} else if (currentStatus === "not started") {
-		confirmMessage = "Please only click this when the meeting has already started.\n\nStarting will open voting to the audience. Do you want to proceed?";
+		confirmTitle = "Start Meeting";
+		confirmMessage = "<strong>Starting will open voting to the audience.</strong> Please only click this when the meeting has already started. Do you want to proceed?";
 	} else if (currentStatus === "running") {
-		confirmMessage = "Stopping the meeting ends voting and shows the final vote results.\n\nDo you want to proceed?";
+		confirmTitle = "Stop Meeting";
+		confirmMessage = "<strong>Stopping the meeting ends voting and shows the final vote results.</strong> Do you want to proceed?";
 	} else {
 		return;
 	}
 
-	if (!confirm(confirmMessage)) {
-		return;
-	}
+	showCustomConfirm(confirmTitle, confirmMessage).then((confirmed) => {
+		if (!confirmed) {
+			return;
+		}
 
-	// Perform Status Update
-	fetch(`/agenda/status/${meetingId}`, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-		},
-	})
-	.then((response) => response.json())
-	.then((data) => {
-		if (data.success) {
-			const newStatus = data.new_status;
-			if (currentStatus === "unpublished" && newStatus === "not started") {
-				// Transitioned to "not started", ask if they want to start it now
-				if (confirm("Meeting published successfully. Do you want to start the meeting now?")) {
-					// Recursively transition to 'running'
-					button.dataset.currentStatus = "not started";
-					handleMeetingStatusToggle(button);
+		// Perform Status Update
+		fetch(`/agenda/status/${meetingId}`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+		})
+		.then((response) => response.json())
+		.then((data) => {
+			if (data.success) {
+				const newStatus = data.new_status;
+				if (currentStatus === "unpublished" && newStatus === "not started") {
+					// Transitioned to "not started", ask if they want to start it now
+					showCustomConfirm("Start Now", "Meeting published successfully. Do you want to start the meeting now?").then((startNow) => {
+						if (startNow) {
+							// Recursively transition to 'running'
+							button.dataset.currentStatus = "not started";
+							handleMeetingStatusToggle(button);
+							return;
+						}
+						window.location.reload();
+					});
 					return;
 				}
+				window.location.reload();
+			} else {
+				showCustomAlert("Error", "Error updating status: " + data.message);
 			}
-			window.location.reload();
-		} else {
-			alert("Error updating status: " + data.message);
-		}
-	})
-	.catch((error) => {
-		console.error("Error:", error);
-		alert("An error occurred while updating the meeting status.");
+		})
+		.catch((error) => {
+			console.error("Error:", error);
+			showCustomAlert("Error", "An error occurred while updating the meeting status.");
+		});
 	});
 }

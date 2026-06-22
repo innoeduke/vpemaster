@@ -286,6 +286,8 @@
     {% endif %}
 </div>
 
+{% include 'components/custom_modal.html' %}
+
 <script id="voting-data" type="application/json">
 {
 	"isAdminView": {{ is_admin_view|tojson }},
@@ -300,5 +302,6 @@
 	"awardConfigs": {{ award_configs|tojson if award_configs else '{}'|safe }}
 }
 </script>
-<script src="{{ url_for('static', filename='js/voting.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/components/custom_modal.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/voting.js') }}"></script>
 {% endblock %}

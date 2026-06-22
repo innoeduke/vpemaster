@@ -1,0 +1,13 @@
+{% from "partials/_button_macros.html" import btn %}
+
+<div id="custom-modal" class="custom-modal">
+    <div class="custom-modal-content">
+        <div id="custom-modal-icon" class="custom-modal-icon"></div>
+        <div id="custom-modal-title" class="custom-modal-title"></div>
+        <div id="custom-modal-message" class="custom-modal-message"></div>
+        <div id="custom-modal-actions" class="custom-modal-actions">
+            {% call btn('cancel', id='custom-modal-cancel', class='custom-modal-btn', attrs={'style': 'display: none;'}) %}{{ _('Cancel') }}{% endcall %}
+            {% call btn('ok', id='custom-modal-ok', class='custom-modal-btn btn-confirm') %}{{ _('OK') }}{% endcall %}
+        </div>
+    </div>
+</div>

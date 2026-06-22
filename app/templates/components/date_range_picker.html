@@ -1,0 +1,77 @@
+{% macro render_date_range_picker(
+    range_label,
+    action_url,
+    start_month='',
+    end_month='',
+    id_prefix='date-range',
+    title=None,
+    modal_title=None,
+    hint=None,
+    method='GET',
+    start_label=None,
+    end_label=None,
+    cancel_label=None,
+    apply_label=None
+) %}
+<div class="date-range-picker" data-date-range-picker="{{ id_prefix }}">
+    <button type="button"
+            class="date-range-btn"
+            id="{{ id_prefix }}-btn"
+            title="{{ title or _('Change date range') }}"
+            aria-haspopup="dialog"
+            aria-expanded="false"
+            aria-controls="{{ id_prefix }}-modal">
+        <i class="fas fa-calendar-alt date-range-icon" aria-hidden="true"></i>
+        <span class="date-range-label">{{ range_label or _('Date Range') }}</span>
+        <i class="fas fa-chevron-down date-range-caret" aria-hidden="true"></i>
+    </button>
+
+    <div class="date-range-modal"
+         id="{{ id_prefix }}-modal"
+         hidden
+         aria-hidden="true"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="{{ id_prefix }}-modal-title">
+        <div class="date-range-backdrop" data-close-modal></div>
+        <div class="date-range-card">
+            <div class="date-range-header">
+                <h3 id="{{ id_prefix }}-modal-title">
+                    <i class="fas fa-calendar-alt"></i> {{ modal_title or _('Select Date Range') }}
+                </h3>
+                <button type="button" class="date-range-close" data-close-modal aria-label="{{ _('Close') }}">&times;</button>
+            </div>
+            <form method="{{ method }}" action="{{ action_url }}" class="date-range-form" id="{{ id_prefix }}-form">
+                <div class="date-range-fields">
+                    <div class="month-picker">
+                        <label for="{{ id_prefix }}-start-month">{{ start_label or _('Start Month') }}</label>
+                        <input type="month"
+                               id="{{ id_prefix }}-start-month"
+                               name="start_month"
+                               value="{{ start_month }}"
+                               max="{{ end_month }}"
+                               required>
+                    </div>
+                    <div class="month-picker-arrow" aria-hidden="true">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                    <div class="month-picker">
+                        <label for="{{ id_prefix }}-end-month">{{ end_label or _('End Month') }}</label>
+                        <input type="month"
+                               id="{{ id_prefix }}-end-month"
+                               name="end_month"
+                               value="{{ end_month }}"
+                               min="{{ start_month }}"
+                               required>
+                    </div>
+                </div>
+                <p class="date-range-hint">{{ hint or _('Choose the start and end months for the calendar view.') }}</p>
+                <div class="date-range-actions">
+                    <button type="button" class="btn-modal btn-modal-secondary" data-close-modal>{{ cancel_label or _('Cancel') }}</button>
+                    <button type="submit" class="btn-modal btn-modal-primary">{{ apply_label or _('Apply') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endmacro %}

@@ -1,48 +1,5 @@
 
     (function () {
-        const modal = document.getElementById('date-range-modal');
-        const btn = document.getElementById('date-range-btn');
-        if (!modal || !btn) return;
-
-        const open = () => {
-            modal.hidden = false;
-            modal.removeAttribute('inert');
-            document.body.classList.add('modal-open');
-        };
-        const close = () => {
-            if (document.activeElement && modal.contains(document.activeElement)) {
-                document.activeElement.blur();
-            }
-            modal.hidden = true;
-            modal.setAttribute('inert', '');
-            document.body.classList.remove('modal-open');
-        };
-
-        btn.addEventListener('click', open);
-        modal.querySelectorAll('[data-close-modal]').forEach((el) => {
-            el.addEventListener('click', close);
-        });
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !modal.hidden) close();
-        });
-
-        // Keep start <= end and end >= start as the user changes values
-        const startEl = document.getElementById('modal-start-month');
-        const endEl = document.getElementById('modal-end-month');
-        if (startEl && endEl) {
-            startEl.addEventListener('change', () => {
-                if (startEl.value && (!endEl.value || endEl.value < startEl.value)) {
-                    endEl.value = startEl.value;
-                }
-                endEl.min = startEl.value || '';
-            });
-            endEl.addEventListener('change', () => {
-                if (endEl.value && (!startEl.value || startEl.value > endEl.value)) {
-                    startEl.value = endEl.value;
-                }
-                startEl.max = endEl.value || '';
-            });
-        }
         // KPI Filter and Mobile Label Toggle Logic
         const parent = document.querySelector('.filter-row-premium');
         const kpiTiles = document.querySelectorAll('.calendar-kpis .kpi-tile');
@@ -54,7 +11,7 @@
             rows.forEach(row => {
                 const totalCards = row.querySelectorAll('.meeting-card').length;
                 const visibleCards = Array.from(row.querySelectorAll('.meeting-card')).filter(card => card.style.display !== 'none');
-                
+
                 // Toggle cell-empty class on each calendar-cell
                 row.querySelectorAll('.calendar-cell').forEach(cell => {
                     const cellVisibleCards = Array.from(cell.querySelectorAll('.meeting-card')).filter(card => card.style.display !== 'none');
@@ -101,7 +58,7 @@
                         tile.classList.add('active-filter');
                         tile.classList.add('show-label');
                         parent.classList.add('has-active-filter');
-                        
+
                         cards.forEach(card => {
                             if (card.classList.contains(typeClass)) {
                                 card.style.display = 'flex';
@@ -118,7 +75,7 @@
                 totalTile.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    
+
                     kpiTiles.forEach(t => {
                         t.classList.remove('active-filter');
                         t.classList.remove('show-label');

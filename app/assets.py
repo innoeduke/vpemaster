@@ -13,6 +13,7 @@ css_all = Bundle(
     'css/components/tabs.css',
     'css/components/pagination.css',
     'css/components/meeting_filter.css',
+    'css/components/date_range_picker.css',
     'css/components/trend_btn.css',
     'css/components/tm-action-btn.css',
     # Agenda CSS (modular structure)

@@ -461,19 +461,10 @@
     </script>
     <script defer src="{{ url_for('static', filename='js/speech_modal.js') }}?v={{ 'js/speech_modal.js' | static_version }}"></script>
     <script defer src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/components/custom_modal.js') }}"></script>
     <script defer src="{{ url_for('static', filename='vendor/js/html2canvas.min.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/agenda.js') }}?v={{ 'js/agenda.js' | static_version }}"></script>
-    <div id="custom-modal" class="custom-modal">
-        <div class="custom-modal-content">
-            <div id="custom-modal-icon" class="custom-modal-icon"></div>
-            <div id="custom-modal-title" class="custom-modal-title"></div>
-            <div id="custom-modal-message" class="custom-modal-message"></div>
-            <div id="custom-modal-actions" class="custom-modal-actions">
-                {% call btn('cancel', id='custom-modal-cancel', class='custom-modal-btn', attrs={'style': 'display: none;'}) %}{{ _('Cancel') }}{% endcall %}
-                {% call btn('ok', id='custom-modal-ok', class='custom-modal-btn btn-confirm') %}{{ _('OK') }}{% endcall %}
-            </div>
-        </div>
-    </div>
+    {% include 'components/custom_modal.html' %}
     {% endif %}
 </div> {# End of #agenda-content wrapper #}
 {% endblock %}
