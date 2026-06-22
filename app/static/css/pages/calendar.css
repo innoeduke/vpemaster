@@ -662,11 +662,10 @@
         margin: 0;
     }
     .calendar-page-container .date-range-btn {
-        width: 100%;
         height: 38px;
         box-sizing: border-box;
-        justify-content: space-between;
         padding: 0 12px;
+        flex: 0 0 auto;
     }
     .kpi-tile-total {
         grid-column: 2;
