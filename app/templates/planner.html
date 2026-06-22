@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "components/custom_select.html" import render_custom_select %}
+{% from "components/date_range_picker.html" import render_date_range_picker %}
 {% from "partials/_button_macros.html" import btn %}
 
 {% block title %}{{ _('Planner') }}{% endblock %}
@@ -19,18 +20,16 @@
     <div class="filters-control premium">
         <div class="filter-row-premium">
             <div class="filter-left">
-                <form method="GET" action="{{ url_for('planner_bp.planner') }}" id="planner-term-filter-form" class="date-filter-form">
-                    <div class="date-filter-group">
-                        <div class="date-input-wrapper">
-                            <label class="filter-label" for="start_date">{{ _('Start Date') }}:</label>
-                            <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date or (current_term['start'] if current_term else '') }}" onchange="updateDateSelection()">
-                        </div>
-                        <div class="date-input-wrapper">
-                            <label class="filter-label" for="end_date">{{ _('End Date') }}:</label>
-                            <input type="date" id="end_date" name="end_date" class="form-control" value="{{ end_date or (current_term['end'] if current_term else '') }}" onchange="updateDateSelection()">
-                        </div>
-                    </div>
-                </form>
+                <div class="filter-group">
+                    <label class="filter-label" for="planner-date-range-btn">{{ _('Month Range:') }}</label>
+                    {{ render_date_range_picker(
+                        range_label=range_label,
+                        action_url=url_for('planner_bp.planner'),
+                        start_month=start_month,
+                        end_month=end_month,
+                        id_prefix='planner-date-range'
+                    ) }}
+                </div>
             </div>
             <div class="filter-right">
                 {% call btn('new', id='add-plan-btn') %}<i class="fas fa-plus"></i> {{ _('New Task') }}{% endcall %}
@@ -109,15 +108,9 @@
     var workingPath = "{{ contact.Current_Path or '' }}";
 </script>
 <script src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>
+<script src="{{ url_for('static', filename='js/components/date_range_picker.js') }}"></script>
 <script src="{{ url_for('static', filename='js/planner_modal.js') }}"></script>
 <script>
-    // --- Date Filter Logic ---
-    function updateDateSelection() {
-        const form = document.getElementById('planner-term-filter-form');
-        if (form) form.submit();
-    }
-
-
     // Event delegation for Edit/Cancel buttons in the table
     document.addEventListener('click', async function(e) {
         const editBtn = e.target.closest('.btn-edit');

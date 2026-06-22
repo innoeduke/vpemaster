@@ -150,6 +150,12 @@
 	box-shadow: 0 0 0 3px rgba(119, 36, 50, 0.1);
 }
 
+/* .select-item-icon is absolutely positioned (left:12px) by meeting_filter.css,
+   so the flex-gap doesn't push the text away — give the text its own padding. */
+.draw-type-selector .custom-select-trigger .selected-text {
+	padding-left: 24px;
+}
+
 
 .draw-buttons {
 	display: flex;

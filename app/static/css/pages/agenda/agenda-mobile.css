@@ -5,6 +5,12 @@
 
 @media (max-width: 768px) {
 
+  /* Action bar must sit below the mobile nav (z-index 95) so its controls
+     don't render through the open nav menu. */
+  .action-bar {
+    z-index: 50;
+  }
+
   /* Prevent grid layout from interfering with edit mode table on narrow screens */
   .edit-mode-active #logs-table,
   .edit-mode-active #logs-table thead,

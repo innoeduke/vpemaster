@@ -4,10 +4,32 @@ from .models import db, Planner, MeetingRole, Project, Club, Meeting, SessionTyp
 from .auth.permissions import Permissions
 from .club_context import get_current_club_id
 from datetime import datetime
+import calendar as _cal
+import re as _re
 from .constants import ProjectID
 from .services.role_service import RoleService
 
 planner_bp = Blueprint('planner_bp', __name__)
+
+_MONTH_NAMES_EN = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+
+def _format_month_label(iso_date, locale, compact=False):
+    """Render a YYYY-MM-DD (or YYYY-MM) string as 'Mon YYYY' for the toggle button."""
+    if not iso_date:
+        return ''
+    m = _re.match(r'^(\d{4})-(\d{2})', str(iso_date))
+    if not m:
+        return str(iso_date)
+    year, month = int(m.group(1)), int(m.group(2))
+    if locale == 'zh_CN':
+        if compact:
+            return f'{year % 100}年{month}月'
+        return f'{year}年{month}月'
+    if compact:
+        return f"{_MONTH_NAMES_EN[month]} '{str(year)[-2:]}"
+    return f'{_MONTH_NAMES_EN[month]} {year}'
 
 @planner_bp.before_request
 def check_planner_enabled():
@@ -34,17 +56,37 @@ def planner():
     # 2. Fetch all terms for the club to show in the filter
     from .utils import get_terms, get_active_term, get_date_ranges_for_terms
     terms = get_terms()
-    
+
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
-    
+    start_month = request.args.get('start_month')
+    end_month = request.args.get('end_month')
+
+    if start_month and _re.match(r'^\d{4}-\d{2}$', start_month):
+        start_date = f'{start_month}-01'
+    if end_month and _re.match(r'^\d{4}-\d{2}$', end_month):
+        last_day = _cal.monthrange(int(end_month[:4]), int(end_month[5:7]))[1]
+        end_date = f'{end_month}-{last_day:02d}'
+
     # Fallback: if no dates selected, use the active term
     current_term = get_active_term(terms)
     if not start_date and not end_date:
         if current_term:
             start_date = current_term['start']
             end_date = current_term['end']
-            
+
+    # Derive start_month / end_month for the modal pre-fill (from the resolved dates)
+    def _to_month(iso_date):
+        if not iso_date:
+            return ''
+        m = _re.match(r'^(\d{4})-(\d{2})', str(iso_date))
+        return f'{m.group(1)}-{m.group(2)}' if m else ''
+
+    if not start_month:
+        start_month = _to_month(start_date)
+    if not end_month:
+        end_month = _to_month(end_date)
+
     # 4. Fetch future published meetings filtered by date ranges
     from sqlalchemy import or_, func
     date_ranges = []
@@ -81,12 +123,21 @@ def planner():
     from .utils import get_dropdown_metadata
     dropdown_data = get_dropdown_metadata()
 
-    return render_template('planner.html', 
-                         plans=plans, 
+    from app.translations.translations import get_locale as _gl
+    _locale = _gl()
+    range_label = ''
+    if start_date and end_date:
+        range_label = f'{_format_month_label(start_date, _locale, compact=True)} — {_format_month_label(end_date, _locale, compact=True)}'
+
+    return render_template('planner.html',
+                         plans=plans,
                          meetings=unpublished_meetings,
                          terms=terms,
                          start_date=start_date,
                          end_date=end_date,
+                         start_month=start_month,
+                         end_month=end_month,
+                         range_label=range_label,
                          current_term=current_term,
                          grouped_projects=grouped_projects,
                          contact=contact,

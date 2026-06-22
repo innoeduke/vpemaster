@@ -425,63 +425,7 @@ optgroup option {
 }
 
 /* --- Date Filter Form --- */
-.date-filter-form {
-  flex: 1;
-  min-width: 300px;
-}
-
-.date-filter-group {
-  display: flex;
-  gap: 15px;
-  align-items: flex-end;
-}
-
-.date-input-wrapper {
-  display: flex;
-  flex-direction: column;
-}
-
-.date-input-wrapper input[type="date"] {
-  width: 140px;
-  height: 38px;
-  padding: 8px 12px;
-  box-sizing: border-box;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background-color: #f8fafc;
-  color: #334155;
-  font-family: "Montserrat", "Inter", sans-serif;
-  font-size: 0.9rem;
-  transition: all 0.2s ease-in-out;
-  outline: none;
-}
-
-.date-input-wrapper input[type="date"]:hover {
-  border-color: #cbd5e1;
-  background-color: #fff;
-}
-
-.date-input-wrapper input[type="date"]:focus {
-  border-color: #004165;
-  background-color: #fff;
-  box-shadow: 0 0 0 3px rgba(0, 65, 101, 0.15), inset 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.date-input-wrapper input[type="date"]::-webkit-datetime-edit {
-  flex: 1;
-}
-
-.date-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  opacity: 0.6;
-  transition: opacity 0.2s;
-  flex-shrink: 0;
-  margin-left: auto;
-}
-
-.date-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator:hover {
-  opacity: 1;
-}
+/* Removed: date filter now uses the shared .date-range-picker component. */
 
 .filter-label {
   font-family: "Montserrat", sans-serif;
@@ -492,6 +436,21 @@ optgroup option {
   color: #64748b;
   margin-bottom: 6px;
   display: block;
+}
+
+/* Tight inline grouping for the date-range picker + its label so they sit
+   together instead of stretching across .filter-left's flex:1 width. */
+.filter-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-group .filter-label {
+  display: inline-block;
+  margin-bottom: 0;
+  white-space: nowrap;
 }
 
 .custom-dropdown-container {
