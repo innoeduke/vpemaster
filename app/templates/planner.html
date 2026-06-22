@@ -3,24 +3,142 @@
 {% from "components/date_range_picker.html" import render_date_range_picker %}
 {% from "partials/_button_macros.html" import btn %}
 
-{% block title %}{{ _('Planner') }}{% endblock %}
+{% block title %}{{ _('Programs & Planner') }}{% endblock %}
  
-{% block header_title %}{{ _('My Planner') }}{% endblock %}
+{% block header_title %}{{ _('Programs & Planner') }}{% endblock %}
  
 {% block head_extra %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/planner/planner-base.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/planner/planner-desktop.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/planner/planner-ipad.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/planner/planner-mobile.css') }}">
+<style>
+    .templates-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+        margin-top: 15px;
+    }
+    .template-card {
+        background: var(--card-bg, #ffffff);
+        border: 1px solid var(--border-color, #e0e0e0);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.04);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .template-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.06);
+    }
+    .template-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+    }
+    .template-card-title {
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin: 0;
+        color: var(--text-color, #333);
+    }
+    .template-card-actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 15px;
+    }
+</style>
 {% endblock %}
  
 {% block content %}
 <div class="page-container">
-    <h1><i class="fas fa-tasks"></i> {{ _('Planner') }}</h1>
+    <h1><i class="fas fa-tasks"></i> {{ _('Programs & Planner') }}</h1>
+
+    <!-- View selection tabs -->
+    <div style="display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid var(--border-color, #eee); padding-bottom: 15px;">
+        <a href="{{ url_for('planner_bp.planner', view='mine') }}" class="btn btn-sm {% if view_mode == 'mine' %}btn-primary{% else %}btn-secondary{% endif %}">
+            <i class="fas fa-user"></i> {{ _('Mine') }}
+        </a>
+        <a href="{{ url_for('planner_bp.planner', view='mentor') }}" class="btn btn-sm {% if view_mode == 'mentor' %}btn-primary{% else %}btn-secondary{% endif %}">
+            <i class="fas fa-hands-helping"></i> {{ _('As Mentor') }}
+        </a>
+        {% if is_admin %}
+        <a href="{{ url_for('planner_bp.planner', view='all') }}" class="btn btn-sm {% if view_mode == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">
+            <i class="fas fa-users-cog"></i> {{ _('All Enrollments') }}
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Program Enrollments Section -->
+    <div id="enrollments-section" style="margin-bottom: 40px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3>{{ _('Program Enrollments') }}</h3>
+            {% if is_admin %}
+                {% call btn('new', id='enroll-member-btn', attrs={'onclick': 'openEnrollmentModal()'}) %}<i class="fas fa-plus"></i> {{ _('New Enrollment') }}{% endcall %}
+            {% endif %}
+        </div>
+        
+        <div class="templates-grid">
+            {% for e in enrollments %}
+            <div class="template-card">
+                <div>
+                    <div class="template-card-header">
+                        <h4 class="template-card-title">{{ e.program.name }}</h4>
+                        <span class="status-badge status-{{ e.status }}">
+                            {{ _(e.status|capitalize) }}
+                        </span>
+                    </div>
+                    <div style="margin-bottom: 15px; font-size: 0.95rem;">
+                        <div><strong>{{ _('Mentee:') }}</strong> {{ e.mentee.get_contact(get_current_club_id()).Name if e.mentee.get_contact(get_current_club_id()) else e.mentee.username }}</div>
+                        <div style="color: var(--text-muted, #666); margin-top: 4px;">
+                            <strong>{{ _('Mentor:') }}</strong>
+                            {{ e.mentor_contact.Name if e.mentor_contact else (e.mentor.get_contact(get_current_club_id()).Name if e.mentor else _('not assigned')) }}
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div style="margin-bottom: 5px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-muted, #666);">
+                            <span>{{ _('Tasks') }}</span>
+                            <span>{{ e.progress_stats.done }} / {{ e.progress_stats.total }}</span>
+                        </div>
+                        <div class="progress-bar-premium" style="height: 6px;">
+                            <div class="progress-fill-premium" style="width: {{ e.progress_stats.percent }}%;"></div>
+                        </div>
+                    </div>
+                    <div class="template-card-actions">
+                        <a href="{{ url_for('planner_bp.enrollment_detail', enrollment_id=e.id) }}" class="btn btn-primary btn-sm" style="width: 100%; text-align: center; display: block; border-radius: 4px; padding: 6px;">
+                            <i class="fas fa-folder-open"></i> {{ _('Open') }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div style="text-align: center; grid-column: 1/-1; padding: 35px; background: var(--bg-hover, #fafafa); border: 1px dashed var(--border-color, #ccc); border-radius: 8px; color: var(--text-muted);">
+                <i class="fas fa-graduation-cap fa-2x" style="margin-bottom: 10px;"></i>
+                {% if view_mode == 'mine' %}
+                    <p>{{ _('You are not enrolled in any programs.') }}</p>
+                {% elif view_mode == 'mentor' %}
+                    <p>{{ _('You are not mentoring any members in any programs.') }}</p>
+                {% else %}
+                    <p>{{ _('No program enrollments found in this club.') }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Standalone Meeting Plans Section -->
     <div class="filters-control premium">
         <div class="filter-row-premium">
             <div class="filter-left">
-                <div class="filter-group">
+                <h3>{{ _('Meeting Plans') }}</h3>
+                <div class="filter-group" style="margin-top: 10px;">
                     <label class="filter-label" for="planner-date-range-btn">{{ _('Month Range:') }}</label>
                     {{ render_date_range_picker(
                         range_label=range_label,
@@ -31,7 +149,7 @@
                     ) }}
                 </div>
             </div>
-            <div class="filter-right">
+            <div class="filter-right" style="align-self: flex-end;">
                 {% call btn('new', id='add-plan-btn') %}<i class="fas fa-plus"></i> {{ _('New Task') }}{% endcall %}
             </div>
         </div>
@@ -95,11 +213,14 @@
         </table>
     </div>
 </div>
-
+ 
 {% include 'partials/_planner_modal.html' %}
-
+{% if is_admin %}
+    {% include 'partials/_enrollment_modal.html' %}
+{% endif %}
+ 
 {% endblock %}
-
+ 
 {% block scripts %}
 <script>
     var allProjects = {{ projects | tojson | safe if projects else '[]' }};
@@ -115,7 +236,7 @@
     document.addEventListener('click', async function(e) {
         const editBtn = e.target.closest('.btn-edit');
         const cancelBtn = e.target.closest('.plan-cancel-btn');
-
+ 
         if (editBtn) {
             e.preventDefault();
             e.stopPropagation();
@@ -137,7 +258,7 @@
                 openPlanModal(planData);
             }
         }
-
+ 
         if (cancelBtn) {
             e.preventDefault();
             e.stopPropagation();
@@ -159,7 +280,7 @@
             }
         }
     });
-
+ 
     const addPlanBtn = document.getElementById('add-plan-btn');
     if (addPlanBtn) {
         addPlanBtn.onclick = () => {

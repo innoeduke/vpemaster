@@ -199,6 +199,7 @@ def create_app(config_class='config.Config'):
         from .roster_routes import roster_bp
         from .lucky_draw_routes import lucky_draw_bp
         from .planner_routes import planner_bp
+        from .program_routes import program_bp
         from .uploads_routes import uploads_bp
         from .chat_routes import chat_bp
         from .issue_routes import issue_bp
@@ -228,6 +229,7 @@ def create_app(config_class='config.Config'):
         from .messages_routes import messages_bp
         app.register_blueprint(messages_bp)
         app.register_blueprint(planner_bp)
+        app.register_blueprint(program_bp)
         app.register_blueprint(uploads_bp)
         app.register_blueprint(template_bp)
         app.register_blueprint(chat_bp)

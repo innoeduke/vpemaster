@@ -23,7 +23,16 @@ class Planner(db.Model):
     date_created = db.Column(db.DateTime, default=datetime.utcnow)
     date_modified = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    user = db.relationship('User', backref=db.backref('planner_entries', lazy='dynamic'))
+    # Program extensions
+    enrollment_id = db.Column(db.Integer, db.ForeignKey('program_enrollments.id', ondelete='CASCADE'), nullable=True, index=True)
+    program_task_id = db.Column(db.Integer, db.ForeignKey('program_tasks.id', ondelete='SET NULL'), nullable=True, index=True)
+    auto_completed = db.Column(db.Boolean, default=False, nullable=False)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    completed_by_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+
+    user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('planner_entries', lazy='dynamic'))
+    completed_by = db.relationship('User', foreign_keys=[completed_by_id])
+    program_task = db.relationship('ProgramTask', backref='planner_entries')
     club = db.relationship('Club', backref='planner_entries')
     role = db.relationship('MeetingRole', backref='planner_entries')
     project = db.relationship('Project', backref='planner_entries')

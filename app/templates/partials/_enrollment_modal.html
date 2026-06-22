@@ -1,0 +1,106 @@
+{% from "partials/_button_macros.html" import btn %}
+<!-- Enrollment Modal -->
+<div id="enrollmentModal" class="planner-modal" style="display: none;">
+    <div class="planner-modal-content" style="max-width: 500px;">
+        <span class="planner-close-modal" onclick="closeEnrollmentModal()"><i class="fas fa-times"></i></span>
+        <div class="planner-modal-header">
+            <h3>{{ _('New Enrollment') }}</h3>
+        </div>
+        <form id="enrollmentForm">
+            <div class="planner-form-group">
+                <label for="enroll-user-id">{{ _('Member (Mentee)') }}</label>
+                <select id="enroll-user-id" class="planner-form-control" required>
+                    <option value="">{{ _('Select Member') }}</option>
+                    {% for c in contacts %}
+                        {% if c._user %}
+                            <option value="{{ c._user.id }}">{{ c.Name }} ({{ c._user.username }})</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="planner-form-group">
+                <label for="enroll-program-id">{{ _('Program Template') }}</label>
+                <select id="enroll-program-id" class="planner-form-control" required>
+                    <option value="">{{ _('Select Program') }}</option>
+                    {% for p in active_programs %}
+                        <option value="{{ p.id }}">{{ p.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="planner-form-group">
+                <label for="enroll-mentor-contact-id">{{ _('Mentor') }}</label>
+                <select id="enroll-mentor-contact-id" class="planner-form-control">
+                    <option value="">{{ _('Select Mentor (Optional)') }}</option>
+                    {% for c in contacts %}
+                        <option value="{{ c.id }}" data-user-id="{{ c._user.id if c._user else '' }}">{{ c.Name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="planner-form-group">
+                <label for="enroll-notes">{{ _('Notes') }}</label>
+                <textarea id="enroll-notes" class="planner-form-control" rows="3" placeholder="{{ _('Add initial enrollment notes or goals...') }}"></textarea>
+            </div>
+
+            <div class="planner-modal-footer">
+                {% call btn('cancel', attrs={'type': 'button', 'onclick': 'closeEnrollmentModal()'}) %}{{ _('Cancel') }}{% endcall %}
+                {% call btn('new', id='save-enrollment-btn', type='submit') %}{{ _('Enroll') }}{% endcall %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openEnrollmentModal() {
+        document.getElementById('enrollmentForm').reset();
+        document.getElementById('enrollmentModal').style.display = 'flex';
+    }
+
+    function closeEnrollmentModal() {
+        document.getElementById('enrollmentModal').style.display = 'none';
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const enrollForm = document.getElementById('enrollmentForm');
+        if (enrollForm) {
+            enrollForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const userId = document.getElementById('enroll-user-id').value;
+                const programId = document.getElementById('enroll-program-id').value;
+                const mentorSelect = document.getElementById('enroll-mentor-contact-id');
+                const mentorContactId = mentorSelect.value || null;
+                const mentorUserId = mentorSelect.options[mentorSelect.selectedIndex]?.dataset.userId || null;
+                const notes = document.getElementById('enroll-notes').value;
+                
+                const data = {
+                    program_id: parseInt(programId),
+                    user_id: parseInt(userId),
+                    mentor_contact_id: mentorContactId ? parseInt(mentorContactId) : null,
+                    mentor_user_id: mentorUserId ? parseInt(mentorUserId) : null,
+                    notes: notes
+                };
+
+                try {
+                    const response = await fetch('/api/program-enrollments', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    
+                    const result = await response.json();
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert(result.message || 'Failed to enroll member');
+                    }
+                } catch (error) {
+                    console.error('Error enrolling:', error);
+                    alert('An error occurred. Please try again.');
+                }
+            });
+        }
+    });
+</script>

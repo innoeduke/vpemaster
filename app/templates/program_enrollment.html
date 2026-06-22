@@ -1,0 +1,402 @@
+{% extends "base.html" %}
+{% from "partials/_button_macros.html" import btn %}
+
+{% block title %}{{ enrollment.program.name }} - {{ _('Details') }}{% endblock %}
+
+{% block header_title %}{{ enrollment.program.name }}{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/planner/planner-base.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/planner/planner-desktop.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/planner/planner-ipad.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/planner/planner-mobile.css') }}">
+<style>
+    .enrollment-detail-container {
+        padding: 20px 0;
+    }
+    .back-btn {
+        margin-bottom: 20px;
+    }
+    .detail-card {
+        background: var(--card-bg, #ffffff);
+        border: 1px solid var(--border-color, #e0e0e0);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.03);
+    }
+    .detail-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 1px solid var(--border-color, #eee);
+        padding-bottom: 15px;
+    }
+    .detail-card-title {
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin: 0;
+    }
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+    .detail-item-label {
+        font-size: 0.85rem;
+        color: var(--text-muted, #777);
+        text-transform: uppercase;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    .detail-item-value {
+        font-size: 1.05rem;
+        font-weight: 500;
+    }
+    .phase-section {
+        margin-bottom: 30px;
+    }
+    .phase-title {
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: var(--primary-color, #005a9c);
+        border-bottom: 2px solid var(--primary-color, #005a9c);
+        padding-bottom: 5px;
+        display: inline-block;
+    }
+    .task-rows-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .task-row-item {
+        background: var(--card-bg, #fff);
+        border: 1px solid var(--border-color, #eee);
+        border-radius: 6px;
+        padding: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: background-color 0.2s;
+    }
+    .task-row-item.task-completed {
+        background: var(--bg-hover, #f4faf4);
+        border-color: #d0edd0;
+    }
+    .task-row-left {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-grow: 1;
+    }
+    .task-checkbox-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .task-checkbox {
+        width: 22px;
+        height: 22px;
+        cursor: pointer;
+    }
+    .task-checkbox:disabled {
+        cursor: not-allowed;
+    }
+    .task-text {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .task-title-text {
+        font-size: 1.05rem;
+        font-weight: 600;
+    }
+    .task-desc-text {
+        font-size: 0.88rem;
+        color: var(--text-muted, #666);
+    }
+    .task-row-right {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-shrink: 0;
+        width: 250px;
+        justify-content: flex-end;
+    }
+    .task-badge {
+        flex: 0 0 85px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        font-size: 0.75rem;
+        padding: 3px 8px;
+        border-radius: 20px;
+        font-weight: 600;
+        box-sizing: border-box;
+    }
+    .badge-manual {
+        background: #f1f3f5;
+        color: #495057;
+    }
+    .badge-auto {
+        background: #e7f5ff;
+        color: #228be6;
+    }
+    .completion-meta {
+        flex: 0 0 150px;
+        font-size: 0.8rem;
+        color: var(--text-muted, #888);
+        text-align: right;
+    }
+    @media (max-width: 600px) {
+        .task-row-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .task-row-right {
+            width: 100%;
+            justify-content: space-between;
+            border-top: 1px dashed var(--border-color, #eee);
+            padding-top: 8px;
+        }
+        .task-badge {
+            flex: 0 0 auto;
+        }
+        .completion-meta {
+            flex: 0 0 auto;
+            text-align: right;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container enrollment-detail-container">
+    <div class="back-btn">
+        <a href="{{ url_for('planner_bp.planner') }}" class="tm-action-btn" title="{{ _('Back to Planner') }}">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+    </div>
+
+    <!-- Enrollment Card Overview -->
+    <div class="detail-card">
+        <div class="detail-card-header">
+            <h2 class="detail-card-title">{{ enrollment.program.name }}</h2>
+            <span class="status-badge status-{{ enrollment.status }}">
+                {{ _(enrollment.status|capitalize) }}
+            </span>
+        </div>
+        <div class="detail-grid">
+            <div>
+                <div class="detail-item-label">{{ _('Mentee') }}</div>
+                <div class="detail-item-value">
+                    {{ contact.Name if contact else enrollment.mentee.username }}
+                </div>
+            </div>
+            <div>
+                <div class="detail-item-label">{{ _('Mentor') }}</div>
+                <div class="detail-item-value" id="mentor-display-name">
+                    {{ enrollment.mentor_contact.Name if enrollment.mentor_contact else (enrollment.mentor.get_contact(enrollment.club_id).Name if enrollment.mentor else _('Not Assigned')) }}
+                    {% if is_authorized(Permissions.PROGRAMS_MANAGE) %}
+                    <button type="button" class="tm-action-btn" style="padding: 2px 6px; font-size: 0.8rem;" onclick="openEditMentorModal()" title="{{ _('Edit Mentor') }}">
+                        <i class="fas fa-pencil-alt"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                <div class="detail-item-label">{{ _('Progress') }}</div>
+                <div class="detail-item-value" id="progress-text-display">
+                    {{ enrollment.progress_stats.done }} / {{ enrollment.progress_stats.total }} {{ _('tasks completed') }} ({{ enrollment.progress_stats.percent }}%)
+                </div>
+                <div class="progress-bar-premium" style="height: 8px; margin-top: 6px;">
+                    <div class="progress-fill-premium" id="progress-bar-fill" style="width: {{ enrollment.progress_stats.percent }}%;"></div>
+                </div>
+            </div>
+            <div>
+                <div class="detail-item-label">{{ _('Started At') }}</div>
+                <div class="detail-item-value">
+                    {{ enrollment.started_at.strftime('%b %d, %Y') if enrollment.started_at else 'N/A' }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Program Phases & Tasks -->
+    <div class="phases-container">
+        {% for phase in phases %}
+        <div class="phase-section">
+            <h3 class="phase-title">{{ _(phase) }}</h3>
+            <div class="task-rows-list">
+                {% for plan in grouped_tasks[phase] %}
+                <div class="task-row-item {% if plan.status == 'completed' %}task-completed{% endif %}" id="task-row-{{ plan.id }}">
+                    <div class="task-row-left">
+                        <div class="task-checkbox-container">
+                            <input type="checkbox" 
+                                   class="task-checkbox" 
+                                   data-planner-id="{{ plan.id }}" 
+                                   {% if plan.status == 'completed' %}checked{% endif %}
+                                   {% if plan.program_task.completion_type != 'manual' %}disabled{% endif %}
+                                   onchange="toggleTask(this)">
+                        </div>
+                        <div class="task-text">
+                            <span class="task-title-text">{{ plan.program_task.title }}</span>
+                            {% if plan.program_task.description %}
+                            <span class="task-desc-text">{{ plan.program_task.description }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="task-row-right">
+                        {% if plan.program_task.completion_type == 'manual' %}
+                        <span class="task-badge badge-manual"><i class="fas fa-hand-pointer"></i> {{ _('Manual') }}</span>
+                        {% else %}
+                        <span class="task-badge badge-auto" title="{{ _('Auto-detected from trigger') }}: {{ plan.program_task.completion_type }}">
+                            <i class="fas fa-magic"></i> {{ _('Auto') }}
+                        </span>
+                        {% endif %}
+                        
+                        <div class="completion-meta" id="completion-meta-{{ plan.id }}">
+                            {% if plan.status == 'completed' %}
+                            <div>{{ _('Completed') }}</div>
+                            <div>{{ plan.completed_at.strftime('%Y-%m-%d') if plan.completed_at else '' }}</div>
+                            {% if plan.completed_by %}
+                            <div>by @{{ plan.completed_by.username }}</div>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Edit Mentor Modal (Admin only) -->
+{% if is_authorized(Permissions.PROGRAMS_MANAGE) %}
+<div id="editMentorModal" class="planner-modal" style="display: none;">
+    <div class="planner-modal-content" style="max-width: 400px;">
+        <span class="planner-close-modal" onclick="closeEditMentorModal()"><i class="fas fa-times"></i></span>
+        <div class="planner-modal-header">
+            <h3>{{ _('Assign Mentor') }}</h3>
+        </div>
+        <form id="editMentorForm">
+            <div class="planner-form-group">
+                <label for="mentor-select">{{ _('Select Mentor') }}</label>
+                <select id="mentor-select" class="planner-form-control">
+                    <option value="">{{ _('No Mentor') }}</option>
+                    {% for c in enrollment.club.user_memberships %}
+                        {% if c.contact and c.user_id != enrollment.user_id %}
+                            <option value="{{ c.contact.id }}" data-user-id="{{ c.user_id }}" {% if enrollment.mentor_contact_id == c.contact.id %}selected{% endif %}>{{ c.contact.Name }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="planner-modal-footer">
+                {% call btn('cancel', attrs={'type': 'button', 'onclick': 'closeEditMentorModal()'}) %}{{ _('Cancel') }}{% endcall %}
+                {% call btn('new', type='submit') %}{{ _('Save') }}{% endcall %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const enrollmentId = {{ enrollment.id }};
+    
+    async function toggleTask(checkbox) {
+        const plannerId = checkbox.dataset.plannerId;
+        const row = document.getElementById(`task-row-${plannerId}`);
+        const meta = document.getElementById(`completion-meta-${plannerId}`);
+        
+        // Disable temporarily during request
+        checkbox.disabled = true;
+        
+        try {
+            const response = await fetch(`/api/program-enrollments/${enrollmentId}/tasks/${plannerId}/toggle`, {
+                method: 'POST'
+            });
+            const result = await response.json();
+            
+            if (response.ok) {
+                if (result.status === 'completed') {
+                    row.classList.add('task-completed');
+                    checkbox.checked = true;
+                    
+                    let metaHTML = `<div>Completed</div>`;
+                    if (result.completed_at) {
+                        metaHTML += `<div>${result.completed_at.substring(0, 10)}</div>`;
+                    }
+                    if (result.completed_by) {
+                        metaHTML += `<div>by @${result.completed_by}</div>`;
+                    }
+                    meta.innerHTML = metaHTML;
+                } else {
+                    row.classList.remove('task-completed');
+                    checkbox.checked = false;
+                    meta.innerHTML = '';
+                }
+                
+                // Update progress bar & text
+                const prog = result.progress;
+                document.getElementById('progress-text-display').innerText = `${prog.done} / ${prog.total} tasks completed (${prog.percent}%)`;
+                document.getElementById('progress-bar-fill').style.width = `${prog.percent}%`;
+            } else {
+                alert(result.message || 'Failed to toggle task');
+                checkbox.checked = !checkbox.checked; // revert
+            }
+        } catch (error) {
+            console.error('Error toggling task:', error);
+            alert('An error occurred. Please try again.');
+            checkbox.checked = !checkbox.checked; // revert
+        } finally {
+            checkbox.disabled = false;
+        }
+    }
+
+    {% if is_authorized(Permissions.PROGRAMS_MANAGE) %}
+    function openEditMentorModal() {
+        document.getElementById('editMentorModal').style.display = 'flex';
+    }
+
+    function closeEditMentorModal() {
+        document.getElementById('editMentorModal').style.display = 'none';
+    }
+
+    document.getElementById('editMentorForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const mentorSelect = document.getElementById('mentor-select');
+        const contactId = mentorSelect.value ? parseInt(mentorSelect.value) : null;
+        const userId = mentorSelect.options[mentorSelect.selectedIndex]?.dataset.userId || null;
+        
+        try {
+            const response = await fetch(`/api/program-enrollments/${enrollmentId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    mentor_contact_id: contactId,
+                    mentor_user_id: userId ? parseInt(userId) : null
+                })
+            });
+            
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Failed to assign mentor');
+            }
+        } catch (error) {
+            console.error('Error saving mentor:', error);
+            alert('An error occurred. Please try again.');
+        }
+    });
+    {% endif %}
+</script>
+{% endblock %}

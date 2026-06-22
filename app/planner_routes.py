@@ -1,13 +1,16 @@
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for
 from flask_login import current_user, login_required
-from .models import db, Planner, MeetingRole, Project, Club, Meeting, SessionType, SessionLog
+from .models import db, Planner, MeetingRole, Project, Club, Meeting, SessionType, SessionLog, Program, ProgramTask, ProgramEnrollment, Contact, ContactClub
 from .auth.permissions import Permissions
+from .auth.utils import is_authorized
 from .club_context import get_current_club_id
+from sqlalchemy.orm import joinedload
 from datetime import datetime
 import calendar as _cal
 import re as _re
 from .constants import ProjectID
 from .services.role_service import RoleService
+from .services.planner_service import planner_service
 
 planner_bp = Blueprint('planner_bp', __name__)
 
@@ -38,7 +41,7 @@ def check_planner_enabled():
     from flask import abort
     if not is_module_enabled('Planner'):
         abort(404)
-    if not is_authorized(Permissions.MEMBERS_SELF):
+    if not is_authorized(Permissions.PROGRAMS_SELF):
         abort(403)
 
 
@@ -47,11 +50,48 @@ def check_planner_enabled():
 def planner():
     club_id = get_current_club_id()
     
-    # 1. Fetch user's plans with joined relationships
+    # 1. Fetch user's standalone plans (no enrollment links) with joined relationships
     from sqlalchemy.orm import joinedload
     plans = Planner.query.filter_by(user_id=current_user.id, club_id=club_id)\
+        .filter(Planner.enrollment_id.is_(None))\
         .options(joinedload(Planner.meeting), joinedload(Planner.role), joinedload(Planner.project))\
         .order_by(Planner.meeting_id).all()
+        
+    # Fetch program enrollments based on view mode
+    view_mode = request.args.get('view', 'mine')
+    if view_mode == 'all' and not is_authorized(Permissions.PROGRAMS_MANAGE):
+        view_mode = 'mine'
+        
+    if view_mode == 'all':
+        enrollments = ProgramEnrollment.query.filter_by(club_id=club_id)\
+            .options(
+                joinedload(ProgramEnrollment.program),
+                joinedload(ProgramEnrollment.mentee),
+                joinedload(ProgramEnrollment.mentor),
+                joinedload(ProgramEnrollment.mentor_contact)
+            ).all()
+    elif view_mode == 'mentor':
+        enrollments = ProgramEnrollment.query.filter_by(club_id=club_id, mentor_user_id=current_user.id)\
+            .options(
+                joinedload(ProgramEnrollment.program),
+                joinedload(ProgramEnrollment.mentee),
+                joinedload(ProgramEnrollment.mentor),
+                joinedload(ProgramEnrollment.mentor_contact)
+            ).all()
+    else: # 'mine'
+        enrollments = ProgramEnrollment.query.filter_by(club_id=club_id, user_id=current_user.id)\
+            .options(
+                joinedload(ProgramEnrollment.program),
+                joinedload(ProgramEnrollment.mentee),
+                joinedload(ProgramEnrollment.mentor),
+                joinedload(ProgramEnrollment.mentor_contact)
+            ).all()
+
+    # Bulk refresh active enrollments and compute progress stats
+    for e in enrollments:
+        if e.status == 'active':
+            planner_service.bulk_refresh(e)
+        e.progress_stats = planner_service.progress(e)
     
     # 2. Fetch all terms for the club to show in the filter
     from .utils import get_terms, get_active_term, get_date_ranges_for_terms
@@ -129,8 +169,23 @@ def planner():
     if start_date and end_date:
         range_label = f'{_format_month_label(start_date, _locale, compact=True)} — {_format_month_label(end_date, _locale, compact=True)}'
 
+    # Fetch active programs for new enrollment picker
+    active_programs = Program.query.filter(
+        (Program.club_id == club_id) | (Program.club_id.is_(None)),
+        Program.is_active == True
+    ).order_by(Program.display_order, Program.id).all()
+
+    # Fetch contacts for mentor selection
+    contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id, Contact.Type == 'Member').order_by(Contact.Name).all()
+    Contact.populate_users(contacts, club_id=club_id)
+
     return render_template('planner.html',
                          plans=plans,
+                         enrollments=enrollments,
+                         view_mode=view_mode,
+                         active_programs=active_programs,
+                         contacts=contacts,
+                         is_admin=is_authorized(Permissions.PROGRAMS_MANAGE),
                          meetings=unpublished_meetings,
                          terms=terms,
                          start_date=start_date,
@@ -144,7 +199,7 @@ def planner():
                          pathways=dropdown_data['pathways'],
                          pathway_mapping=dropdown_data['pathway_mapping'],
                          projects=dropdown_data['projects'],
-                         header_title="Planner")
+                         header_title="Programs & Planner")
 
 @planner_bp.route('/api/meeting/<int:meeting_id>')
 @login_required
@@ -218,128 +273,75 @@ def get_meeting_info(meeting_id):
 def create_plan():
     data = request.get_json()
     club_id = get_current_club_id()
-    
-    user_id = current_user.id
-    meeting_id = data.get('meeting_id')
-    role_id = data.get('meeting_role_id')
-    
-    # Check for existing entry to avoid duplicates (especially during booking flow)
-    existing = None
-    if meeting_id and role_id:
-        existing = Planner.query.filter_by(
-            user_id=user_id,
-            meeting_id=meeting_id,
-            meeting_role_id=role_id
-        ).first()
-    
-    if existing:
-        # Update existing instead of creating new
-        if 'project_id' in data:
-            existing.project_id = data.get('project_id')
-        if 'pathway' in data:
-            existing.pathway = data.get('pathway')
-        if 'title' in data:
-            existing.title = data.get('title')
-        if 'status' in data:
-            existing.status = data.get('status')
-        if 'notes' in data:
-            existing.notes = data.get('notes')
-        
-        db.session.commit()
-        return jsonify({'id': existing.id, 'message': 'Plan updated successfully', 'updated': True}), 200
-
-    new_plan = Planner(
-        meeting_id=meeting_id,
-        meeting_role_id=role_id,
-        project_id=data.get('project_id'),
-        pathway=data.get('pathway'),
-        title=data.get('title'),
-        status=data.get('status', 'draft'),
-        notes=data.get('notes'),
-        user_id=user_id,
-        club_id=club_id
-    )
-    
-    db.session.add(new_plan)
-    db.session.commit()
-    
-    # Invalidate booking page cache for this meeting
-    if new_plan.meeting_id:
-        RoleService._clear_meeting_cache(new_plan.meeting_id, club_id)
-    
-    return jsonify({'id': new_plan.id, 'message': 'Plan created successfully'}), 201
+    plan, updated = planner_service.create_plan(data, current_user.id, club_id)
+    if updated:
+        return jsonify({'id': plan.id, 'message': 'Plan updated successfully', 'updated': True}), 200
+    return jsonify({'id': plan.id, 'message': 'Plan created successfully'}), 201
 
 @planner_bp.route('/api/planner/<int:plan_id>', methods=['PUT'])
 @login_required
 def update_plan(plan_id):
-    plan = Planner.query.filter_by(id=plan_id, user_id=current_user.id).first_or_404()
     data = request.get_json()
-    
-    if 'meeting_id' in data:
-        plan.meeting_id = data['meeting_id']
-    if 'meeting_role_id' in data:
-        plan.meeting_role_id = data['meeting_role_id']
-    if 'project_id' in data:
-        plan.project_id = data['project_id']
-    if 'pathway' in data:
-        plan.pathway = data['pathway']
-    if 'title' in data:
-        plan.title = data['title']
-    if 'notes' in data:
-        plan.notes = data['notes']
-    if 'status' in data:
-        plan.status = data['status']
-    
-    db.session.commit()
-
-    # Invalidate booking page cache for this meeting
-    if plan.meeting_id:
-        club_id = get_current_club_id()
-        RoleService._clear_meeting_cache(plan.meeting_id, club_id)
-
+    club_id = get_current_club_id()
+    planner_service.update_plan(plan_id, data, current_user.id, club_id)
     return jsonify({'message': 'Plan updated successfully'})
 
 @planner_bp.route('/api/planner/<int:plan_id>/cancel', methods=['POST'])
 @login_required
 def cancel_plan(plan_id):
-    plan = Planner.query.filter_by(id=plan_id, user_id=current_user.id).first_or_404()
-    
-    # 1. Update status to cancelled
-    plan.status = 'cancelled'
-    
-    # 2. If it was booked/waitlisted, remove from meeting
-    if plan.meeting_id and plan.meeting_role_id:
-        # Find the session log for this meeting and role
-        session_log = SessionLog.query.join(SessionType).filter(
-            SessionLog.meeting_id == plan.meeting_id,
-            SessionType.role_id == plan.meeting_role_id
-        ).first()
-        
-        if session_log:
-            user_contact_id = current_user.contact_id
-            if user_contact_id:
-                RoleService.cancel_meeting_role(session_log, user_contact_id, is_admin=True) # is_admin=True to skip ownership check if necessary, though it should be fine
-    
-    db.session.commit()
-
-    # Invalidate booking page cache for this meeting
-    if plan.meeting_id:
-        club_id = get_current_club_id()
-        RoleService._clear_meeting_cache(plan.meeting_id, club_id)
-
+    club_id = get_current_club_id()
+    planner_service.cancel_plan(plan_id, current_user.id, club_id)
     return jsonify({'message': 'Plan cancelled successfully'})
 
 @planner_bp.route('/api/planner/<int:plan_id>', methods=['DELETE'])
 @login_required
 def delete_plan(plan_id):
-    plan = Planner.query.filter_by(id=plan_id, user_id=current_user.id).first_or_404()
-    meeting_id = plan.meeting_id
-    db.session.delete(plan)
-    db.session.commit()
-
-    # Invalidate booking page cache for this meeting
-    if meeting_id:
-        club_id = get_current_club_id()
-        RoleService._clear_meeting_cache(meeting_id, club_id)
-
+    club_id = get_current_club_id()
+    planner_service.delete_plan(plan_id, current_user.id, club_id)
     return jsonify({'message': 'Plan deleted successfully'})
+
+@planner_bp.route('/planner/enrollment/<int:enrollment_id>')
+@login_required
+def enrollment_detail(enrollment_id):
+    club_id = get_current_club_id()
+    enrollment = ProgramEnrollment.query.filter_by(id=enrollment_id, club_id=club_id).first_or_404()
+    
+    # Visibility check: mentee, mentor, or admin
+    if not (is_authorized(Permissions.PROGRAMS_MANAGE) or 
+            enrollment.user_id == current_user.id or 
+            enrollment.mentor_user_id == current_user.id):
+        abort(403)
+        
+    if enrollment.status == 'active':
+        planner_service.bulk_refresh(enrollment)
+    enrollment.progress_stats = planner_service.progress(enrollment)
+        
+    # Fetch planner tasks
+    planner_tasks = Planner.query.filter_by(enrollment_id=enrollment.id)\
+        .options(joinedload(Planner.program_task), joinedload(Planner.completed_by))\
+        .all()
+        
+    # Group tasks by phase label
+    from collections import defaultdict
+    grouped_tasks = defaultdict(list)
+    for p in planner_tasks:
+        phase = p.program_task.phase_label if (p.program_task and p.program_task.phase_label) else 'Ungrouped'
+        grouped_tasks[phase].append(p)
+        
+    # Sort tasks within each phase by display order / planner id
+    for phase in grouped_tasks:
+        grouped_tasks[phase].sort(key=lambda p: (p.program_task.display_order if p.program_task else 0, p.id))
+        
+    # Sort phases
+    phases = sorted([p for p in grouped_tasks.keys() if p != 'Ungrouped'])
+    if 'Ungrouped' in grouped_tasks:
+        phases.append('Ungrouped')
+        
+    contact = enrollment.mentee.get_contact(club_id)
+    
+    return render_template('program_enrollment.html',
+                           enrollment=enrollment,
+                           phases=phases,
+                           grouped_tasks=grouped_tasks,
+                           contact=contact,
+                           header_title=enrollment.program.name)

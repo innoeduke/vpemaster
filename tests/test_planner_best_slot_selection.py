@@ -31,20 +31,30 @@ class TestPlannerSlotSelection(unittest.TestCase):
         self.user = User(username='testuser', email='test@example.com', password_hash='dummy')
         db.session.add(self.user)
 
-        # Grant MEMBERS_SELF via a Member role so the planner before_request
-        # hook (which gates on MEMBERS_SELF) lets the API through.
-        perm = Permission.query.filter_by(name=Permissions.MEMBERS_SELF).first()
-        if perm is None:
-            perm = Permission(name=Permissions.MEMBERS_SELF, description='Members self', category='members')
-            db.session.add(perm)
+        # Grant MEMBERS_SELF and PROGRAMS_SELF via a Member role so the planner before_request
+        # hook lets the API through.
+        perm_members = Permission.query.filter_by(name=Permissions.MEMBERS_SELF).first()
+        if perm_members is None:
+            perm_members = Permission(name=Permissions.MEMBERS_SELF, description='Members self', category='members')
+            db.session.add(perm_members)
             db.session.flush()
+            
+        perm_programs = Permission.query.filter_by(name=Permissions.PROGRAMS_SELF).first()
+        if perm_programs is None:
+            perm_programs = Permission(name=Permissions.PROGRAMS_SELF, description='Programs self', category='members')
+            db.session.add(perm_programs)
+            db.session.flush()
+
         member_role = AuthRole.query.filter_by(name='Member').first()
         if member_role is None:
             member_role = AuthRole(name='Member', description='Member', level=1)
             db.session.add(member_role)
             db.session.flush()
-        if not RolePermission.query.filter_by(role_id=member_role.id, permission_id=perm.id).first():
-            db.session.add(RolePermission(role_id=member_role.id, permission_id=perm.id))
+
+        for p in [perm_members, perm_programs]:
+            if not RolePermission.query.filter_by(role_id=member_role.id, permission_id=p.id).first():
+                db.session.add(RolePermission(role_id=member_role.id, permission_id=p.id))
+
         uc = UserClub(user_id=self.user.id, club_id=self.club.id, auth_role_id=member_role.id)
         db.session.add(uc)
         db.session.commit()

@@ -83,7 +83,7 @@
                             or (is_module_enabled('Voting') and has_meetings and not hide_voting_nav)
                             or (is_module_enabled('Roster') and is_authorized(Permissions.ROSTER_VIEW)) %}
       {% set has_tools_nav = (is_module_enabled('Journal') and is_authorized(Permissions.MEMBERS_SELF) and has_meetings)
-                        or (is_module_enabled('Planner') and current_user.is_authenticated and is_authorized(Permissions.MEMBERS_SELF))
+                        or (is_module_enabled('Planner') and current_user.is_authenticated and (is_authorized(Permissions.PROGRAMS_SELF) or is_authorized(Permissions.PROGRAMS_MANAGE)))
                         or is_authorized(Permissions.LIBRARY_VIEW)
                         or (is_module_enabled('Lucky Draw') and is_authorized(Permissions.MEETING_MANAGE))
                         or (is_module_enabled('Upload') and is_authorized(Permissions.UPLOAD_MANAGE)) %}
@@ -158,11 +158,19 @@
           </a>
         </li>
         {% endif %}
-        {% if is_module_enabled('Planner') and current_user.is_authenticated and is_authorized(Permissions.MEMBERS_SELF) %}
+        {% if is_module_enabled('Planner') and current_user.is_authenticated and is_authorized(Permissions.PROGRAMS_SELF) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('planner_bp') %}active{% endif %}">
           <a href="{{ url_for('planner_bp.planner') }}" title="{{ _('Plan future speeches and roles') }}">
             <i class="fas fa-tasks nav-icon"></i>
-            <span>{{ _('Planner') }}</span>
+            <span>{{ _('My Plans') }}</span>
+          </a>
+        </li>
+        {% endif %}
+        {% if is_module_enabled('Planner') and current_user.is_authenticated and is_authorized(Permissions.PROGRAMS_MANAGE) %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('program_bp') %}active{% endif %}">
+          <a href="{{ url_for('program_bp.programs_admin') }}" title="{{ _('Manage programs and templates') }}">
+            <i class="fas fa-graduation-cap nav-icon"></i>
+            <span>{{ _('Programs') }}</span>
           </a>
         </li>
         {% endif %}
@@ -375,6 +383,7 @@
           {% set tools_active = request.endpoint and (
             request.endpoint.startswith('speech_logs_bp') or 
             request.endpoint.startswith('planner_bp') or 
+            request.endpoint.startswith('program_bp') or 
             request.endpoint.startswith('pathways_bp') or 
             request.endpoint.startswith('lucky_draw_bp') or 
             request.endpoint.startswith('tools_bp') or 
@@ -394,10 +403,17 @@
                 </a>
               </li>
               {% endif %}
-              {% if is_module_enabled('Planner') and current_user.is_authenticated and is_authorized(Permissions.MEMBERS_SELF) %}
+              {% if is_module_enabled('Planner') and current_user.is_authenticated and is_authorized(Permissions.PROGRAMS_SELF) %}
               <li class="{% if request.endpoint and request.endpoint.startswith('planner_bp') %}submenu-active{% endif %}">
                 <a href="{{ url_for('planner_bp.planner') }}">
-                  <i class="fas fa-tasks"></i> {{ _('Planner') }}
+                  <i class="fas fa-tasks"></i> {{ _('My Plans') }}
+                </a>
+              </li>
+              {% endif %}
+              {% if is_module_enabled('Planner') and current_user.is_authenticated and is_authorized(Permissions.PROGRAMS_MANAGE) %}
+              <li class="{% if request.endpoint and request.endpoint.startswith('program_bp') %}submenu-active{% endif %}">
+                <a href="{{ url_for('program_bp.programs_admin') }}">
+                  <i class="fas fa-graduation-cap"></i> {{ _('Programs') }}
                 </a>
               </li>
               {% endif %}

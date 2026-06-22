@@ -1,0 +1,148 @@
+{% from "partials/_button_macros.html" import btn %}
+<!-- Program Template Creator/Editor Modal -->
+<div id="programTemplateModal" class="planner-modal" style="display: none;">
+    <div class="planner-modal-content" style="max-width: 800px;">
+        <span class="planner-close-modal" id="close-template-modal-btn"><i class="fas fa-times"></i></span>
+        <div class="planner-modal-header">
+            <h3 id="template-modal-title">{{ _('Program Template') }}</h3>
+        </div>
+        <form id="programTemplateForm">
+            <input type="hidden" id="template-id">
+            
+            <!-- Program details -->
+            <div class="planner-form-group">
+                <label for="template-name">{{ _('Program Name') }}</label>
+                <input type="text" id="template-name" class="planner-form-control" placeholder="{{ _('e.g. New Member Orientation') }}" required>
+            </div>
+            
+            <div class="planner-form-group">
+                <label for="template-description">{{ _('Description') }}</label>
+                <textarea id="template-description" class="planner-form-control" rows="2" placeholder="{{ _('Describe what this program is about...') }}"></textarea>
+            </div>
+
+            <div class="planner-form-group" style="display: flex; align-items: center; gap: 8px;">
+                <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="template-is-active" checked> {{ _('Active (available for enrollment)') }}
+                </label>
+            </div>
+
+            <!-- Tasks editor section -->
+            <div id="tasks-editor-section" style="margin-top: 20px; border-top: 1px solid var(--border-color, #eee); padding-top: 15px; display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h4>{{ _('Program Tasks') }}</h4>
+                    {% call btn('new', id='add-task-row-btn', type='button') %}<i class="fas fa-plus"></i> {{ _('Add Task') }}{% endcall %}
+                </div>
+                
+                <div class="tasks-list-header" style="display: grid; grid-template-columns: 2fr 1fr 1.5fr 1fr auto; gap: 10px; font-weight: bold; font-size: 0.85rem; padding-bottom: 8px; border-bottom: 1px solid var(--border-color, #eee); margin-bottom: 8px;">
+                    <div>{{ _('Task Title & Description') }}</div>
+                    <div>{{ _('Phase') }}</div>
+                    <div>{{ _('Trigger / Type') }}</div>
+                    <div>{{ _('Required') }}</div>
+                    <div style="text-align: right; padding-right: 15px;">{{ _('Actions') }}</div>
+                </div>
+
+                <div id="tasks-list-container" style="max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-bottom: 10px;">
+                    <!-- Tasks rows will be populated dynamically -->
+                </div>
+            </div>
+
+            <div class="planner-modal-footer" style="margin-top: 20px;">
+                {% call btn('cancel', id='cancel-template-btn', attrs={'type': 'button'}) %}{{ _('Cancel') }}{% endcall %}
+                {% call btn('new', id='save-template-btn', type='submit') %}{{ _('Save') }}{% endcall %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Task Row HTML Template (used dynamically in JS) -->
+<template id="task-row-template">
+    <div class="task-editor-row" style="display: grid; grid-template-columns: 2fr 1fr 1.5fr 1fr auto; gap: 10px; align-items: center; background: var(--bg-hover, #fdfdfd); border: 1px solid var(--border-color, #eee); border-radius: 6px; padding: 10px; position: relative;">
+        <!-- Hidden input fields to hold task values for form saving -->
+        <input type="hidden" class="task-id">
+        <input type="hidden" class="task-title">
+        <input type="hidden" class="task-desc">
+        <input type="hidden" class="task-phase">
+        <input type="hidden" class="task-completion-type">
+        <input type="hidden" class="task-completion-config">
+        <input type="hidden" class="task-is-required-val">
+        
+        <!-- Display fields -->
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+            <div class="display-task-title" style="font-weight: 600; color: var(--text-color, #333); font-size: 0.9rem;"></div>
+            <div class="display-task-desc" style="font-size: 0.8rem; color: var(--text-muted, #777);"></div>
+        </div>
+        
+        <div>
+            <span class="display-task-phase badge-manual" style="padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; font-weight: 500;"></span>
+        </div>
+        
+        <div>
+            <span class="display-task-type" style="font-size: 0.85rem; font-weight: 500; color: var(--primary-color, #005a9c);"></span>
+        </div>
+        
+        <div style="display: flex; align-items: center; justify-content: center;">
+            <span class="display-task-required"></span>
+        </div>
+        
+        <div style="display: flex; gap: 4px; align-items: center; justify-content: flex-end;">
+            <button type="button" class="btn-move-up tm-action-btn" title="{{ _('Move up') }}"><i class="fas fa-arrow-up"></i></button>
+            <button type="button" class="btn-move-down tm-action-btn" title="{{ _('Move down') }}"><i class="fas fa-arrow-down"></i></button>
+            <button type="button" class="btn-edit-task tm-action-btn" title="{{ _('Edit Task') }}"><i class="fas fa-edit"></i></button>
+            <button type="button" class="btn-delete-task tm-action-btn btn-delete" style="color: var(--danger-color, #d9534f);" title="{{ _('Delete Task') }}"><i class="fas fa-trash-alt"></i></button>
+        </div>
+    </div>
+</template>
+
+<!-- Program Task Creator/Editor Modal -->
+<div id="programTaskModal" class="planner-modal" style="display: none; z-index: 1060;">
+    <div class="planner-modal-content" style="max-width: 500px;">
+        <span class="planner-close-modal" id="close-task-modal-btn"><i class="fas fa-times"></i></span>
+        <div class="planner-modal-header">
+            <h3 id="task-modal-title">{{ _('Program Task') }}</h3>
+        </div>
+        <form id="programTaskForm">
+            <div class="planner-form-group">
+                <label for="modal-task-title">{{ _('Task Title') }} *</label>
+                <input type="text" id="modal-task-title" class="planner-form-control" placeholder="{{ _('e.g. Complete Ice Breaker speech') }}" required>
+            </div>
+            
+            <div class="planner-form-group">
+                <label for="modal-task-desc">{{ _('Description') }}</label>
+                <textarea id="modal-task-desc" class="planner-form-control" rows="2" placeholder="{{ _('Optional details or links...') }}"></textarea>
+            </div>
+            
+            <div class="planner-form-group">
+                <label for="modal-task-phase">{{ _('Phase') }}</label>
+                <input type="text" id="modal-task-phase" class="planner-form-control" placeholder="{{ _('e.g. 1st Month') }}">
+            </div>
+            
+            <div class="planner-form-group">
+                <label for="modal-task-completion-type">{{ _('Trigger / Type') }} *</label>
+                <select id="modal-task-completion-type" class="planner-form-control" required>
+                    <option value="manual">{{ _('Manual Check') }}</option>
+                    <option value="ice_breaker">{{ _('Ice Breaker Speech') }}</option>
+                    <option value="pathway_selected">{{ _('Select Pathway') }}</option>
+                    <option value="mentor_assigned">{{ _('Assign Mentor') }}</option>
+                    <option value="sessionlog">{{ _('Session Log (custom)') }}</option>
+                </select>
+            </div>
+            
+            <div class="planner-form-group" id="modal-task-completion-config-group" style="display: none;">
+                <label for="modal-task-completion-config">{{ _('Custom Completion Configuration (JSON)') }}</label>
+                <textarea id="modal-task-completion-config" class="planner-form-control" rows="2" placeholder='e.g. {"role_name": "Timer"}'></textarea>
+            </div>
+            
+            <div class="planner-form-group" style="display: flex; align-items: center; gap: 8px;">
+                <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="modal-task-is-required" checked> {{ _('Required task') }}
+                </label>
+            </div>
+            
+            <div class="planner-modal-footer" style="margin-top: 20px;">
+                {% call btn('cancel', id='cancel-task-btn', attrs={'type': 'button'}) %}{{ _('Cancel') }}{% endcall %}
+                {% call btn('new', id='save-task-btn', type='submit') %}{{ _('Save Task') }}{% endcall %}
+            </div>
+        </form>
+    </div>
+</div>
+

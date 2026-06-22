@@ -2328,6 +2328,13 @@ def update_meeting_status(meeting_id):
                     from .utils import sync_contact_metadata
                     sync_contact_metadata(owner.id, commit=False)
 
+        # Refresh all active program enrollments in the club
+        from app.models.program import ProgramEnrollment
+        from app.services.planner_service import planner_service
+        active_enrollments = ProgramEnrollment.query.filter_by(club_id=club_id, status='active').all()
+        for enrollment in active_enrollments:
+            planner_service.bulk_refresh(enrollment)
+
     elif current_status == 'finished':
         # Full deletion flow as requested
         # Check if user has permission to delete meetings
