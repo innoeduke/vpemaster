@@ -657,7 +657,8 @@
     .calendar-page-container .filter-right {
         grid-column: 1;
         grid-row: 1;
-        width: 100%;
+        width: auto;
+        justify-self: start;
         display: flex;
         margin: 0;
     }

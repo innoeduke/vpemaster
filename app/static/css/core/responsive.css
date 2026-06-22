@@ -10,7 +10,7 @@
     height: 100%;
     background-color: rgba(244, 244, 249, 0.98);
     /* Use a slightly transparent background from your theme */
-    z-index: 2000;
+    z-index: 300;
     /* Ensure it's on top of other content */
     flex-direction: column;
     justify-content: center;
@@ -108,7 +108,7 @@
         justify-content: space-between;
         align-items: center;
         box-sizing: border-box;
-        z-index: 1005;
+        z-index: 100;
         /* Increased to stay above chart overlays */
         height: 60px;
     }
@@ -225,7 +225,7 @@
         height: calc(100vh - 60px);
         /* Fallback */
         height: calc(100dvh - 60px);
-        z-index: 1003;
+        z-index: 95;
         transform: translateX(-100%);
         transition: transform 0.3s ease-in-out;
         overflow-y: auto;
@@ -263,7 +263,7 @@
         height: 100%;
         background-color: rgba(0, 0, 0, 0.5);
         /* Semi-transparent black */
-        z-index: 1002;
+        z-index: 90;
         /* Below nav-pane, above everything else */
     }
 
@@ -520,7 +520,7 @@
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
         min-width: 180px;
         padding: 6px 0;
-        z-index: 2100;
+        z-index: 102;
     }
 
     /* Invisible hover bridge to prevent menu from closing when cursor crosses the gap */
@@ -590,7 +590,7 @@
         pointer-events: none;
         transform: translateY(8px);
         transition: opacity 0.15s ease, transform 0.15s ease;
-        z-index: 2100;
+        z-index: 102;
     }
 
     /* Hover bridge for profile menu */

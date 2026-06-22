@@ -13,6 +13,10 @@
     cancel_label=None,
     apply_label=None
 ) %}
+{% set month_names = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] %}
+{% set month_abbrs = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] %}
+{% set ns_start = namespace(y=start_month[:4] if start_month else '', m=start_month[5:7] if start_month and start_month|length >= 7 else '') %}
+{% set ns_end = namespace(y=end_month[:4] if end_month else '', m=end_month[5:7] if end_month and end_month|length >= 7 else '') %}
 <div class="date-range-picker" data-date-range-picker="{{ id_prefix }}">
     <button type="button"
             class="date-range-btn"
@@ -43,26 +47,68 @@
             </div>
             <form method="{{ method }}" action="{{ action_url }}" class="date-range-form" id="{{ id_prefix }}-form">
                 <div class="date-range-fields">
-                    <div class="month-picker">
-                        <label for="{{ id_prefix }}-start-month">{{ start_label or _('Start Month') }}</label>
-                        <input type="month"
+                    <div class="month-picker" data-month-picker data-month-role="start">
+                        <label for="{{ id_prefix }}-start-month-trigger">{{ start_label or _('Start Month') }}</label>
+                        <input type="hidden"
                                id="{{ id_prefix }}-start-month"
                                name="start_month"
                                value="{{ start_month }}"
-                               max="{{ end_month }}"
+                               data-month-picker-input
                                required>
+                        <button type="button"
+                                class="month-picker-trigger"
+                                id="{{ id_prefix }}-start-month-trigger"
+                                data-month-picker-trigger
+                                aria-haspopup="dialog"
+                                aria-expanded="false">
+                            <span class="month-picker-value" data-month-picker-value>—</span>
+                            <i class="fas fa-calendar-alt month-picker-icon" aria-hidden="true"></i>
+                        </button>
+                        <div class="month-picker-popover" data-month-picker-popover hidden>
+                            <div class="month-picker-head">
+                                <button type="button" class="month-picker-nav" data-month-picker-prev aria-label="{{ _('Previous year') }}">&#8249;</button>
+                                <span class="month-picker-year" data-month-picker-year>—</span>
+                                <button type="button" class="month-picker-nav" data-month-picker-next aria-label="{{ _('Next year') }}">&#8250;</button>
+                            </div>
+                            <div class="month-picker-grid" data-month-picker-grid>
+                                {% for abbr in month_abbrs %}
+                                <button type="button" class="month-picker-cell" data-month="{{ loop.index }}" data-month-label="{{ month_names[loop.index0] }}">{{ abbr }}</button>
+                                {% endfor %}
+                            </div>
+                        </div>
                     </div>
                     <div class="month-picker-arrow" aria-hidden="true">
                         <i class="fas fa-arrow-right"></i>
                     </div>
-                    <div class="month-picker">
-                        <label for="{{ id_prefix }}-end-month">{{ end_label or _('End Month') }}</label>
-                        <input type="month"
+                    <div class="month-picker" data-month-picker data-month-role="end">
+                        <label for="{{ id_prefix }}-end-month-trigger">{{ end_label or _('End Month') }}</label>
+                        <input type="hidden"
                                id="{{ id_prefix }}-end-month"
                                name="end_month"
                                value="{{ end_month }}"
-                               min="{{ start_month }}"
+                               data-month-picker-input
                                required>
+                        <button type="button"
+                                class="month-picker-trigger"
+                                id="{{ id_prefix }}-end-month-trigger"
+                                data-month-picker-trigger
+                                aria-haspopup="dialog"
+                                aria-expanded="false">
+                            <span class="month-picker-value" data-month-picker-value>—</span>
+                            <i class="fas fa-calendar-alt month-picker-icon" aria-hidden="true"></i>
+                        </button>
+                        <div class="month-picker-popover" data-month-picker-popover hidden>
+                            <div class="month-picker-head">
+                                <button type="button" class="month-picker-nav" data-month-picker-prev aria-label="{{ _('Previous year') }}">&#8249;</button>
+                                <span class="month-picker-year" data-month-picker-year>—</span>
+                                <button type="button" class="month-picker-nav" data-month-picker-next aria-label="{{ _('Next year') }}">&#8250;</button>
+                            </div>
+                            <div class="month-picker-grid" data-month-picker-grid>
+                                {% for abbr in month_abbrs %}
+                                <button type="button" class="month-picker-cell" data-month="{{ loop.index }}" data-month-label="{{ month_names[loop.index0] }}">{{ abbr }}</button>
+                                {% endfor %}
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <p class="date-range-hint">{{ hint or _('Choose the start and end months for the calendar view.') }}</p>
