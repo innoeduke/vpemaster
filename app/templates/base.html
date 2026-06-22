@@ -166,14 +166,6 @@
           </a>
         </li>
         {% endif %}
-        {% if is_module_enabled('Planner') and current_user.is_authenticated and is_authorized(Permissions.PROGRAMS_MANAGE) %}
-        <li class="{% if request.endpoint and request.endpoint.startswith('program_bp') %}active{% endif %}">
-          <a href="{{ url_for('program_bp.programs_admin') }}" title="{{ _('Manage programs and templates') }}">
-            <i class="fas fa-graduation-cap nav-icon"></i>
-            <span>{{ _('Programs') }}</span>
-          </a>
-        </li>
-        {% endif %}
         {% if is_authorized(Permissions.LIBRARY_VIEW) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('pathways_bp') %}active{% endif %}">
           <a href="{{ url_for('pathways_bp.pathway_library') }}" title="{{ _('Pathways Library') }}">
@@ -222,6 +214,14 @@
           <a href="{{ url_for('speech_logs_bp.show_project_view') }}" title="{{ _('View projects') }}">
             <i class="fas fa-chart-line nav-icon"></i>
             <span>{{ _('Projects') }}</span>
+          </a>
+        </li>
+        {% endif %}
+        {% if is_module_enabled('Planner') and current_user.is_authenticated and is_authorized(Permissions.PROGRAMS_MANAGE) %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('program_bp') %}active{% endif %}">
+          <a href="{{ url_for('program_bp.programs_admin') }}" title="{{ _('Manage programs and templates') }}">
+            <i class="fas fa-graduation-cap nav-icon"></i>
+            <span>{{ _('Programs') }}</span>
           </a>
         </li>
         {% endif %}
@@ -381,12 +381,11 @@
           <!-- 2. Tools Dropdown -->
           {% if current_user.is_authenticated or is_authorized(Permissions.LIBRARY_VIEW) %}
           {% set tools_active = request.endpoint and (
-            request.endpoint.startswith('speech_logs_bp') or 
-            request.endpoint.startswith('planner_bp') or 
-            request.endpoint.startswith('program_bp') or 
-            request.endpoint.startswith('pathways_bp') or 
-            request.endpoint.startswith('lucky_draw_bp') or 
-            request.endpoint.startswith('tools_bp') or 
+            request.endpoint == 'speech_logs_bp.show_speech_logs' or
+            request.endpoint.startswith('planner_bp') or
+            request.endpoint.startswith('pathways_bp') or
+            request.endpoint.startswith('lucky_draw_bp') or
+            request.endpoint.startswith('tools_bp') or
             request.endpoint.startswith('uploads_bp')
           ) %}
           {% if not in_club_directory %}
@@ -407,13 +406,6 @@
               <li class="{% if request.endpoint and request.endpoint.startswith('planner_bp') %}submenu-active{% endif %}">
                 <a href="{{ url_for('planner_bp.planner') }}">
                   <i class="fas fa-tasks"></i> {{ _('My Plans') }}
-                </a>
-              </li>
-              {% endif %}
-              {% if is_module_enabled('Planner') and current_user.is_authenticated and is_authorized(Permissions.PROGRAMS_MANAGE) %}
-              <li class="{% if request.endpoint and request.endpoint.startswith('program_bp') %}submenu-active{% endif %}">
-                <a href="{{ url_for('program_bp.programs_admin') }}">
-                  <i class="fas fa-graduation-cap"></i> {{ _('Programs') }}
                 </a>
               </li>
               {% endif %}
@@ -456,9 +448,10 @@
             request.endpoint.startswith('contacts_bp') or
             request.endpoint.startswith('settings_bp') or
             request.endpoint.startswith('clubs_bp') or
+            request.endpoint.startswith('program_bp') or
             request.endpoint == 'speech_logs_bp.show_project_view'
           ) %}
-          {% if is_authorized(Permissions.MEMBERS_MANAGE) or is_authorized(Permissions.ROSTER_VIEW) or (is_authorized(Permissions.SETTINGS_VIEW) and current_user.primary_role_name != 'Guest') %}
+          {% if is_authorized(Permissions.MEMBERS_MANAGE) or is_authorized(Permissions.ROSTER_VIEW) or (is_authorized(Permissions.SETTINGS_VIEW) and current_user.primary_role_name != 'Guest') or is_authorized(Permissions.PROGRAMS_MANAGE) %}
           <li class="nav-dropdown-wrapper {% if management_active %}active{% endif %}">
             <a href="#" class="nav-dropdown-trigger">
               <span>{{ _('Club') }}</span>
@@ -483,6 +476,13 @@
               <li class="{% if request.endpoint == 'speech_logs_bp.show_project_view' %}submenu-active{% endif %}">
                 <a href="{{ url_for('speech_logs_bp.show_project_view') }}">
                   <i class="fas fa-chart-line"></i> {{ _('Projects') }}
+                </a>
+              </li>
+              {% endif %}
+              {% if is_module_enabled('Planner') and current_user.is_authenticated and is_authorized(Permissions.PROGRAMS_MANAGE) %}
+              <li class="{% if request.endpoint and request.endpoint.startswith('program_bp') %}submenu-active{% endif %}">
+                <a href="{{ url_for('program_bp.programs_admin') }}">
+                  <i class="fas fa-graduation-cap"></i> {{ _('Programs') }}
                 </a>
               </li>
               {% endif %}

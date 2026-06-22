@@ -28,21 +28,13 @@
 
             <!-- Tasks editor section -->
             <div id="tasks-editor-section" style="margin-top: 20px; border-top: 1px solid var(--border-color, #eee); padding-top: 15px; display: none;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
                     <h4>{{ _('Program Tasks') }}</h4>
                     {% call btn('new', id='add-task-row-btn', type='button') %}<i class="fas fa-plus"></i> {{ _('Add Task') }}{% endcall %}
                 </div>
-                
-                <div class="tasks-list-header" style="display: grid; grid-template-columns: 2fr 1fr 1.5fr 1fr auto; gap: 10px; font-weight: bold; font-size: 0.85rem; padding-bottom: 8px; border-bottom: 1px solid var(--border-color, #eee); margin-bottom: 8px;">
-                    <div>{{ _('Task Title & Description') }}</div>
-                    <div>{{ _('Phase') }}</div>
-                    <div>{{ _('Trigger / Type') }}</div>
-                    <div>{{ _('Required') }}</div>
-                    <div style="text-align: right; padding-right: 15px;">{{ _('Actions') }}</div>
-                </div>
 
-                <div id="tasks-list-container" style="max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-bottom: 10px;">
-                    <!-- Tasks rows will be populated dynamically -->
+                <div id="tasks-list-container" class="tasks-list-container">
+                    <!-- Tasks cards will be populated dynamically -->
                 </div>
             </div>
 
@@ -54,9 +46,9 @@
     </div>
 </div>
 
-<!-- Task Row HTML Template (used dynamically in JS) -->
+<!-- Task Card HTML Template (used dynamically in JS) -->
 <template id="task-row-template">
-    <div class="task-editor-row" style="display: grid; grid-template-columns: 2fr 1fr 1.5fr 1fr auto; gap: 10px; align-items: center; background: var(--bg-hover, #fdfdfd); border: 1px solid var(--border-color, #eee); border-radius: 6px; padding: 10px; position: relative;">
+    <div class="task-editor-row task-card">
         <!-- Hidden input fields to hold task values for form saving -->
         <input type="hidden" class="task-id">
         <input type="hidden" class="task-title">
@@ -65,36 +57,33 @@
         <input type="hidden" class="task-completion-type">
         <input type="hidden" class="task-completion-config">
         <input type="hidden" class="task-is-required-val">
-        
-        <!-- Display fields -->
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-            <div class="display-task-title" style="font-weight: 600; color: var(--text-color, #333); font-size: 0.9rem;"></div>
-            <div class="display-task-desc" style="font-size: 0.8rem; color: var(--text-muted, #777);"></div>
+
+        <div class="task-card-content">
+            <span class="task-card-sequence"></span>
+            <div class="task-card-title-block">
+                <div class="display-task-title"></div>
+                <div class="display-task-desc"></div>
+            </div>
+            <div class="task-card-meta">
+                <span class="display-task-type task-type-pill"></span>
+                <span class="display-task-required"></span>
+            </div>
         </div>
-        
-        <div>
-            <span class="display-task-phase badge-manual" style="padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; font-weight: 500;"></span>
-        </div>
-        
-        <div>
-            <span class="display-task-type" style="font-size: 0.85rem; font-weight: 500; color: var(--primary-color, #005a9c);"></span>
-        </div>
-        
-        <div style="display: flex; align-items: center; justify-content: center;">
-            <span class="display-task-required"></span>
-        </div>
-        
-        <div style="display: flex; gap: 4px; align-items: center; justify-content: flex-end;">
-            <button type="button" class="btn-move-up tm-action-btn" title="{{ _('Move up') }}"><i class="fas fa-arrow-up"></i></button>
-            <button type="button" class="btn-move-down tm-action-btn" title="{{ _('Move down') }}"><i class="fas fa-arrow-down"></i></button>
-            <button type="button" class="btn-edit-task tm-action-btn" title="{{ _('Edit Task') }}"><i class="fas fa-edit"></i></button>
-            <button type="button" class="btn-delete-task tm-action-btn btn-delete" style="color: var(--danger-color, #d9534f);" title="{{ _('Delete Task') }}"><i class="fas fa-trash-alt"></i></button>
+
+        <div class="task-card-footer">
+            <span class="display-task-phase task-phase-pill"></span>
+            <div class="task-card-actions">
+                <button type="button" class="btn-move-up tm-action-btn" title="{{ _('Move up') }}"><i class="fas fa-arrow-up"></i></button>
+                <button type="button" class="btn-move-down tm-action-btn" title="{{ _('Move down') }}"><i class="fas fa-arrow-down"></i></button>
+                <button type="button" class="btn-edit-task tm-action-btn" title="{{ _('Edit Task') }}"><i class="fas fa-edit"></i></button>
+                <button type="button" class="btn-delete-task tm-action-btn btn-delete" title="{{ _('Delete Task') }}"><i class="fas fa-trash-alt"></i></button>
+            </div>
         </div>
     </div>
 </template>
 
 <!-- Program Task Creator/Editor Modal -->
-<div id="programTaskModal" class="planner-modal" style="display: none; z-index: 1060;">
+<div id="programTaskModal" class="planner-modal" style="display: none; z-index: 1001;">
     <div class="planner-modal-content" style="max-width: 500px;">
         <span class="planner-close-modal" id="close-task-modal-btn"><i class="fas fa-times"></i></span>
         <div class="planner-modal-header">
@@ -113,7 +102,17 @@
             
             <div class="planner-form-group">
                 <label for="modal-task-phase">{{ _('Phase') }}</label>
-                <input type="text" id="modal-task-phase" class="planner-form-control" placeholder="{{ _('e.g. 1st Month') }}">
+                <select id="modal-task-phase" class="planner-form-control">
+                    <!-- Populated dynamically; options include existing phases + "Add new phase..." -->
+                </select>
+                <div class="phase-new-row" id="phase-new-row" style="display: none;">
+                    <input type="text" id="modal-task-phase-new" class="planner-form-control phase-new-input"
+                           placeholder="{{ _('Enter new phase name') }}">
+                    <button type="button" id="add-phase-btn" class="tm-action-btn phase-add-btn"
+                            title="{{ _('Add this phase') }}">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
             </div>
             
             <div class="planner-form-group">

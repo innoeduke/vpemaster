@@ -25,6 +25,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalTaskTitle = document.getElementById('modal-task-title');
     const modalTaskDesc = document.getElementById('modal-task-desc');
     const modalTaskPhase = document.getElementById('modal-task-phase');
+    const modalTaskPhaseNew = document.getElementById('modal-task-phase-new');
+    const phaseNewRow = document.getElementById('phase-new-row');
+    const addPhaseBtn = document.getElementById('add-phase-btn');
+    const PHASE_ADD_NEW = '__add_new__';
     const modalTaskCompletionType = document.getElementById('modal-task-completion-type');
     const modalTaskCompletionConfig = document.getElementById('modal-task-completion-config');
     const modalTaskCompletionConfigGroup = document.getElementById('modal-task-completion-config-group');
@@ -75,13 +79,97 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    if (modalTaskPhase) {
+        modalTaskPhase.addEventListener('change', function() {
+            if (this.value === PHASE_ADD_NEW) {
+                phaseNewRow.style.display = 'flex';
+                modalTaskPhaseNew.focus();
+            } else {
+                phaseNewRow.style.display = 'none';
+                modalTaskPhaseNew.value = '';
+            }
+        });
+    }
+
+    if (addPhaseBtn) {
+        addPhaseBtn.addEventListener('click', function() {
+            const newPhase = modalTaskPhaseNew.value.trim();
+            if (!newPhase) {
+                modalTaskPhaseNew.focus();
+                return;
+            }
+            const existing = Array.from(modalTaskPhase.options).some(o => o.value === newPhase);
+            if (!existing) {
+                const newOption = document.createElement('option');
+                newOption.value = newPhase;
+                newOption.textContent = newPhase;
+                const separator = Array.from(modalTaskPhase.options).find(o => o.disabled);
+                const addNewOpt = Array.from(modalTaskPhase.options).find(o => o.value === PHASE_ADD_NEW);
+                if (separator) {
+                    modalTaskPhase.insertBefore(newOption, separator);
+                } else if (addNewOpt) {
+                    modalTaskPhase.insertBefore(newOption, addNewOpt);
+                } else {
+                    modalTaskPhase.appendChild(newOption);
+                }
+            }
+            modalTaskPhase.value = newPhase;
+            phaseNewRow.style.display = 'none';
+            modalTaskPhaseNew.value = '';
+        });
+    }
+
+    function populatePhaseOptions(currentPhase) {
+        const phases = new Set();
+        tasksList.querySelectorAll('.task-editor-row').forEach(row => {
+            const p = row.querySelector('.task-phase').value;
+            if (p) phases.add(p);
+        });
+
+        modalTaskPhase.innerHTML = '';
+        Array.from(phases).sort().forEach(phase => {
+            const opt = document.createElement('option');
+            opt.value = phase;
+            opt.textContent = phase;
+            modalTaskPhase.appendChild(opt);
+        });
+
+        if (phases.size > 0) {
+            const separator = document.createElement('option');
+            separator.disabled = true;
+            separator.textContent = '──────────';
+            modalTaskPhase.appendChild(separator);
+        }
+
+        const addNew = document.createElement('option');
+        addNew.value = PHASE_ADD_NEW;
+        addNew.textContent = '+ Add new phase…';
+        modalTaskPhase.appendChild(addNew);
+
+        if (currentPhase && phases.has(currentPhase)) {
+            modalTaskPhase.value = currentPhase;
+            phaseNewRow.style.display = 'none';
+            modalTaskPhaseNew.value = '';
+        } else if (currentPhase) {
+            modalTaskPhase.value = PHASE_ADD_NEW;
+            phaseNewRow.style.display = 'flex';
+            modalTaskPhaseNew.value = currentPhase;
+        } else {
+            modalTaskPhase.value = '';
+            phaseNewRow.style.display = 'none';
+            modalTaskPhaseNew.value = '';
+        }
+    }
+
     if (taskForm) {
         taskForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
             const title = modalTaskTitle.value;
             const desc = modalTaskDesc.value;
-            const phase = modalTaskPhase.value;
+            const phase = modalTaskPhase.value === PHASE_ADD_NEW
+                ? modalTaskPhaseNew.value.trim()
+                : modalTaskPhase.value;
             const type = modalTaskCompletionType.value;
             const config = modalTaskCompletionConfig.value;
             const required = modalTaskIsRequired.checked;
@@ -132,6 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 deletedTaskIds.push(taskId);
             }
             row.remove();
+            refreshSequenceNumbers();
             return;
         }
 
@@ -145,6 +234,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (prev) {
                 tasksList.insertBefore(row, prev);
             }
+            refreshSequenceNumbers();
             return;
         }
 
@@ -153,6 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (next) {
                 tasksList.insertBefore(next, row);
             }
+            refreshSequenceNumbers();
             return;
         }
     });
@@ -198,12 +289,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             ${p.is_active ? 'Active' : 'Inactive'}
                         </span>
                     </div>
-                    <p class="template-card-desc" style="margin-bottom: 8px;">${escapeHTML(p.description || 'No description provided.')}</p>
-                    ${p.phases && p.phases.length > 0 ? `
-                    <div class="template-card-phases" style="margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 6px;">
-                        ${p.phases.map(ph => `<span class="phase-tag" style="background: var(--bg-hover, #f0f4f8); color: var(--primary-color, #005a9c); border: 1px solid var(--border-color, #d0e0f0); border-radius: 4px; padding: 2px 6px; font-size: 0.75rem; font-weight: 600;">${escapeHTML(ph)}</span>`).join('')}
-                    </div>
-                    ` : ''}
+                    <p class="template-card-desc">${escapeHTML(p.description || 'No description provided.')}</p>
                 </div>
                 <div>
                     <div class="template-card-meta">
@@ -333,20 +419,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
         updateRowDisplay(row);
         tasksList.appendChild(row);
+        refreshSequenceNumbers();
+    }
+
+    function refreshSequenceNumbers() {
+        const rows = tasksList.querySelectorAll('.task-editor-row');
+        rows.forEach((r, i) => {
+            const seq = r.querySelector('.task-card-sequence');
+            if (seq) seq.textContent = String(i + 1).padStart(2, '0');
+        });
     }
 
     function openTaskModal(row = null) {
         activeTaskRow = row;
         taskForm.reset();
         modalTaskCompletionConfigGroup.style.display = 'none';
+        phaseNewRow.style.display = 'none';
+        modalTaskPhaseNew.value = '';
+
+        const currentPhase = row ? row.querySelector('.task-phase').value : '';
+        populatePhaseOptions(currentPhase);
 
         if (row) {
             document.getElementById('task-modal-title').innerText = 'Edit Program Task';
             modalTaskTitle.value = row.querySelector('.task-title').value;
             modalTaskDesc.value = row.querySelector('.task-desc').value;
-            modalTaskPhase.value = row.querySelector('.task-phase').value;
             modalTaskCompletionType.value = row.querySelector('.task-completion-type').value;
-            
+
             const configVal = row.querySelector('.task-completion-config').value;
             modalTaskCompletionConfig.value = configVal;
             if (modalTaskCompletionType.value === 'sessionlog') {
@@ -364,6 +463,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function closeTaskModal() {
         taskModal.style.display = 'none';
         activeTaskRow = null;
+        phaseNewRow.style.display = 'none';
+        modalTaskPhaseNew.value = '';
     }
 
     function updateRowDisplay(row) {
