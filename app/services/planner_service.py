@@ -1,7 +1,7 @@
 """Service layer for Planner and Program operations."""
 from datetime import datetime, timezone
 from app import db
-from app.models import Planner, Program, ProgramTask, ProgramEnrollment, User, Contact, UserClub, SessionLog, Project
+from app.models import Planner, Program, ProgramTask, ProgramEnrollment, User, Contact, UserClub, SessionLog, Project, Pathway, PathwayProject
 from app.models.roster import MeetingRole
 from app.models.session import OwnerMeetingRoles
 
@@ -189,78 +189,134 @@ class PlannerService:
         return enrollment
 
     def evaluate(self, planner_row, enrollment):
-        """Evaluate if an enrollment task trigger is met."""
+        """Evaluate if an enrollment task trigger is met.
+
+        Supported completion_type values:
+          - 'manual'   : no auto-evaluation (user toggles)
+          - 'path'     : config {path_ids: [...]} — mentee's current path is any of these
+          - 'level'    : config {level: N} — mentee has reached level N or higher
+          - 'role'     : config {role_ids: [...]} — mentee has a completed SessionLog for any of these roles
+          - 'project'  : config {project_ids: [...]} — mentee has a completed SessionLog for any of these projects
+          - 'field'    : config {field: 'member_no'|'dtm'|'officer'|'mentor_id'} — corresponding contact field is truthy
+        """
         task = planner_row.program_task
         if not task or task.completion_type == 'manual':
             return False, None, None
 
-        completed = False
-        completed_at = None
-        completed_by_id = None
-
         user = enrollment.mentee
         club_id = enrollment.club_id
+        now = datetime.now(timezone.utc)
 
-        if task.completion_type == 'pathway_selected':
-            # Check UserClub for current_path_id first
-            uc = UserClub.query.filter_by(user_id=user.id, club_id=club_id).first()
-            if uc and uc.current_path_id:
-                completed = True
-                completed_at = uc.updated_at or datetime.now(timezone.utc)
-            else:
-                contact = user.get_contact(club_id)
-                if contact and contact.Current_Path:
-                    completed = True
-                    completed_at = contact.date_modified or datetime.now(timezone.utc)
+        def _completed_at_from_log(log):
+            if log and log.meeting and log.meeting.Meeting_Date:
+                return datetime.combine(log.meeting.Meeting_Date, datetime.min.time())
+            if log and log.date_modified:
+                return log.date_modified
+            return now
 
-        elif task.completion_type == 'mentor_assigned':
-            uc = UserClub.query.filter_by(user_id=user.id, club_id=club_id).first()
-            if uc and uc.mentor_id:
-                completed = True
-                completed_at = uc.updated_at or datetime.now(timezone.utc)
-
-        elif task.completion_type == 'ice_breaker':
-            contact = user.get_contact(club_id)
-            if contact:
-                # Find finished SessionLog for Ice Breaker project owned by this contact
-                log = db.session.query(SessionLog)\
-                    .join(OwnerMeetingRoles, OwnerMeetingRoles.session_log_id == SessionLog.id)\
-                    .join(Project, SessionLog.Project_ID == Project.id)\
-                    .filter(
-                        OwnerMeetingRoles.contact_id == contact.id,
-                        SessionLog.Status.in_(['Completed', 'completed']),
-                        Project.Project_Name == 'Ice Breaker'
-                    ).first()
-                if log:
-                    completed = True
-                    completed_at = datetime.combine(log.meeting.Meeting_Date, datetime.min.time()) if (log.meeting and log.meeting.Meeting_Date) else (log.date_modified or datetime.now(timezone.utc))
-
-        elif task.completion_type == 'sessionlog':
+        if task.completion_type == 'path':
             config = task.completion_config or {}
+            path_ids = set(config.get('path_ids') or [])
+            if not path_ids:
+                return False, None, None
+            uc = UserClub.query.filter_by(user_id=user.id, club_id=club_id).first()
+            if uc and uc.current_path_id in path_ids:
+                return True, (uc.updated_at or now), None
             contact = user.get_contact(club_id)
-            if contact:
-                query = db.session.query(SessionLog)\
-                    .join(OwnerMeetingRoles, OwnerMeetingRoles.session_log_id == SessionLog.id)\
-                    .filter(
-                        OwnerMeetingRoles.contact_id == contact.id,
-                        SessionLog.Status.in_(['Completed', 'completed'])
-                    )
+            if contact and contact.Current_Path:
+                names = {p.name for p in Pathway.query.filter(Pathway.id.in_(path_ids)).all()}
+                if contact.Current_Path in names:
+                    return True, (contact.date_modified or now), None
+            return False, None, None
 
-                if 'role_id' in config:
-                    query = query.filter(OwnerMeetingRoles.role_id == config['role_id'])
-                elif 'role_name' in config:
-                    query = query.join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
-                        .filter(MeetingRole.name == config['role_name'])
+        if task.completion_type == 'level':
+            config = task.completion_config or {}
+            try:
+                required_level = int(config.get('level') or 0)
+            except (TypeError, ValueError):
+                return False, None, None
+            if required_level <= 0:
+                return False, None, None
+            contact = user.get_contact(club_id)
+            if not contact:
+                return False, None, None
+            uc = UserClub.query.filter_by(user_id=user.id, club_id=club_id).first()
+            path_id = uc.current_path_id if uc and uc.current_path_id else None
+            if not path_id and contact.Current_Path:
+                path_obj = Pathway.query.filter_by(name=contact.Current_Path).first()
+                path_id = path_obj.id if path_obj else None
+            if not path_id:
+                return False, None, None
+            max_level = db.session.query(db.func.max(PathwayProject.level))\
+                .join(SessionLog, SessionLog.Project_ID == PathwayProject.project_id)\
+                .join(OwnerMeetingRoles, OwnerMeetingRoles.session_log_id == SessionLog.id)\
+                .filter(
+                    OwnerMeetingRoles.contact_id == contact.id,
+                    PathwayProject.path_id == path_id,
+                    SessionLog.Status.in_(['Completed', 'completed']),
+                    PathwayProject.level.isnot(None),
+                ).scalar() or 0
+            if max_level >= required_level:
+                return True, (contact.date_modified or now), None
+            return False, None, None
 
-                if 'project_id' in config:
-                    query = query.filter(SessionLog.Project_ID == config['project_id'])
+        if task.completion_type == 'role':
+            config = task.completion_config or {}
+            role_ids = set(config.get('role_ids') or [])
+            if not role_ids:
+                return False, None, None
+            contact = user.get_contact(club_id)
+            if not contact:
+                return False, None, None
+            log = db.session.query(SessionLog)\
+                .join(OwnerMeetingRoles, OwnerMeetingRoles.session_log_id == SessionLog.id)\
+                .filter(
+                    OwnerMeetingRoles.contact_id == contact.id,
+                    OwnerMeetingRoles.role_id.in_(role_ids),
+                    SessionLog.Status.in_(['Completed', 'completed'])
+                ).first()
+            if log:
+                return True, _completed_at_from_log(log), None
+            return False, None, None
 
-                log = query.first()
-                if log:
-                    completed = True
-                    completed_at = datetime.combine(log.meeting.Meeting_Date, datetime.min.time()) if (log.meeting and log.meeting.Meeting_Date) else (log.date_modified or datetime.now(timezone.utc))
+        if task.completion_type == 'project':
+            config = task.completion_config or {}
+            project_ids = set(config.get('project_ids') or [])
+            if not project_ids:
+                return False, None, None
+            contact = user.get_contact(club_id)
+            if not contact:
+                return False, None, None
+            log = db.session.query(SessionLog)\
+                .join(OwnerMeetingRoles, OwnerMeetingRoles.session_log_id == SessionLog.id)\
+                .filter(
+                    OwnerMeetingRoles.contact_id == contact.id,
+                    SessionLog.Project_ID.in_(project_ids),
+                    SessionLog.Status.in_(['Completed', 'completed'])
+                ).first()
+            if log:
+                return True, _completed_at_from_log(log), None
+            return False, None, None
 
-        return completed, completed_at, completed_by_id
+        if task.completion_type == 'field':
+            config = task.completion_config or {}
+            field = config.get('field')
+            contact = user.get_contact(club_id)
+            if not contact:
+                return False, None, None
+            completed_at = contact.date_modified or now
+            if field == 'member_no':
+                return bool(contact.Member_ID), completed_at, None
+            if field == 'dtm':
+                return bool(contact.DTM), completed_at, None
+            if field == 'officer':
+                return contact.Type == 'Officer', completed_at, None
+            if field == 'mentor_id':
+                return bool(contact.Mentor_ID), completed_at, None
+            return False, None, None
+
+        # Unknown completion_type — treat as not completed
+        return False, None, None
 
     def toggle_task(self, planner_id, actor_user):
         """Toggle a manual program task checkbox."""

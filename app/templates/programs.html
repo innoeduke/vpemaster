@@ -101,6 +101,23 @@
 <script>
     var currentUserId = {{ current_user.id }};
     var currentClubId = {{ get_current_club_id() }};
+    var taskConfigOptions = {
+        pathways: [
+            {% for p in pathways %}
+            { id: {{ p.id }}, name: {{ p.name|tojson }}, abbr: {{ p.abbr|tojson }} }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ],
+        projects: [
+            {% for p in projects %}
+            { id: {{ p.id }}, name: {{ p.Project_Name|tojson }} }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ],
+        roles: [
+            {% for r in roles %}
+            { id: {{ r.id }}, name: {{ r.name|tojson }} }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ]
+    };
 </script>
 <script src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>
 <script src="{{ url_for('static', filename='js/program_admin.js') }}"></script>

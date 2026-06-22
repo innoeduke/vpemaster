@@ -30,9 +30,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const addPhaseBtn = document.getElementById('add-phase-btn');
     const PHASE_ADD_NEW = '__add_new__';
     const modalTaskCompletionType = document.getElementById('modal-task-completion-type');
-    const modalTaskCompletionConfig = document.getElementById('modal-task-completion-config');
-    const modalTaskCompletionConfigGroup = document.getElementById('modal-task-completion-config-group');
     const modalTaskIsRequired = document.getElementById('modal-task-is-required');
+
+    // Type-specific config inputs
+    const configGroups = document.querySelectorAll('.task-config-group');
+    const configLevelValue = document.getElementById('config-level-value');
+    const configFieldValue = document.getElementById('config-field-value');
+    const configPathOptions = document.getElementById('config-path-options');
+    const configRoleOptions = document.getElementById('config-role-options');
+    const configProjectOptions = document.getElementById('config-project-options');
+
+    // Hidden JSON field that backs the completion_config column
+    let modalTaskCompletionConfig = { type: 'manual', config: {} };
 
     let deletedTaskIds = [];
     let activeTaskRow = null;
@@ -71,12 +80,111 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (modalTaskCompletionType) {
         modalTaskCompletionType.addEventListener('change', function() {
-            if (this.value === 'sessionlog') {
-                modalTaskCompletionConfigGroup.style.display = 'block';
-            } else {
-                modalTaskCompletionConfigGroup.style.display = 'none';
-            }
+            showConfigForType(this.value);
         });
+    }
+
+    function renderCheckboxGroup(container, items, nameAttr) {
+        container.innerHTML = '';
+        items.forEach(item => {
+            const id = `${nameAttr}-${item.id}`;
+            const wrap = document.createElement('label');
+            wrap.className = 'task-config-option';
+            wrap.setAttribute('for', id);
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.id = id;
+            cb.name = nameAttr;
+            cb.value = String(item.id);
+            cb.dataset.label = item.name;
+            const span = document.createElement('span');
+            span.textContent = item.name;
+            wrap.appendChild(cb);
+            wrap.appendChild(span);
+            container.appendChild(wrap);
+        });
+    }
+
+    const ALLOWED_ROLE_NAMES = [
+        'topics speaker',
+        'individual evaluator',
+        'prepared speaker',
+        'moderator',
+        'keynote speaker',
+        'topicsmaster',
+        'general evaluator',
+        'timer'
+    ];
+
+    function normalizeRoleName(name) {
+        return (name || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    }
+
+    function showConfigForType(type) {
+        configGroups.forEach(g => {
+            g.style.display = (g.dataset.configFor === type) ? '' : 'none';
+        });
+        if (type === 'path') {
+            renderCheckboxGroup(configPathOptions, (window.taskConfigOptions && window.taskConfigOptions.pathways) || [], 'cfg-path');
+        } else if (type === 'role') {
+            const allRoles = (window.taskConfigOptions && window.taskConfigOptions.roles) || [];
+            const allowed = new Set(ALLOWED_ROLE_NAMES.map(normalizeRoleName));
+            const filtered = allRoles.filter(r => allowed.has(normalizeRoleName(r.name)));
+            renderCheckboxGroup(configRoleOptions, filtered, 'cfg-role');
+        } else if (type === 'project') {
+            renderCheckboxGroup(configProjectOptions, (window.taskConfigOptions && window.taskConfigOptions.projects) || [], 'cfg-project');
+        }
+    }
+
+    function readTypeConfig(type) {
+        if (type === 'manual') return {};
+        if (type === 'path') {
+            const ids = Array.from(configPathOptions.querySelectorAll('input:checked')).map(cb => Number(cb.value));
+            return { path_ids: ids };
+        }
+        if (type === 'level') {
+            const v = parseInt(configLevelValue.value, 10);
+            return isNaN(v) ? {} : { level: v };
+        }
+        if (type === 'role') {
+            const ids = Array.from(configRoleOptions.querySelectorAll('input:checked')).map(cb => Number(cb.value));
+            return { role_ids: ids };
+        }
+        if (type === 'project') {
+            const ids = Array.from(configProjectOptions.querySelectorAll('input:checked')).map(cb => Number(cb.value));
+            return { project_ids: ids };
+        }
+        if (type === 'field') {
+            return { field: configFieldValue.value };
+        }
+        return {};
+    }
+
+    function applyTypeConfig(type, config) {
+        config = config || {};
+        if (type === 'manual') return;
+        if (type === 'path') {
+            const ids = new Set((config.path_ids || []).map(Number));
+            configPathOptions.querySelectorAll('input').forEach(cb => { cb.checked = ids.has(Number(cb.value)); });
+        } else if (type === 'level') {
+            configLevelValue.value = config.level != null ? config.level : '';
+        } else if (type === 'role') {
+            const ids = new Set((config.role_ids || []).map(Number));
+            configRoleOptions.querySelectorAll('input').forEach(cb => { cb.checked = ids.has(Number(cb.value)); });
+        } else if (type === 'project') {
+            const ids = new Set((config.project_ids || []).map(Number));
+            configProjectOptions.querySelectorAll('input').forEach(cb => { cb.checked = ids.has(Number(cb.value)); });
+        } else if (type === 'field') {
+            configFieldValue.value = config.field || 'member_no';
+        }
+    }
+
+    function clearTypeConfig() {
+        configLevelValue.value = '';
+        configFieldValue.value = 'member_no';
+        configPathOptions.innerHTML = '';
+        configRoleOptions.innerHTML = '';
+        configProjectOptions.innerHTML = '';
     }
 
     if (modalTaskPhase) {
@@ -171,17 +279,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 ? modalTaskPhaseNew.value.trim()
                 : modalTaskPhase.value;
             const type = modalTaskCompletionType.value;
-            const config = modalTaskCompletionConfig.value;
+            const configObj = readTypeConfig(type);
+            const config = type === 'manual' ? '' : JSON.stringify(configObj);
             const required = modalTaskIsRequired.checked;
-
-            if (type === 'sessionlog' && config) {
-                try {
-                    JSON.parse(config);
-                } catch (err) {
-                    alert('Invalid JSON config. Example config: {"role_name": "Timer"}');
-                    return;
-                }
-            }
 
             if (activeTaskRow) {
                 // Update hidden inputs
@@ -191,7 +291,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 activeTaskRow.querySelector('.task-completion-type').value = type;
                 activeTaskRow.querySelector('.task-completion-config').value = config;
                 activeTaskRow.querySelector('.task-is-required-val').value = required ? 'true' : 'false';
-                
+
                 updateRowDisplay(activeTaskRow);
             } else {
                 // Add new row
@@ -200,7 +300,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     description: desc,
                     phase_label: phase,
                     completion_type: type,
-                    completion_config: config ? JSON.parse(config) : null,
+                    completion_config: type === 'manual' ? null : configObj,
                     is_required: required
                 });
             }
@@ -405,7 +505,7 @@ document.addEventListener('DOMContentLoaded', function() {
             desc = task.description || '';
             phase = task.phase_label || '';
             type = task.completion_type || 'manual';
-            config = task.completion_type === 'sessionlog' ? JSON.stringify(task.completion_config || {}) : '';
+            config = type === 'manual' ? '' : JSON.stringify(task.completion_config || {});
             required = task.is_required !== false;
         }
 
@@ -433,29 +533,35 @@ document.addEventListener('DOMContentLoaded', function() {
     function openTaskModal(row = null) {
         activeTaskRow = row;
         taskForm.reset();
-        modalTaskCompletionConfigGroup.style.display = 'none';
         phaseNewRow.style.display = 'none';
         modalTaskPhaseNew.value = '';
+        clearTypeConfig();
 
         const currentPhase = row ? row.querySelector('.task-phase').value : '';
         populatePhaseOptions(currentPhase);
 
+        let currentType = 'manual';
+        let currentConfig = {};
         if (row) {
             document.getElementById('task-modal-title').innerText = 'Edit Program Task';
             modalTaskTitle.value = row.querySelector('.task-title').value;
             modalTaskDesc.value = row.querySelector('.task-desc').value;
-            modalTaskCompletionType.value = row.querySelector('.task-completion-type').value;
-
-            const configVal = row.querySelector('.task-completion-config').value;
-            modalTaskCompletionConfig.value = configVal;
-            if (modalTaskCompletionType.value === 'sessionlog') {
-                modalTaskCompletionConfigGroup.style.display = 'block';
+            currentType = row.querySelector('.task-completion-type').value || 'manual';
+            try {
+                const raw = row.querySelector('.task-completion-config').value;
+                currentConfig = raw ? JSON.parse(raw) : {};
+            } catch (err) {
+                currentConfig = {};
             }
             modalTaskIsRequired.checked = row.querySelector('.task-is-required-val').value === 'true';
         } else {
             document.getElementById('task-modal-title').innerText = 'New Program Task';
             modalTaskIsRequired.checked = true;
         }
+
+        modalTaskCompletionType.value = currentType;
+        showConfigForType(currentType);
+        applyTypeConfig(currentType, currentConfig);
 
         taskModal.style.display = 'flex';
     }
@@ -554,11 +660,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     const required = row.querySelector('.task-is-required-val').value === 'true';
 
                     let configObj = null;
-                    if (type === 'sessionlog' && configStr) {
+                    if (type !== 'manual' && configStr) {
                         try {
                             configObj = JSON.parse(configStr);
                         } catch (err) {
-                            alert(`Invalid JSON config in task "${title}". Example config: {"role_name": "Timer"}`);
+                            alert(`Invalid config in task "${title}".`);
                             return;
                         }
                     }

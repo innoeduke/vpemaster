@@ -38,12 +38,25 @@ def programs_admin():
     """Renders the program templates administration interface."""
     club_id = get_current_club_id()
     # Fetch active users for enrollment selector mapping
-    from app.models import Contact, ContactClub
+    from app.models import Contact, ContactClub, Pathway, Project
+    from app.models.roster import MeetingRole
     contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id, Contact.Type == 'Member').all()
     Contact.populate_users(contacts, club_id=club_id)
     members = [c for c in contacts if hasattr(c, '_user') and c._user]
-    
-    return render_template('programs.html', members=members, header_title="Manage Templates")
+
+    # Data for the task-modal type-config UI
+    pathways = Pathway.query.filter_by(status='active').order_by(Pathway.name).all()
+    projects = Project.query.order_by(Project.Project_Name).all()
+    roles = MeetingRole.query.filter_by(club_id=club_id).order_by(MeetingRole.name).all()
+
+    return render_template(
+        'programs.html',
+        members=members,
+        header_title="Manage Templates",
+        pathways=pathways,
+        projects=projects,
+        roles=roles,
+    )
 
 
 # ============================================================================
@@ -494,4 +507,30 @@ def toggle_enrollment_task(id, planner_id):
             'progress': program_service.progress(enrollment)
         })
     except Exception as e:
+        return jsonify(success=False, message=str(e)), 400
+
+
+@program_bp.route('/api/program-enrollments/<int:id>', methods=['DELETE'])
+def delete_program_enrollment(id):
+    """Delete a program enrollment and cascade to its planner entries.
+
+    Requires MEMBERS_MANAGE — deleting someone's enrollment is a member-management
+    operation. The ProgramEnrollment model's ``planner_entries`` relationship is
+    configured with cascade='all, delete-orphan', so the related Planner rows go
+    with it.
+    """
+    club_id = get_current_club_id()
+    enrollment = ProgramEnrollment.query.filter_by(id=id, club_id=club_id).first_or_404()
+
+    if not is_authorized(Permissions.MEMBERS_MANAGE):
+        abort(403)
+
+    try:
+        mentee_name = enrollment.mentee.username if enrollment.mentee else ''
+        program_name = enrollment.program.name if enrollment.program else ''
+        db.session.delete(enrollment)
+        db.session.commit()
+        return jsonify(success=True, mentee_name=mentee_name, program_name=program_name)
+    except Exception as e:
+        db.session.rollback()
         return jsonify(success=False, message=str(e)), 400

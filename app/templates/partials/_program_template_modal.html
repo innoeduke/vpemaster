@@ -119,16 +119,43 @@
                 <label for="modal-task-completion-type">{{ _('Trigger / Type') }} *</label>
                 <select id="modal-task-completion-type" class="planner-form-control" required>
                     <option value="manual">{{ _('Manual Check') }}</option>
-                    <option value="ice_breaker">{{ _('Ice Breaker Speech') }}</option>
-                    <option value="pathway_selected">{{ _('Select Pathway') }}</option>
-                    <option value="mentor_assigned">{{ _('Assign Mentor') }}</option>
-                    <option value="sessionlog">{{ _('Session Log (custom)') }}</option>
+                    <option value="path">{{ _('Pathway Selected') }}</option>
+                    <option value="level">{{ _('Pathway Level') }}</option>
+                    <option value="role">{{ _('Role Performed') }}</option>
+                    <option value="project">{{ _('Project Completed') }}</option>
+                    <option value="field">{{ _('Member Field') }}</option>
                 </select>
             </div>
-            
-            <div class="planner-form-group" id="modal-task-completion-config-group" style="display: none;">
-                <label for="modal-task-completion-config">{{ _('Custom Completion Configuration (JSON)') }}</label>
-                <textarea id="modal-task-completion-config" class="planner-form-control" rows="2" placeholder='e.g. {"role_name": "Timer"}'></textarea>
+
+            <!-- Type-specific config sections -->
+            <div class="planner-form-group task-config-group" data-config-for="path" style="display: none;">
+                <label>{{ _('One or more pathways') }}</label>
+                <div class="task-config-options" id="config-path-options"></div>
+            </div>
+
+            <div class="planner-form-group task-config-group" data-config-for="level" style="display: none;">
+                <label for="config-level-value">{{ _('Required level (>=)') }}</label>
+                <input type="number" id="config-level-value" class="planner-form-control" min="1" max="10" step="1" placeholder="{{ _('e.g. 3') }}">
+            </div>
+
+            <div class="planner-form-group task-config-group" data-config-for="role" style="display: none;">
+                <label>{{ _('One or more roles') }}</label>
+                <div class="task-config-options" id="config-role-options"></div>
+            </div>
+
+            <div class="planner-form-group task-config-group" data-config-for="project" style="display: none;">
+                <label>{{ _('One or more projects') }}</label>
+                <div class="task-config-options" id="config-project-options"></div>
+            </div>
+
+            <div class="planner-form-group task-config-group" data-config-for="field" style="display: none;">
+                <label for="config-field-value">{{ _('Member field') }}</label>
+                <select id="config-field-value" class="planner-form-control">
+                    <option value="member_no">{{ _('Member Number (registered on toastmasters.org)') }}</option>
+                    <option value="dtm">{{ _('DTM (Distinguished Toastmaster)') }}</option>
+                    <option value="officer">{{ _('Club Officer') }}</option>
+                    <option value="mentor_id">{{ _('Mentor Assigned') }}</option>
+                </select>
             </div>
             
             <div class="planner-form-group" style="display: flex; align-items: center; gap: 8px;">

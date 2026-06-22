@@ -49,8 +49,89 @@
     .template-card-actions {
         display: flex;
         justify-content: space-between;
+        align-items: center;
         gap: 10px;
         margin-top: 15px;
+    }
+
+    .enrollment-open-btn {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        text-align: center;
+        border-radius: 4px;
+        padding: 6px;
+    }
+
+    /* Delete enrollment confirmation modal */
+    .enrollment-confirm-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(4px);
+        z-index: 2000;
+        display: none;
+        justify-content: center;
+        align-items: center;
+    }
+    .enrollment-confirm-modal.is-open {
+        display: flex;
+    }
+    .enrollment-confirm-modal .custom-modal-content {
+        background: #fff;
+        border-radius: 14px;
+        width: 92%;
+        max-width: 440px;
+        box-shadow: 0 18px 38px rgba(20, 20, 30, 0.18);
+        overflow: hidden;
+        animation: confirmModalIn 0.22s ease-out;
+    }
+    .enrollment-confirm-modal .custom-modal-body {
+        padding: 28px 26px 18px;
+        text-align: center;
+    }
+    .enrollment-confirm-modal .confirm-icon {
+        width: 58px;
+        height: 58px;
+        margin: 0 auto 14px;
+        border-radius: 50%;
+        background: #fdf0ee;
+        color: #b64339;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.45rem;
+    }
+    .enrollment-confirm-modal .confirm-title {
+        font-family: "Montserrat", sans-serif;
+        font-weight: 700;
+        font-size: 1.15rem;
+        color: #1a1a1a;
+        margin: 0 0 10px;
+    }
+    .enrollment-confirm-modal .confirm-sub {
+        font-family: "Inter", sans-serif;
+        font-size: 0.92rem;
+        color: #5b5b66;
+        margin: 0;
+        line-height: 1.5;
+    }
+    .enrollment-confirm-modal .confirm-sub strong {
+        color: #2a2a35;
+    }
+    .enrollment-confirm-modal .confirm-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 14px 22px 22px;
+        border-top: 1px solid #f0ece4;
+        background: #fafafa;
+    }
+    @keyframes confirmModalIn {
+        from { transform: scale(0.94); opacity: 0; }
+        to   { transform: scale(1);    opacity: 1; }
     }
 </style>
 {% endblock %}
@@ -85,6 +166,8 @@
         
         <div class="templates-grid">
             {% for e in enrollments %}
+            {% set mentee_contact = e.mentee.get_contact(get_current_club_id()) if e.mentee else None %}
+            {% set mentee_name = mentee_contact.Name if mentee_contact else (e.mentee.username if e.mentee else '') %}
             <div class="template-card">
                 <div>
                     <div class="template-card-header">
@@ -94,7 +177,7 @@
                         </span>
                     </div>
                     <div style="margin-bottom: 15px; font-size: 0.95rem;">
-                        <div><strong>{{ _('Mentee:') }}</strong> {{ e.mentee.get_contact(get_current_club_id()).Name if e.mentee.get_contact(get_current_club_id()) else e.mentee.username }}</div>
+                        <div><strong>{{ _('Mentee:') }}</strong> {{ mentee_name }}</div>
                         <div style="color: var(--text-muted, #666); margin-top: 4px;">
                             <strong>{{ _('Mentor:') }}</strong>
                             {{ e.mentor_contact.Name if e.mentor_contact else (e.mentor.get_contact(get_current_club_id()).Name if e.mentor else _('not assigned')) }}
@@ -112,9 +195,20 @@
                         </div>
                     </div>
                     <div class="template-card-actions">
-                        <a href="{{ url_for('planner_bp.enrollment_detail', enrollment_id=e.id) }}" class="btn btn-primary btn-sm" style="width: 100%; text-align: center; display: block; border-radius: 4px; padding: 6px;">
+                        <a href="{{ url_for('planner_bp.enrollment_detail', enrollment_id=e.id) }}" class="btn btn-primary btn-sm enrollment-open-btn">
                             <i class="fas fa-folder-open"></i> {{ _('Open') }}
                         </a>
+                        {% if can_manage_members %}
+                        <button type="button"
+                                class="tm-action-btn btn-delete delete-enrollment-btn"
+                                data-enrollment-id="{{ e.id }}"
+                                data-program-name="{{ e.program.name }}"
+                                data-mentee-name="{{ mentee_name }}"
+                                title="{{ _('Delete enrollment') }}"
+                                aria-label="{{ _('Delete enrollment') }}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -130,6 +224,25 @@
                 {% endif %}
             </div>
             {% endfor %}
+        </div>
+    </div>
+
+    <!-- Delete enrollment confirmation modal -->
+    <div class="enrollment-confirm-modal" id="deleteEnrollmentModal" role="dialog" aria-modal="true" aria-labelledby="deleteEnrollmentTitle">
+        <div class="custom-modal-content">
+            <div class="custom-modal-body">
+                <div class="confirm-icon">
+                    <i class="fas fa-trash-alt"></i>
+                </div>
+                <h3 class="confirm-title" id="deleteEnrollmentTitle">{{ _('Delete this enrollment?') }}</h3>
+                <p class="confirm-sub">
+                    {{ _('This will remove ') }}<strong id="deleteEnrollmentMentee"></strong>{{ _("'s enrollment in ") }}<strong id="deleteEnrollmentProgram"></strong>{{ _(' and all related tasks. This action cannot be undone.') }}
+                </p>
+            </div>
+            <div class="confirm-actions">
+                <button type="button" class="btn btn-secondary" id="cancelDeleteEnrollmentBtn">{{ _('Cancel') }}</button>
+                {% call btn('delete', attrs={'id': 'confirmDeleteEnrollmentBtn'}) %}{{ _('Delete') }}{% endcall %}
+            </div>
         </div>
     </div>
 
@@ -289,5 +402,77 @@
             }
         };
     }
+
+    // Delete enrollment flow
+    const deleteEnrollmentModal = document.getElementById('deleteEnrollmentModal');
+    const confirmDeleteEnrollmentBtn = document.getElementById('confirmDeleteEnrollmentBtn');
+    const cancelDeleteEnrollmentBtn = document.getElementById('cancelDeleteEnrollmentBtn');
+    const deleteEnrollmentMentee = document.getElementById('deleteEnrollmentMentee');
+    const deleteEnrollmentProgram = document.getElementById('deleteEnrollmentProgram');
+    let pendingDeleteEnrollmentId = null;
+
+    function openDeleteEnrollmentModal(id, programName, menteeName) {
+        pendingDeleteEnrollmentId = id;
+        deleteEnrollmentMentee.textContent = menteeName || '';
+        deleteEnrollmentProgram.textContent = programName || '';
+        deleteEnrollmentModal.classList.add('is-open');
+    }
+
+    function closeDeleteEnrollmentModal() {
+        deleteEnrollmentModal.classList.remove('is-open');
+        pendingDeleteEnrollmentId = null;
+    }
+
+    if (cancelDeleteEnrollmentBtn) {
+        cancelDeleteEnrollmentBtn.addEventListener('click', closeDeleteEnrollmentModal);
+    }
+    if (deleteEnrollmentModal) {
+        deleteEnrollmentModal.addEventListener('click', function(e) {
+            if (e.target === deleteEnrollmentModal) closeDeleteEnrollmentModal();
+        });
+    }
+    if (confirmDeleteEnrollmentBtn) {
+        confirmDeleteEnrollmentBtn.addEventListener('click', async function() {
+            if (!pendingDeleteEnrollmentId) return;
+            confirmDeleteEnrollmentBtn.disabled = true;
+            try {
+                const response = await fetch(`/api/program-enrollments/${pendingDeleteEnrollmentId}`, {
+                    method: 'DELETE',
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert("{{ _('Failed to delete enrollment') }}");
+                    confirmDeleteEnrollmentBtn.disabled = false;
+                    closeDeleteEnrollmentModal();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert("{{ _('Failed to delete enrollment') }}");
+                confirmDeleteEnrollmentBtn.disabled = false;
+                closeDeleteEnrollmentModal();
+            }
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        const delBtn = e.target.closest('.delete-enrollment-btn');
+        if (delBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            openDeleteEnrollmentModal(
+                delBtn.dataset.enrollmentId,
+                delBtn.dataset.programName,
+                delBtn.dataset.menteeName
+            );
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && deleteEnrollmentModal && deleteEnrollmentModal.classList.contains('is-open')) {
+            closeDeleteEnrollmentModal();
+        }
+    });
 </script>
 {% endblock %}

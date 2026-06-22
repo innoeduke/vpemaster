@@ -186,6 +186,7 @@ def planner():
                          active_programs=active_programs,
                          contacts=contacts,
                          is_admin=is_authorized(Permissions.PROGRAMS_MANAGE),
+                         can_manage_members=is_authorized(Permissions.MEMBERS_MANAGE),
                          meetings=unpublished_meetings,
                          terms=terms,
                          start_date=start_date,
