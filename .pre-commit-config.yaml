@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: jinja-syntax-check
+        name: Jinja2 template syntax check
+        entry: python scripts/jinja_parser_check.py
+        language: system
+        pass_filenames: false
+        files: '^app/templates/.*\.html$'
