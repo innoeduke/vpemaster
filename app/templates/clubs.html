@@ -502,27 +502,36 @@
 
             top.classList.add('club-card--flying');
 
+            const resetTopCard = () => {
+                top.style.transition = 'none';
+                top.classList.remove('club-card--flying');
+                deckCards.push(deckCards.shift());
+                deckCards.forEach((card, i) => card.setAttribute('data-stack-index', i));
+                updateDeckCounter();
+                
+                // Force layout so it snaps instantly without animating the transition back down
+                void top.offsetWidth;
+                top.style.transition = '';
+            };
+
             const onTransitionEnd = (ev) => {
-                if (ev.propertyName !== 'transform') return;
+                if (ev.target !== top) return;
+                if (ev.propertyName !== 'transform' && ev.propertyName !== '-webkit-transform' && ev.propertyName !== 'opacity') return;
+                
                 top.removeEventListener('transitionend', onTransitionEnd);
                 if (deckSafetyTimer) {
                     clearTimeout(deckSafetyTimer);
                     deckSafetyTimer = null;
                 }
-                top.classList.remove('club-card--flying');
-                deckCards.push(deckCards.shift());
-                deckCards.forEach((card, i) => card.setAttribute('data-stack-index', i));
-                updateDeckCounter();
+                resetTopCard();
             };
+            
             top.addEventListener('transitionend', onTransitionEnd);
             deckSafetyTimer = setTimeout(() => {
                 top.removeEventListener('transitionend', onTransitionEnd);
-                top.classList.remove('club-card--flying');
-                deckCards.push(deckCards.shift());
-                deckCards.forEach((card, i) => card.setAttribute('data-stack-index', i));
-                updateDeckCounter();
                 deckSafetyTimer = null;
-            }, 500);
+                resetTopCard();
+            }, 350);
         }
 
         function applyDeckOrSavedView() {
