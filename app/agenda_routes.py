@@ -1443,26 +1443,34 @@ def _upsert_meeting_record(data, media_id):
         meeting.sync_excomm()
 
     if is_new:
-        # Auto-add Officers to Roster
-        from .models import ContactClub
+        # Auto-add Officers to Roster (gated by the "Import Officers to Roster" club rule)
         club_id = get_current_club_id()
         if club_id:
-            # Find all officers for this club
-            officers = ContactClub.query.filter_by(club_id=club_id, is_officer=True).all()
-            
-            # Pre-fetch Officer ticket
-            from .models import Ticket
-            officer_ticket = Ticket.query.filter_by(name='Officer', club_id=club_id).first()
-            
-            for i, membership in enumerate(officers):
-                roster_entry = Roster(
-                    meeting_id=meeting.id,
-                    contact_id=membership.contact_id,
-                    order_number=None,
-                    ticket=officer_ticket,
-                    contact_type='Officer'
-                )
-                db.session.add(roster_entry)
+            from app.models.club_rule import ClubRule
+            rule = ClubRule.query.filter_by(
+                club_id=club_id, rule_name='import_officers_to_meeting'
+            ).first()
+            import_officers_enabled = rule.is_enabled if rule else True
+
+            if import_officers_enabled:
+                # Find all officers for this club
+                officers = ContactClub.query.filter_by(
+                    club_id=club_id, is_officer=True
+                ).all()
+
+                # Pre-fetch Officer ticket
+                officer_ticket = Ticket.query.filter_by(
+                    name='Officer', club_id=club_id
+                ).first()
+
+                for membership in officers:
+                    db.session.add(Roster(
+                        meeting_id=meeting.id,
+                        contact_id=membership.contact_id,
+                        order_number=None,
+                        ticket=officer_ticket,
+                        contact_type='Officer',
+                    ))
 
     return meeting
 

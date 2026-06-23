@@ -97,6 +97,84 @@ def test_upsert_meeting_record_updates_excomm(app, default_club):
 
         db.session.rollback()
 
+def test_upsert_meeting_record_imports_officers_when_rule_enabled(app, default_club):
+    """New meetings auto-add officer roster rows when no ClubRule is set (default ON)."""
+    from app.agenda_routes import _upsert_meeting_record
+    from app.club_context import set_current_club_id
+    from app.models import Contact, ContactClub, Roster
+
+    with app.app_context(), app.test_request_context():
+        set_current_club_id(default_club.id)
+
+        officer = Contact(Name='Officer One', Type='Member', Email='officer1@example.com')
+        db.session.add(officer)
+        db.session.flush()
+        db.session.add(ContactClub(contact_id=officer.id, club_id=default_club.id, is_officer=True))
+
+        data = {
+            'meeting_number': 410,
+            'meeting_date': date(2024, 4, 1),
+            'start_time': None,
+            'ge_mode': 0,
+            'meeting_type': 'Keynote Speech',
+            'meeting_title': 'Officer Import ON',
+            'subtitle': '',
+            'wod': '',
+            'meeting_id': None,
+        }
+        meeting = _upsert_meeting_record(data, None)
+
+        officer_rows = Roster.query.filter_by(
+            meeting_id=meeting.id, contact_type='Officer'
+        ).all()
+        assert len(officer_rows) == 1
+        assert officer_rows[0].contact_id == officer.id
+
+        db.session.rollback()
+
+
+def test_upsert_meeting_record_skips_officers_when_rule_disabled(app, default_club):
+    """New meetings skip officer auto-add when the ClubRule is OFF."""
+    from app.agenda_routes import _upsert_meeting_record
+    from app.club_context import set_current_club_id
+    from app.models import ClubRule, Contact, ContactClub, Roster
+
+    with app.app_context(), app.test_request_context():
+        set_current_club_id(default_club.id)
+
+        # Persist the policy as OFF for this club.
+        db.session.add(ClubRule(
+            club_id=default_club.id,
+            rule_name='import_officers_to_meeting',
+            is_enabled=False,
+        ))
+
+        officer = Contact(Name='Officer Two', Type='Member', Email='officer2@example.com')
+        db.session.add(officer)
+        db.session.flush()
+        db.session.add(ContactClub(contact_id=officer.id, club_id=default_club.id, is_officer=True))
+
+        data = {
+            'meeting_number': 420,
+            'meeting_date': date(2024, 4, 1),
+            'start_time': None,
+            'ge_mode': 0,
+            'meeting_type': 'Keynote Speech',
+            'meeting_title': 'Officer Import OFF',
+            'subtitle': '',
+            'wod': '',
+            'meeting_id': None,
+        }
+        meeting = _upsert_meeting_record(data, None)
+
+        officer_rows = Roster.query.filter_by(
+            meeting_id=meeting.id, contact_type='Officer'
+        ).all()
+        assert officer_rows == []
+
+        db.session.rollback()
+
+
 def test_data_import_service_updates_excomm(app, default_club):
     with app.app_context():
         excomm = ExComm(

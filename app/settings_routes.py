@@ -1756,6 +1756,11 @@ RULE_DEFINITIONS = [
         "display_name": "3-Week Policy",
         "description": "Hide Prepared Speaker roles from members who have spoken in the last 3 meetings.",
     },
+    {
+        "name": "import_officers_to_meeting",
+        "display_name": "Import Officers to Roster",
+        "description": "Auto-add all current officers to a new meeting's roster by default.",
+    },
 ]
 
 
