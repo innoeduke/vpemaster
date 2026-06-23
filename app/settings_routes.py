@@ -1759,7 +1759,12 @@ RULE_DEFINITIONS = [
     {
         "name": "import_officers_to_meeting",
         "display_name": "Import Officers to Roster",
-        "description": "Auto-add all current officers to a new meeting's roster by default.",
+        "description": "Auto-add all current officers to a new meeting's roster.",
+    },
+    {
+        "name": "direct_booking_approval",
+        "display_name": "VPE Approval for Key Roles",
+        "description": "Require VPE approval before a member can book Toastmaster, General Evaluator, Topicmaster, Individual Evaluator, or Prepared Speaker. Turn off to allow direct booking.",
     },
 ]
 

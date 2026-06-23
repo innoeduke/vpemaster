@@ -277,15 +277,23 @@ def _get_contact_role_requirements(contact, club_id):
 def _get_roles_for_booking(meeting_id, current_user_contact_id, selected_meeting, is_past_meeting):
     """Helper function to get and process roles for the booking page."""
     club_id = get_current_club_id()
-    
-    # Use RoleService to get consolidated roles
-    roles = RoleService.get_meeting_roles(meeting_id, club_id)
-    
+
+    # Use RoleService to get consolidated roles. Shallow-copy each dict so
+    # we can annotate per-request fields like effective_needs_approval without
+    # polluting the cache with policy-state values.
+    cached_roles = RoleService.get_meeting_roles(meeting_id, club_id)
+    roles = [dict(r) for r in cached_roles]
+
     # Apply user-specific filters and rules
     filtered_roles = _apply_user_filters_and_rules(
         roles, current_user_contact_id, meeting_id)
     sorted_roles = _sort_roles_for_booking(
         filtered_roles, current_user_contact_id, is_past_meeting)
+
+    # Annotate effective_needs_approval using the current club policy.
+    # When the direct_booking_approval rule is OFF, roles that would
+    # otherwise need VPE approval are treated as directly bookable.
+    RoleService.annotate_effective_needs_approval(sorted_roles, club_id)
 
     # For 'not started' or 'unpublished' meetings, only show Topics Speaker to admins
     is_admin_booker = is_authorized(Permissions.MEETING_MANAGE, meeting=selected_meeting)

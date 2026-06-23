@@ -136,6 +136,50 @@ class RoleService:
         cache.delete(f"role_takers_None_{meeting_id}")
 
     @staticmethod
+    def is_role_approval_required(role_obj, club_id):
+        """True iff a role still requires VPE approval for this club.
+
+        Respects the club-level direct_booking_approval policy: when that
+        policy is OFF, roles with needs_approval=True are treated as
+        directly bookable.
+        """
+        if not role_obj or not role_obj.needs_approval:
+            return False
+        if not club_id:
+            return True
+        from app.models.club_rule import ClubRule
+        record = ClubRule.query.filter_by(
+            club_id=club_id, rule_name='direct_booking_approval'
+        ).first()
+        # Default ON (approval required) when no row exists
+        policy_enabled = record.is_enabled if record else True
+        return policy_enabled
+
+    @staticmethod
+    def annotate_effective_needs_approval(role_dicts, club_id):
+        """Annotate each role dict in-place with effective_needs_approval,
+        reflecting the club's direct_booking_approval policy. When the
+        policy is OFF, roles whose raw needs_approval=True are treated as
+        directly bookable (effective_needs_approval=False).
+
+        The raw `needs_approval` field is left untouched so the original
+        role definition is preserved.
+        """
+        from app.models.club_rule import ClubRule
+        policy_off = False
+        if club_id:
+            policy_record = ClubRule.query.filter_by(
+                club_id=club_id, rule_name='direct_booking_approval'
+            ).first()
+            policy_off = policy_record is not None and not policy_record.is_enabled
+        for role in role_dicts:
+            if role.get('needs_approval') and policy_off:
+                role['effective_needs_approval'] = False
+            else:
+                role['effective_needs_approval'] = bool(role.get('needs_approval'))
+        return role_dicts
+
+    @staticmethod
     def book_meeting_role(session_log, user_contact_id, project_id=None, title=None, pathway=None):
         """
         Handles self-booking logic: Checks duplicates, approvals, then assigns.
@@ -147,11 +191,12 @@ class RoleService:
         if RoleService.check_duplicates(session_log, user_contact_id):
              return False, "Warning: You have already booked a role of this type for this meeting."
 
-        # 2. Approval Check
+        # 2. Approval Check (club-level direct_booking_approval policy may bypass)
         session_type = session_log.session_type
         role_obj = session_type.role if session_type else None
-        
-        if role_obj and role_obj.needs_approval:
+        club_id = session_log.meeting.club_id if session_log.meeting else None
+
+        if role_obj and RoleService.is_role_approval_required(role_obj, club_id):
             return RoleService.join_waitlist(session_log, user_contact_id, project_id=project_id, title=title, pathway=pathway)
 
         # 3. Validation: Is it already taken?
@@ -160,7 +205,7 @@ class RoleService:
 
         # 4. Success -> Assign
         RoleService._captured_assign_role(session_log, [user_contact_id])
-        
+
         # 5. Save Speech Details if provided
         if project_id:
             session_log.Project_ID = project_id
@@ -168,7 +213,7 @@ class RoleService:
             session_log.Session_Title = title
         if pathway:
             session_log.pathway = pathway
-            
+
         db.session.commit()
         return True, "Role booked successfully."
 
@@ -204,9 +249,9 @@ class RoleService:
              # Unassign ONLY this user
              # If there were multiple owners, keep the others.
              new_owner_ids = [oid for oid in current_owner_ids if oid != contact_id]
-             
+
              RoleService._captured_assign_role(session_log, new_owner_ids)
-             
+
              # Auto-promote logic
              # Only auto-promote if the slot becomes COMPLETEY empty?
              # Or if we want to fill the spot immediately?
@@ -214,12 +259,13 @@ class RoleService:
              if not new_owner_ids:
                  session_type = session_log.session_type
                  role_obj = session_type.role if session_type else None
-                 
-                 if role_obj and not role_obj.needs_approval:
+                 club_id = session_log.meeting.club_id if session_log.meeting else None
+
+                 if role_obj and not RoleService.is_role_approval_required(role_obj, club_id):
                      # Check for waitlist
                      next_in_line = Waitlist.query.filter_by(session_log_id=session_log.id)\
                          .order_by(Waitlist.timestamp.asc()).first()
-                     
+
                      if next_in_line:
                          # Promote
                          promoted_id = next_in_line.contact_id

@@ -182,7 +182,7 @@
         {% else %}
         {# For shared roles with existing owners, show Request instead of Book #}
         {% set has_existing_owners = role.all_owners is defined and role.all_owners|length > 0 %}
-        {% if role.needs_approval or has_existing_owners %}
+        {% if role.effective_needs_approval or has_existing_owners %}
         {% call btn('join', attrs={'onclick': "joinWaitlist('" ~ role.session_id ~ "', '" ~ role.role ~ "')"}) %}{{ _('Request') }}{% endcall %}
         {% else %}
         {% call btn('book', attrs={'onclick': "bookOrCancelRole('" ~ role.session_id ~ "', 'book', '" ~ role.role ~ "')"}) %}{{ _('Book') }}{% endcall %}
