@@ -263,6 +263,7 @@
         }
         #meetingDetailsModal .mdm-awards-table-wrap {
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
         #meetingDetailsModal .mdm-awards-table {
             width: 100%;
@@ -439,17 +440,50 @@
             #meetingDetailsModal .mdm-grid,
             #meetingDetailsModal .mdm-grid--three { grid-template-columns: minmax(0, 1fr); }
             #meetingDetailsModal .mdm-section { padding: 16px; }
-            #meetingDetailsModal .mdm-awards-table { font-size: 12px; }
-            #meetingDetailsModal .mdm-awards-table input[type="number"] { width: 48px !important; }
+
+            /* Awards table mobile: tighten padding so text fits in narrow columns */
+            #meetingDetailsModal .mdm-awards-table {
+                font-size: 12px;
+                width: 580px !important;
+            }
+            #meetingDetailsModal .mdm-awards-table thead th {
+                padding: 8px 4px !important;
+                font-size: 10px !important;
+                letter-spacing: 0 !important;
+            }
+            #meetingDetailsModal .mdm-awards-table tbody td {
+                padding: 8px 4px !important;
+            }
+            /* Widen the narrow numeric columns so header text doesn't wrap per-char */
+            #meetingDetailsModal .mdm-awards-table thead th:nth-child(1) { width: 20% !important; }
+            #meetingDetailsModal .mdm-awards-table thead th:nth-child(2),
+            #meetingDetailsModal .mdm-awards-table thead th:nth-child(3) { width: 11% !important; }
+            /* Shrink number inputs to match tighter cells */
+            #meetingDetailsModal .mdm-awards-table input[type="number"] {
+                width: 36px !important;
+                padding: 4px 2px !important;
+                font-size: 12px !important;
+            }
 
             #meetingDetailsModal .mdm-field input[type="date"],
             #meetingDetailsModal .mdm-field input[type="time"] {
-                display: inline-flex !important;
-                align-items: center;
+                -webkit-appearance: none !important;
+                appearance: none !important;
+                display: block !important;
+                height: var(--mobile-control-height) !important;
+                min-height: var(--mobile-control-height) !important;
+                padding: 0 12px !important;
+                line-height: calc(var(--mobile-control-height) - 2px) !important;
+                font-size: 14.5px !important;
+                font-weight: bold !important;
+                font-family: "Montserrat", sans-serif !important;
                 min-width: 0 !important;
                 max-width: 100% !important;
                 width: 100% !important;
                 box-sizing: border-box !important;
+                border: 1px solid #cbd5e0 !important;
+                border-radius: 8px !important;
+                background-color: #fff !important;
             }
             #meetingDetailsModal .mdm-field input[type="date"]::-webkit-datetime-edit,
             #meetingDetailsModal .mdm-field input[type="time"]::-webkit-datetime-edit {

@@ -533,12 +533,23 @@
      that overflows narrow mobile containers. */
   #agenda-content #createAgendaModal .contact-form-item input[type="date"],
   #agenda-content #createAgendaModal .contact-form-item input[type="time"] {
-    display: inline-flex !important;
-    align-items: center;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    display: block !important;
+    height: var(--mobile-control-height) !important;
+    min-height: var(--mobile-control-height) !important;
+    padding: 0 12px !important;
+    line-height: calc(var(--mobile-control-height) - 2px) !important;
+    font-size: 14.5px !important;
+    font-weight: bold !important;
+    font-family: "Montserrat", sans-serif !important;
     min-width: 0 !important;
     max-width: 100% !important;
     width: 100% !important;
     box-sizing: border-box !important;
+    border: 1.5px solid #e9ecef !important;
+    border-radius: 8px !important;
+    background-color: #f8f9fa !important;
   }
 
   #agenda-content #createAgendaModal .contact-form-item input[type="date"]::-webkit-datetime-edit,
