@@ -520,7 +520,7 @@
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
         min-width: 180px;
         padding: 6px 0;
-        z-index: var(--z-app);
+        z-index: var(--z-popover);
     }
 
     /* Invisible hover bridge to prevent menu from closing when cursor crosses the gap */
@@ -590,7 +590,7 @@
         pointer-events: none;
         transform: translateY(8px);
         transition: opacity 0.15s ease, transform 0.15s ease;
-        z-index: var(--z-app);
+        z-index: var(--z-popover);
     }
 
     /* Hover bridge for profile menu */

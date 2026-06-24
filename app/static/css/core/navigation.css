@@ -488,7 +488,7 @@
     min-width: 260px;
     max-width: 320px;
     padding: 8px 0;
-    z-index: var(--z-app);
+    z-index: var(--z-popover);
 }
 
 /* Hover bridge to prevent menu from closing when cursor crosses the gap */
