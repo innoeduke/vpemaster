@@ -194,7 +194,7 @@
     position: sticky;
     left: 0;
     background-color: var(--card-bg, #fff);
-    z-index: 3;
+    z-index: var(--z-inline);
     border-right: 2px solid #ccc;
     box-shadow: 2px 0 5px rgba(0,0,0,0.05);
     text-align: left;
@@ -202,7 +202,7 @@
   }
   
   .matrix-table th:first-child {
-    z-index: 4;
+    z-index: var(--z-inline);
   }
 
   /* Role Columns */

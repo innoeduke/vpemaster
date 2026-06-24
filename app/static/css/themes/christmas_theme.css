@@ -426,7 +426,7 @@ select {
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 9999;
+    z-index: var(--z-toast);
     overflow: hidden;
 }
 
@@ -668,7 +668,7 @@ select {
     height: 100%;
     background-color: #f0f0f0;
     /* White ribbon */
-    z-index: 0;
+    z-index: var(--z-base);
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }
 
@@ -682,7 +682,7 @@ select {
     /* Green Lid */
     border-bottom: 3px solid #d4af37;
     border-radius: 4px 4px 0 0;
-    z-index: 10;
+    z-index: var(--z-sticky);
     /* Topmost */
     top: 0;
     transform-origin: top;
@@ -700,7 +700,7 @@ select {
     /* Scaled to 70% */
     height: 100%;
     background-color: #f0f0f0;
-    z-index: 11;
+    z-index: var(--z-sticky);
 }
 
 /* The Bow */
@@ -713,7 +713,7 @@ select {
     /* Scaled to 70% */
     left: 50%;
     transform: translateX(-50%);
-    z-index: 12;
+    z-index: var(--z-sticky);
     filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
 }
 

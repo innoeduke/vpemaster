@@ -216,7 +216,7 @@
 	border-top: none;
 	border-radius: 0 0 8px 8px;
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-	z-index: 1000;
+	z-index: var(--z-modal);
 	max-height: 250px;
 	overflow-y: auto;
 }
@@ -843,7 +843,7 @@
 	color: #aaa;
 	cursor: pointer;
 	line-height: 1;
-	z-index: 10;
+	z-index: var(--z-sticky);
 	width: 40px;
 	height: 40px;
 	display: flex;
@@ -1019,7 +1019,7 @@ body .page-container .print-pages-container .print-page .print-table tbody tr:la
 	border-radius: 50%;
 	cursor: pointer;
 	transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
-	z-index: 2;
+	z-index: var(--z-inline);
 }
 .checkin-qr-modal .checkin-qr-close:hover {
 	background: rgba(119, 36, 50, 0.08);

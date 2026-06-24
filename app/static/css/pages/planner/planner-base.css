@@ -108,7 +108,7 @@
   backdrop-filter: blur(4px);
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: var(--z-modal);
 }
 
 .planner-modal-content {
@@ -349,7 +349,7 @@ optgroup option {
   border-radius: 8px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   border: 1px solid #eee;
-  z-index: 2100;
+  z-index: var(--z-popover-mid);
   overflow-y: auto;
   overflow-x: hidden;
   display: none;
@@ -483,7 +483,7 @@ optgroup option {
   border-radius: 4px;
   max-height: 400px;
   overflow-y: auto;
-  z-index: 1000;
+  z-index: var(--z-modal);
   padding: 5px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }

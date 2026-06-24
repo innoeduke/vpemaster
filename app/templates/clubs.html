@@ -378,7 +378,7 @@
 </div>
 
 <!-- Full Poster Modal -->
-<div id="posterModal" class="modal" onclick="closePosterModal()" style="display: none; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.85); z-index: 2000; position: fixed; top: 0; left: 0; width: 100%; height: 100%;">
+<div id="posterModal" class="modal" onclick="closePosterModal()" style="display: none; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.85); z-index: var(--z-modal); position: fixed; top: 0; left: 0; width: 100%; height: 100%;">
     <span class="close" style="position: absolute; right: 25px; top: 15px; color: white; font-size: 40px; cursor: pointer; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">&times;</span>
     <img id="modalPosterImg" style="max-width: 90%; max-height: 90%; width: auto; height: auto; object-fit: contain; border-radius: 8px; box-shadow: 0 5px 25px rgba(0,0,0,0.5);">
 </div>

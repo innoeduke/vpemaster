@@ -39,7 +39,7 @@ function initTooltips() {
                 border-radius: 4px;
                 font-size: 0.85em;
                 max-width: 300px;
-                z-index: 10000;
+                z-index: var(--z-popover-high);
                 box-shadow: 0 2px 8px rgba(0,0,0,0.2);
                 line-height: 1.4;
             `;

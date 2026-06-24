@@ -36,7 +36,7 @@
 	grid-template-columns: 35px 1fr 35px;
 	grid-template-rows: auto 1fr auto;
 	position: relative;
-	z-index: 1;
+	z-index: var(--z-inline);
 	/* Keep below header */
 	height: 560px;
 	gap: 5px;
@@ -62,7 +62,7 @@
 	align-items: center;
 	justify-content: center;
 	white-space: nowrap;
-	z-index: 12;
+	z-index: var(--z-sticky);
 }
 
 .axis-title-fixed.left {
@@ -100,14 +100,14 @@
 	width: 100%;
 	height: 100%;
 	pointer-events: none;
-	z-index: 10;
+	z-index: var(--z-sticky);
 }
 
 .chart-scroll-area {
 	flex: 1;
 	overflow-x: auto;
 	overflow-y: hidden;
-	z-index: 5;
+	z-index: var(--z-inline);
 	margin: 0 60px;
 }
 

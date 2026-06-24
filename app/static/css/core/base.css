@@ -365,7 +365,7 @@ h1 {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    z-index: 9999;
+    z-index: var(--z-toast);
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -642,7 +642,7 @@ h1 {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     border-radius: 8px;
     padding: 8px 0;
-    z-index: 1000;
+    z-index: var(--z-modal);
     border: 1px solid #e2e8f0;
 }
 

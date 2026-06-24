@@ -1,0 +1,14 @@
+{
+  "name": "vpemaster",
+  "version": "1.0.0",
+  "private": true,
+  "description": "VPEMaster — Toastmasters club management. Front-end linting only; the app itself is Python/Flask.",
+  "scripts": {
+    "lint:css": "stylelint \"app/static/css/**/*.css\"",
+    "test:rule": "node --test tools/stylelint-plugin-vpe-zindex/index.test.js"
+  },
+  "devDependencies": {
+    "stylelint": "^16.10.0",
+    "stylelint-config-standard": "^36.0.1"
+  }
+}

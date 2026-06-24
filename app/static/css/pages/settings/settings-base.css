@@ -395,7 +395,7 @@
 	border-color: #004165;
 	box-shadow: 0 4px 15px rgba(0, 65, 101, 0.3);
 	transform: scale(1.1);
-	z-index: 1;
+	z-index: var(--z-inline);
 }
 
 .icon-item i {
@@ -659,7 +659,7 @@ fieldset.modal-frame .compact-form {
 	backdrop-filter: blur(4px);
 	justify-content: center;
 	align-items: center;
-	z-index: 2000;
+	z-index: var(--z-modal);
 }
 
 .planner-modal-content {
@@ -805,7 +805,7 @@ fieldset.modal-frame .compact-form {
 	border-radius: 8px;
 	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 	border: 1px solid #e2e8f0;
-	z-index: 2500;
+	z-index: var(--z-popover-high);
 	overflow-y: auto;
 	display: none;
 	animation: dropdownSlide 0.2s ease-out;
@@ -1156,7 +1156,7 @@ fieldset.modal-frame .compact-form {
 	position: absolute;
 	border: 1px solid #e0e0e0;
 	border-top: none;
-	z-index: 9999;
+	z-index: var(--z-popover);
 	top: 100%;
 	left: 0;
 	right: 0;

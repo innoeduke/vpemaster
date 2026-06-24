@@ -13,7 +13,7 @@
 	padding-left: 20px;
 	background-color: transparent;
 	position: relative;
-	z-index: 1002;
+	z-index: var(--z-modal);
 	/* Above fixed header on desktop */
 }
 
@@ -338,7 +338,7 @@
 	border-radius: 8px;
 	background: white;
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-	z-index: 1100;
+	z-index: var(--z-modal-mid);
 	opacity: 0;
 	transform: translateX(400px);
 	transition: all 0.3s ease;

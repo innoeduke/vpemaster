@@ -292,7 +292,7 @@ function showVotingToast(msg) {
 		toast.style.borderRadius = '8px';
 		toast.style.fontSize = '14px';
 		toast.style.fontWeight = '500';
-		toast.style.zIndex = '10000';
+		toast.style.zIndex = 'var(--z-toast)';
 		toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
 		toast.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
 		document.body.appendChild(toast);

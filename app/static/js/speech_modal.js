@@ -215,7 +215,7 @@ function createModalOwnerPicker({ initialOwnerId, initialCredential, contacts, o
     openDropdown.style.left = `${rect.left}px`;
     openDropdown.style.top = `${rect.bottom}px`;
     openDropdown.style.width = `${rect.width}px`;
-    openDropdown.style.zIndex = "10000";
+    openDropdown.style.zIndex = "var(--z-popover)";
   };
 
   const buildSuggestionItems = (matches, val) => {

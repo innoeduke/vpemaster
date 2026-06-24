@@ -8,7 +8,7 @@
   /* Action bar must sit below the mobile nav (z-index 95) so its controls
      don't render through the open nav menu. */
   .action-bar {
-    z-index: 50;
+    z-index: var(--z-sticky);
   }
 
   /* Prevent grid layout from interfering with edit mode table on narrow screens */
@@ -108,7 +108,7 @@
   .wod-display {
     margin-top: 10px;
     position: relative;
-    z-index: 1;
+    z-index: var(--z-inline);
   }
 
   /* Row 2: meeting filter spans the full grid width */
@@ -155,7 +155,7 @@
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     transition: all 0.5s 0.2s ease-in-out;
-    z-index: -1;
+    z-index: var(--z-bg);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -173,11 +173,11 @@
 
   .wod-display.open .envelope-flap {
     transform: rotateX(180deg);
-    z-index: -2;
+    z-index: var(--z-bg-back);
   }
 
   .wod-display.open .letter {
-    z-index: 1;
+    z-index: var(--z-inline);
     opacity: 1;
     transform: translateY(-100%);
     visibility: visible;
@@ -571,7 +571,7 @@
   }
 
   #agenda-content #createAgendaModal .custom-select-options {
-    z-index: 2100;
+    z-index: var(--z-popover-mid);
   }
 
   /* Form Actions Refinement */

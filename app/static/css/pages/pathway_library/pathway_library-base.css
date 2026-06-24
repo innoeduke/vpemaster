@@ -37,12 +37,12 @@
 	width: fit-content;
 	min-width: 200px;
 	max-width: 100%;
-	z-index: 1;
+	z-index: var(--z-inline);
 }
 
 /* Elevate the active dropdown above siblings */
 #pathway-library-container .filters-container .custom-dropdown:focus-within {
-	z-index: 100;
+	z-index: var(--z-app);
 }
 
 /* Force hide the native select but allow JS access */
@@ -83,7 +83,7 @@
 	top: 100%;
 	left: 0;
 	right: auto;
-	z-index: 1000;
+	z-index: var(--z-modal);
 	background: #fff;
 	border: 1px solid #ccc;
 	border-radius: 4px;

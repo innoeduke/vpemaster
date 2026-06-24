@@ -219,7 +219,7 @@ function showResults(query, resultsContainer, sessionId, input, isMemberOnly) {
     resultsContainer.style.width = 'max-content';
     resultsContainer.style.maxWidth = '300px'; // Prevent it from getting too wide
     
-    resultsContainer.style.zIndex = '999999';
+    resultsContainer.style.zIndex = 'var(--z-popover)';
     resultsContainer._ownerInput = input;
     
     if (resultsContainer.parentElement !== document.body) {

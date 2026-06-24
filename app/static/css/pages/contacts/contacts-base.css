@@ -477,7 +477,7 @@
   border-radius: 4px;
   max-height: 400px;
   overflow-y: auto;
-  z-index: 1000;
+  z-index: var(--z-popover);
   padding: 5px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
@@ -613,7 +613,7 @@
 }
 
 #contactModal .custom-select-options {
-  z-index: 2200;
+  z-index: var(--z-popover-mid);
 }
 
 #contactModal .modal-content {

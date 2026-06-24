@@ -742,7 +742,7 @@ function showNotification(message, type = "info") {
     position: fixed;
     top: 20px;
     right: 20px;
-    z-index: 9999;
+    z-index: var(--z-toast);
     min-width: 300px;
     max-width: 500px;
   `;

@@ -1,0 +1,34 @@
+{
+  "_comment": "Single source of truth for the z-index token system. See docs/ZINDEX_SCALE.md for tier semantics. The Stylelint rule (tools/stylelint-plugin-vpe-zindex) and the Python backup linter (tools/lint_zindex.py) both read this file. The CSS mirror lives at app/static/css/core/zindex.css and MUST stay in sync.",
+  "tokens": {
+    "z-bg-back":   -2,
+    "z-bg":        -1,
+    "z-base":       0,
+    "z-inline":     1,
+    "z-inline-high": 9,
+    "z-sticky":    10,
+    "z-sticky-high": 90,
+    "z-app":      100,
+    "z-app-mid":  300,
+    "z-app-high": 999,
+    "z-modal":   1000,
+    "z-modal-mid": 1100,
+    "z-popover": 2000,
+    "z-popover-mid": 2100,
+    "z-popover-high": 2500,
+    "z-toast":   3000,
+    "z-debug":   9999
+  },
+  "tiers": {
+    "T1": { "label": "Below flow",     "range": [-9999, -1], "tokens": ["z-bg-back", "z-bg"] },
+    "T2": { "label": "Default",        "range": [0, 0],      "tokens": ["z-base"] },
+    "T3": { "label": "Inline",         "range": [1, 9],      "tokens": ["z-inline", "z-inline-high"] },
+    "T4": { "label": "Sticky",         "range": [10, 99],    "tokens": ["z-sticky", "z-sticky-high"] },
+    "T5": { "label": "App chrome",     "range": [100, 999],  "tokens": ["z-app", "z-app-mid", "z-app-high"] },
+    "T6": { "label": "Modal",          "range": [1000, 1999],"tokens": ["z-modal", "z-modal-mid"] },
+    "T7": { "label": "Popover",        "range": [2000, 2999],"tokens": ["z-popover", "z-popover-mid", "z-popover-high"] },
+    "T8": { "label": "Toast",          "range": [3000, 3999],"tokens": ["z-toast"] },
+    "T9": { "label": "Debug",          "range": [9999, null],"tokens": ["z-debug"], "production_allowed": false }
+  },
+  "debug_file_patterns": ["**/*-dev.css", "**/debug*.css", "**/dev-*.css"]
+}

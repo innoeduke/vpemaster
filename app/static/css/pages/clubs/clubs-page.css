@@ -71,7 +71,7 @@
         transform: translateY(-50%);
         color: #adb5bd;
         pointer-events: none;
-        z-index: 1;
+        z-index: var(--z-inline);
     }
 
     .clear-search {
@@ -906,7 +906,7 @@
             padding: 4px 12px;
             border-radius: 12px;
             letter-spacing: 0.05em;
-            z-index: 15;
+            z-index: var(--z-sticky);
             pointer-events: none;
             white-space: nowrap;
         }
@@ -931,28 +931,28 @@
         #clubs-grid-view.clubs-grid--deck .club-card[data-stack-index="0"] {
             transform: translateX(0) translateY(0) scale(1);
             opacity: 1;
-            z-index: 10;
+            z-index: var(--z-sticky);
             cursor: pointer;
             pointer-events: auto;
         }
         #clubs-grid-view.clubs-grid--deck .club-card[data-stack-index="1"] {
             transform: translateX(16px) translateY(32px) scale(0.94) rotate(-2deg);
             opacity: 0.85;
-            z-index: 9;
+            z-index: var(--z-inline-high);
             pointer-events: none;
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
         }
         #clubs-grid-view.clubs-grid--deck .club-card[data-stack-index="2"] {
             transform: translateX(-12px) translateY(62px) scale(0.88) rotate(1.5deg);
             opacity: 0.7;
-            z-index: 8;
+            z-index: var(--z-inline-high);
             pointer-events: none;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
         }
         #clubs-grid-view.clubs-grid--deck .club-card[data-stack-index="3"] {
             transform: translateX(8px) translateY(90px) scale(0.82) rotate(-0.5deg);
             opacity: 0.5;
-            z-index: 7;
+            z-index: var(--z-inline-high);
             pointer-events: none;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
@@ -966,7 +966,7 @@
         #clubs-grid-view.clubs-grid--deck .club-card[data-stack-index="11"] {
             transform: translateX(0) translateY(114px) scale(0.78);
             opacity: 0;
-            z-index: 6;
+            z-index: var(--z-inline-high);
             pointer-events: none;
         }
         @media (prefers-reduced-motion: no-preference) {
@@ -991,7 +991,7 @@
     .custom-modal {
         display: none;
         position: fixed;
-        z-index: 9999;
+        z-index: var(--z-modal);
         left: 0;
         top: 0;
         width: 100%;

@@ -610,7 +610,7 @@
 	font-size: 0.85rem;
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
 	background-color: #fff;
-	z-index: 10;
+	z-index: var(--z-sticky);
 }
 
 .msg-row-delete-btn:hover {
@@ -644,7 +644,7 @@
 	font-size: 0.85rem;
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
 	background-color: #fff;
-	z-index: 10;
+	z-index: var(--z-sticky);
 }
 
 .msg-row-restore-btn:hover {
@@ -725,7 +725,7 @@
 .msg-modal.custom-modal {
 	display: none;
 	position: fixed;
-	z-index: 1100;
+	z-index: var(--z-modal-mid);
 	left: 0;
 	top: 0;
 	width: 100%;
@@ -810,7 +810,7 @@
 	right: 0;
 	height: 3px;
 	background: var(--msg-accent);
-	z-index: 1;
+	z-index: var(--z-inline);
 }
 
 .msg-modal .custom-modal-close {
@@ -1144,7 +1144,7 @@
 		   and have it settle at the layout bottom when not scrolling. */
 		position: sticky;
 		bottom: 0;
-		z-index: 2;
+		z-index: var(--z-inline);
 	}
 	.msg-pagination-btn {
 		padding: 0.3rem 0.6rem;

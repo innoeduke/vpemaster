@@ -1,0 +1,11 @@
+{
+  "plugins": ["./tools/stylelint-plugin-vpe-zindex/index.js"],
+  "rules": {
+    "vpe/zindex-token": ["error", {
+      "tokensFile": "./tools/zindex-tokens.json"
+    }]
+  },
+  "ignoreFiles": [
+    "app/static/css/packed.css"
+  ]
+}

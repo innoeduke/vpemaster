@@ -169,7 +169,7 @@
 	border-radius: 8px;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 	transition: all 0.5s 0.2s ease-in-out;
-	z-index: -1;
+	z-index: var(--z-bg);
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
@@ -183,11 +183,11 @@
 
 .wod-display.open .envelope-flap {
 	transform: rotateX(180deg);
-	z-index: -2;
+	z-index: var(--z-bg-back);
 }
 
 .wod-display.open .letter {
-	z-index: 1;
+	z-index: var(--z-inline);
 	opacity: 1;
 	transform: translateY(-100%);
 	visibility: visible;
@@ -346,7 +346,7 @@ select[multiple].edit-mode-field option:checked {
 	margin: 16px auto 14px;
 	max-width: 100%;
 	position: relative;
-	z-index: 100;
+	z-index: var(--z-app);
 	overflow: visible;
 	gap: 10px;
 	flex-wrap: nowrap;
@@ -478,7 +478,7 @@ select[multiple].edit-mode-field option:checked {
 #edit-mode-buttons {
 	position: sticky;
 	top: 60px;
-	z-index: 1000;
+	z-index: var(--z-sticky);
 	width: 100%;
 	box-sizing: border-box;
 	display: flex;
@@ -661,7 +661,7 @@ td.actions-column .tm-action-buttons {
 	   own stacking context via position: relative on the wrapper, so a
 	   low z-index like 1 is contained to that row and gets visually
 	   clipped by the previous row's contents. */
-	z-index: 1000;
+	z-index: var(--z-popover);
 	bottom: 125%;
 	left: 50%;
 	margin-left: -160px;
@@ -722,7 +722,7 @@ td.actions-column .tm-action-buttons {
 }
 
 .edit-mode-active .col-no {
-	min-width: 32px; !important;
+	min-width: 32px !important;
 	text-align: center;
 	position: relative;
 	padding-left: 4px !important;
@@ -756,7 +756,7 @@ td.actions-column .tm-action-buttons {
 	white-space: normal;
 	width: max-content;
 	max-width: 280px;
-	z-index: 1000;
+	z-index: var(--z-popover);
 }
 
 .info-popover::after {
@@ -1096,7 +1096,7 @@ a.owner-link:hover {
 	transform: scale(0.6);
 	transform-origin: right bottom;
 	margin: 0;
-	z-index: 100;
+	z-index: var(--z-app);
 }
 
 .action-bar-wod.open .letter {
@@ -1119,7 +1119,7 @@ a.owner-link:hover {
 	border: 1px solid #d4d4d4;
 	border-bottom: none;
 	border-top: none;
-	z-index: 99;
+	z-index: var(--z-sticky-high);
 	top: auto;
 	bottom: 0;
 	left: 0;
@@ -1481,7 +1481,7 @@ a.owner-link:hover {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    z-index: 10;
+    z-index: var(--z-sticky);
     letter-spacing: 0.05em;
     box-shadow: 0 4px 12px rgba(119, 36, 50, 0.10),
                 0 1px 2px rgba(43, 11, 22, 0.04);
@@ -1603,7 +1603,7 @@ a.owner-link:hover {
 .custom-modal {
 	display: none;
 	position: fixed;
-	z-index: 9999;
+	z-index: var(--z-modal);
 	left: 0;
 	top: 0;
 	width: 100%;
@@ -1912,7 +1912,7 @@ a.owner-link:hover {
     padding: 5px;
     opacity: 0.5;
     transition: all 0.2s ease;
-    z-index: 10;
+    z-index: var(--z-sticky);
 }
 
 .custom-option-delete:hover {
@@ -2054,7 +2054,7 @@ td.non-edit-mode-cell.col-session:hover {
 /* Ensure links inside the cell still behave as links but don't prevent clicking the rest of the cell */
 td.non-edit-mode-cell.col-session a {
 	position: relative;
-	z-index: 2;
+	z-index: var(--z-inline);
 }
 
 /* --- Session Type Picker: trigger button + modal --- */
@@ -2109,7 +2109,7 @@ td.non-edit-mode-cell.col-session a {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	z-index: 2000;
+	z-index: var(--z-modal);
 	padding: 16px;
 }
 
@@ -2386,7 +2386,7 @@ td.non-edit-mode-cell.col-session a {
 	margin: 0;
 }
 /* ===== Award Role Picker Modal ===== */
-.ap-backdrop { z-index: 2000; }
+.ap-backdrop { z-index: var(--z-modal); }
 
 .ap-panel { max-width: 720px; }
 

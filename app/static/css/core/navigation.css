@@ -12,7 +12,7 @@
     transition: width 0.3s ease-in-out;
     overflow: hidden;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
-    z-index: 100;
+    z-index: var(--z-app);
 }
 
 .nav-pane.expanded {
@@ -71,7 +71,7 @@
     pointer-events: none;
     /* Allow clicks to pass through the badge */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    z-index: 1;
+    z-index: var(--z-inline);
     transition: opacity 0.3s ease-in-out;
     opacity: 0;
     /* Hidden when collapsed */
@@ -192,7 +192,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 25px;
-    z-index: 100;
+    z-index: var(--z-app);
     background-color: #004165;
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0, 0, 0, 0.2);
     transition: left 0.3s ease-in-out;
@@ -234,7 +234,7 @@
 /* Profile Dropdown (Desktop Layout) - header user menu only */
 .page-header .profile-container {
     position: relative;
-    z-index: 2;
+    z-index: var(--z-inline);
     margin-left: auto;
     /* Absolute right alignment within flex */
 }
@@ -384,7 +384,7 @@
     gap: 4px;
     font-size: 0.85rem;
     font-weight: 600;
-    z-index: 2;
+    z-index: var(--z-inline);
     margin-right: 15px;
     flex-shrink: 0;
     white-space: nowrap;
@@ -488,7 +488,7 @@
     min-width: 260px;
     max-width: 320px;
     padding: 8px 0;
-    z-index: 102;
+    z-index: var(--z-app);
 }
 
 /* Hover bridge to prevent menu from closing when cursor crosses the gap */

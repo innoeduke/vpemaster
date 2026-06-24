@@ -1,0 +1,43 @@
+/* ========================================
+   Z-Index Token System
+   See docs/ZINDEX_SCALE.md and tools/zindex-tokens.json.
+   This file MUST stay in sync with tools/zindex-tokens.json.
+   Loaded first in the css_all bundle (see app/assets.py).
+   ======================================== */
+
+:root {
+  /* T1: Below flow — decorative layers behind in-flow content */
+  --z-bg-back:     -2;  /* T1 deepest: behind another T1 layer */
+  --z-bg:          -1;  /* T1: behind flow (envelope, underlay) */
+
+  /* T2: Default */
+  --z-base:         0;  /* T2: explicit default flow */
+
+  /* T3: Inline — tiny within-component stacking */
+  --z-inline:       1;  /* T3 low: badges, focus rings, icon overlap */
+  --z-inline-high:  9;  /* T3 high: topmost within-component element */
+
+  /* T4: Sticky — elements pinned during scroll */
+  --z-sticky:      10;  /* T4 low: sticky table headers */
+  --z-sticky-high: 90;  /* T4 high: mobile nav, action bars */
+
+  /* T5: App chrome — persistent UI above content */
+  --z-app:        100;  /* T5 low: top nav, sidebar */
+  --z-app-mid:    300;  /* T5 mid: mobile drawer, FAB */
+  --z-app-high:   999;  /* T5 high: banner alerts above nav */
+
+  /* T6: Modal — focus-capturing dialogs */
+  --z-modal:     1000;  /* T6 low: modal backdrop and dialog */
+  --z-modal-mid: 1100;  /* T6 high: nested modal */
+
+  /* T7: Popover — floating UI that escapes modal clipping */
+  --z-popover:      2000;  /* T7 low: dropdown, tooltip, date picker */
+  --z-popover-mid:  2100;  /* T7 mid: popover above popover */
+  --z-popover-high: 2500;  /* T7 high: stacked popovers */
+
+  /* T8: Toast — top-most system feedback */
+  --z-toast:     3000;  /* T8: flash messages and transient feedback */
+
+  /* T9: Debug — diagnostic overlays only. NEVER in production CSS. */
+  --z-debug:     9999;
+}

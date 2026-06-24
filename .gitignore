@@ -29,3 +29,7 @@ pyrefly.toml
 !/app/static/club_resources/0/
 .claude/
 .worktrees/
+
+# Node toolchain (Stylelint linter)
+node_modules/
+.npm-cache/

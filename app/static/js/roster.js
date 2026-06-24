@@ -97,7 +97,7 @@ function showSuggestions(filteredContacts, elements) {
   suggestionsContainer.style.top = '100%';
   suggestionsContainer.style.left = '0';
   suggestionsContainer.style.width = '100%';
-  suggestionsContainer.style.zIndex = '1000';
+  suggestionsContainer.style.zIndex = 'var(--z-popover)';
   suggestionsContainer.style.backgroundColor = '#fff';
   suggestionsContainer.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
   suggestionsContainer.style.maxHeight = '200px';
@@ -761,7 +761,10 @@ async function handleDirectMobilePDF(btn) {
   modal.style.position = "fixed";
   modal.style.left = "-9999px";
   modal.style.top = "0";
-  modal.style.zIndex = "-1000";
+  // Hide the modal off-screen and behind everything while we render for export.
+  // --z-bg (-1) puts the modal below all in-flow content; combined with
+  // position: fixed + left: -9999px, the modal is invisible to the user.
+  modal.style.zIndex = "var(--z-bg)";
 
   try {
     // Populate the hidden pages inside the modal container

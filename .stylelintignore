@@ -1,0 +1,5 @@
+# Flask-Assets regenerates this bundle. Lint the source files instead.
+app/static/css/packed.css
+
+# Node modules
+node_modules/

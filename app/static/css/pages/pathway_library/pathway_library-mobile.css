@@ -17,7 +17,7 @@
 	/* Round 4: Elevate the entire filters container when any dropdown is open */
 	#pathway-library-container .filters-container.is-open {
 		position: relative;
-		z-index: 9500 !important;
+		z-index: var(--z-popover-high) !important;
 	}
 
 	.filters-container .form-group {
@@ -30,9 +30,9 @@
 	}
 
 	/* Ensure top filters always overlay bottom filters on mobile Safari */
-	.filters-container .form-group:nth-child(1) { z-index: 50; }
-	.filters-container .form-group:nth-child(2) { z-index: 40; }
-	.filters-container .form-group:nth-child(3) { z-index: 30; }
+	.filters-container .form-group:nth-child(1) { z-index: var(--z-sticky-high); }
+	.filters-container .form-group:nth-child(2) { z-index: var(--z-sticky); }
+	.filters-container .form-group:nth-child(3) { z-index: var(--z-sticky); }
 
 	/* Optimizing Project Header for Mobile */
 	.project-header {
@@ -115,7 +115,7 @@
 		top: 100%;
 		left: 0;
 		width: 100%;
-		z-index: 1000;
+		z-index: var(--z-popover);
 		background: #fff;
 		border: 1px solid #ccc;
 		border-radius: 4px;
@@ -129,13 +129,13 @@
 	}
 
 	#pathway-library-container .custom-dropdown.is-open {
-		z-index: 100 !important;
+		z-index: var(--z-app) !important;
 	}
 
 	/* Round 2: Elevate the entire parent form-group to prevent Safari stacking context isolation */
 	#pathway-library-container .filters-container .form-group.is-open {
 		position: relative;
-		z-index: 100 !important;
+		z-index: var(--z-app) !important;
 	}
 
 	#pathway-library-container .filters-container select {

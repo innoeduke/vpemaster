@@ -1,5 +1,5 @@
 #mergeContactModal {
-    z-index: 1005;
+    z-index: var(--z-modal);
 }
 
 #secondaryContactsList {

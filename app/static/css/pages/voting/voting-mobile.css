@@ -148,7 +148,7 @@
 
   .filters-control.premium {
     position: relative;
-    z-index: 10;
+    z-index: var(--z-sticky);
   }
 
   /* Feedback input */

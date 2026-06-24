@@ -3,6 +3,8 @@ from flask_assets import Environment, Bundle
 assets = Environment()
 
 css_all = Bundle(
+    # Z-index tokens MUST load first so --z-* vars are available everywhere
+    'css/core/zindex.css',
     'css/core/base.css',
     'css/core/navigation.css',
     'css/components/forms.css',

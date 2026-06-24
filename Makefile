@@ -1,6 +1,6 @@
 # Makefile for VPEMaster Flask Application
 
-.PHONY: help install install-test-deps test test-fast test-chat-fast test-chat-mock test-verbose test-coverage test-watch test-file test-class test-method run clean
+.PHONY: help install install-test-deps test test-fast test-chat-fast test-chat-mock test-verbose test-coverage test-watch test-file test-class test-method run clean lint lint-css lint-zindex test-rule
 
 # Default target
 help:
@@ -125,10 +125,33 @@ clean:
 	@rm -f test_meeting_*.xlsx 2>/dev/null || true
 	@echo "✅ Cleanup complete"
 
-# Linting (optional - install flake8 first)
+# Linting (flake8 + z-index linters; CSS/JS/HTML z-index drift catcher)
 lint:
-	@echo "Running linter..."
+	@echo "Running Python linter..."
 	@flake8 app/ tests/ --max-line-length=120 --exclude=migrations
+	@echo "Running z-index linters..."
+	@$(MAKE) lint-css
+	@$(MAKE) lint-zindex
+
+lint-css:
+	@if [ -d node_modules ]; then \
+		echo "Running Stylelint (vpe/zindex-token)..."; \
+		npx stylelint "app/static/css/**/*.css"; \
+	else \
+		echo "Skipping lint-css: node_modules not installed. Run 'npm install' to enable."; \
+	fi
+
+lint-zindex:
+	@echo "Running z-index backup linter (templates + JS)..."
+	@python tools/lint_zindex.py
+
+test-rule:
+	@if [ -d node_modules ]; then \
+		echo "Running Stylelint rule unit tests..."; \
+		node --test tools/stylelint-plugin-vpe-zindex/index.test.js; \
+	else \
+		echo "Skipping test-rule: node_modules not installed. Run 'npm install' to enable."; \
+	fi
 
 # Format code (optional - install black first)
 format:

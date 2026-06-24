@@ -310,7 +310,7 @@
 	border-radius: 4px;
 	max-height: 400px;
 	overflow-y: auto;
-	z-index: 1000;
+	z-index: var(--z-popover);
 	padding: 5px;
 	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
@@ -1271,7 +1271,7 @@
 	cursor: pointer;
 	transition: transform 0.2s, z-index 0.2s;
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-	z-index: 1;
+	z-index: var(--z-inline);
 }
 
 .avatar-item:first-child {
@@ -1280,7 +1280,7 @@
 
 .avatar-item:hover {
 	transform: scale(1.15);
-	z-index: 100;
+	z-index: var(--z-app);
 	border-color: #cbd5e0;
 }
 
@@ -1578,7 +1578,7 @@
 .history-modal {
 	display: none;
 	position: fixed;
-	z-index: 2000;
+	z-index: var(--z-modal);
 	left: 0;
 	top: 0;
 	width: 100%;
@@ -1812,7 +1812,7 @@
 	line-height: 1;
 	transition: all 0.2s;
 	border: 1px solid #e2e8f0;
-	z-index: 5;
+	z-index: var(--z-inline);
 }
 
 .extra-roles-badge:hover {
@@ -2079,7 +2079,7 @@
 	box-shadow:
 		0 4px 8px rgba(17, 14, 12, 0.06),
 		0 12px 28px rgba(17, 14, 12, 0.1);
-	z-index: 1000;
+	z-index: var(--z-popover);
 	min-width: 280px;
 	max-height: 320px;
 	overflow-y: auto;
