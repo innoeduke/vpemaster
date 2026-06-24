@@ -129,7 +129,7 @@
 	}
 
 	#pathway-library-container .custom-dropdown.is-open {
-		z-index: var(--z-app) !important;
+		z-index: var(--z-popover) !important;
 	}
 
 	/* Round 2: Elevate the entire parent form-group to prevent Safari stacking context isolation */

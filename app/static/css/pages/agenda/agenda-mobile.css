@@ -516,16 +516,43 @@
 
   /* Reset grid for mobile */
   #agenda-content #createAgendaModal .contact-form-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 20px;
   }
 
   #agenda-content #createAgendaModal .contact-form-item {
     grid-column: span 1;
+    min-width: 0;
   }
 
   #agenda-content #createAgendaModal .contact-form-item.full-width {
     grid-column: span 1;
+  }
+
+  /* Constrain native date/time inputs — WebKit gives them a min-content width
+     that overflows narrow mobile containers. */
+  #agenda-content #createAgendaModal .contact-form-item input[type="date"],
+  #agenda-content #createAgendaModal .contact-form-item input[type="time"] {
+    display: inline-flex !important;
+    align-items: center;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  #agenda-content #createAgendaModal .contact-form-item input[type="date"]::-webkit-datetime-edit,
+  #agenda-content #createAgendaModal .contact-form-item input[type="time"]::-webkit-datetime-edit {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+  }
+
+  #agenda-content #createAgendaModal .contact-form-item input[type="date"]::-webkit-calendar-picker-indicator,
+  #agenda-content #createAgendaModal .contact-form-item input[type="time"]::-webkit-calendar-picker-indicator {
+    flex-shrink: 0;
+    margin: 0 0 0 4px;
+    padding: 0;
   }
 
   #agenda-content #createAgendaModal .contact-form-item label {

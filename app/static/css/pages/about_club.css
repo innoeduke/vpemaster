@@ -148,7 +148,7 @@
         max-height: 200px;
         overflow-y: auto;
         overflow-x: hidden;
-        z-index: var(--z-modal);
+        z-index: var(--z-popover);
         display: none;
         width: 100%;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);

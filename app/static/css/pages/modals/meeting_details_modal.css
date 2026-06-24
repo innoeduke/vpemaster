@@ -437,9 +437,31 @@
             }
             #meetingDetailsModal .mdm-body { padding: 18px; }
             #meetingDetailsModal .mdm-grid,
-            #meetingDetailsModal .mdm-grid--three { grid-template-columns: 1fr; }
+            #meetingDetailsModal .mdm-grid--three { grid-template-columns: minmax(0, 1fr); }
             #meetingDetailsModal .mdm-section { padding: 16px; }
             #meetingDetailsModal .mdm-awards-table { font-size: 12px; }
             #meetingDetailsModal .mdm-awards-table input[type="number"] { width: 48px !important; }
+
+            #meetingDetailsModal .mdm-field input[type="date"],
+            #meetingDetailsModal .mdm-field input[type="time"] {
+                display: inline-flex !important;
+                align-items: center;
+                min-width: 0 !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+            }
+            #meetingDetailsModal .mdm-field input[type="date"]::-webkit-datetime-edit,
+            #meetingDetailsModal .mdm-field input[type="time"]::-webkit-datetime-edit {
+                flex: 1;
+                min-width: 0;
+                padding: 0;
+            }
+            #meetingDetailsModal .mdm-field input[type="date"]::-webkit-calendar-picker-indicator,
+            #meetingDetailsModal .mdm-field input[type="time"]::-webkit-calendar-picker-indicator {
+                flex-shrink: 0;
+                margin: 0 0 0 4px;
+                padding: 0;
+            }
         }
     

@@ -75,7 +75,7 @@ body.modal-open .date-range-picker {
 .date-range-modal {
     position: fixed;
     inset: 0;
-    z-index: var(--z-app-mid);
+    z-index: var(--z-modal);
     display: flex;
     align-items: center;
     justify-content: center;
