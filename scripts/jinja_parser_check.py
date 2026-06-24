@@ -1,6 +1,7 @@
 import os
 import argparse
 from jinja2 import Environment, FileSystemLoader
+from webassets.ext.jinja2 import AssetsExtension
 
 def check_template(env, template_dir, name):
     """Parses a single Jinja template to check for syntax errors."""
@@ -29,7 +30,7 @@ def main():
         print(f"Error: Template directory not found at {template_dir}")
         return
 
-    env = Environment(loader=FileSystemLoader(template_dir))
+    env = Environment(loader=FileSystemLoader(template_dir), extensions=[AssetsExtension])
     
     files_to_check = args.files
     if not files_to_check:
