@@ -1,62 +1,20 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 Flask app for Toastmasters club management (meetings, agendas, Pathways speech tracking, role booking/waitlists, in-meeting voting, AI chat assistant). Production.
 
 ## Commands
 
-Prefer Makefile targets — they wrap pytest with the right flags. Raw `pytest` is fine for ad-hoc runs.
+Prefer Makefile targets — they wrap pytest with the right flags. The Makefile is the source of truth for the full list.
 
 ```bash
-make run                          # dev server on :5001 (reads .flaskenv: FLASK_APP=run.py, FLASK_DEBUG=1)
+make run                          # dev server on :5001
 make run-prod                     # gunicorn (matches deploy setup)
-
-# Tests (in-memory SQLite via conftest.py)
 make test-fast                    # parallel pytest — preferred for full suite
-make test                         # serial pytest
-make test-smart                   # only tests affected by recent changes
-make test-fix                     # only tests that failed in the last run
-make test-coverage                # coverage report → htmlcov/index.html
-make test-watch                   # auto-rerun on file change
-make test-file FILE=tests/test_agenda_routes.py
-make test-class CLASS=tests/test_agenda_routes.py::TestClass
-make test-method METHOD=tests/test_agenda_routes.py::TestClass::test_name
-make test-chat-fast               # parallel: Anthropic-backed chat tests
-make test-chat-mock               # offline: mocked chat tool tests (no API calls)
-
-make lint                         # flake8 (optional — install flake8 first)
-make format                       # black (optional — install black first)
-
-# Database migrations (Makefile wraps flask db — prefer these)
-make db-upgrade
-make db-migrate MSG="description" # generates a new migration
-flask db history                  # raw only — no Makefile target
-
-# CLI
-flask resources backup
-flask sync
-flask translate-scan
 ```
 
 ## CSS — z-index
 
-Pick the tier that matches the **role**, not the visibility you want. The full table is in `docs/ZINDEX_SCALE.md`; the short version:
-
-- `z-bg` / `z-base` — decorative layers and default flow.
-- `z-inline` / `z-inline-high` (1–9) — within-component stacking (a focused filter dropdown, a hovered avatar).
-- `z-sticky` / `z-sticky-high` (10–90) — per-page chrome that scrolls: **action bars, sticky page elements, modal-open filter lifts.**
-- `z-app` / `z-app-mid` / `z-app-high` (100–999) — **app chrome only**, defined in `app/static/css/core/`. The stylelint rule rejects these tokens in any other path. If you find yourself wanting `z-app` in a page, you almost certainly want `z-sticky-high` (page chrome) or `z-popover` (something that escapes the page).
-- `z-modal` / `z-modal-mid` (1000–1199) — modal backdrops and dialogs.
-- `z-popover` / `z-popover-mid` / `z-popover-high` (2000–2500) — dropdowns, tooltips, anything that must escape modal clipping.
-- `z-toast` (3000) — flash messages.
-- `z-debug` (9999) — dev files only (`*-dev.css`, `debug*.css`, `dev-*.css`).
-
-**Common mistake:** giving an action bar / sticky page element `z-app` because you want it above content. It will collide with `.page-header` (also `z-app`) and the later-in-DOM element wins — usually breaking the nav dropdown. Use `z-sticky-high` for page chrome.
-
-Lint: `npm run lint:css` (stylelint enforces token usage **and** tier-permitted paths). Regression tests: `tests/test_zindex_stacking.py` (static) and `tests/test_dropdown_stacking_browser.py` (browser smoke, skipped if Chrome unavailable).
-
-```
+Use the tiers in `docs/ZINDEX_SCALE.md` (definitive). Lint: `npm run lint:css` (stylelint enforces token usage and tier-permitted paths). Regression tests: `tests/test_zindex_stacking.py` (static) and `tests/test_dropdown_stacking_browser.py` (browser smoke, skipped if Chrome unavailable).
 
 ## Conventions (load-bearing — these have bitten us before)
 
@@ -73,13 +31,9 @@ Lint: `npm run lint:css` (stylelint enforces token usage **and** tier-permitted 
 
 **App factory** (`app/__init__.py`): `create_app()` wires up SQLAlchemy, Migrate, Bcrypt, Login, Principal, Mail, Assets, Cache; registers blueprints and CLI commands; sets up Flask-Principal identity loading. Reads `config.Config` (which loads `.env`).
 
-### Database
-
-MySQL in production, SQLite in-memory for tests. Flask-Migrate manages `migrations/versions/`. Constraint naming convention is defined in the app factory.
-
 ### Multi-club context
 
-The app supports multiple clubs per install. Active club is tracked in `session['current_club_id']` via `app/club_context.py`. `get_or_set_default_club()` resolves per request: URL query param → session → user's home club → first club. `@authorized_club_required` gates club-scoped routes.
+Active club is tracked in `session['current_club_id']` via `app/club_context.py`. `get_or_set_default_club()` resolves per request: URL query param → session → user's home club → first club. `@authorized_club_required` gates club-scoped routes.
 
 ### Models (`app/models/`) — one file per domain
 
@@ -95,7 +49,7 @@ One blueprint per file in `app/` (agenda, booking, voting, contacts, speech logs
 
 ### Frontend assets
 
-Flask-Assets bundles CSS with `cssmin` (see `app/assets.py`). CSS pattern: `*-base.css`, `*-desktop.css`, `*-ipad.css`, `*-mobile.css`. JS in `app/static/js/`. Jinja2 templates with `_()` translations and the `static_version` filter for cache busting.
+CSS files follow `*-base.css`, `*-desktop.css`, `*-ipad.css`, `*-mobile.css`. Flask-Assets bundles with `cssmin` (`app/assets.py`). JS in `app/static/js/`. Jinja2 templates use `_()` translations and the `static_version` filter for cache busting.
 
 ## See also
 
