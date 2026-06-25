@@ -50,12 +50,12 @@ class TablePaginator {
             .then(r => r.ok ? r.json() : null)
             .then(data => {
               if (!data || !data.success || !Array.isArray(data.users)) {
-                this.update();
+                applySearchFilter(false);
                 return;
               }
               const tableBody = document.getElementById('users-table-body');
               if (!tableBody) {
-                this.update();
+                applySearchFilter(false);
                 return;
               }
               tableBody.innerHTML = '';
@@ -73,13 +73,13 @@ class TablePaginator {
                 tr.innerHTML = `<td class="col-no">${index + 1}</td><td class="col-name">${user.username}</td><td class="col-roles"></td><td class="col-email"></td><td class="col-phone"></td><td class="col-mentor"></td><td class="col-path"></td><td class="col-project"></td><td class="col-actions"></td>`;
                 tableBody.appendChild(tr);
               });
-              this.update();
-              fetchRemainingUsers().then(() => this.update());
+              applySearchFilter(false);
+              fetchRemainingUsers().then(() => applySearchFilter(false));
             })
-            .catch(() => this.update());
+            .catch(() => applySearchFilter(false));
           return;
         }
-        this.update();
+        applySearchFilter(false);
       });
     }
 
@@ -101,7 +101,9 @@ class TablePaginator {
   }
 
   getTotalPages() {
-    if (this.totalCount !== null) {
+    const searchInput = document.getElementById('global-settings-search');
+    const isSearching = searchInput && searchInput.value.trim().length > 0;
+    if (initialFirstPageOnly && this.totalCount !== null && !isSearching) {
       return Math.ceil(this.totalCount / this.pageSize) || 1;
     }
     const rows = this.getFilteredRows();
@@ -140,7 +142,11 @@ class TablePaginator {
     });
 
     const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
-    const totalForInfo = this.totalCount !== null ? this.totalCount : filteredRows.length;
+    const searchInput = document.getElementById('global-settings-search');
+    const isSearching = searchInput && searchInput.value.trim().length > 0;
+    const totalForInfo = (initialFirstPageOnly && this.totalCount !== null && !isSearching)
+      ? this.totalCount
+      : filteredRows.length;
     if (this.infoDisplay) {
       if (totalForInfo === 0) {
         this.infoDisplay.textContent = isChinese ? '没有找到记录' : 'No records found';
@@ -526,14 +532,10 @@ async function loadUsersAsync() {
   // to load the rest in the background for client-side pagination.
   if (typeof INITIAL_USERS !== 'undefined' && INITIAL_USERS && INITIAL_USERS.length > 0) {
     initialFirstPageOnly = true;
-    if (window.activePaginators && window.activePaginators['user-settings']) {
-      window.activePaginators['user-settings'].update();
-    }
+    applySearchFilter(false);
     // Background-load the remaining rows (page 2+) for full pagination.
     fetchRemainingUsers().then(() => {
-      if (window.activePaginators && window.activePaginators['user-settings']) {
-        window.activePaginators['user-settings'].update();
-      }
+      applySearchFilter(false);
     });
     return;
   }
@@ -637,14 +639,7 @@ async function loadUsersAsync() {
       });
 
       initialFirstPageOnly = false;
-      if (window.activePaginators && window.activePaginators['user-settings']) {
-        window.activePaginators['user-settings'].update();
-      }
-
-      const searchInput = document.getElementById('global-settings-search');
-      if (searchInput && searchInput.value) {
-        searchInput.dispatchEvent(new Event('keyup'));
-      }
+      applySearchFilter(false);
 
     } else {
       const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
@@ -824,6 +819,38 @@ async function toggleConnection(contactId) {
   }
 }
 
+/**
+ * Applies search filter to rows in the users table
+ */
+function applySearchFilter(resetPage = false) {
+  const searchInput = document.getElementById('global-settings-search');
+  const searchClear = document.getElementById('clear-global-settings-search');
+  if (!searchInput) return;
+
+  const filter = searchInput.value.toUpperCase().trim();
+  if (searchClear) searchClear.style.display = filter.length > 0 ? "block" : "none";
+
+  const tbody = document.getElementById('users-table-body');
+  if (tbody) {
+    Array.from(tbody.rows).forEach(row => {
+      let rowText = "";
+      row.querySelectorAll("td").forEach(cell => {
+        rowText += cell.textContent.toUpperCase() + " ";
+      });
+      const isMatch = rowText.includes(filter);
+      row.setAttribute('data-search-hidden', isMatch ? 'false' : 'true');
+    });
+
+    if (window.activePaginators && window.activePaginators['user-settings']) {
+      const paginator = window.activePaginators['user-settings'];
+      if (resetPage) {
+        paginator.currentPage = 1;
+      }
+      paginator.update();
+    }
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   loadUsersAsync();
 
@@ -886,9 +913,9 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             tableBody.appendChild(tr);
           });
-          paginator.update();
+          applySearchFilter(false);
           // Continue loading the rest in the background.
-          fetchRemainingUsers().then(() => paginator.update());
+          fetchRemainingUsers().then(() => applySearchFilter(false));
         })
         .catch(() => { /* keep server-rendered rows */ });
     }
@@ -920,32 +947,14 @@ document.addEventListener('DOMContentLoaded', () => {
   
   if (searchInput) {
     searchInput.addEventListener('keyup', () => {
-      const filter = searchInput.value.toUpperCase().trim();
-      if (searchClear) searchClear.style.display = filter.length > 0 ? "block" : "none";
-      
-      const tbody = document.getElementById('users-table-body');
-      if (tbody) {
-        Array.from(tbody.rows).forEach(row => {
-          let rowText = "";
-          row.querySelectorAll("td").forEach(cell => {
-            rowText += cell.textContent.toUpperCase() + " ";
-          });
-          const isMatch = rowText.includes(filter);
-          row.setAttribute('data-search-hidden', isMatch ? 'false' : 'true');
-        });
-        
-        if (window.activePaginators && window.activePaginators['user-settings']) {
-          window.activePaginators['user-settings'].currentPage = 1;
-          window.activePaginators['user-settings'].update();
-        }
-      }
+      applySearchFilter(true);
     });
   }
 
   if (searchClear && searchInput) {
     searchClear.addEventListener('click', () => {
       searchInput.value = '';
-      searchInput.dispatchEvent(new Event('keyup'));
+      applySearchFilter(true);
     });
   }
 
