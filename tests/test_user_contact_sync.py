@@ -283,3 +283,57 @@ def test_club_admin_restriction(test_app):
             assert user.email == 'admin@example.com'
 
 
+def test_home_club_admin_can_update_profile(test_app):
+    """Test that the admin of the user's home club can update their profile."""
+    from app.users_routes import _save_user_data
+    from unittest.mock import patch, MagicMock
+
+    with test_app.app_context():
+        club = Club(club_no='123', club_name='Test Club')
+        db.session.add(club)
+        db.session.commit()
+
+        user = User(
+            username='homeclubmember',
+            first_name='Original',
+            last_name='Name',
+            email='member@example.com'
+        )
+        user.set_password('password')
+        db.session.add(user)
+        db.session.commit()
+
+        # Set the home club via UserClub
+        from app.models import UserClub
+        uc = UserClub(user_id=user.id, club_id=club.id, is_home=True)
+        db.session.add(uc)
+        db.session.commit()
+
+        # Simulate Home Club Admin (has_club_permission returns True for SETTINGS_EDIT)
+        mock_user = MagicMock()
+        mock_user.is_authenticated = True
+        mock_user.id = 888
+        
+        # When checking SETTINGS_EDIT for club.id, return True
+        def has_permission(perm, club_id):
+            from app.auth.permissions import Permissions
+            return perm == Permissions.SETTINGS_EDIT and club_id == club.id
+
+        mock_user.has_club_permission.side_effect = has_permission
+
+        with patch('app.users_routes.is_authorized', return_value=False), \
+             patch('app.users_routes.current_user', mock_user):
+            _save_user_data(
+                user=user,
+                first_name='HomeAdminUpdate',
+                email='updated@example.com',
+                club_id=club.id
+            )
+            db.session.commit()
+            
+            # SHOULD be updated
+            assert user.first_name == 'HomeAdminUpdate'
+            assert user.email == 'updated@example.com'
+
+
+

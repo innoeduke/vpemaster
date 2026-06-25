@@ -32,6 +32,7 @@ def _save_user_data(user=None, **kwargs):
     # 1. Create or Update User instance
     is_new = user is None
     is_sysadmin = is_authorized(Permissions.SYSADMIN)
+    is_home_club_admin = False
     # Username can only be changed by a sysadmin viewing the super club.
     # A regular clubadmin in their own club has ROSTER_EDIT but not
     # SYSADMIN, so this gates username edits to the super-club sysadmin.
@@ -49,7 +50,6 @@ def _save_user_data(user=None, **kwargs):
     else:
         # Existing User
         # Calculate permissions
-        is_home_club_admin = False
         if current_user.is_authenticated and user.home_club:
             is_home_club_admin = current_user.has_club_permission(Permissions.SETTINGS_EDIT, user.home_club.id)
 
@@ -65,8 +65,8 @@ def _save_user_data(user=None, **kwargs):
             if password:
                 user.set_password(password)
     
-    # Update names - Only if NEW or current_user is SysAdmin
-    if is_new or is_sysadmin:
+    # Update names - Only if NEW or current_user is SysAdmin or is_home_club_admin
+    if is_new or is_sysadmin or is_home_club_admin:
         if kwargs.get('first_name'):
             user.first_name = kwargs.get('first_name')
         if kwargs.get('last_name'):

@@ -22,22 +22,22 @@
         </tr>
         <tr>
             <td><label for="first_name" class="required">First Name:</label></td>
-            <td><input type="text" id="first_name" name="first_name" value="{{ user.first_name if user and user.first_name else (source_contact.first_name if source_contact else (user_contact.first_name if user_contact else '')) }}" required {% if user and not current_user_is_sysadmin %}disabled{% endif %}>
+            <td><input type="text" id="first_name" name="first_name" value="{{ user.first_name if user and user.first_name else (source_contact.first_name if source_contact else (user_contact.first_name if user_contact else '')) }}" required {% if user and not (current_user_is_sysadmin or is_home_club_admin) %}disabled{% endif %}>
             </td>
         </tr>
         <tr>
             <td><label for="last_name" class="required">Last Name:</label></td>
-            <td><input type="text" id="last_name" name="last_name" value="{{ user.last_name if user and user.last_name else (source_contact.last_name if source_contact else (user_contact.last_name if user_contact else '')) }}" required {% if user and not current_user_is_sysadmin %}disabled{% endif %}>
+            <td><input type="text" id="last_name" name="last_name" value="{{ user.last_name if user and user.last_name else (source_contact.last_name if source_contact else (user_contact.last_name if user_contact else '')) }}" required {% if user and not (current_user_is_sysadmin or is_home_club_admin) %}disabled{% endif %}>
             </td>
         </tr>
         <tr>
             <td><label for="email" class="required">Email:</label></td>
-            <td><input type="email" id="email" name="email" value="{{ source_contact.Email if source_contact else (user_contact.Email if (user_contact and user_contact.Email) else (user.email if user and user.email else '')) }}" required {% if user and not current_user_is_sysadmin %}disabled{% endif %}>
+            <td><input type="email" id="email" name="email" value="{{ source_contact.Email if source_contact else (user_contact.Email if (user_contact and user_contact.Email) else (user.email if user and user.email else '')) }}" required {% if user and not (current_user_is_sysadmin or is_home_club_admin) %}disabled{% endif %}>
             </td>
         </tr>
         <tr>
             <td><label for="phone">Phone:</label></td>
-            <td><input type="text" id="phone" name="phone" value="{{ source_contact.Phone_Number if source_contact else (user_contact.Phone_Number if (user_contact and user_contact.Phone_Number) else (user.phone if user and user.phone else '')) }}" {% if user and not current_user_is_sysadmin %}disabled{% endif %}>
+            <td><input type="text" id="phone" name="phone" value="{{ source_contact.Phone_Number if source_contact else (user_contact.Phone_Number if (user_contact and user_contact.Phone_Number) else (user.phone if user and user.phone else '')) }}" {% if user and not (current_user_is_sysadmin or is_home_club_admin) %}disabled{% endif %}>
             </td>
         </tr>
         <tr>
