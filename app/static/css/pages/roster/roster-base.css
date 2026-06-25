@@ -285,13 +285,15 @@
 		padding: 8px 8px;
 	}
 
+	/* .select-item-icon is position:absolute (left:12px) in meeting_filter.css,
+	   so the flex gap won't push the text away — give the text its own padding. */
 	.roster-page-container .input-ticket .custom-select-trigger .selected-text {
 		font-size: 0.72rem;
+		padding-left: 20px;
 	}
 
 	.roster-page-container .input-ticket .custom-select-trigger .select-item-icon {
 		font-size: 0.72rem;
-		margin-right: 6px;
 	}
 
 	.roster-page-container .input-ticket .custom-select-trigger .dropdown-icon {
