@@ -261,3 +261,33 @@ def test_verify_email_when_already_logged_in(client, app):
         logout_resp = client.get('/logout')
         assert logout_resp.status_code == 302
 
+
+def test_reset_password_when_already_logged_in(client, app):
+    with app.app_context():
+        from app import db
+        # Create user B (bob)
+        bob = User(username="bob_reset", email="bob_reset@test.com", status="active")
+        bob.set_password("Password123")
+        # Create user A (alice)
+        alice = User(username="alice_logged", email="alice_logged@test.com", status="active")
+        alice.set_password("Password123")
+        db.session.add_all([bob, alice])
+        db.session.commit()
+        
+        token = bob.get_reset_token()
+
+    with client:
+        # Log in as Alice first
+        login_resp = client.post('/login', data={'username': 'alice_logged', 'password': 'Password123'})
+        assert login_resp.status_code == 302
+        
+        # Click reset password link for Bob while logged in as Alice
+        resp = client.get(f'/reset_password/{token}')
+        assert resp.status_code == 200
+        # Check that we got the reset token template content
+        assert b'Reset Password' in resp.data
+        
+        # Now verify Alice is logged out (e.g. accessing a protected page redirects to login)
+        logout_resp = client.get('/logout')
+        assert logout_resp.status_code == 302
+

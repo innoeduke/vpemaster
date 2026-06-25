@@ -362,3 +362,60 @@ def test_regular_user_denied_unauthorized_club(app, client):
             
             # Verify context was switched to club1 (where they are member)
             assert session['current_club_id'] == club1.id
+
+
+def test_user_club_null_role_fallback_to_member(app):
+    with app.app_context():
+        # Seed the default Member role
+        member_role = AuthRole(name='Member', level=1)
+        db.session.add(member_role)
+        db.session.flush()
+        
+        # Seed the permission and role permission mapping
+        from app.models import Permission, RolePermission
+        from app.auth.permissions import Permissions
+        perm = Permission(name=Permissions.MEMBERS_SELF, description="Self Permission")
+        db.session.add(perm)
+        db.session.flush()
+        
+        rp = RolePermission(role_id=member_role.id, permission_id=perm.id, club_id=None)
+        db.session.add(rp)
+        db.session.flush()
+
+        # Clear static name cache so get_by_name finds it
+        AuthRole.clear_role_cache()
+
+        # Create test club and user
+        club = Club(club_name="Test Role Club", club_no="TEST_ROLE_1")
+        db.session.add(club)
+        db.session.flush()
+        
+        user = User(username='test_fallback_user', status='active')
+        user.set_password('password')
+        db.session.add(user)
+        db.session.flush()
+        
+        # Add UserClub record with explicitly NULL auth_role_id
+        uc = UserClub(user_id=user.id, club_id=club.id)
+        # Manually force auth_role_id to None/NULL to test property fallbacks on existing data
+        uc.auth_role_id = None
+        db.session.add(uc)
+        db.session.commit()
+        
+        # Test property fallback to Member
+        assert uc.club_role is not None
+        assert uc.club_role.name == 'Member'
+        assert len(uc.roles) == 1
+        assert uc.roles[0].name == 'Member'
+        
+        # Test primary role and name checks
+        from flask import session
+        with app.test_request_context():
+            session['current_club_id'] = club.id
+            from flask_login import login_user
+            login_user(user)
+            assert user.primary_role_name == 'Member'
+            
+            # Check permission checks via has_club_permission
+            from app.auth.permissions import Permissions
+            assert user.has_club_permission(Permissions.MEMBERS_SELF, club.id)

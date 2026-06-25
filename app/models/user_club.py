@@ -68,12 +68,25 @@ class UserClub(db.Model):
         Backwards compatibility: Return the role object.
         Used by existing code that expects a single role.
         """
-        return self.auth_role
+        if self.auth_role:
+            return self.auth_role
+        try:
+            from .role import Role
+            return Role.get_by_name('Member')
+        except Exception:
+            return None
 
     @property
     def roles(self):
         """Simplied direct matching for backward compatibility."""
-        return [self.auth_role] if self.auth_role else []
+        if self.auth_role:
+            return [self.auth_role]
+        try:
+            from .role import Role
+            member_role = Role.get_by_name('Member')
+            return [member_role] if member_role else []
+        except Exception:
+            return []
     
     def __init__(self, **kwargs):
         # Backward Compatibility: if club_role_level is provided, convert to auth_role_id
@@ -86,6 +99,16 @@ class UserClub(db.Model):
         elif 'club_role_level' in kwargs:
             # Remove it so it doesn't get passed to the column (which no longer exists)
             kwargs.pop('club_role_level')
+
+        # Default to Member role if auth_role_id is missing or None
+        if 'auth_role_id' not in kwargs or kwargs['auth_role_id'] is None:
+            try:
+                from .role import Role
+                member_role = Role.get_by_name('Member')
+                if member_role:
+                    kwargs['auth_role_id'] = member_role.id
+            except Exception:
+                pass
 
         super(UserClub, self).__init__(**kwargs)
         # 1st club for a user is marked as home club by default if not specified

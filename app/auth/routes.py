@@ -351,7 +351,9 @@ def reset_password_request():
 @auth_bp.route('/reset_password/<token>', methods=['GET', 'POST'])
 def reset_token(token):
     if current_user.is_authenticated:
-        return redirect(url_for('main_bp.index'))
+        session.pop('force_password_reset', None)
+        session.pop('current_club_id', None)
+        logout_user()
     
     user = User.verify_reset_token(token)
     if user is None:
