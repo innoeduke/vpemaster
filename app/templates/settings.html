@@ -79,7 +79,7 @@
         <table id="rules-table">
           <thead>
             <tr>
-              <th>{{ _('Name') }}</th>
+              <th>{{ _('Policy Name') }}</th>
               <th>{{ _('Description') }}</th>
               <th style="text-align: center;">{{ _('Status') }}</th>
             </tr>
@@ -786,6 +786,48 @@
 </div>
 
 <script>
+    window.__translations = window.__translations || {};
+    Object.assign(window.__translations, {
+        "Core": "{{ _('Core') }}",
+        "Booking": "{{ _('Booking') }}",
+        "Voting": "{{ _('Voting') }}",
+        "Roster": "{{ _('Roster') }}",
+        "Calendar": "{{ _('Calendar') }}",
+        "Chatbot": "{{ _('Chatbot') }}",
+        "Journal": "{{ _('Journal') }}",
+        "Club Directory": "{{ _('Club Directory') }}",
+        "Planner": "{{ _('Planner') }}",
+        "Lucky Draw": "{{ _('Lucky Draw') }}",
+        "Upload": "{{ _('Upload') }}",
+        "Data/Slides Export": "{{ _('Data/Slides Export') }}",
+        "Self Check-In": "{{ _('Self Check-In') }}",
+        "Core system functions — always enabled.": "{{ _('Core system functions — always enabled.') }}",
+        "Members book meeting roles and manage waitlists.": "{{ _('Members book meeting roles and manage waitlists.') }}",
+        "Calendar view of upcoming and past meetings.": "{{ _('Calendar view of upcoming and past meetings.') }}",
+        "AI assistant for answering club and Toastmasters questions.": "{{ _('AI assistant for answering club and Toastmasters questions.') }}",
+        "Browse and connect with other clubs in the district.": "{{ _('Browse and connect with other clubs in the district.') }}",
+        "Export meeting data, slides, and reports.": "{{ _('Export meeting data, slides, and reports.') }}",
+        "Personal speech log and Pathways project tracking.": "{{ _('Personal speech log and Pathways project tracking.') }}",
+        "Random draw for Table Topics or other selections.": "{{ _('Random draw for Table Topics or other selections.') }}",
+        "Plan and track Pathways projects and goals.": "{{ _('Plan and track Pathways projects and goals.') }}",
+        "Club member roster with attendance and contact information.": "{{ _('Club member roster with attendance and contact information.') }}",
+        "Members check themselves in to meetings.": "{{ _('Members check themselves in to meetings.') }}",
+        "Upload and share files with the club.": "{{ _('Upload and share files with the club.') }}",
+        "In-meeting voting for best speaker, evaluator, and other awards.": "{{ _('In-meeting voting for best speaker, evaluator, and other awards.') }}",
+        "3-Week Policy": "{{ _('3-Week Policy') }}",
+        "Import Officers to Roster": "{{ _('Import Officers to Roster') }}",
+        "VPE Approval for Key Roles": "{{ _('VPE Approval for Key Roles') }}",
+        "Hide Prepared Speaker roles from members who have spoken in the last 3 meetings.": "{{ _('Hide Prepared Speaker roles from members who have spoken in the last 3 meetings.') }}",
+        "Auto-add all current officers to a new meeting's roster.": "{{ _('Auto-add all current officers to a new meeting\'s roster.') }}",
+        "Require VPE approval before a member can book Toastmaster, General Evaluator, Topicmaster, Individual Evaluator, or Prepared Speaker. Turn off to allow direct booking.": "{{ _('Require VPE approval before a member can book Toastmaster, General Evaluator, Topicmaster, Individual Evaluator, or Prepared Speaker. Turn off to allow direct booking.') }}",
+        "System administrator — unrestricted access across all clubs, settings, modules, and data. Hidden from the club-level permissions matrix by design.": "{{ _('System administrator — unrestricted access across all clubs, settings, modules, and data. Hidden from the club-level permissions matrix by design.') }}",
+        "Club leadership team — full configuration of this club: members, security groups, modules, speech logs, and all data. Typically held by the VPE or President.": "{{ _('Club leadership team — full configuration of this club: members, security groups, modules, speech logs, and all data. Typically held by the VPE or President.') }}",
+        "Club officer — view access across all club data plus the planner and own-profile editing. Held by the seven club officers.": "{{ _('Club officer — view access across all club data plus the planner and own-profile editing. Held by the seven club officers.') }}",
+        "Club member — view published club content, book own meeting roles, edit own profile, and track own speech-log progress.": "{{ _('Club member — view published club content, book own meeting roles, edit own profile, and track own speech-log progress.') }}",
+        "Anonymous visitor — view the public club home page, agenda, and Pathway library. No login required.": "{{ _('Anonymous visitor — view the public club home page, agenda, and Pathway library. No login required.') }}",
+        "Meeting operations lead — owns the weekly meeting: agenda, roster, booking, lucky draw, voting results, and speech-log tracking. Typically held by the SAA and meeting chairs.": "{{ _('Meeting operations lead — owns the weekly meeting: agenda, roster, booking, lucky draw, voting results, and speech-log tracking. Typically held by the SAA and meeting chairs.') }}"
+    });
+
     var ROLES_DATA = {{ roles| tojson }};
     const ALL_CONTACTS = {{ all_contacts| tojson }};
     const CURRENT_CLUB_ID = {{ club_id }};

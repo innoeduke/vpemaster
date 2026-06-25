@@ -67,6 +67,22 @@ class TranslationsTestCase(unittest.TestCase):
             session['locale'] = 'zh_CN'
             self.assertEqual(translate('Calendar'), '日历')
             self.assertEqual(translate('Agenda'), '日程表')
+            self.assertEqual(translate('Templates'), '模板')
+            self.assertEqual(translate('Projects'), '项目')
+            self.assertEqual(translate('Self Check-In'), '自助签到')
+            self.assertEqual(translate('Booking'), '角色预订')
+            self.assertEqual(translate('Members book meeting roles and manage waitlists.'), '成员可预订会议角色及管理候补名单。')
+            self.assertEqual(translate('Awards'), '奖项')
+            self.assertEqual(translate('Club Awards Management'), '俱乐部奖项管理')
+            self.assertEqual(translate('Default'), '默认')
+            self.assertEqual(translate('Category'), '类别')
+            self.assertEqual(translate('Max Votes'), '最大选票数')
+            self.assertEqual(translate('Max Winners'), '最大获奖数')
+            self.assertEqual(translate('Associated Roles'), '关联角色')
+            self.assertEqual(translate('Issues'), '问题反馈')
+            self.assertEqual(translate('Tracker'), '追踪器')
+            self.assertEqual(translate('New Issue'), '新建问题')
+            self.assertEqual(translate('Open Issues'), '待解决问题')
             # Test missing key fallback
             self.assertEqual(translate('Nonexistent Key'), 'Nonexistent Key')
 

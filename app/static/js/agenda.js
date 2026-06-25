@@ -1,6 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
   "use strict";
 
+  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+  function _(text) {
+    if (isChinese) {
+      return (window.__translations && window.__translations[text]) || text;
+    }
+    return text;
+  }
+
   // --- DOM Elements ---
   const agendaContent = document.getElementById("agenda-content");
   const editBtn = document.getElementById("edit-btn");
@@ -621,7 +629,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const tdName = document.createElement('td');
       if (award.is_default) {
         tdName.className = 'award-name-cell';
-        tdName.textContent = award.label;
+        tdName.textContent = _(award.label);
       } else {
         // The four default categories are auto-included in every meeting.
         // Hide them from the picker to avoid duplicates.
@@ -643,7 +651,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const placeholder = document.createElement('option');
         placeholder.value = '';
-        placeholder.textContent = 'Select award…';
+        placeholder.textContent = _('Select award…');
         nameSelect.appendChild(placeholder);
 
         pickerAwards.forEach(a => {
@@ -667,7 +675,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // Add a synthetic option so the user can see the saved name.
             const legacyOpt = document.createElement('option');
             legacyOpt.value = String(award.award_id);
-            legacyOpt.textContent = award.label + ' (legacy)';
+            legacyOpt.textContent = _(award.label) + _(' (legacy)');
             legacyOpt.selected = true;
             nameSelect.insertBefore(legacyOpt, nameSelect.firstChild.nextSibling);
           }
@@ -882,7 +890,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Empty option
       const emptyOpt = document.createElement('option');
       emptyOpt.value = '';
-      emptyOpt.textContent = '— Select —';
+      emptyOpt.textContent = _('— Select —');
       sel.appendChild(emptyOpt);
 
       candidates.forEach(c => {
@@ -926,25 +934,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ===== Award Role Picker Modal =====
   const AP_ROLE_TYPES = [
-    { value: 'officer',    label: 'Officer',    icon: 'fa-user-tie' },
-    { value: 'leading',    label: 'Leading',    icon: 'fa-flag' },
-    { value: 'functional', label: 'Functional', icon: 'fa-tools' },
-    { value: 'other',      label: 'Other',      icon: 'fa-circle' },
+    { value: 'officer',    label: _('Officer'),    icon: 'fa-user-tie' },
+    { value: 'leading',    label: _('Leading'),    icon: 'fa-flag' },
+    { value: 'functional', label: _('Functional'), icon: 'fa-tools' },
+    { value: 'other',      label: _('Other'),      icon: 'fa-circle' },
   ];
 
   function formatAwardRoleLabel(award) {
     const rolesById = new Map((window.__meetingRoles || []).map(r => [r.id, r]));
     const selectedIds = Array.isArray(award.selected_role_ids) ? award.selected_role_ids : [];
-    const names = selectedIds.map(id => (rolesById.get(id) || {}).name).filter(Boolean);
+    const names = selectedIds.map(id => _((rolesById.get(id) || {}).name)).filter(Boolean);
     if (names.length === 0 && award.associated_role) {
       // Legacy fallback: show the name directly if it matches a known role
       const match = (window.__meetingRoles || []).find(r => r.name === award.associated_role);
-      return match ? match.name : award.associated_role;
+      return match ? _(match.name) : _(award.associated_role);
     }
-    if (names.length === 0) return 'Select…';
+    if (names.length === 0) return _('Select…');
     if (names.length === 1) return names[0];
     if (names.length <= 3) return names.join(', ');
-    return names.length + ' roles';
+    return names.length + _(' roles');
   }
 
   let apModal = null;
@@ -957,19 +965,23 @@ document.addEventListener("DOMContentLoaded", () => {
     backdrop.id = 'award-picker-modal';
     backdrop.className = 'st-modal-backdrop ap-backdrop';
     backdrop.style.display = 'none';
+    const modalTitle = _("Select Roles");
+    const modalSubtitle = _("Pick one or more roles for this award. Use the per-type \"Select all\" to bulk-select.");
+    const cancelBtnText = _("Cancel");
+    const okBtnText = _("OK");
     backdrop.innerHTML = `
-      <div class="st-modal-panel ap-panel" role="dialog" aria-modal="true" aria-label="Select Roles">
+      <div class="st-modal-panel ap-panel" role="dialog" aria-modal="true" aria-label="${modalTitle}">
         <div class="st-modal-header">
           <div>
-            <h2 class="st-modal-title">Select Roles</h2>
-            <p class="st-modal-subtitle">Pick one or more roles for this award. Use the per-type "Select all" to bulk-select.</p>
+            <h2 class="st-modal-title">${modalTitle}</h2>
+            <p class="st-modal-subtitle">${modalSubtitle}</p>
           </div>
           <button type="button" class="st-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
         </div>
         <div class="st-modal-body ap-body" id="ap-body"></div>
         <div class="st-modal-footer">
-          <button type="button" class="st-modal-cancel">Cancel</button>
-          <button type="button" class="st-modal-ok">OK</button>
+          <button type="button" class="st-modal-cancel">${cancelBtnText}</button>
+          <button type="button" class="st-modal-ok">${okBtnText}</button>
         </div>
       </div>
     `;
@@ -1023,7 +1035,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     row.appendChild(cb);
     const name = document.createElement('span');
-    name.textContent = role.name;
+    name.textContent = _(role.name);
     row.appendChild(name);
     return row;
   }
@@ -1050,8 +1062,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const groupAll = document.createElement('input');
     groupAll.type = 'checkbox';
     groupAll.className = 'ap-type-group-all ap-select-all-inline';
-    groupAll.title = 'Select all ' + type.label;
-    groupAll.setAttribute('aria-label', 'Select all ' + type.label);
+    groupAll.title = _('Select all ') + type.label;
+    groupAll.setAttribute('aria-label', _('Select all ') + type.label);
     groupAll.addEventListener('change', () => {
       const roleIds = new Set(list.map(r => r.id));
       list.forEach(r => {
@@ -1093,8 +1105,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const topAllCb = document.createElement('input');
     topAllCb.type = 'checkbox';
     topAllCb.className = 'ap-top-all ap-select-all-inline';
-    topAllCb.title = 'Select all roles';
-    topAllCb.setAttribute('aria-label', 'Select all roles');
+    topAllCb.title = _('Select all roles');
+    topAllCb.setAttribute('aria-label', _('Select all roles'));
     topAllCb.addEventListener('change', () => {
       const allIds = (window.__meetingRoles || []).map(r => r.id);
       allIds.forEach(id => {
@@ -1110,7 +1122,7 @@ document.addEventListener("DOMContentLoaded", () => {
     topBar.appendChild(topAllCb);
     const topLabel = document.createElement('span');
     topLabel.className = 'ap-top-label';
-    topLabel.textContent = 'Select all roles';
+    topLabel.textContent = _('Select all roles');
     topBar.appendChild(topLabel);
     body.appendChild(topBar);
 

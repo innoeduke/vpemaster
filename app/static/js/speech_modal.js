@@ -4,6 +4,14 @@
 // These are assumed to be defined in the HTML <script> tags:
 // - allProjects, pathwayMap
 
+const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+function _(text) {
+  if (isChinese) {
+    return (window.__translations && window.__translations[text]) || text;
+  }
+  return text;
+}
+
 // --- DOM Elements Cache ---
 const modalElements = {
   modal: document.getElementById("speechEditModal"),
@@ -606,15 +614,15 @@ async function openEditDetailsModal(
         }
 
         if (regPaths.length > 0) {
-          sel.innerHTML = '<option value="">-- Select Pathway --</option>';
+          sel.innerHTML = '<option value="">' + _("-- Select Pathway --") + '</option>';
           regPaths.forEach((name) => {
-            sel.appendChild(new Option(name, name));
+            sel.appendChild(new Option(_(name), name));
           });
           if (!regPaths.includes("Non Pathway")) {
-            sel.appendChild(new Option("Non Pathway", "Non Pathway"));
+            sel.appendChild(new Option(_("Non Pathway"), "Non Pathway"));
           }
         } else {
-          sel.appendChild(new Option("Non Pathway", "Non Pathway"));
+          sel.appendChild(new Option(_("Non Pathway"), "Non Pathway"));
         }
         return sel;
       }
@@ -623,9 +631,9 @@ async function openEditDetailsModal(
       function buildLevelSelect() {
         const sel = document.createElement("select");
         sel.className = "role-card-level";
-        sel.innerHTML = '<option value="">-- Select Level --</option>';
+        sel.innerHTML = '<option value="">' + _("-- Select Level --") + '</option>';
         for (let i = 1; i <= 5; i++) {
-          sel.appendChild(new Option(`Level ${i}`, i));
+          sel.appendChild(new Option(_(`Level ${i}`), i));
         }
         return sel;
       }
@@ -748,7 +756,7 @@ async function openEditDetailsModal(
             }
             syncLevel();
           },
-          placeholder: initialOwnerId ? "Change owner..." : "Add owner...",
+          placeholder: initialOwnerId ? _("Change owner...") : _("Add owner..."),
         });
 
         // Mount the picker at the top of the card
@@ -794,7 +802,7 @@ async function openEditDetailsModal(
         const addBtn = document.createElement("button");
         addBtn.type = "button";
         addBtn.className = "btn btn-sm add-owner-btn";
-        addBtn.innerHTML = '<i class="fas fa-user-plus"></i> Add Owner';
+        addBtn.innerHTML = '<i class="fas fa-user-plus"></i> ' + _("Add Owner");
         addBtn.style.cssText = "margin-top: 10px; background: #f1f5f9; color: #475569; border: 1px dashed #cbd5e0; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;";
         addBtn.addEventListener("click", () => {
           const newCard = buildRoleOwnerCard(null);
@@ -821,29 +829,29 @@ async function openEditDetailsModal(
         "Evaluation": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
           ...opts,
           projectIds: ProjectID.EVALUATION_PROJECTS,
-          defaultOption: "-- Select Evaluation Project --",
-          speechTitleLabelText: "Evaluator for:"
+          defaultOption: _("-- Select Evaluation Project --"),
+          speechTitleLabelText: _("Evaluator for:")
         }),
         "Individual Evaluator": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
           ...opts,
           projectIds: ProjectID.EVALUATION_PROJECTS,
-          defaultOption: "-- Select Evaluation Project --",
-          speechTitleLabelText: "Evaluator for:"
+          defaultOption: _("-- Select Evaluation Project --"),
+          speechTitleLabelText: _("Evaluator for:")
         }),
         "Panel Discussion": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
           ...opts,
           projectIds: [ProjectID.MODERATOR_PROJECT],
-          defaultOption: "-- Select Panel Discussion Project --"
+          defaultOption: _("-- Select Panel Discussion Project --")
         }),
         "Table Topics": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
           ...opts,
           projectIds: [ProjectID.TOPICSMASTER_PROJECT],
-          defaultOption: "-- Select Table Topics Project --"
+          defaultOption: _("-- Select Table Topics Project --")
         }),
         "Keynote Speech": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
           ...opts,
           projectIds: [ProjectID.KEYNOTE_SPEAKER_PROJECT],
-          defaultOption: "-- Select Keynote Speech Project --"
+          defaultOption: _("-- Select Keynote Speech Project --")
         }),
         "Pathway Speech": (log, opts) => SpeechModalSetupManager.setupSpeech(log, opts),
         "Prepared Speech": (log, opts) => SpeechModalSetupManager.setupSpeech(log, opts),
@@ -852,17 +860,17 @@ async function openEditDetailsModal(
         "Topicsmaster": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
           ...opts,
           projectIds: [ProjectID.TOPICSMASTER_PROJECT],
-          defaultOption: "-- Select Table Topics Project --"
+          defaultOption: _("-- Select Table Topics Project --")
         }),
         "Moderator": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
           ...opts,
           projectIds: [ProjectID.MODERATOR_PROJECT],
-          defaultOption: "-- Select Panel Discussion Project --"
+          defaultOption: _("-- Select Panel Discussion Project --")
         }),
         "Keynote Speaker": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
           ...opts,
           projectIds: [ProjectID.KEYNOTE_SPEAKER_PROJECT],
-          defaultOption: "-- Select Keynote Speech Project --"
+          defaultOption: _("-- Select Keynote Speech Project --")
         }),
         default: (log, opts) => SpeechModalSetupManager.setupRole(log, opts),
       };
@@ -879,7 +887,7 @@ async function openEditDetailsModal(
     modalElements.modal.style.display = "flex";
   } catch (error) {
     console.error("Fetch error:", error);
-    alert(`An error occurred while fetching details: ${error.message}`);
+    alert(_("An error occurred while fetching details: ") + error.message);
   }
 }
 
@@ -904,7 +912,7 @@ async function saveEditDetailsChanges(event) {
     const originalText = submitBtn ? submitBtn.textContent : "Save";
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.textContent = "Saving...";
+      submitBtn.textContent = _("Saving...");
     }
 
     const cards = document.querySelectorAll("#role-owners-scroll .role-owner-card");
@@ -986,11 +994,11 @@ async function saveEditDetailsChanges(event) {
           window.location.reload();
         }
       } else {
-        alert("Error saving: " + (data.message || "Unknown error"));
+        alert(_("Error saving: ") + (data.message || _("Unknown error")));
       }
     } catch (error) {
       console.error("Save error:", error);
-      alert("An error occurred while saving: " + error.message);
+      alert(_("An error occurred while saving: ") + error.message);
     } finally {
       if (submitBtn) {
         submitBtn.disabled = false;
@@ -1015,7 +1023,7 @@ async function saveEditDetailsChanges(event) {
       }
     } catch (error) {
       console.error("Save error:", error);
-      alert(`An error occurred while saving changes: ${error.message}`);
+      alert(_("An error occurred while saving changes: ") + error.message);
     }
   }
 }
@@ -1182,10 +1190,10 @@ function resetModal(logData, sessionType) {
     if (el) el.style.display = "none";
   });
 
-  modalElements.speechTitleLabel.textContent = "Session Title:";
-  modalElements.labelPathway.textContent = "Pathway:";
-  modalElements.labelLevel.textContent = "Level:";
-  modalElements.labelProject.textContent = "Project:";
+  modalElements.speechTitleLabel.textContent = _("Session Title:");
+  modalElements.labelPathway.textContent = _("Pathway:");
+  modalElements.labelLevel.textContent = _("Level:");
+  modalElements.labelProject.textContent = _("Project:");
   modalElements.pathwaySelect.required = false;
 }
 
@@ -1202,15 +1210,15 @@ const SpeechModalSetupManager = {
 
     dropdown.innerHTML = '';
     if (regPaths.length > 0) {
-      dropdown.add(new Option("-- Select Pathway --", ""));
+      dropdown.add(new Option(_("-- Select Pathway --"), ""));
       regPaths.forEach((name) => {
-        dropdown.add(new Option(name, name));
+        dropdown.add(new Option(_(name), name));
       });
       if (!regPaths.includes("Non Pathway")) {
-        dropdown.add(new Option("Non Pathway", "Non Pathway"));
+        dropdown.add(new Option(_("Non Pathway"), "Non Pathway"));
       }
     } else {
-      dropdown.add(new Option("Non Pathway", "Non Pathway"));
+      dropdown.add(new Option(_("Non Pathway"), "Non Pathway"));
     }
   },
 
@@ -1530,9 +1538,9 @@ const SpeechModalSetupManager = {
     }
 
     if (sessionType === "Presentation") {
-      modalElements.labelPathway.textContent = "Pathway:";
-      modalElements.labelProject.textContent = "Project:";
-      modalElements.labelLevel.textContent = "Level:";
+      modalElements.labelPathway.textContent = _("Pathway:");
+      modalElements.labelProject.textContent = _("Project:");
+      modalElements.labelLevel.textContent = _("Level:");
       modalElements.pathwaySelect.required = true;
       modalElements.pathwayGenericRow.style.display = "block";
       modalElements.levelSelectGroup.style.display = "block";
@@ -1588,9 +1596,9 @@ const SpeechModalSetupManager = {
       modalElements.pathwaySelect.value = pathwayToSelect || "";
 
       // Rebuild levels to 3, 4, 5
-      modalElements.levelSelect.innerHTML = '<option value="">-- Select Level --</option>';
+      modalElements.levelSelect.innerHTML = '<option value="">' + _("-- Select Level --") + '</option>';
       for (let i = 3; i <= 5; i++) {
-        modalElements.levelSelect.add(new Option(`Level ${i}`, i));
+        modalElements.levelSelect.add(new Option(_(`Level ${i}`), i));
       }
 
       const currentOwnerId = logData.owner_id;
@@ -1645,9 +1653,9 @@ const SpeechModalSetupManager = {
       },
     });
 
-    modalElements.labelPathway.textContent = "Pathway:";
-    modalElements.labelProject.textContent = "Project:";
-    modalElements.labelLevel.textContent = "Level:";
+    modalElements.labelPathway.textContent = _("Pathway:");
+    modalElements.labelProject.textContent = _("Project:");
+    modalElements.labelLevel.textContent = _("Level:");
 
     this.populatePathwayDropdown(modalElements.pathwaySelect, logData.owner_id, logData.registered_paths, logData.owners_data);
 

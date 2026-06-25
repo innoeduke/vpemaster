@@ -4,8 +4,8 @@
     <!-- Header -->
     <div class="mdm-header">
       <div>
-        <h2>Meeting Details</h2>
-        <p class="mdm-subtitle">Update the meeting's core information, recognitions, and media.</p>
+        <h2>{{ _('Meeting Details') }}</h2>
+        <p class="mdm-subtitle">{{ _("Update the meeting's core information, recognitions, and media.") }}</p>
       </div>
       <button type="button" class="mdm-close" aria-label="Close" onclick="closeMeetingDetailsModal()">
         <i class="fas fa-times"></i>
@@ -20,13 +20,13 @@
         <header class="mdm-section-header">
           <span class="mdm-section-icon mdm-section-icon--info"><i class="fas fa-calendar-alt"></i></span>
           <div>
-            <h3 class="mdm-section-title">Meeting Information</h3>
-            <p class="mdm-section-desc">Identity, schedule, and theme of the meeting.</p>
+            <h3 class="mdm-section-title">{{ _('Meeting Information') }}</h3>
+            <p class="mdm-section-desc">{{ _('Identity, schedule, and theme of the meeting.') }}</p>
           </div>
         </header>
         <div class="mdm-grid mdm-grid--1-2">
           <div class="mdm-field">
-            <label for="edit-meeting-number">Meeting Number</label>
+            <label for="edit-meeting-number">{{ _('Meeting Number') }}</label>
             <input type="number"
                    id="edit-meeting-number"
                    class="edit-mode-field"
@@ -35,11 +35,11 @@
                    step="1"
                    placeholder="e.g. 977">
             <small class="mdm-hint">
-              <i class="fas fa-info-circle"></i>Must be a positive integer not already used by another meeting in this club.
+              <i class="fas fa-info-circle"></i>{{ _('Must be a positive integer not already used by another meeting in this club.') }}
             </small>
           </div>
           <div class="mdm-field">
-            <label for="edit-meeting-title">Meeting Title</label>
+            <label for="edit-meeting-title">{{ _('Meeting Title') }}</label>
             <input type="text"
                    id="edit-meeting-title"
                    class="edit-mode-field"
@@ -47,14 +47,14 @@
                    placeholder="e.g. A Poet's Love">
           </div>
           <div class="mdm-field">
-            <label for="edit-meeting-date">Meeting Date</label>
+            <label for="edit-meeting-date">{{ _('Meeting Date') }}</label>
             <input type="date"
                    id="edit-meeting-date"
                    class="edit-mode-field"
                    value="{{ selected_meeting.Meeting_Date.strftime('%Y-%m-%d') if selected_meeting and selected_meeting.Meeting_Date else '' }}">
           </div>
           <div class="mdm-field">
-            <label for="edit-subtitle">Sub-Title</label>
+            <label for="edit-subtitle">{{ _('Sub-Title') }}</label>
             <input type="text"
                    id="edit-subtitle"
                    class="edit-mode-field"
@@ -64,31 +64,31 @@
         </div>
         <div class="mdm-grid mdm-grid--three" style="margin-top: 14px;">
           <div class="mdm-field">
-            <label for="edit-start-time">Start Time</label>
+            <label for="edit-start-time">{{ _('Start Time') }}</label>
             <input type="time"
                    id="edit-start-time"
                    class="edit-mode-field"
                    value="{{ selected_meeting.Start_Time.strftime('%H:%M') if selected_meeting and selected_meeting.Start_Time else '' }}">
             <small class="mdm-hint">
-              <i class="fas fa-info-circle"></i>Session times roll forward from here.
+              <i class="fas fa-info-circle"></i>{{ _('Session times roll forward from here.') }}
             </small>
           </div>
           <div class="mdm-field">
-            <label for="edit-meeting-type">Meeting Type</label>
+            <label for="edit-meeting-type">{{ _('Meeting Type') }}</label>
             <select id="edit-meeting-type" class="edit-mode-field">
-              <option value="" {% if not selected_meeting.type %}selected{% endif %}>-- Select Type --</option>
+              <option value="" {% if not selected_meeting.type %}selected{% endif %}>{{ _('-- Select Type --') }}</option>
               {% for type in meeting_types.keys() %}
-              <option value="{{ type }}" {% if selected_meeting.type == type %}selected{% endif %}>{{ type }}</option>
+              <option value="{{ type }}" {% if selected_meeting.type == type %}selected{% endif %}>{{ _(type) }}</option>
               {% endfor %}
             </select>
           </div>
           <div class="mdm-field">
-            <label for="edit-wod">Word of the Day</label>
+            <label for="edit-wod">{{ _('Word of the Day') }}</label>
             <input type="text"
                    id="edit-wod"
                    class="edit-mode-field"
                    value="{{ selected_meeting.WOD or '' }}"
-                   placeholder="Enter Word of the Day">
+                   placeholder="{{ _('Enter Word of the Day') }}">
           </div>
         </div>
       </section>
@@ -98,14 +98,14 @@
         <header class="mdm-section-header">
           <span class="mdm-section-icon mdm-section-icon--awards"><i class="fas fa-trophy"></i></span>
           <div>
-            <h3 class="mdm-section-title">Recognition & Awards</h3>
-            <p class="mdm-section-desc">Configure award limits and assign winners.</p>
+            <h3 class="mdm-section-title">{{ _('Recognition & Awards') }}</h3>
+            <p class="mdm-section-desc">{{ _('Configure award limits and assign winners.') }}</p>
           </div>
         </header>
         {% if not selected_meeting or selected_meeting.status != 'finished' %}
         <div class="mdm-notice">
           <i class="fas fa-info-circle"></i>
-          <span>Winner selection becomes editable once the meeting is marked as <strong>finished</strong>.</span>
+          <span>{{ _('Winner selection becomes editable once the meeting is marked as <strong>finished</strong>.') | safe }}</span>
         </div>
         {% endif %}
 
@@ -113,11 +113,11 @@
           <table class="mdm-awards-table" id="awards-table">
             <thead>
               <tr>
-                <th style="width: 24%;">Award Name</th>
-                <th style="width: 9%; text-align: center; white-space: normal;">Max<br>Winners</th>
-                <th style="width: 9%; text-align: center; white-space: normal;">Max<br>Votes</th>
-                <th style="width: 22%;">Roles</th>
-                <th style="width: 28%;">Winner(s)</th>
+                <th style="width: 24%;">{{ _('Award Name') }}</th>
+                <th style="width: 9%; text-align: center; white-space: normal;">{{ _('Max<br>Winners') | safe }}</th>
+                <th style="width: 9%; text-align: center; white-space: normal;">{{ _('Max<br>Votes') | safe }}</th>
+                <th style="width: 22%;">{{ _('Roles') }}</th>
+                <th style="width: 28%;">{{ _('Winner(s)') }}</th>
                 <th style="width: 8%; text-align: center;"></th>
               </tr>
             </thead>
@@ -126,8 +126,8 @@
             </tbody>
           </table>
         </div>
-        <button type="button" class="mdm-add-award-btn" id="add-award-btn" title="Add a custom award">
-          <i class="fas fa-plus"></i> Add Award
+        <button type="button" class="mdm-add-award-btn" id="add-award-btn" title="{{ _('Add a custom award') }}">
+          <i class="fas fa-plus"></i> {{ _('Add Award') }}
         </button>
       </section>
 
@@ -146,13 +146,13 @@
         <header class="mdm-section-header">
           <span class="mdm-section-icon mdm-section-icon--media"><i class="fas fa-video"></i></span>
           <div>
-            <h3 class="mdm-section-title">Media</h3>
-            <p class="mdm-section-desc">Link to the meeting recording or any external reference.</p>
+            <h3 class="mdm-section-title">{{ _('Media') }}</h3>
+            <p class="mdm-section-desc">{{ _('Link to the meeting recording or any external reference.') }}</p>
           </div>
         </header>
         <div class="mdm-grid mdm-grid--single">
           <div class="mdm-field">
-            <label for="edit-media-url">Video URL</label>
+            <label for="edit-media-url">{{ _('Video URL') }}</label>
             <input type="url"
                    id="edit-media-url"
                    class="edit-mode-field"
@@ -165,8 +165,40 @@
 
     <!-- Footer -->
     <div class="mdm-footer">
-      {% call btn('cancel', attrs={'onclick': 'closeMeetingDetailsModal()'}) %}Cancel{% endcall %}
-      {% call btn('save', id='save-meeting-details-btn') %}Save Changes{% endcall %}
+      {% call btn('cancel', attrs={'onclick': 'closeMeetingDetailsModal()'}) %}{{ _('Cancel') }}{% endcall %}
+      {% call btn('save', id='save-meeting-details-btn') %}{{ _('Save Changes') }}{% endcall %}
     </div>
   </div>
 </div>
+
+<!-- Translation injection for client-side JavaScript (Meeting Awards & Roles) -->
+<script>
+  window.__translations = window.__translations || {};
+  Object.assign(window.__translations, {
+    "Best Speaker": "{{ _('Best Speaker') }}",
+    "Best Evaluator": "{{ _('Best Evaluator') }}",
+    "Best Table Topic": "{{ _('Best Table Topic') }}",
+    "Best Role Taker": "{{ _('Best Role Taker') }}",
+    "Select award…": "{{ _('Select award…') }}",
+    " (legacy)": "{{ _(' (legacy)') }}",
+    "Delete this award": "{{ _('Delete this award') }}",
+    "— Select —": "{{ _('— Select —') }}",
+    "Select Roles": "{{ _('Select Roles') }}",
+    "Pick one or more roles for this award. Use the per-type \"Select all\" to bulk-select.": "{{ _('Pick one or more roles for this award. Use the per-type \"Select all\" to bulk-select.') }}",
+    "Cancel": "{{ _('Cancel') }}",
+    "OK": "{{ _('OK') }}",
+    "Select all roles": "{{ _('Select all roles') }}",
+    "Select all ": "{{ _('Select all ') }}",
+    "Officer": "{{ _('Officer') }}",
+    "Leading": "{{ _('Leading') }}",
+    "Functional": "{{ _('Functional') }}",
+    "Other": "{{ _('Other') }}",
+    "Select…": "{{ _('Select…') }}",
+    " roles": "{{ _(' roles') }}"
+  });
+  {% if meeting_roles %}
+    {% for r in meeting_roles %}
+      window.__translations["{{ r.name }}"] = "{{ _(r.name) }}";
+    {% endfor %}
+  {% endif %}
+</script>

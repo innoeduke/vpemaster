@@ -4,8 +4,8 @@
     <!-- Header -->
     <div class="sem-header">
       <div>
-        <h2>Session Details</h2>
-        <p class="sem-subtitle">Update role assignments and pathway information.</p>
+        <h2>{{ _('Session Details') }}</h2>
+        <p class="sem-subtitle">{{ _('Update role assignments and pathway information.') }}</p>
       </div>
       <button type="button" class="sem-close" aria-label="Close" onclick="closeEditDetailsModal()">
         <i class="fas fa-times"></i>
@@ -28,36 +28,36 @@
             <header class="sem-section-header">
               <span class="sem-section-icon sem-section-icon--info"><i class="fas fa-info-circle"></i></span>
               <div>
-                <h3 class="sem-section-title">Project Information</h3>
-                <p class="sem-section-desc">Core details of this project or speech session.</p>
+                <h3 class="sem-section-title">{{ _('Project Information') }}</h3>
+                <p class="sem-section-desc">{{ _('Core details of this project or speech session.') }}</p>
               </div>
             </header>
             <div class="sem-grid">
               <!-- Title (first row) -->
               <div class="sem-field">
-                <label for="edit-speech-title" id="edit-speech-title-label">Title</label>
+                <label for="edit-speech-title" id="edit-speech-title-label">{{ _('Title') }}</label>
                 <div id="evaluation-title-container" style="display: none; gap: 12px; width: 100%;">
                   <select id="evaluation-speaker-select" style="flex: 1; min-width: 0; padding: 10px 12px; font-size: 14px;">
-                    <option value="">-- Select Speaker --</option>
+                    <option value="">{{ _('-- Select Speaker --') }}</option>
                   </select>
                   <input type="text" id="evaluation-custom-title" placeholder="" style="flex: 1; min-width: 0;" disabled />
                 </div>
-                <input type="text" id="edit-speech-title" name="speech_title" required placeholder="Enter title" />
+                <input type="text" id="edit-speech-title" name="speech_title" required placeholder="{{ _('Enter title') }}" />
               </div>
 
               <!-- Is Project? (project role case) -->
               <div class="sem-field" id="project-group" style="display: none;">
                 <label class="sem-checkbox">
                   <input type="checkbox" id="is-project-chk" name="is_project" class="scaled-checkbox">
-                  <span>Is Project?</span>
+                  <span>{{ _('Is Project?') }}</span>
                 </label>
               </div>
 
               <!-- Project select (project role case, conditional) -->
               <div class="sem-field" id="project-mode-fields" style="display: none;">
-                <label for="project-select-dropdown">Project</label>
+                <label for="project-select-dropdown">{{ _('Project') }}</label>
                 <select id="project-select-dropdown" name="project_dropdown">
-                  <option value="">-- Select Project --</option>
+                  <option value="">{{ _('-- Select Project --') }}</option>
                 </select>
               </div>
 
@@ -66,13 +66,13 @@
                 <div class="sem-field">
                   <label class="sem-checkbox">
                     <input type="checkbox" id="edit-is-project" name="is_project" class="scaled-checkbox" checked />
-                    <span>Is Project?</span>
+                    <span>{{ _('Is Project?') }}</span>
                   </label>
                 </div>
                 <div class="sem-field" id="project-select-group">
-                  <label for="edit-project" id="label-project-presentation">Project</label>
+                  <label for="edit-project" id="label-project-presentation">{{ _('Project') }}</label>
                   <select id="edit-project" name="project_id">
-                    <option value="">-- Select a Project --</option>
+                    <option value="">{{ _('-- Select a Project --') }}</option>
                   </select>
                 </div>
               </div>
@@ -80,18 +80,18 @@
               <!-- Duration (Min / Max) -->
               <div class="sem-duration-row">
                 <div class="sem-field">
-                  <label for="edit-duration-min">Min Minutes</label>
+                  <label for="edit-duration-min">{{ _('Min Minutes') }}</label>
                   <input type="number" id="edit-duration-min" name="duration_min" min="0" max="480" placeholder="e.g. 5" />
                 </div>
                 <div class="sem-field">
-                  <label for="edit-duration-max">Max Minutes</label>
+                  <label for="edit-duration-max">{{ _('Max Minutes') }}</label>
                   <input type="number" id="edit-duration-max" name="duration_max" min="0" max="480" placeholder="e.g. 7" />
                 </div>
               </div>
 
               <!-- Displayed Credential (last) -->
               <div class="sem-field" style="display: none;">
-                <label for="edit-credential">Displayed Credential</label>
+                <label for="edit-credential">{{ _('Displayed Credential') }}</label>
                 <input type="text" id="edit-credential" name="credential" placeholder="e.g. DTM" />
               </div>
             </div>
@@ -102,26 +102,26 @@
             <header class="sem-section-header">
               <span class="sem-section-icon sem-section-icon--owners"><i class="fas fa-user"></i></span>
               <div>
-                <h3 class="sem-section-title">Owners &amp; Pathway</h3>
-                <p class="sem-section-desc">The member(s) assigned and their pathway progress.</p>
+                <h3 class="sem-section-title">{{ _('Owners & Pathway') }}</h3>
+                <p class="sem-section-desc">{{ _('The member(s) assigned and their pathway progress.') }}</p>
               </div>
             </header>
 
             <!-- Project role case: owner card with pathway/level -->
             <div class="role-owner-card" id="pathway-group" style="display: none; flex-direction: column;">
-              <div class="card-owner-name" id="project-role-owner-name">Owner Name</div>
+              <div class="card-owner-name" id="project-role-owner-name">{{ _('Owner Name') }}</div>
               <div class="form-group">
-                <label for="pathway-select-dropdown">Pathway</label>
+                <label for="pathway-select-dropdown">{{ _('Pathway') }}</label>
                 <select id="pathway-select-dropdown" name="pathway_dropdown">
-                  <option value="">-- Select Pathway --</option>
+                  <option value="">{{ _('-- Select Pathway --') }}</option>
                 </select>
               </div>
               <div class="form-group" id="level-group">
-                <label for="level-select-dropdown">Level</label>
+                <label for="level-select-dropdown">{{ _('Level') }}</label>
                 <select id="level-select-dropdown" name="level_dropdown">
-                  <option value="">-- Select Level --</option>
+                  <option value="">{{ _('-- Select Level --') }}</option>
                   {% for i in range(1, 6) %}
-                  <option value="{{ i }}">Level {{ i }}</option>
+                  <option value="{{ i }}">{{ _('Level') }} {{ i }}</option>
                   {% endfor %}
                 </select>
               </div>
@@ -130,17 +130,17 @@
             <!-- Standard speech case: owner card with pathway/level -->
             <div id="standard-selection" style="display: none;">
               <div class="role-owner-card" id="speech-owner-card" style="display: flex; flex-direction: column;">
-                <div class="card-owner-name" id="speech-owner-name">Owner Name</div>
+                <div class="card-owner-name" id="speech-owner-name">{{ _('Owner Name') }}</div>
                 <div class="form-group" id="pathway-generic-row">
-                  <label for="edit-pathway" id="label-pathway-series">Pathway</label>
+                  <label for="edit-pathway" id="label-pathway-series">{{ _('Pathway') }}</label>
                   <select id="edit-pathway" name="pathway" onchange="updateDynamicOptions()" required></select>
                 </div>
                 <div class="form-group" id="level-select-group">
-                  <label for="edit-level" id="label-level">Level</label>
+                  <label for="edit-level" id="label-level">{{ _('Level') }}</label>
                   <select id="edit-level" name="level" onchange="updateDynamicOptions()">
-                    <option value="">-- Select Level --</option>
+                    <option value="">{{ _('-- Select Level --') }}</option>
                     {% for i in range(1, 6) %}
-                    <option value="{{ i }}">Level {{ i }}</option>
+                    <option value="{{ i }}">{{ _('Level') }} {{ i }}</option>
                     {% endfor %}
                   </select>
                 </div>
@@ -153,13 +153,13 @@
             <header class="sem-section-header">
               <span class="sem-section-icon sem-section-icon--media"><i class="fas fa-video"></i></span>
               <div>
-                <h3 class="sem-section-title">Media</h3>
-                <p class="sem-section-desc">Link to the meeting recording or any external reference.</p>
+                <h3 class="sem-section-title">{{ _('Media') }}</h3>
+                <p class="sem-section-desc">{{ _('Link to the meeting recording or any external reference.') }}</p>
               </div>
             </header>
             <div class="sem-grid">
               <div class="sem-field">
-                <label for="edit-speech-media-url">Video URL</label>
+                <label for="edit-speech-media-url">{{ _('Video URL') }}</label>
                 <input type="text" id="edit-speech-media-url" name="media_url" placeholder="e.g. https://youtu.be/..." />
               </div>
             </div>
@@ -173,8 +173,8 @@
               <header class="sem-section-header">
                 <span class="sem-section-icon sem-section-icon--role"><i class="fas fa-user-tag"></i></span>
                 <div>
-                  <h3 class="sem-section-title">Role</h3>
-                  <p class="sem-section-desc">The role being assigned in this meeting.</p>
+                  <h3 class="sem-section-title">{{ _('Role') }}</h3>
+                  <p class="sem-section-desc">{{ _('The role being assigned in this meeting.') }}</p>
                 </div>
               </header>
               <div class="sem-role-display" id="role-name-display"></div>
@@ -185,22 +185,22 @@
               <header class="sem-section-header">
                 <span class="sem-section-icon sem-section-icon--info"><i class="fas fa-heading"></i></span>
                 <div>
-                  <h3 class="sem-section-title">Session Details</h3>
-                  <p class="sem-section-desc">Title and timing for this session.</p>
+                  <h3 class="sem-section-title">{{ _('Session Details') }}</h3>
+                  <p class="sem-section-desc">{{ _('Title and timing for this session.') }}</p>
                 </div>
               </header>
               <div class="sem-grid">
                 <div class="sem-field">
-                  <label for="role-session-title">Session Title</label>
-                  <input type="text" id="role-session-title" name="role_session_title" placeholder="Enter session title" />
+                  <label for="role-session-title">{{ _('Session Title') }}</label>
+                  <input type="text" id="role-session-title" name="role_session_title" placeholder="{{ _('Enter session title') }}" />
                 </div>
                 <div class="sem-duration-row">
                   <div class="sem-field">
-                    <label for="role-duration-min">Min Minutes</label>
+                    <label for="role-duration-min">{{ _('Min Minutes') }}</label>
                     <input type="number" id="role-duration-min" name="role_duration_min" min="0" max="480" placeholder="e.g. 5" />
                   </div>
                   <div class="sem-field">
-                    <label for="role-duration-max">Max Minutes</label>
+                    <label for="role-duration-max">{{ _('Max Minutes') }}</label>
                     <input type="number" id="role-duration-max" name="role_duration_max" min="0" max="480" placeholder="e.g. 7" />
                   </div>
                 </div>
@@ -212,8 +212,8 @@
             <header class="sem-section-header">
               <span class="sem-section-icon sem-section-icon--owners"><i class="fas fa-users"></i></span>
               <div>
-                <h3 class="sem-section-title">Owners &amp; Pathway</h3>
-                <p class="sem-section-desc">Members assigned to this role and their pathway progress.</p>
+                <h3 class="sem-section-title">{{ _('Owners & Pathway') }}</h3>
+                <p class="sem-section-desc">{{ _('Members assigned to this role and their pathway progress.') }}</p>
               </div>
             </header>
             <div id="role-owners-scroll" class="role-owners-scroll">
@@ -225,9 +225,61 @@
 
       <!-- Footer -->
       <div class="sem-footer">
-        {% call btn('cancel', attrs={'onclick': 'closeEditDetailsModal()'}) %}Cancel{% endcall %}
-        {% call btn('save', type='submit') %}Save{% endcall %}
+        {% call btn('cancel', attrs={'onclick': 'closeEditDetailsModal()'}) %}{{ _('Cancel') }}{% endcall %}
+        {% call btn('save', type='submit') %}{{ _('Save') }}{% endcall %}
       </div>
     </form>
   </div>
 </div>
+
+<!-- Translation injection for client-side JavaScript -->
+<script>
+  window.__translations = window.__translations || {};
+  Object.assign(window.__translations, {
+    "Suffix": "{{ _('Suffix') }}",
+    "No matches for \"{val}\"": "{{ _('No matches for \"{val}\"') }}",
+    "Loading members… (open the Edit Details modal after the agenda has loaded)": "{{ _('Loading members… (open the Edit Details modal after the agenda has loaded)') }}",
+    "No matches": "{{ _('No matches') }}",
+    "-- Select Pathway --": "{{ _('-- Select Pathway --') }}",
+    "Non Pathway": "{{ _('Non Pathway') }}",
+    "-- Select Level --": "{{ _('-- Select Level --') }}",
+    "Level ": "{{ _('Level ') }}",
+    "Level 1": "{{ _('Level 1') }}",
+    "Level 2": "{{ _('Level 2') }}",
+    "Level 3": "{{ _('Level 3') }}",
+    "Level 4": "{{ _('Level 4') }}",
+    "Level 5": "{{ _('Level 5') }}",
+    "Pathway": "{{ _('Pathway') }}",
+    "Level": "{{ _('Level') }}",
+    "Change owner...": "{{ _('Change owner...') }}",
+    "Add owner...": "{{ _('Add owner...') }}",
+    "Search members...": "{{ _('Search members...') }}",
+    "Add Owner": "{{ _('Add Owner') }}",
+    "Saving...": "{{ _('Saving...') }}",
+    "Session Title:": "{{ _('Session Title:') }}",
+    "Pathway:": "{{ _('Pathway:') }}",
+    "Level:": "{{ _('Level:') }}",
+    "Project:": "{{ _('Project:') }}",
+    "Evaluator for:": "{{ _('Evaluator for:') }}",
+    "-- Select Evaluation Project --": "{{ _('-- Select Evaluation Project --') }}",
+    "-- Select Panel Discussion Project --": "{{ _('-- Select Panel Discussion Project --') }}",
+    "-- Select Table Topics Project --": "{{ _('-- Select Table Topics Project --') }}",
+    "-- Select Keynote Speech Project --": "{{ _('-- Select Keynote Speech Project --') }}",
+    "-- Select Speaker --": "{{ _('-- Select Speaker --') }}",
+    "Others": "{{ _('Others') }}",
+    "Enter person or session to evaluate": "{{ _('Enter person or session to evaluate') }}",
+    "e.g. The Leader in You": "{{ _('e.g. The Leader in You') }}",
+    "e.g. Table Topics": "{{ _('e.g. Table Topics') }}",
+    "e.g. Panel Discussion": "{{ _('e.g. Panel Discussion') }}",
+    "e.g. Evaluating Tom's Ice Breaker": "{{ _('e.g. Evaluating Tom\'s Ice Breaker') }}",
+    "e.g. My Ice Breaker": "{{ _('e.g. My Ice Breaker') }}",
+    "e.g. My Pathway Speech": "{{ _('e.g. My Pathway Speech') }}",
+    "e.g. My Club Presentation": "{{ _('e.g. My Club Presentation') }}",
+    "Enter title": "{{ _('Enter title') }}",
+    "An error occurred while fetching details: ": "{{ _('An error occurred while fetching details: ') }}",
+    "Error saving: ": "{{ _('Error saving: ') }}",
+    "Unknown error": "{{ _('Unknown error') }}",
+    "An error occurred while saving: ": "{{ _('An error occurred while saving: ') }}",
+    "An error occurred while saving changes: ": "{{ _('An error occurred while saving changes: ') }}"
+  });
+</script>

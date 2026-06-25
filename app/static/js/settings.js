@@ -1,4 +1,12 @@
 // static/js/settings.js
+const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+function _(text) {
+  if (isChinese) {
+    return (window.__translations && window.__translations[text]) || text;
+  }
+  return text;
+}
+
 const ICON_LIST = [
   {
     group: "Core Roles", icons: [
@@ -1374,18 +1382,21 @@ function loadModules() {
   const tableBody = document.getElementById("modules-table-body");
   if (!tableBody) return;
 
+  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+
   fetch("/api/settings/modules")
     .then((r) => r.json())
     .then((data) => {
       if (!data.success) {
-        tableBody.innerHTML = `<tr><td colspan="2" class="text-center text-danger">${data.message || 'Error loading modules.'}</td></tr>`;
+        const errorMsg = isChinese ? '加载模块时出错。' : 'Error loading modules.';
+        tableBody.innerHTML = `<tr><td colspan="2" class="text-center text-danger">${data.message || errorMsg}</td></tr>`;
         return;
       }
       renderModulesTable(data.modules);
     })
     .catch((e) => {
       console.error("Modules load error:", e);
-      tableBody.innerHTML = `<tr><td colspan="2" class="text-center text-danger">Error loading modules: ${e.message}</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="2" class="text-center text-danger">${isChinese ? '加载模块出错' : 'Error loading modules'}: ${e.message}</td></tr>`;
     });
 }
 
@@ -1393,13 +1404,13 @@ function renderModulesTable(modules) {
   const tableBody = document.getElementById("modules-table-body");
   if (!tableBody) return;
 
+  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
   if (modules.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4">No modules found.</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4">${isChinese ? '未找到模块。' : 'No modules found.'}</td></tr>`;
     return;
   }
 
   let html = '';
-  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
   modules.forEach((mod) => {
     const isDisabled = mod.is_core || (typeof HAS_SETTINGS_EDIT !== 'undefined' && !HAS_SETTINGS_EDIT);
     const checkedAttr = mod.enabled ? 'checked' : '';
@@ -1419,7 +1430,7 @@ function renderModulesTable(modules) {
         <td>
           <span style="font-weight: 500;">${isChinese ? translateModuleName(mod.name) : mod.name}</span>
         </td>
-        <td>${mod.description || ''}</td>
+        <td>${isChinese ? translateModuleDescription(mod.description) : (mod.description || '')}</td>
         <td>${toggleHtml}</td>
       </tr>
     `;
@@ -1429,21 +1440,11 @@ function renderModulesTable(modules) {
 }
 
 function translateModuleName(name) {
-  const translations = {
-    'Core': '核心',
-    'Booking': '订场',
-    'Voting': '投票',
-    'Roster': '花名册',
-    'Calendar': '日历',
-    'Chatbot': '聊天机器人',
-    'Journal': '演讲记录',
-    'Club Directory': '俱乐部目录',
-    'Planner': '规划助手',
-    'Lucky Draw': '幸运抽奖',
-    'Upload': '上传',
-    'Data/Slides Export': '数据/幻灯片导出'
-  };
-  return translations[name] || name;
+  return _(name);
+}
+
+function translateModuleDescription(desc) {
+  return _(desc);
 }
 
 // Security group description translations. Kept in sync with the English
@@ -1452,16 +1453,7 @@ function translateModuleName(name) {
 // original text keeps English mode and any future / custom descriptions working
 // without code changes.
 function translateRoleDescription(desc) {
-  if (!desc) return desc;
-  const translations = {
-    "System administrator — unrestricted access across all clubs, settings, modules, and data. Hidden from the club-level permissions matrix by design.": "系统管理员 — 在所有俱乐部拥有无限制权限，可访问设置、模块及全部数据。默认在俱乐部层级的权限矩阵中隐藏。",
-    "Club leadership team — full configuration of this club: members, security groups, modules, speech logs, and all data. Typically held by the VPE or President.": "俱乐部领导团队 — 可对本俱乐部进行全面配置：成员、安全组、模块、演讲记录及全部数据。通常由 VPE 或主席担任。",
-    "Meeting operations lead — owns the weekly meeting: agenda, roster, booking, lucky draw, voting results, and speech-log tracking. Typically held by the SAA and meeting chairs.": "会议运营负责人 — 负责每周例会：日程、花名册、订场、幸运抽奖、投票结果及演讲记录跟踪。通常由 SAA 与例会主持担任。",
-    "Club officer — view access across all club data plus the planner and own-profile editing. Held by the seven club officers.": "俱乐部官员 — 可查看俱乐部全部数据，并可使用规划助手与编辑个人资料。由七位俱乐部官员担任。",
-    "Club member — view published club content, book own meeting roles, edit own profile, and track own speech-log progress.": "俱乐部成员 — 可查看已发布的俱乐部内容、预订自己的会议角色、编辑个人资料，并跟踪自己的演讲记录进度。",
-    "Anonymous visitor — view the public club home page, agenda, and Pathway library. No login required.": "匿名访客 — 可查看俱乐部公开主页、日程表与路径库，无需登录。"
-  };
-  return translations[desc] || desc;
+  return _(desc);
 }
 
 function toggleModuleState(checkbox) {
@@ -1506,18 +1498,21 @@ function loadRules() {
   const tableBody = document.getElementById("rules-table-body");
   if (!tableBody) return;
 
+  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+
   fetch("/api/settings/rules")
     .then((r) => r.json())
     .then((data) => {
       if (!data.success) {
-        tableBody.innerHTML = `<tr><td colspan="3" class="text-center text-danger">${data.message || 'Error loading rules.'}</td></tr>`;
+        const errorMsg = isChinese ? '加载政策时出错。' : 'Error loading rules.';
+        tableBody.innerHTML = `<tr><td colspan="3" class="text-center text-danger">${data.message || errorMsg}</td></tr>`;
         return;
       }
       renderRulesTable(data.rules);
     })
     .catch((e) => {
       console.error("Rules load error:", e);
-      tableBody.innerHTML = `<tr><td colspan="3" class="text-center text-danger">Error loading rules: ${e.message}</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="3" class="text-center text-danger">${isChinese ? '加载政策出错' : 'Error loading rules'}: ${e.message}</td></tr>`;
     });
 }
 
@@ -1525,8 +1520,9 @@ function renderRulesTable(rules) {
   const tableBody = document.getElementById("rules-table-body");
   if (!tableBody) return;
 
+  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
   if (rules.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4">No rules found.</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4">${isChinese ? '未找到政策规定。' : 'No rules found.'}</td></tr>`;
     return;
   }
 
@@ -1547,14 +1543,22 @@ function renderRulesTable(rules) {
 
     html += `
       <tr>
-        <td><span style="font-weight: 500;">${rule.display_name}</span></td>
-        <td>${rule.description}</td>
+        <td><span style="font-weight: 500;">${isChinese ? translateRuleName(rule.display_name) : rule.display_name}</span></td>
+        <td>${isChinese ? translateRuleDescription(rule.description) : rule.description}</td>
         <td>${toggleHtml}</td>
       </tr>
     `;
   });
 
   tableBody.innerHTML = html;
+}
+
+function translateRuleName(name) {
+  return _(name);
+}
+
+function translateRuleDescription(desc) {
+  return _(desc);
 }
 
 function toggleRuleState(checkbox) {
