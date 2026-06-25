@@ -40,9 +40,10 @@
 	z-index: var(--z-inline);
 }
 
-/* Elevate the active dropdown above siblings */
+/* Elevate the active dropdown above sibling filters. z-inline-high (T3) is
+   above the resting z-inline (1) of siblings but below page chrome (T5). */
 #pathway-library-container .filters-container .custom-dropdown:focus-within {
-	z-index: var(--z-app);
+	z-index: var(--z-inline-high);
 }
 
 /* Force hide the native select but allow JS access */

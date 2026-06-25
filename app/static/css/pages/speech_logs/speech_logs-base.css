@@ -1280,7 +1280,10 @@
 
 .avatar-item:hover {
 	transform: scale(1.15);
-	z-index: var(--z-app);
+	/* z-inline-high (T3) lifts the hovered avatar above its row siblings,
+	   which sit at z-inline (1). Must stay below z-app (T5) so the page
+	   chrome keeps its tier. */
+	z-index: var(--z-inline-high);
 	border-color: #cbd5e0;
 }
 

@@ -37,6 +37,24 @@ flask db history                  # raw only — no Makefile target
 flask resources backup
 flask sync
 flask translate-scan
+```
+
+## CSS — z-index
+
+Pick the tier that matches the **role**, not the visibility you want. The full table is in `docs/ZINDEX_SCALE.md`; the short version:
+
+- `z-bg` / `z-base` — decorative layers and default flow.
+- `z-inline` / `z-inline-high` (1–9) — within-component stacking (a focused filter dropdown, a hovered avatar).
+- `z-sticky` / `z-sticky-high` (10–90) — per-page chrome that scrolls: **action bars, sticky page elements, modal-open filter lifts.**
+- `z-app` / `z-app-mid` / `z-app-high` (100–999) — **app chrome only**, defined in `app/static/css/core/`. The stylelint rule rejects these tokens in any other path. If you find yourself wanting `z-app` in a page, you almost certainly want `z-sticky-high` (page chrome) or `z-popover` (something that escapes the page).
+- `z-modal` / `z-modal-mid` (1000–1199) — modal backdrops and dialogs.
+- `z-popover` / `z-popover-mid` / `z-popover-high` (2000–2500) — dropdowns, tooltips, anything that must escape modal clipping.
+- `z-toast` (3000) — flash messages.
+- `z-debug` (9999) — dev files only (`*-dev.css`, `debug*.css`, `dev-*.css`).
+
+**Common mistake:** giving an action bar / sticky page element `z-app` because you want it above content. It will collide with `.page-header` (also `z-app`) and the later-in-DOM element wins — usually breaking the nav dropdown. Use `z-sticky-high` for page chrome.
+
+Lint: `npm run lint:css` (stylelint enforces token usage **and** tier-permitted paths). Regression tests: `tests/test_zindex_stacking.py` (static) and `tests/test_dropdown_stacking_browser.py` (browser smoke, skipped if Chrome unavailable).
 
 ```
 

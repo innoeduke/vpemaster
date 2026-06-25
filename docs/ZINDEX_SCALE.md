@@ -111,3 +111,47 @@ Two linters enforce the policy:
 
 Both run as part of `make lint` (which also runs flake8 on Python code).
 Add new tiers, lint, and the existing CI will catch drift.
+
+### Path-restricted tokens (tier discipline)
+
+The Stylelint rule also enforces **where** a token may appear, via the
+`permittedPaths` map at the top of [`tools/zindex-tokens.json`](../tools/zindex-tokens.json).
+Tokens without an entry are allowed in any file; tokens with an entry must
+be used in a file matching at least one pattern, otherwise the rule
+rejects the declaration. This is the rule that catches the bug class
+behind the Meetings-dropdown stacking regression: `.action-bar` was
+given `z-app` (T5, app-chrome tier), which collided with `.page-header`
+in the same tier at the same z-index, and DOM order decided paint
+order against the dropdown.
+
+The current restrictions:
+
+| Token        | Permitted paths                                   | Why                                                |
+|--------------|---------------------------------------------------|----------------------------------------------------|
+| `z-app`      | `app/static/css/core/**`                          | Top nav + sidebar live in core; page chrome must use T4. |
+| `z-app-mid`  | `app/static/css/core/**`                          | Mobile drawer / FAB belong in core chrome.         |
+| `z-app-high` | `app/static/css/core/**`                          | Banner alerts above nav belong in core chrome.     |
+| `z-toast`    | `app/static/css/core/**`, `.../components/**`, `.../themes/**` | Toast can be core, a component, or a theme overlay. |
+| `z-debug`    | dev-file patterns (`**/*-dev.css`, `**/debug*.css`, `**/dev-*.css`) | Production rule; debug must not ship.  |
+
+When the rule rejects a declaration, the message tells you which file
+and which tier you tried to use. The fix is either to move the
+declaration to a permitted path, or — more often — to pick a different
+tier that fits the role. For page chrome that needs to lift above
+siblings, use `z-sticky-high` (T4). For dropdowns/popovers, use
+`z-popover` (T7).
+
+### Stacking regression tests
+
+Two pytest files catch regressions cheaply:
+
+- [`tests/test_zindex_stacking.py`](../tests/test_zindex_stacking.py) —
+  static. Parses `app/static/css/packed.css` and asserts
+  `.page-header` z-index is strictly greater than `.action-bar`. No
+  browser required; runs in <1s. Skips gracefully if packed.css hasn't
+  been built yet.
+- [`tests/test_dropdown_stacking_browser.py`](../tests/test_dropdown_stacking_browser.py) —
+  end-to-end. Loads `packed.css` in headless Chrome with a simulated
+  page-header/dropdown/action-bar DOM, hovers the Meetings trigger, and
+  asserts the dropdown actually paints below the page-header. Skips if
+  Chrome isn't available; deselect with `-m "not browser"`.

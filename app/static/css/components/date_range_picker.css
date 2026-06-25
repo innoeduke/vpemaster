@@ -68,8 +68,10 @@ body.modal-open {
 body.modal-open .filters-control.premium,
 body.modal-open .filters-container.premium,
 body.modal-open .date-range-picker {
+    /* When a modal is open, lift these above sibling page content (T4 high)
+       while staying below the modal backdrop itself (z-modal, T6). */
     position: relative;
-    z-index: var(--z-app-mid);
+    z-index: var(--z-sticky-high);
 }
 
 .date-range-modal {

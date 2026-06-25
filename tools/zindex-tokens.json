@@ -1,5 +1,6 @@
 {
   "_comment": "Single source of truth for the z-index token system. See docs/ZINDEX_SCALE.md for tier semantics. The Stylelint rule (tools/stylelint-plugin-vpe-zindex) and the Python backup linter (tools/lint_zindex.py) both read this file. The CSS mirror lives at app/static/css/core/zindex.css and MUST stay in sync.",
+
   "tokens": {
     "z-bg-back":   -2,
     "z-bg":        -1,
@@ -19,6 +20,16 @@
     "z-toast":   3000,
     "z-debug":   9999
   },
+
+  "_paths_comment": "permittedPaths (optional, per token) restricts where a token may be used. Files not matching any pattern will be rejected by the stylelint rule. Tokens without this field are allowed anywhere. Use file-path globs relative to the repo root (e.g. 'app/static/css/core/**'). Path semantics enforce tier discipline: app-chrome tokens (T5) live in core/** only, so page-level chrome (action bars, sticky page chrome) must use T4 instead of T5.",
+  "permittedPaths": {
+    "z-app":       ["app/static/css/core/**"],
+    "z-app-mid":   ["app/static/css/core/**"],
+    "z-app-high":  ["app/static/css/core/**"],
+    "z-toast":     ["app/static/css/core/**", "app/static/css/components/**", "app/static/css/themes/**"],
+    "z-debug":     ["**/*-dev.css", "**/debug*.css", "**/dev-*.css"]
+  },
+
   "tiers": {
     "T1": { "label": "Below flow",     "range": [-9999, -1], "tokens": ["z-bg-back", "z-bg"] },
     "T2": { "label": "Default",        "range": [0, 0],      "tokens": ["z-base"] },
@@ -30,5 +41,6 @@
     "T8": { "label": "Toast",          "range": [3000, 3999],"tokens": ["z-toast"] },
     "T9": { "label": "Debug",          "range": [9999, null],"tokens": ["z-debug"], "production_allowed": false }
   },
+
   "debug_file_patterns": ["**/*-dev.css", "**/debug*.css", "**/dev-*.css"]
 }

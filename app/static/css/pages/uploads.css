@@ -362,7 +362,10 @@
     align-items: center;
     gap: 20px;
     transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    z-index: var(--z-app-high);
+    /* T4 high — page chrome, but pinned at the bottom so it doesn't
+       overlap the page-header. Use z-sticky-high, not z-app-high, since
+       this isn't global app chrome. */
+    z-index: var(--z-sticky-high);
 }
 
 .floating-actions-bar.show {

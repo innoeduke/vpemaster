@@ -132,10 +132,12 @@
 		z-index: var(--z-popover) !important;
 	}
 
-	/* Round 2: Elevate the entire parent form-group to prevent Safari stacking context isolation */
+	/* Round 2: Elevate the entire parent form-group to prevent Safari stacking context isolation.
+	   Use z-popover (T7) — must be above the page-header (z-app, T5) so the
+	   menu inside (z-popover) can escape and paint over app chrome. */
 	#pathway-library-container .filters-container .form-group.is-open {
 		position: relative;
-		z-index: var(--z-app) !important;
+		z-index: var(--z-popover) !important;
 	}
 
 	#pathway-library-container .filters-container select {

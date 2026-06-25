@@ -346,7 +346,9 @@ select[multiple].edit-mode-field option:checked {
 	margin: 16px auto 14px;
 	max-width: 100%;
 	position: relative;
-	z-index: var(--z-app);
+	/* T4 high (action bars). Must stay below z-app (T5, page-header)
+	   so the header's popovers (e.g. Meetings dropdown) can paint over it. */
+	z-index: var(--z-sticky-high);
 	overflow: visible;
 	gap: 10px;
 	flex-wrap: nowrap;
@@ -1089,18 +1091,6 @@ a.owner-link:hover {
 /* Table Container Polish */
 #agenda-content .table-container {
 	margin-top: 0;
-}
-
-/* Action Bar Scaling for WOD */
-.action-bar .action-bar-wod {
-	transform: scale(0.6);
-	transform-origin: right bottom;
-	margin: 0;
-	z-index: var(--z-app);
-}
-
-.action-bar-wod.open .letter {
-	transform: translateY(-80%) scale(1.1);
 }
 
 .table-container .autocomplete-container {

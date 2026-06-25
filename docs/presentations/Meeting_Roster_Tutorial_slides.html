@@ -1,0 +1,1479 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>The Meeting Roster — Slide Deck · Memory Maker</title>
+<meta name="description" content="A 17-slide professional deck distilling the Meeting Roster tutorial for the Treasurer." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..900,0..100,0..1&family=Hanken+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #F4EFE4;
+    --bg-2:     #EAE2D0;
+    --ink:      #0E1622;
+    --ink-2:    #2A3340;
+    --muted:    #6B7280;
+    --rule:     rgba(14,22,34,0.18);
+    --rule-s:   rgba(14,22,34,0.08);
+    --ochre:    #B8862A;
+    --ochre-d:  #8B651A;
+    --brick:    #9B3A2A;
+    --forest:   #2D5D3A;
+    --indigo:   #2A3E5C;
+    --serif:    "Fraunces", "Times New Roman", serif;
+    --sans:     "Hanken Grotesk", -apple-system, system-ui, sans-serif;
+    --mono:     "JetBrains Mono", ui-monospace, monospace;
+  }
+  *,*::before,*::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    background: #1a1a1a;
+    font-family: var(--sans);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow: hidden;
+  }
+
+  /* ---- stage ---- */
+  .stage {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: #0a0a0a;
+  }
+  .deck {
+    position: relative;
+    width: min(96vw, calc(96vh * 16 / 9));
+    aspect-ratio: 16 / 9;
+    background: var(--bg);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .deck::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.05 0 0 0 0 0.06 0 0 0 0 0.08 0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ---- slide base ---- */
+  .slide {
+    position: absolute;
+    inset: 0;
+    padding: 56px 72px;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    opacity: 0;
+    transform: translateX(40px);
+    transition: opacity 360ms ease, transform 360ms ease;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .slide.active {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+  .slide > * { position: relative; z-index: 2; }
+
+  /* header / footer */
+  .slide-h {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 12px;
+  }
+  .slide-h .lhs { display: flex; gap: 18px; align-items: baseline; }
+  .slide-h .lhs .ochre { color: var(--ochre-d); }
+  .slide-h .rhs { color: var(--ink-2); }
+  .slide-f {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-top: 14px;
+    border-top: 1px solid var(--rule-s);
+  }
+  .slide-f .brand { color: var(--ink); }
+  .slide-f .page { font-family: var(--serif); font-style: italic; font-size: 18px; letter-spacing: 0; text-transform: none; color: var(--ink); }
+
+  /* ---- typography ---- */
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .eyebrow .dot { color: var(--ochre-d); margin-right: 6px; }
+  .display {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-variation-settings: "opsz" 144, "SOFT" 30, "WONK" 1;
+    line-height: 1.0;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin: 0;
+  }
+  .display .it { font-style: italic; font-variation-settings: "opsz" 144, "SOFT" 100, "WONK" 1; }
+  .display .och { color: var(--ochre-d); }
+  .h-cover { font-size: clamp(64px, 7vw, 110px); }
+  .h-big   { font-size: clamp(48px, 5.5vw, 84px); }
+  .h-mid   { font-size: clamp(36px, 4vw, 60px); }
+  .h-sml   { font-size: clamp(24px, 2.6vw, 36px); }
+  .body {
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0;
+  }
+  .body.lead { font-size: 19px; line-height: 1.5; }
+  .body strong { color: var(--ink); font-weight: 600; }
+  .pull {
+    font-family: var(--serif);
+    font-style: italic;
+    font-variation-settings: "opsz" 96, "SOFT" 80, "WONK" 1;
+    font-weight: 400;
+    font-size: clamp(22px, 2.4vw, 32px);
+    line-height: 1.25;
+    color: var(--ink);
+    padding-left: 18px;
+    border-left: 3px solid var(--ochre);
+  }
+  .pull .em { color: var(--ochre-d); }
+
+  /* ---- SLIDE 1: Cover ---- */
+  .s-cover { background: var(--bg); }
+  .s-cover .stack-v {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100%;
+    padding: 0;
+  }
+  .s-cover .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--ink);
+  }
+  .s-cover .top-bar .name { color: var(--ink); font-weight: 500; }
+  .s-cover .middle {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    column-gap: 56px;
+    align-items: end;
+    padding: 36px 0 24px;
+  }
+  .s-cover .middle .left .h-cover { margin-bottom: 18px; }
+  .s-cover .middle .left .deck {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 21px;
+    line-height: 1.4;
+    color: var(--ink-2);
+    max-width: 540px;
+    border-top: 1px solid var(--rule);
+    padding-top: 18px;
+  }
+  .s-cover .middle .right {
+    border-left: 1px solid var(--ink);
+    padding: 8px 0 8px 24px;
+    display: grid;
+    gap: 18px;
+    align-self: end;
+  }
+  .s-cover .middle .right .row { display: grid; grid-template-columns: 110px 1fr; column-gap: 16px; align-items: baseline; }
+  .s-cover .middle .right .k { font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
+  .s-cover .middle .right .v { font-family: var(--serif); font-size: 19px; color: var(--ink); }
+  .s-cover .bottom-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    column-gap: 32px;
+    padding-top: 18px;
+    border-top: 1px solid var(--ink);
+  }
+  .s-cover .bottom-bar .cell .k { font-family: var(--mono); font-size: 9px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .s-cover .bottom-bar .cell .v { font-family: var(--serif); font-size: 16px; color: var(--ink); }
+
+  /* ---- SLIDE 2: Agenda ---- */
+  .s-agenda .body { font-size: 18px; line-height: 1.6; }
+  .agenda-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: 56px;
+    row-gap: 0;
+    align-self: center;
+    border-top: 2px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+  }
+  .agenda-grid .item {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    column-gap: 18px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--rule-s);
+    align-items: baseline;
+  }
+  .agenda-grid .item:last-child,
+  .agenda-grid .item:nth-last-child(2) { border-bottom: 0; }
+  .agenda-grid .item .ix { font-family: var(--mono); font-size: 12px; color: var(--ochre-d); letter-spacing: 0.04em; }
+  .agenda-grid .item .ti { font-family: var(--serif); font-size: 22px; line-height: 1.2; color: var(--ink); letter-spacing: -0.01em; }
+  .agenda-grid .item .ti em { font-style: italic; color: var(--ochre-d); }
+
+  /* ---- SLIDE 3: The Roster Defined ---- */
+  .s-defined .grid { display: grid; grid-template-columns: 1.3fr 1fr; column-gap: 64px; align-self: center; }
+  .s-defined .left .dropcap::first-letter {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-variation-settings: "opsz" 144, "SOFT" 0, "WONK" 1;
+    font-size: 4.6em;
+    float: left;
+    line-height: 0.85;
+    padding: 4px 12px 0 0;
+    color: var(--ochre-d);
+  }
+  .s-defined .left .lead { font-family: var(--serif); font-size: 26px; line-height: 1.4; color: var(--ink); margin-bottom: 18px; }
+  .s-defined .left .body { font-size: 16px; line-height: 1.6; }
+  .s-defined .right .card {
+    border: 1px solid var(--ink);
+    background: var(--bg-2);
+    padding: 22px 22px 24px;
+    position: relative;
+  }
+  .s-defined .right .card .stamp {
+    position: absolute;
+    top: -10px; left: 18px;
+    background: var(--bg);
+    padding: 0 8px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ochre-d);
+  }
+  .s-defined .right .card h4 { font-family: var(--serif); font-size: 18px; margin: 0 0 8px; color: var(--ink); }
+  .s-defined .right .card p { font-family: var(--serif); font-size: 14px; line-height: 1.5; margin: 0 0 12px; color: var(--ink); }
+  .s-defined .right .card .row { display: grid; grid-template-columns: 22px 1fr; column-gap: 10px; padding: 8px 0; border-top: 1px solid var(--rule); align-items: baseline; }
+  .s-defined .right .card .row:first-of-type { border-top: 0; }
+  .s-defined .right .card .row .n { font-family: var(--mono); font-size: 12px; color: var(--ochre-d); }
+  .s-defined .right .card .row .t { font-family: var(--serif); font-size: 15px; line-height: 1.4; }
+  .s-defined .right .card .row .t em { font-style: italic; color: var(--muted); display: block; font-size: 12px; }
+
+  /* ---- SLIDE 4: The Stake ---- */
+  .s-stake {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .s-stake .slide-h { color: rgba(244,239,228,0.55); border-bottom-color: rgba(244,239,228,0.18); }
+  .s-stake .slide-h .lhs .ochre { color: var(--ochre); }
+  .s-stake .slide-f { color: rgba(244,239,228,0.45); border-top-color: rgba(244,239,228,0.10); }
+  .s-stake .slide-f .brand { color: var(--bg); }
+  .s-stake .slide-f .page { color: var(--ochre); }
+  .s-stake .body { color: rgba(244,239,228,0.78); }
+  .s-stake .body strong { color: var(--bg); }
+  .stake-center {
+    align-self: center;
+    display: grid;
+    grid-template-columns: 1fr 1px 1fr;
+    column-gap: 56px;
+    align-items: start;
+  }
+  .stake-center .pull {
+    font-family: var(--serif);
+    font-style: italic;
+    font-variation-settings: "opsz" 144, "SOFT" 100, "WONK" 1;
+    font-size: clamp(34px, 3.6vw, 52px);
+    line-height: 1.15;
+    color: var(--bg);
+    padding-left: 0;
+    border-left: 0;
+    letter-spacing: -0.01em;
+  }
+  .stake-center .pull .em { color: var(--ochre); font-weight: 500; }
+  .stake-center .vrule { background: rgba(244,239,228,0.18); width: 1px; height: 100%; min-height: 220px; }
+  .stake-center .right .eyebrow { color: rgba(244,239,228,0.55); }
+  .stake-center .right .list { margin-top: 18px; display: grid; gap: 14px; }
+  .stake-center .right .list .row { display: grid; grid-template-columns: 90px 1fr; column-gap: 14px; align-items: baseline; padding: 12px 0; border-top: 1px solid rgba(244,239,228,0.10); }
+  .stake-center .right .list .row:last-child { border-bottom: 1px solid rgba(244,239,228,0.10); }
+  .stake-center .right .list .k { font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ochre); }
+  .stake-center .right .list .v { font-family: var(--serif); font-size: 17px; line-height: 1.4; color: var(--bg); }
+
+  /* ---- SLIDE 5: Lifecycle ---- */
+  .s-life .phases {
+    align-self: center;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    column-gap: 32px;
+    position: relative;
+    margin-top: 16px;
+  }
+  .s-life .phases::before {
+    content: "";
+    position: absolute;
+    top: 36px; left: 0; right: 0;
+    height: 1px;
+    background: var(--ink);
+  }
+  .s-life .phase {
+    padding-top: 64px;
+    position: relative;
+  }
+  .s-life .phase .node {
+    position: absolute;
+    top: 24px; left: 0;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--ink);
+    display: grid;
+    place-items: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .s-life .phase.h .node { background: var(--ochre); border-color: var(--ochre-d); }
+  .s-life .phase h3 { font-family: var(--serif); font-size: 24px; margin: 0 0 6px; letter-spacing: -0.01em; color: var(--ink); }
+  .s-life .phase .when { font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  .s-life .phase p { font-family: var(--sans); font-size: 14px; line-height: 1.5; color: var(--ink-2); margin: 0 0 12px; }
+  .s-life .phase .owns { font-family: var(--serif); font-style: italic; font-size: 13px; color: var(--ochre-d); }
+  .s-life .footnote { margin-top: 28px; font-family: var(--serif); font-style: italic; font-size: 16px; color: var(--muted); text-align: center; }
+
+  /* ---- SLIDE 6: Phase divider ---- */
+  .s-divider {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .s-divider .slide-h { color: rgba(244,239,228,0.55); border-bottom-color: rgba(244,239,228,0.18); }
+  .s-divider .slide-h .lhs .ochre { color: var(--ochre); }
+  .s-divider .slide-f { color: rgba(244,239,228,0.45); border-top-color: rgba(244,239,228,0.10); }
+  .s-divider .slide-f .brand { color: var(--bg); }
+  .s-divider .slide-f .page { color: var(--ochre); }
+  .divider-body {
+    align-self: center;
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    column-gap: 56px;
+    align-items: center;
+  }
+  .divider-body .numeral {
+    font-family: var(--serif);
+    font-style: italic;
+    font-variation-settings: "opsz" 144, "SOFT" 100, "WONK" 1;
+    font-size: clamp(220px, 28vw, 380px);
+    line-height: 0.8;
+    color: var(--ochre);
+    letter-spacing: -0.04em;
+  }
+  .divider-body .text .roman {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: rgba(244,239,228,0.55);
+    margin-bottom: 16px;
+  }
+  .divider-body .text h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-variation-settings: "opsz" 144, "SOFT" 30, "WONK" 1;
+    font-size: clamp(48px, 6vw, 84px);
+    line-height: 1.0;
+    letter-spacing: -0.02em;
+    color: var(--bg);
+    margin: 0 0 18px;
+  }
+  .divider-body .text h2 em { font-style: italic; color: var(--ochre); }
+  .divider-body .text .lede { font-family: var(--serif); font-style: italic; font-size: 22px; line-height: 1.4; color: rgba(244,239,228,0.85); max-width: 560px; }
+  .divider-body .text .window {
+    margin-top: 28px;
+    display: inline-block;
+    padding: 10px 16px;
+    border: 1px solid rgba(244,239,228,0.5);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ochre);
+  }
+
+  /* ---- SLIDE 7: Page Anatomy ---- */
+  .s-anatomy .grid { display: grid; grid-template-columns: 1.3fr 1fr; column-gap: 48px; align-self: center; }
+  .s-anatomy .screen {
+    border: 1px solid var(--ink);
+    background: var(--bg-2);
+    overflow: hidden;
+  }
+  .s-anatomy .screen .bar {
+    background: var(--ink);
+    color: var(--bg);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .s-anatomy .region {
+    padding: 12px 16px;
+    border-bottom: 1px dashed var(--rule);
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    column-gap: 12px;
+    align-items: baseline;
+    position: relative;
+  }
+  .s-anatomy .region:last-child { border-bottom: 0; }
+  .s-anatomy .region .ix { font-family: var(--mono); font-size: 11px; color: var(--ochre-d); }
+  .s-anatomy .region .body { font-family: var(--sans); }
+  .s-anatomy .region .body .name { font-family: var(--serif); font-size: 17px; font-weight: 600; margin-bottom: 2px; }
+  .s-anatomy .region .body .hint { font-family: var(--sans); font-size: 12px; color: var(--muted); }
+  .s-anatomy .legend { display: grid; gap: 12px; align-content: center; }
+  .s-anatomy .legend .item { display: grid; grid-template-columns: 28px 1fr; column-gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+  .s-anatomy .legend .item:last-child { border-bottom: 0; }
+  .s-anatomy .legend .item .ix { font-family: var(--mono); font-size: 11px; color: var(--ochre-d); }
+  .s-anatomy .legend .item .v { font-family: var(--serif); font-size: 14px; line-height: 1.4; }
+  .s-anatomy .legend .item .v strong { font-weight: 600; }
+
+  /* ---- SLIDE 8: Ticket Types ---- */
+  .s-tickets .table { align-self: center; border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); }
+  .s-tickets .row {
+    display: grid;
+    grid-template-columns: 60px 1.4fr 0.8fr 1.6fr;
+    column-gap: 32px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--rule);
+    align-items: baseline;
+  }
+  .s-tickets .row:last-child { border-bottom: 0; }
+  .s-tickets .row.head { border-bottom: 1px solid var(--ink); padding: 8px 0; }
+  .s-tickets .row.head .cell { font-family: var(--mono); font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
+  .s-tickets .row .ix { font-family: var(--mono); font-size: 13px; color: var(--ochre-d); }
+  .s-tickets .row .nm { font-family: var(--serif); font-size: 26px; font-weight: 500; letter-spacing: -0.01em; }
+  .s-tickets .row .nm .price { font-family: var(--mono); font-size: 11px; color: var(--muted); font-weight: 400; display: block; margin-top: 4px; letter-spacing: 0.06em; }
+  .s-tickets .row .pr { font-family: var(--mono); font-size: 14px; color: var(--ink); }
+  .s-tickets .row .when { font-family: var(--serif); font-style: italic; font-size: 15px; color: var(--ink-2); line-height: 1.4; }
+
+  /* ---- SLIDE 9: Self Check-In ---- */
+  .s-sci .grid { display: grid; grid-template-columns: 1fr 1.1fr; column-gap: 56px; align-self: center; align-items: center; }
+  .s-sci .qr {
+    width: 100%;
+    max-width: 360px;
+    aspect-ratio: 1;
+    background: var(--bg-2);
+    border: 1px solid var(--ink);
+    padding: 22px;
+    position: relative;
+    box-shadow: 14px 14px 0 var(--ochre);
+    justify-self: center;
+  }
+  .s-sci .qr::before {
+    content: "SELF CHECK-IN";
+    position: absolute;
+    top: -10px; left: 16px;
+    background: var(--bg);
+    padding: 0 8px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    color: var(--ink);
+  }
+  .s-sci .qr .matrix {
+    width: 100%; height: 100%;
+    background-image: conic-gradient(from 90deg at 1px 1px, var(--ink) 90deg, transparent 90deg);
+    background-size: 9px 9px;
+    position: relative;
+  }
+  .s-sci .qr .matrix::before, .s-sci .qr .matrix::after, .s-sci .qr .matrix .corner {
+    content: ""; position: absolute;
+    width: 56px; height: 56px;
+    background: var(--bg-2);
+    border: 6px solid var(--ink);
+  }
+  .s-sci .qr .matrix::before { top: 0; left: 0; }
+  .s-sci .qr .matrix::after  { top: 0; right: 0; }
+  .s-sci .qr .matrix .corner { bottom: 0; left: 0; }
+  .s-sci .right .pull { margin-bottom: 22px; }
+  .s-sci .right ol { list-style: none; padding: 0; margin: 0; counter-reset: s; }
+  .s-sci .right ol li { counter-increment: s; padding: 10px 0 10px 40px; position: relative; font-size: 14px; line-height: 1.5; color: var(--ink-2); border-bottom: 1px solid var(--rule-s); }
+  .s-sci .right ol li::before {
+    content: counter(s);
+    position: absolute;
+    left: 0; top: 10px;
+    width: 26px; height: 26px;
+    border: 1.5px solid var(--ochre-d);
+    border-radius: 50%;
+    display: grid; place-items: center;
+    font-family: var(--mono);
+    font-size: 11px; color: var(--ochre-d);
+  }
+
+  /* ---- SLIDE 10: KPI Panel ---- */
+  .s-kpi .numbers { align-self: center; display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 0; margin-bottom: 20px; }
+  .s-kpi .numcard {
+    padding: 24px 22px;
+    border-top: 2px solid var(--ink);
+    border-bottom: 1px solid var(--rule);
+    position: relative;
+  }
+  .s-kpi .numcard:nth-child(2) { border-left: 1px solid var(--rule); border-right: 1px solid var(--rule); }
+  .s-kpi .numcard .lbl { font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  .s-kpi .numcard .val { font-family: var(--serif); font-weight: 600; font-variation-settings: "opsz" 144, "SOFT" 0, "WONK" 1; font-size: clamp(54px, 6.5vw, 92px); line-height: 0.95; letter-spacing: -0.04em; color: var(--ink); }
+  .s-kpi .numcard .unit { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 6px; letter-spacing: 0.06em; }
+  .s-kpi .numcard.primary { background: rgba(184,134,42,0.10); border-top-color: var(--ochre-d); }
+  .s-kpi .numcard.primary .val { color: var(--ochre-d); }
+  .s-kpi .numcard.primary .badge {
+    position: absolute; top: 10px; right: 14px;
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ochre-d);
+    border: 1px solid var(--ochre-d); padding: 2px 6px;
+  }
+  .s-kpi .callout {
+    align-self: end;
+    padding: 14px 18px;
+    background: var(--bg-2);
+    border-left: 3px solid var(--ochre);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+
+  /* ---- SLIDE 11: Soft vs Hard cancel ---- */
+  .s-cancel .grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 40px; align-self: center; border-top: 2px solid var(--ink); }
+  .s-cancel .side { padding: 24px 0 12px; }
+  .s-cancel .side + .side { border-left: 1px solid var(--ink); padding-left: 28px; }
+  .s-cancel .side .tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .s-cancel .side .tag .sw { width: 10px; height: 10px; }
+  .s-cancel .side.soft .tag { color: var(--forest); }
+  .s-cancel .side.soft .tag .sw { background: var(--forest); }
+  .s-cancel .side.hard .tag { color: var(--brick); }
+  .s-cancel .side.hard .tag .sw { background: var(--brick); }
+  .s-cancel .side h3 { font-family: var(--serif); font-size: 28px; margin: 0 0 12px; letter-spacing: -0.01em; }
+  .s-cancel .side .lede { font-family: var(--serif); font-size: 16px; line-height: 1.5; color: var(--ink-2); margin: 0 0 14px; }
+  .s-cancel .side ul { padding-left: 18px; margin: 0 0 14px; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+  .s-cancel .side .verdict {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--rule);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .s-cancel .side.soft .verdict { border-top-color: var(--forest); color: var(--forest); }
+  .s-cancel .side.hard .verdict { border-top-color: var(--brick); color: var(--brick); }
+
+  /* ---- SLIDE 12: Export ---- */
+  .s-export .cards { align-self: center; display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 24px; }
+  .s-export .card {
+    border: 1px solid var(--ink);
+    background: var(--bg-2);
+    padding: 22px 22px 24px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 360px;
+  }
+  .s-export .card.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .s-export .card .ix { font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; opacity: 0.7; }
+  .s-export .card .badge {
+    position: absolute;
+    top: 14px; right: 14px;
+    border: 1px solid currentColor;
+    padding: 3px 7px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+  .s-export .card.primary .badge { color: var(--ochre); border-color: var(--ochre); }
+  .s-export .card .fmt {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-variation-settings: "opsz" 96, "SOFT" 0, "WONK" 1;
+    font-size: 64px;
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    margin: 14px 0 6px;
+    color: var(--ink);
+  }
+  .s-export .card.primary .fmt { color: var(--bg); }
+  .s-export .card .role { font-family: var(--serif); font-style: italic; font-size: 17px; margin-bottom: 14px; color: var(--ochre-d); }
+  .s-export .card.primary .role { color: var(--ochre); }
+  .s-export .card p { font-size: 14px; line-height: 1.5; margin: 0 0 12px; color: var(--ink-2); }
+  .s-export .card.primary p { color: rgba(244,239,228,0.85); }
+  .s-export .card .filename {
+    margin-top: auto;
+    padding: 10px 12px;
+    border: 1px dashed currentColor;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    opacity: 0.85;
+  }
+
+  /* ---- SLIDE 13: Permissions ---- */
+  .s-perms .table { align-self: center; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--ink); }
+  .s-perms .row {
+    display: grid;
+    grid-template-columns: 36px 1.6fr 1fr 1.2fr;
+    column-gap: 20px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--rule-s);
+    align-items: baseline;
+  }
+  .s-perms .row:last-child { border-bottom: 0; }
+  .s-perms .row.head { border-bottom: 1px solid var(--ink); padding: 8px 0; }
+  .s-perms .row.head .c { font-family: var(--mono); font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
+  .s-perms .row .ix { font-family: var(--mono); font-size: 11px; color: var(--ochre-d); }
+  .s-perms .row .act { font-family: var(--serif); font-size: 16px; color: var(--ink); }
+  .s-perms .row .perm { font-family: var(--mono); font-size: 11px; color: var(--ink); }
+  .s-perms .row .who { font-family: var(--serif); font-style: italic; font-size: 14px; color: var(--ink-2); }
+  .s-perms .footnote {
+    margin-top: 24px;
+    padding: 14px 18px;
+    border-left: 3px solid var(--ochre);
+    background: var(--bg-2);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+
+  /* ---- SLIDE 14: Troubleshooting ---- */
+  .s-trouble .qa { align-self: center; display: grid; grid-template-columns: repeat(2, 1fr); column-gap: 48px; row-gap: 0; }
+  .s-trouble .qa .item { padding: 18px 0; border-top: 1px solid var(--rule); display: grid; grid-template-columns: 56px 1fr; column-gap: 14px; align-items: baseline; }
+  .s-trouble .qa .item:nth-child(-n+2) { border-top: 2px solid var(--ink); }
+  .s-trouble .qa .num { font-family: var(--mono); font-size: 11px; color: var(--ochre-d); }
+  .s-trouble .qa .q { font-family: var(--serif); font-size: 17px; line-height: 1.3; color: var(--ink); margin: 0 0 6px; font-weight: 600; }
+  .s-trouble .qa .a { font-family: var(--serif); font-size: 14px; line-height: 1.5; color: var(--ink-2); margin: 0; }
+
+  /* ---- SLIDE 15: Closing ---- */
+  .s-closing {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .s-closing .slide-h { color: rgba(244,239,228,0.55); border-bottom-color: rgba(244,239,228,0.18); }
+  .s-closing .slide-h .lhs .ochre { color: var(--ochre); }
+  .s-closing .slide-f { color: rgba(244,239,228,0.45); border-top-color: rgba(244,239,228,0.10); }
+  .s-closing .slide-f .brand { color: var(--bg); }
+  .s-closing .slide-f .page { color: var(--ochre); }
+  .closing-body {
+    align-self: center;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    column-gap: 56px;
+    align-items: end;
+  }
+  .closing-body .left h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-variation-settings: "opsz" 144, "SOFT" 30, "WONK" 1;
+    font-size: clamp(56px, 7vw, 100px);
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    color: var(--bg);
+    margin: 0 0 18px;
+  }
+  .closing-body .left h2 em { font-style: italic; color: var(--ochre); }
+  .closing-body .left .signoff {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 22px;
+    line-height: 1.4;
+    color: rgba(244,239,228,0.85);
+    max-width: 540px;
+    border-top: 1px solid rgba(244,239,228,0.2);
+    padding-top: 18px;
+  }
+  .closing-body .right {
+    border-left: 1px solid rgba(244,239,228,0.3);
+    padding-left: 28px;
+    display: grid;
+    gap: 14px;
+  }
+  .closing-body .right .item { padding: 10px 0; border-bottom: 1px solid rgba(244,239,228,0.1); display: grid; grid-template-columns: 110px 1fr; column-gap: 14px; align-items: baseline; }
+  .closing-body .right .item:last-child { border-bottom: 0; }
+  .closing-body .right .k { font-family: var(--mono); font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ochre); }
+  .closing-body .right .v { font-family: var(--serif); font-size: 16px; line-height: 1.4; color: var(--bg); }
+  .closing-body .right .v code { font-family: var(--mono); font-size: 12px; color: var(--ochre); }
+
+  /* ---- navigation UI ---- */
+  .nav-bar {
+    position: fixed;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(14,22,34,0.92);
+    color: #F4EFE4;
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    backdrop-filter: blur(8px);
+  }
+  .nav-bar button {
+    background: transparent;
+    border: 1px solid rgba(244,239,228,0.4);
+    color: #F4EFE4;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 160ms ease, border 160ms ease;
+  }
+  .nav-bar button:hover { background: rgba(244,239,228,0.10); border-color: var(--ochre); }
+  .nav-bar .counter { color: rgba(244,239,228,0.7); min-width: 60px; text-align: center; }
+  .nav-bar .counter strong { color: var(--ochre); font-weight: 600; }
+
+  .progress {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: transparent;
+    z-index: 50;
+  }
+  .progress .fill {
+    height: 100%;
+    background: var(--ochre);
+    width: 0%;
+    transition: width 240ms ease;
+  }
+
+  /* ---- responsive fallback (smaller screens) ---- */
+  @media (max-aspect-ratio: 16/9) {
+    .deck { width: 96vw; }
+  }
+  @media (min-aspect-ratio: 16/9) {
+    .deck { height: 96vh; }
+  }
+
+  /* ---- print: each slide is its own page ---- */
+  @media print {
+    @page {
+      size: 338mm 190mm;   /* 16:9, A4 landscape ratio slightly stretched */
+      margin: 0;
+    }
+    html, body { height: auto; background: #ffffff; overflow: visible; }
+    body { background: #ffffff; }
+    .stage {
+      position: static;
+      inset: auto;
+      display: block;
+      background: #ffffff;
+    }
+    .deck {
+      position: static;
+      width: 100%;
+      height: auto;
+      aspect-ratio: auto;
+      box-shadow: none;
+      background: #ffffff;
+    }
+    .deck::before { display: none; }
+    .slide {
+      position: relative;
+      inset: auto;
+      opacity: 1 !important;
+      transform: none !important;
+      pointer-events: auto !important;
+      width: 100%;
+      height: 190mm;
+      page-break-after: always;
+      break-after: page;
+      padding: 14mm 16mm;
+    }
+    .slide:last-child { page-break-after: auto; break-after: auto; }
+    .nav-bar, .progress { display: none !important; }
+    /* keep slide backgrounds (cover/divider/closing are dark) */
+    .s-cover, .s-stake, .s-divider, .s-closing { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="deck" id="deck">
+
+    <!-- ==================================================== -->
+    <!-- SLIDE 1: Cover                                        -->
+    <!-- ==================================================== -->
+    <section class="slide s-cover active" data-slide="1" data-title="Cover">
+      <div class="stack-v">
+        <div class="top-bar">
+          <span class="name">Memory Maker · Issue 01</span>
+          <span>Slide Deck · 17 slides · 16:9</span>
+        </div>
+
+        <div class="middle">
+          <div class="left">
+            <div class="eyebrow" style="margin-bottom: 18px;"><span class="dot">●</span>A Treasurer's Audit</div>
+            <h1 class="display h-cover">The Meeting<br/>Roster, <span class="it">read</span><br/><span class="och">sideways.</span></h1>
+            <div class="deck">A 17-slide distillation of the meeting roster tutorial — focused on the Treasurer's primary number, the four-phase lifecycle, and the moments where the ledger needs a steady hand.</div>
+          </div>
+          <div class="right">
+            <div class="row"><span class="k">Audience</span><span class="v">Treasurer</span></div>
+            <div class="row"><span class="k">Also</span><span class="v">SAA · VPE</span></div>
+            <div class="row"><span class="k">Updated</span><span class="v">24 Jun 2026</span></div>
+            <div class="row"><span class="k">Source</span><span class="v">docs/Meeting_Roster_Tutorial.md</span></div>
+          </div>
+        </div>
+
+        <div class="bottom-bar">
+          <div class="cell"><div class="k">Companion</div><div class="v">VPE &amp; SAA manuals</div></div>
+          <div class="cell"><div class="k">Section</div><div class="v">Roster / Treasury</div></div>
+          <div class="cell"><div class="k">Window</div><div class="v">T−7 → wrap-up</div></div>
+          <div class="cell"><div class="k">Read time</div><div class="v">~12 minutes</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SLIDE 2: Agenda                                       -->
+    <!-- ==================================================== -->
+    <section class="slide s-agenda" data-slide="2" data-title="Agenda">
+      <div class="slide-h">
+        <div class="lhs"><span><span class="ochre">●</span>&nbsp; 02 · Agenda</span></div>
+        <div class="rhs">What we'll cover</div>
+      </div>
+
+      <div class="agenda-grid">
+        <div class="item"><span class="ix">01</span><span class="ti">The roster — <em>a working definition</em></span></div>
+        <div class="item"><span class="ix">02</span><span class="ti">The Treasurer's <em>primary stake</em></span></div>
+        <div class="item"><span class="ix">03</span><span class="ti">The 4-phase <em>lifecycle</em></span></div>
+        <div class="item"><span class="ix">04</span><span class="ti">Pre-Meeting · <em>page anatomy &amp; tickets</em></span></div>
+        <div class="item"><span class="ix">05</span><span class="ti">Reception · <em>Self Check-In &amp; KPI panel</em></span></div>
+        <div class="item"><span class="ix">06</span><span class="ti">Live Meeting · <em>soft vs hard cancel</em></span></div>
+        <div class="item"><span class="ix">07</span><span class="ti">Wrap-Up · <em>export formats</em></span></div>
+        <div class="item"><span class="ix">08</span><span class="ti">Permissions &amp; <em>troubleshooting</em></span></div>
+      </div>
+
+      <div class="slide-f">
+        <span class="brand">Memory Maker · The Meeting Roster</span>
+        <span class="page">02 / 17 · Agenda</span>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SLIDE 3: The Roster Defined                           -->
+    <!-- ==================================================== -->
+    <section class="slide s-defined" data-slide="3" data-title="The Roster">
+      <div class="slide-h">
+        <div class="lhs"><span><span class="ochre">●</span>&nbsp; 03 · The Roster</span></div>
+        <div class="rhs">A working definition</div>
+      </div>
+
+      <div class="grid">
+        <div class="left">
+          <div class="eyebrow" style="margin-bottom: 12px;"><span class="dot">●</span>What it is</div>
+          <p class="lead dropcap">A roster is not a guest list. A roster is an <em>attendance ledger</em>.</p>
+          <p class="body">Each row ties a person to a ticket type, an amount, and a check-in moment — the four pieces of data that, together, answer the only question the Treasurer asks at 9:01 PM: <strong>how much money came in the door tonight, and from whom?</strong></p>
+          <p class="body" style="margin-top: 14px;">The roster is the source of truth for who was in the room and who paid what.</p>
+        </div>
+        <div class="right">
+          <div class="card">
+            <span class="stamp">§01 · Three groups</span>
+            <h4>Who ends up on the roster</h4>
+            <div class="row"><span class="n">01</span><span class="t"><strong>Self-registered members.</strong><em>Booked a role. Added by the system. You don't touch.</em></span></div>
+            <div class="row"><span class="n">02</span><span class="t"><strong>Walk-up members.</strong><em>Add manually through the Add Entry form. Choose ticket, amount auto-computes.</em></span></div>
+            <div class="row"><span class="n">03</span><span class="t"><strong>Guests.</strong><em>Always added manually — guests don't have accounts.</em></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-f">
+        <span class="brand">Memory Maker · The Meeting Roster</span>
+        <span class="page">03 / 17 · The Roster</span>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SLIDE 4: The Stake (hero pull-quote)                  -->
+    <!-- ==================================================== -->
+    <section class="slide s-stake" data-slide="4" data-title="The Treasurer's Stake">
+      <div class="slide-h">
+        <div class="lhs"><span><span class="ochre">●</span>&nbsp; 04 · The Treasurer's Stake</span></div>
+        <div class="rhs">Why this deck exists</div>
+      </div>
+
+      <div class="stake-center">
+        <div class="pull">"As Treasurer, you are the primary owner of the roster's <span class="em">financial side</span> — ticket types, amounts collected, exports for the club's books."</div>
+        <div class="vrule"></div>
+        <div class="right">
+          <div class="eyebrow"><span class="dot">●</span>Three hands on the ledger</div>
+          <div class="list">
+            <div class="row"><span class="k">Treasurer</span><span class="v">Owns the financial side: ticket types, amounts, exports, reconciliation.</span></div>
+            <div class="row"><span class="k">SAA</span><span class="v">Owns the operational side: registering walk-ins, marking check-ins, watching the live count.</span></div>
+            <div class="row"><span class="k">VPE</span><span class="v">Owns the structural side: meeting lifecycle, role assignments, publishing.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-f">
+        <span class="brand">Memory Maker · The Meeting Roster</span>
+        <span class="page">04 / 17 · The Stake</span>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SLIDE 5: The Lifecycle                                -->
+    <!-- ==================================================== -->
+    <section class="slide s-life" data-slide="5" data-title="The 4-Phase Lifecycle">
+      <div class="slide-h">
+        <div class="lhs"><span><span class="ochre">●</span>&nbsp; 05 · The Lifecycle</span></div>
+        <div class="rhs">From T−7 to wrap-up</div>
+      </div>
+
+      <div class="phases">
+        <div class="phase">
+          <div class="node">I</div>
+          <h3>Pre-Meeting</h3>
+          <div class="when">T−7 → T−1</div>
+          <p>Confirm the meeting exists, review ticket types, scan the roster for anomalies the day before.</p>
+          <div class="owns">VPE creates · SAA reviews</div>
+        </div>
+        <div class="phase h">
+          <div class="node">II</div>
+          <h3>Reception</h3>
+          <div class="when">T−0 · 6:30 PM</div>
+          <p>Register walk-ins and guests, watch the running total against cash, set up Self Check-In.</p>
+          <div class="owns">SAA operates · Treasurer watches</div>
+        </div>
+        <div class="phase">
+          <div class="node">III</div>
+          <h3>Live Meeting</h3>
+          <div class="when">T−0 · 7:00–9:00 PM</div>
+          <p>Late arrivals, role swaps, soft-cancel mistakes. The roster is mostly read-only.</p>
+          <div class="owns">Treasurer corrects</div>
+        </div>
+        <div class="phase">
+          <div class="node">IV</div>
+          <h3>Wrap-Up</h3>
+          <div class="when">T+0 · 9:00 PM</div>
+          <p>Export the PDF, soft-cancel no-shows before reconciliation, archive.</p>
+          <div class="owns">Treasurer seals</div>
+        </div>
+      </div>
+
+      <div class="footnote">The roster is editable at every stage from Pre-meeting through Live meeting. Once the meeting is <em>Finished</em>, edits require ClubAdmin intervention.</div>
+
+      <div class="slide-f">
+        <span class="brand">Memory Maker · The Meeting Roster</span>
+        <span class="page">05 / 17 · Lifecycle</span>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SLIDE 6: Phase I divider                              -->
+    <!-- ==================================================== -->
+    <section class="slide s-divider" data-slide="6" data-title="Phase I">
+      <div class="slide-h">
+        <div class="lhs"><span><span class="ochre">●</span>&nbsp; 06 · Phase I</span></div>
+        <div class="rhs">Pre-Meeting Preparation</div>
+      </div>
+
+      <div class="divider-body">
+        <div class="numeral">I</div>
+        <div class="text">
+          <div class="roman">Phase One</div>
+          <h2>The ledger, <em>before</em><br/>the door opens.</h2>
+          <p class="lede">Most of the roster's value is data that has already been entered before the meeting. By the time the doors open, you should know roughly how many people are coming, what the expected revenue is, and which members have already self-registered for roles.</p>
+          <div class="window">Window · T−7 days through T−1 day</div>
+        </div>
+      </div>
+
+      <div class="slide-f">
+        <span class="brand">Memory Maker · The Meeting Roster</span>
+        <span class="page">06 / 17 · Phase I</span>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SLIDE 7: Page Anatomy                                 -->
+    <!-- ==================================================== -->
+    <section class="slide s-anatomy" data-slide="7" data-title="Page Anatomy">
+      <div class="slide-h">
+        <div class="lhs"><span><span class="ochre">●</span>&nbsp; 07 · The Roster Page</span></div>
+        <div class="rhs">Four regions · open <code style="font-family: var(--mono); font-size: 12px;">/roster</code></div>
+      </div>
+
+      <div class="grid">
+        <div class="screen">
+          <div class="bar"><span>Roster · Shanghai Leadership · No. 868941</span><span>Live</span></div>
+          <div class="region"><span class="ix">A</span><div class="body"><div class="name">Meeting selector</div><div class="hint">Pick the meeting · dropdown lists only this club's meetings</div></div></div>
+          <div class="region"><span class="ix">B</span><div class="body"><div class="name">KPI panel</div><div class="hint">Three live numbers · attendees, total amount, checked-in</div></div></div>
+          <div class="region"><span class="ix">C</span><div class="body"><div class="name">Roster table</div><div class="hint">Name · ticket · amount · check-in · roles · editable cells</div></div></div>
+          <div class="region"><span class="ix">D</span><div class="body"><div class="name">Add Entry form</div><div class="hint">Walk-in &amp; guest quick-add · needs Roster Edit permission</div></div></div>
+        </div>
+
+        <div class="legend">
+          <div class="item"><span class="ix">A</span><span class="v"><strong>The dropdown</strong> lists only this club's meetings. Pick the one you're working on.</span></div>
+          <div class="item"><span class="ix">B</span><span class="v"><strong>Three numbers</strong> — attendees, total amount, checked-in. Live updates as people register and arrive.</span></div>
+          <div class="item"><span class="ix">C</span><span class="v"><strong>The table</strong> is editable cell-by-cell. Click to change ticket, amount, or check-in.</span></div>
+          <div class="item"><span class="ix">D</span><span class="v"><strong>Add Entry</strong> is your tool for walk-ins. Hidden if you lack <em>Roster Edit</em>.</span></div>
+        </div>
+      </div>
+
+      <div class="slide-f">
+        <span class="brand">Memory Maker · The Meeting Roster</span>
+        <span class="page">07 / 17 · Anatomy</span>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SLIDE 8: Ticket Types                                 -->
+    <!-- ==================================================== -->
+    <section class="slide s-tickets" data-slide="8" data-title="Ticket Types">
+      <div class="slide-h">
+        <div class="lhs"><span><span class="ochre">●</span>&nbsp; 08 · Ticket Types</span></div>
+        <div class="rhs">Five tickets · Early-bird and Walk-in both have member &amp; guest rates · <span style="color: var(--ochre-d); font-weight: 600;">cutoff 15:00 on meeting day</span></div>
+      </div>
+
+      <div class="table">
+        <div class="row head">
+          <div class="cell">№</div>
+          <div class="cell">Ticket</div>
+          <div class="cell">Price</div>
+          <div class="cell">When to use</div>
+        </div>
+        <div class="row">
+          <div class="ix">01</div>
+          <div class="nm">Member · Early-bird<span class="price">Paid before 15:00 · lower rate</span></div>
+          <div class="pr">¥20.00</div>
+          <div class="when">Members who paid before the 15:00 cutoff on the meeting day.</div>
+        </div>
+        <div class="row">
+          <div class="ix">02</div>
+          <div class="nm">Member · Walk-in<span class="price">Paid at the door · full price</span></div>
+          <div class="pr">¥25.00</div>
+          <div class="when">Members who pay at the door — i.e. after 15:00 on the meeting day.</div>
+        </div>
+        <div class="row">
+          <div class="ix">03</div>
+          <div class="nm">Guest · Early-bird<span class="price">Paid before 15:00 · guest rate</span></div>
+          <div class="pr">¥40.00</div>
+          <div class="when">Guests who paid before the 15:00 cutoff on the meeting day.</div>
+        </div>
+        <div class="row">
+          <div class="ix">04</div>
+          <div class="nm">Guest · Walk-in<span class="price">Paid at the door · full guest rate</span></div>
+          <div class="pr">¥50.00</div>
+          <div class="when">Guests who pay at the door — i.e. after 15:00 on the meeting day.</div>
+        </div>
+        <div class="row">
+          <div class="ix">05</div>
+          <div class="nm">Officer<span class="price">Free · ExComM only</span></div>
+          <div class="pr">¥0.00</div>
+          <div class="when">Current ExComM members. Add manually — the system cannot tell who is currently an officer.</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 18px; padding: 12px 16px; border-left: 3px solid var(--ochre); background: var(--bg-2); font-family: var(--serif); font-style: italic; font-size: 14px; line-height: 1.5; color: var(--ink);">
+        The 15:00 cutoff is firm. Anyone whose payment hasn't landed in the Treasurer's record by 15:00 on meeting day is automatically a Walk-in.
+      </div>
+
+      <div class="slide-f">
+        <span class="brand">Memory Maker · The Meeting Roster</span>
+        <span class="page">08 / 17 · Tickets</span>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SLIDE 9: Phase II divider                             -->
+    <!-- ==================================================== -->
+    <section class="slide s-divider" data-slide="9" data-title="Phase II">
+      <div class="slide-h">
+        <div class="lhs"><span><span class="ochre">●</span>&nbsp; 09 · Phase II</span></div>
+        <div class="rhs">Reception &amp; Check-In</div>
+      </div>
+
+      <div class="divider-body">
+        <div class="numeral">II</div>
+        <div class="text">
+          <div class="roman">Phase Two</div>
+          <h2>The room fills.<br/><em>The number climbs.</em></h2>
+          <p class="lede">The room is filling up. Members and guests are walking in. Your job is to register everyone who arrives, so the Treasurer's records are accurate.</p>
+          <div class="window">Window · 6:30 PM through 7:15 PM</div>
+        </div>
+      </div>
+
+      <div class="slide-f">
+        <span class="brand">Memory Maker · The Meeting Roster</span>
+        <span class="page">09 / 17 · Phase II</span>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SLIDE 10: Self Check-In                               -->
+    <!-- ==================================================== -->
+    <section class="slide s-sci" data-slide="10" data-title="Self Check-In">
+      <div class="slide-h">
+        <div class="lhs"><span><span class="ochre">●</span>&nbsp; 10 · Self Check-In</span></div>
+        <div class="rhs">Visible only when meeting is <em>Not Started</em> or <em>Running</em></div>
+      </div>
+
+      <div class="grid">
+        <div class="qr">
+          <div class="matrix"><div class="corner"></div></div>
+        </div>
+
+        <div class="right">
+          <div class="pull">"The QR is for <span class="em">members who already have a roster entry</span>. Guests still need you to add them manually."</div>
+          <ol>
+            <li>Click <strong>Self Check-In</strong> on the Roster page (top-right) to reveal the QR.</li>
+            <li>Project it on the TV, print a tent card, or paste the URL in WeChat.</li>
+            <li>Members scan → their check-in is recorded automatically.</li>
+            <li>Guests and unbooked walk-ins still go through the Add Entry form.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="slide-f">
+        <span class="brand">Memory Maker · The Meeting Roster</span>
+        <span class="page">10 / 17 · Self Check-In</span>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SLIDE 11: KPI Panel                                   -->
+    <!-- ==================================================== -->
+    <section class="slide s-kpi" data-slide="11" data-title="The KPI Panel">
+      <div class="slide-h">
+        <div class="lhs"><span><span class="ochre">●</span>&nbsp; 11 · The KPI Panel</span></div>
+        <div class="rhs">Watch your number · every few minutes throughout reception</div>
+      </div>
+
+      <div class="numbers">
+        <div class="numcard">
+          <div class="lbl">Attendees</div>
+          <div class="val">38</div>
+          <div class="unit">rows on the roster</div>
+        </div>
+        <div class="numcard primary">
+          <span class="badge">Treasurer</span>
+          <div class="lbl">Total amount</div>
+          <div class="val">¥1,420</div>
+          <div class="unit">your primary number</div>
+        </div>
+        <div class="numcard">
+          <div class="lbl">Checked-in</div>
+          <div class="val">12</div>
+          <div class="unit">scanned the QR or marked</div>
+        </div>
+      </div>
+
+      <div class="callout">
+        Cross-check the running total against the cash in your envelope every 30 minutes. If the envelope has ¥200 more than the panel shows, someone paid cash and wasn't added to the roster — find them on the floor and add their row.
+      </div>
+
+      <div class="slide-f">
+        <span class="brand">Memory Maker · The Meeting Roster</span>
+        <span class="page">11 / 17 · KPI Panel</span>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SLIDE 12: Phase III divider                           -->
+    <!-- ==================================================== -->
+    <section class="slide s-divider" data-slide="12" data-title="Phase III">
+      <div class="slide-h">
+        <div class="lhs"><span><span class="ochre">●</span>&nbsp; 12 · Phase III</span></div>
+        <div class="rhs">Live Meeting</div>
+      </div>
+
+      <div class="divider-body">
+        <div class="numeral">III</div>
+        <div class="text">
+          <div class="roman">Phase Three</div>
+          <h2>Keep the ledger<br/><em>honest.</em></h2>
+          <p class="lede">During the meeting, the roster is mostly read-only. Your job is to keep it accurate as people come and go — late arrivals, role swaps, the occasional soft-cancel when someone really isn't showing up.</p>
+          <div class="window">Window · 7:00 PM through 9:00 PM</div>
+        </div>
+      </div>
+
+      <div class="slide-f">
+        <span class="brand">Memory Maker · The Meeting Roster</span>
+        <span class="page">12 / 17 · Phase III</span>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SLIDE 13: Soft vs Hard Cancel                         -->
+    <!-- ==================================================== -->
+    <section class="slide s-cancel" data-slide="13" data-title="Soft vs Hard Cancel">
+      <div class="slide-h">
+        <div class="lhs"><span><span class="ochre">●</span>&nbsp; 13 · Cancel &amp; Restore</span></div>
+        <div class="rhs">Two ways to remove a row</div>
+      </div>
+
+      <div class="grid">
+        <div class="side soft">
+          <div class="tag"><span class="sw"></span><span>Soft Cancel · default</span></div>
+          <h3>Mark the row <em>cancelled</em>.</h3>
+          <p class="lede">The entry stays in the database but is marked <em>Cancelled</em>. The ticket is released, but the row is still visible in the table — greyed out, but visible.</p>
+          <ul>
+            <li>Preserves the audit trail</li>
+            <li>Reversible via <strong>Restore</strong></li>
+            <li>Use for most cases</li>
+          </ul>
+          <div class="verdict">Reversible · click Restore on the greyed row.</div>
+        </div>
+
+        <div class="side hard">
+          <div class="tag"><span class="sw"></span><span>Hard Delete · advanced</span></div>
+          <h3>Remove the row <em>entirely</em>.</h3>
+          <p class="lede">The row is removed and any role booking they had is released back to the pool. Use this only for duplicates, wrong-meeting mistakes, or urgent role-slot release.</p>
+          <ul>
+            <li>Permanent for that meeting</li>
+            <li>Cannot be undone from the UI</li>
+            <li>Ticket payment survives in the Tickets table</li>
+          </ul>
+          <div class="verdict">Permanent · always prefer soft cancel unless the entry is bogus.</div>
+        </div>
+      </div>
+
+      <div class="slide-f">
+        <span class="brand">Memory Maker · The Meeting Roster</span>
+        <span class="page">13 / 17 · Cancel</span>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SLIDE 14: Phase IV divider                            -->
+    <!-- ==================================================== -->
+    <section class="slide s-divider" data-slide="14" data-title="Phase IV">
+      <div class="slide-h">
+        <div class="lhs"><span><span class="ochre">●</span>&nbsp; 14 · Phase IV</span></div>
+        <div class="rhs">Wrap-Up</div>
+      </div>
+
+      <div class="divider-body">
+        <div class="numeral">IV</div>
+        <div class="text">
+          <div class="roman">Phase Four</div>
+          <h2>Seal the ledger.<br/><em>Hand it to the room.</em></h2>
+          <p class="lede">The General Evaluator is wrapping up. Time to seal the roster. Export the PDF, soft-cancel no-shows before reconciliation.</p>
+          <div class="window">Window · 9:00 PM through end of meeting</div>
+        </div>
+      </div>
+
+      <div class="slide-f">
+        <span class="brand">Memory Maker · The Meeting Roster</span>
+        <span class="page">14 / 17 · Phase IV</span>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SLIDE 15: Export Formats                              -->
+    <!-- ==================================================== -->
+    <section class="slide s-export" data-slide="15" data-title="Export Formats">
+      <div class="slide-h">
+        <div class="lhs"><span><span class="ochre">●</span>&nbsp; 15 · The Export</span></div>
+        <div class="rhs">Three formats · your primary deliverable and its companions</div>
+      </div>
+
+      <div class="cards">
+        <div class="card primary">
+          <div class="ix">01 · default</div>
+          <div class="badge">Treasurer's primary</div>
+          <div class="fmt">PDF</div>
+          <div class="role">The binder.</div>
+          <p>Printable, signed, and filed. Includes every non-cancelled entry with ticket type, amount, and check-in status. This is the document that goes into your binder as the meeting's financial record.</p>
+          <div class="filename">2026-06-24-meeting-247-roster.pdf</div>
+        </div>
+
+        <div class="card">
+          <div class="ix">02 · reconciliation</div>
+          <div class="fmt">CSV</div>
+          <div class="role">The spreadsheet.</div>
+          <p>For importing into a spreadsheet when you do the month-end reconciliation against the bank statement. Pairs with the Tickets page, the payment ledger.</p>
+          <div class="filename">2026-06-24-meeting-247-roster.csv</div>
+        </div>
+
+        <div class="card">
+          <div class="ix">03 · comms</div>
+          <div class="fmt">PNG</div>
+          <div class="role">The recap.</div>
+          <p>For the post-meeting recap in the club's WeChat group. Quick snapshot of who was there, totals at the top.</p>
+          <div class="filename">2026-06-24-meeting-247-roster.png</div>
+        </div>
+      </div>
+
+      <div class="slide-f">
+        <span class="brand">Memory Maker · The Meeting Roster</span>
+        <span class="page">15 / 17 · Export</span>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SLIDE 16: Permissions + Troubleshooting               -->
+    <!-- ==================================================== -->
+    <section class="slide s-perms" data-slide="16" data-title="Permissions &amp; Troubleshooting">
+      <div class="slide-h">
+        <div class="lhs"><span><span class="ochre">●</span>&nbsp; 16 · Permissions &amp; Trouble</span></div>
+        <div class="rhs">The cheat sheet · see the source doc for troubleshooting Q&amp;A</div>
+      </div>
+
+      <div class="table">
+        <div class="row head">
+          <div class="c">№</div>
+          <div class="c">Action</div>
+          <div class="c">Permission needed</div>
+          <div class="c">Typical roles</div>
+        </div>
+        <div class="row"><div class="ix">01</div><div class="act">View the roster for a meeting</div><div class="perm">Roster View</div><div class="who">Member and above</div></div>
+        <div class="row"><div class="ix">02</div><div class="act">Add / edit / cancel entries</div><div class="perm">Roster Edit</div><div class="who">Officer and above</div></div>
+        <div class="row"><div class="ix">03</div><div class="act">Hard-delete an entry</div><div class="perm">Roster Edit + Meeting Manage</div><div class="who">VPE / ClubAdmin</div></div>
+        <div class="row"><div class="ix">04</div><div class="act">Override a Finished meeting's roster</div><div class="perm">ClubAdmin override</div><div class="who">ClubAdmin only</div></div>
+      </div>
+
+      <div class="footnote">
+        <strong style="font-style: normal;">Sharing-master override:</strong> If you are the meeting's sharing master, Memory Maker automatically grants you Roster Edit and Roster View for that meeting, even if your normal role doesn't include them. Common trouble cases — hidden Add Entry form, greyed QR, hard-deleted by mistake — are covered in the source tutorial.
+      </div>
+
+      <div class="slide-f">
+        <span class="brand">Memory Maker · The Meeting Roster</span>
+        <span class="page">16 / 17 · Permissions</span>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SLIDE 17: Closing                                     -->
+    <!-- ==================================================== -->
+    <section class="slide s-closing" data-slide="17" data-title="Closing">
+      <div class="slide-h">
+        <div class="lhs"><span><span class="ochre">●</span>&nbsp; 17 · Closing</span></div>
+        <div class="rhs">Seal the ledger</div>
+      </div>
+
+      <div class="closing-body">
+        <div class="left">
+          <h2>Count every row.<br/><em>Reconcile every ¥.</em></h2>
+          <p class="signoff">The roster is your ledger. Treat it like one — keep the rows honest, the totals reconciled, and the export in the binder before you turn the lights out. The audit trail outlives every meeting.</p>
+        </div>
+        <div class="right">
+          <div class="item"><span class="k">Source</span><span class="v"><code>docs/Meeting_Roster_Tutorial.md</code></span></div>
+          <div class="item"><span class="k">Companion</span><span class="v">VPE &amp; SAA manuals</span></div>
+          <div class="item"><span class="k">Ledger pair</span><span class="v">Roster (attendance) · Tickets (payments)</span></div>
+          <div class="item"><span class="k">Default matrix</span><span class="v"><code>docs/access_matrix.md</code></span></div>
+          <div class="item"><span class="k">Updated</span><span class="v">24 June 2026</span></div>
+        </div>
+      </div>
+
+      <div class="slide-f">
+        <span class="brand">Memory Maker · The Meeting Roster</span>
+        <span class="page">17 / 17 · End</span>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div class="progress"><div class="fill" id="progressFill"></div></div>
+
+<div class="nav-bar" id="navBar">
+  <button id="prevBtn">◀ Prev</button>
+  <div class="counter"><strong id="curSlide">1</strong> / <span id="totalSlides">17</span></div>
+  <button id="nextBtn">Next ▶</button>
+  <button id="printBtn" title="Print or save as PDF (browser dialog)">Print / PDF</button>
+</div>
+
+<script>
+  (function() {
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const total = slides.length;
+    let current = 1;
+
+    document.getElementById('totalSlides').textContent = total;
+
+    function show(n) {
+      n = Math.max(1, Math.min(total, n));
+      slides.forEach(s => s.classList.remove('active'));
+      slides[n - 1].classList.add('active');
+      current = n;
+      document.getElementById('curSlide').textContent = n;
+      const pct = ((n - 1) / (total - 1)) * 100;
+      document.getElementById('progressFill').style.width = pct + '%';
+    }
+
+    document.getElementById('prevBtn').addEventListener('click', () => show(current - 1));
+    document.getElementById('nextBtn').addEventListener('click', () => show(current + 1));
+    document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); show(current + 1); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(current - 1); }
+      else if (e.key === 'Home') { e.preventDefault(); show(1); }
+      else if (e.key === 'End')  { e.preventDefault(); show(total); }
+    });
+
+    // mousewheel navigation — debounced
+    let wheelLock = false;
+    document.addEventListener('wheel', (e) => {
+      if (wheelLock) return;
+      if (Math.abs(e.deltaY) < 24) return;
+      wheelLock = true;
+      show(current + (e.deltaY > 0 ? 1 : -1));
+      setTimeout(() => { wheelLock = false; }, 360);
+    }, { passive: true });
+
+    // click anywhere on the deck to advance (left half goes back, right half goes forward)
+    document.getElementById('deck').addEventListener('click', (e) => {
+      if (e.target.closest('button')) return;
+      const rect = document.getElementById('deck').getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      if (x < rect.width * 0.25) show(current - 1);
+      else if (x > rect.width * 0.75) show(current + 1);
+    });
+
+    show(1);
+  })();
+</script>
+
+</body>
+</html>
