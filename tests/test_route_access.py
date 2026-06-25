@@ -303,5 +303,25 @@ class RouteAccessTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 403)
         self.logout()
 
+    def test_calendar_route(self):
+        # 1. Unauthenticated -> Redirect to login
+        response = self.client.get('/calendar')
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login', response.location)
+
+        # 2. Authenticated -> Clean session (no current_club_id) should initialize and load calendar
+        self.login('user@test.com', 'password')
+        with self.client.session_transaction() as sess:
+            sess.pop('current_club_id', None)
+            
+        response = self.client.get('/calendar')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'calendar-page-container', response.data)
+        self.assertIn(b'#100', response.data)
+        self.assertIn(b'#101', response.data)
+        self.assertIn(b'#102', response.data)
+        self.assertIn(b'#103', response.data)
+        self.logout()
+
 if __name__ == '__main__':
     unittest.main()

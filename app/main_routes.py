@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify, send_from_directory, current_app
 from .auth.utils import login_required, current_user
 from app.models.meeting import Meeting
-from app.club_context import get_current_club_id
+from app.club_context import get_current_club_id, authorized_club_required
 from app.utils import get_terms, get_active_term
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
@@ -40,6 +40,7 @@ def index():
 
 @main_bp.route('/calendar')
 @login_required
+@authorized_club_required
 def calendar():
     from app.club_context import is_module_enabled
     from flask import abort
