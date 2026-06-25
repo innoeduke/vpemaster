@@ -6,6 +6,18 @@ function _(text) {
   }
   return text;
 }
+// Templated variant: returns the Chinese translation of `template` with
+// `{key}` placeholders substituted by `vars[key]`. Falls back to the input
+// template (placeholders unsubstituted) when no translation is registered.
+function _t(template, vars) {
+  if (!isChinese) return template;
+  const translated = window.__translations && window.__translations[template];
+  if (!translated) return template;
+  return Object.keys(vars).reduce(
+    (s, k) => s.replace(new RegExp('\\{' + k + '\\}', 'g'), vars[k]),
+    translated
+  );
+}
 
 const ICON_LIST = [
   {
@@ -320,15 +332,15 @@ class TablePaginator {
     });
 
     // Update displays
-    const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
     const totalForInfo = filteredRows.length;
     if (this.infoDisplay) {
       if (totalForInfo === 0) {
-        this.infoDisplay.textContent = isChinese ? '没有找到记录' : 'No records found';
+        this.infoDisplay.textContent = _('No records found');
       } else {
-        this.infoDisplay.textContent = isChinese
-          ? `显示第 ${startIndex + 1} - ${Math.min(endIndex, totalForInfo)} 条记录，共 ${totalForInfo} 条`
-          : `Showing ${startIndex + 1} - ${Math.min(endIndex, totalForInfo)} of ${totalForInfo}`;
+        this.infoDisplay.textContent = _t(
+          'Showing {start} - {end} of {total}',
+          { start: startIndex + 1, end: Math.min(endIndex, totalForInfo), total: totalForInfo }
+        );
       }
     }
 
@@ -389,16 +401,14 @@ function saveTableChanges(config) {
             });
           }
         });
-        const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
-        showNotification(isChinese ? "修改保存成功！" : "Changes saved successfully!", "success");
+        showNotification(_("Changes saved successfully!"), "success");
       } else {
         throw new Error(data.message || "Request failed");
       }
     })
     .catch((error) => {
       console.error("Save error:", error);
-      const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
-      showNotification(isChinese ? `保存修改时出错: ${error.message}` : `Error saving changes: ${error.message}`, "error");
+      showNotification(_t("Error saving changes: {error}", { error: error.message }), "error");
     });
 }
 
@@ -417,10 +427,7 @@ function toggleEditMode(config) {
   } = config;
 
   // Update state
-  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
-  editBtn.textContent = enable 
-    ? (isChinese ? "保存" : "Save") 
-    : (isChinese ? "编辑" : "Edit");
+  editBtn.textContent = enable ? _("Save") : _("Edit");
   cancelBtn.style.display = enable ? "inline-block" : "none";
 
   tableBody.querySelectorAll("tr").forEach((row) => {
@@ -874,9 +881,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const form = document.getElementById("addSessionForm");
 
       if (modal && title && submitBtn && form) {
-        const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
-        title.textContent = isChinese ? "添加新环节类型" : "Add New Session Type";
-        submitBtn.textContent = isChinese ? "保存" : "Save";
+        title.textContent = _("Add New Session Type");
+        submitBtn.textContent = _("Save");
         form.reset();
         document.getElementById("session_id_input").value = "";
         modal.style.display = "flex";
@@ -894,9 +900,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const form = document.getElementById("addRoleForm");
 
       if (modal && title && submitBtn && form) {
-        const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
-        title.textContent = isChinese ? "添加新角色" : "Add New Role";
-        submitBtn.textContent = isChinese ? "保存" : "Save";
+        title.textContent = _("Add New Role");
+        submitBtn.textContent = _("Save");
         form.reset();
         document.getElementById("role_id_input").value = "";
 
@@ -1283,10 +1288,10 @@ async function exportPermissionsDefault() {
     });
     const data = await resp.json();
     if (data.success) {
-      showNotification("Saved as default.", "success");
+      showNotification(_("Saved as default."), "success");
       loadDefaultInfo();
     } else {
-      showNotification(data.message || "Export failed", "error");
+      showNotification(data.message || _("Export failed"), "error");
     }
   } catch (e) {
     showNotification(e.message, "error");
@@ -1320,11 +1325,11 @@ async function resetPermissionsToDefault() {
     });
     const data = await resp.json();
     if (data.success) {
-      showNotification(`Reset from ${data.source} default.`, "success");
+      showNotification(_t("Reset from {source} default.", { source: data.source }), "success");
       // Re-fetch the matrix so checkboxes reflect the new state
       loadPermissionsMatrix();
     } else {
-      showNotification(data.message || "Reset failed", "error");
+      showNotification(data.message || _("Reset failed"), "error");
       loadDefaultInfo(); // refresh hint/button state
     }
   } catch (e) {
@@ -1351,11 +1356,11 @@ async function loadDefaultInfo() {
 
     if (hint) {
       if (club.exists) {
-        hint.textContent = `Last saved (club): ${formatTimestamp(club.updated_at)}`;
+        hint.textContent = _t("Last saved (club): {time}", { time: formatTimestamp(club.updated_at) });
       } else if (globalDefault.exists) {
-        hint.textContent = "No club default saved. Global default available.";
+        hint.textContent = _("No club default saved. Global default available.");
       } else {
-        hint.textContent = "No default available. Save one to enable Reset.";
+        hint.textContent = _("No default available. Save one to enable Reset.");
       }
     }
     if (resetBtn) {
@@ -1382,13 +1387,11 @@ function loadModules() {
   const tableBody = document.getElementById("modules-table-body");
   if (!tableBody) return;
 
-  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
-
   fetch("/api/settings/modules")
     .then((r) => r.json())
     .then((data) => {
       if (!data.success) {
-        const errorMsg = isChinese ? '加载模块时出错。' : 'Error loading modules.';
+        const errorMsg = _('Error loading modules.');
         tableBody.innerHTML = `<tr><td colspan="2" class="text-center text-danger">${data.message || errorMsg}</td></tr>`;
         return;
       }
@@ -1396,7 +1399,7 @@ function loadModules() {
     })
     .catch((e) => {
       console.error("Modules load error:", e);
-      tableBody.innerHTML = `<tr><td colspan="2" class="text-center text-danger">${isChinese ? '加载模块出错' : 'Error loading modules'}: ${e.message}</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="2" class="text-center text-danger">${_('Error loading modules')}: ${e.message}</td></tr>`;
     });
 }
 
@@ -1404,9 +1407,8 @@ function renderModulesTable(modules) {
   const tableBody = document.getElementById("modules-table-body");
   if (!tableBody) return;
 
-  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
   if (modules.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4">${isChinese ? '未找到模块。' : 'No modules found.'}</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4">${_('No modules found.')}</td></tr>`;
     return;
   }
 
@@ -1428,9 +1430,9 @@ function renderModulesTable(modules) {
     html += `
       <tr>
         <td>
-          <span style="font-weight: 500;">${isChinese ? translateModuleName(mod.name) : mod.name}</span>
+          <span style="font-weight: 500;">${translateModuleName(mod.name)}</span>
         </td>
-        <td>${isChinese ? translateModuleDescription(mod.description) : (mod.description || '')}</td>
+        <td>${translateModuleDescription(mod.description) || ''}</td>
         <td>${toggleHtml}</td>
       </tr>
     `;
@@ -1498,13 +1500,11 @@ function loadRules() {
   const tableBody = document.getElementById("rules-table-body");
   if (!tableBody) return;
 
-  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
-
   fetch("/api/settings/rules")
     .then((r) => r.json())
     .then((data) => {
       if (!data.success) {
-        const errorMsg = isChinese ? '加载政策时出错。' : 'Error loading rules.';
+        const errorMsg = _('Error loading rules.');
         tableBody.innerHTML = `<tr><td colspan="3" class="text-center text-danger">${data.message || errorMsg}</td></tr>`;
         return;
       }
@@ -1512,7 +1512,7 @@ function loadRules() {
     })
     .catch((e) => {
       console.error("Rules load error:", e);
-      tableBody.innerHTML = `<tr><td colspan="3" class="text-center text-danger">${isChinese ? '加载政策出错' : 'Error loading rules'}: ${e.message}</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="3" class="text-center text-danger">${_('Error loading rules')}: ${e.message}</td></tr>`;
     });
 }
 
@@ -1520,9 +1520,8 @@ function renderRulesTable(rules) {
   const tableBody = document.getElementById("rules-table-body");
   if (!tableBody) return;
 
-  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
   if (rules.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4">${isChinese ? '未找到政策规定。' : 'No rules found.'}</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4">${_('No rules found.')}</td></tr>`;
     return;
   }
 
@@ -1543,8 +1542,8 @@ function renderRulesTable(rules) {
 
     html += `
       <tr>
-        <td><span style="font-weight: 500;">${isChinese ? translateRuleName(rule.display_name) : rule.display_name}</span></td>
-        <td>${isChinese ? translateRuleDescription(rule.description) : rule.description}</td>
+        <td><span style="font-weight: 500;">${translateRuleName(rule.display_name)}</span></td>
+        <td>${translateRuleDescription(rule.description)}</td>
         <td>${toggleHtml}</td>
       </tr>
     `;
@@ -1602,17 +1601,12 @@ function renderAuthRolesTable(roles) {
   const tableBody = document.getElementById("auth-roles-table-body");
   if (!tableBody) return;
 
-  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
-
   if (roles.length === 0) {
-    const emptyMsg = isChinese ? '未找到安全组' : 'No security groups found.';
-    tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4">${emptyMsg}</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4">${_('No security groups found.')}</td></tr>`;
     return;
   }
 
-  const noDescPlaceholder = isChinese
-    ? '<em class="text-muted">暂无描述</em>'
-    : '<em class="text-muted">No description</em>';
+  const noDescPlaceholder = `<em class="text-muted">${_('No description')}</em>`;
 
   tableBody.innerHTML = roles.map(role => {
     const isCore = role.is_core;
@@ -1627,7 +1621,7 @@ function renderAuthRolesTable(roles) {
         : `<button class="delete-btn icon-btn" disabled title="No edit permissions"><i class="fas fa-trash-alt"></i></button>`;
 
     const displayDesc = role.description
-      ? (isChinese ? translateRoleDescription(role.description) : role.description)
+      ? translateRoleDescription(role.description)
       : noDescPlaceholder;
 
     return `
@@ -1747,7 +1741,6 @@ window.toggleCategory = toggleCategory;
 function renderPermissionsMatrix(data) {
   const container = document.getElementById("permissions-matrix");
   const saveBtn = document.getElementById("save-permissions-btn");
-  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
   const { roles, permissions, role_perms } = data;
 
   // Store original state
@@ -1777,9 +1770,9 @@ function renderPermissionsMatrix(data) {
   });
 
   // Header row 1: Level Groups
-  let levelHeadersHtml = `<th class="level-group-header">${isChinese ? '安全组' : 'Security Group'}</th>`;
+  let levelHeadersHtml = `<th class="level-group-header">${_('Security Group')}</th>`;
   // Header row 2: Role Names
-  let roleHeadersHtml = `<th>Permission</th>`;
+  let roleHeadersHtml = `<th>${_('Permission')}</th>`;
 
   sortedLevels.forEach(level => {
     const levelRoles = rolesByLevel[level];
@@ -1787,11 +1780,11 @@ function renderPermissionsMatrix(data) {
     const mainRole = mainRoleForLevel[level];
 
     let groupLabel = `Level ${level}`;
-    if (level === 4) groupLabel = "Level 4 (Admin)";
-    else if (level === 3) groupLabel = "Level 3 (Operator)";
-    else if (level === 2) groupLabel = "Level 2 (Staff)";
-    else if (level === 1) groupLabel = "Level 1 (Member)";
-    else if (level === 0) groupLabel = "Level 0 (Guest)";
+    if (level === 4) groupLabel = _("Level 4 (Admin)");
+    else if (level === 3) groupLabel = _("Level 3 (Operator)");
+    else if (level === 2) groupLabel = _("Level 2 (Staff)");
+    else if (level === 1) groupLabel = _("Level 1 (Member)");
+    else if (level === 0) groupLabel = _("Level 0 (Guest)");
 
     const hasMultiple = levelRoles.length > 1;
     let toggleBtn = "";
@@ -1839,11 +1832,18 @@ function renderPermissionsMatrix(data) {
         totalColumns += isCollapsed ? 1 : levelRoles.length;
       });
 
+      // Translate category if a translation exists; fall back to the
+      // original English value uppercased (preserving prior behavior).
+      const translatedCategory = _(safeCategory);
+      const displayCategory = (translatedCategory && translatedCategory !== safeCategory)
+        ? translatedCategory
+        : safeCategory.toUpperCase();
+
       html += `
         <tr class="category-row collapsed" onclick="toggleCategory('${catSlug}', this)" style="cursor: pointer;">
           <td colspan="${totalColumns}">
             <i class="fas fa-chevron-right toggle-icon" style="margin-right: 8px;"></i>
-            <strong>${currentCategory.toUpperCase()}</strong>
+            <strong>${displayCategory}</strong>
           </td>
         </tr>
       `;
@@ -2150,9 +2150,8 @@ function openEditRoleModal(roleId) {
   if (!modal || !title || !submitBtn || !form) return;
 
   // Set modal to edit mode
-  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
-  title.textContent = isChinese ? "编辑角色" : "Edit Role";
-  submitBtn.textContent = isChinese ? "保存" : "Save";
+  title.textContent = _("Edit Role");
+  submitBtn.textContent = _("Save");
   document.getElementById("role_id_input").value = roleId;
 
   // Populate fields
@@ -2178,7 +2177,7 @@ function openEditRoleModal(roleId) {
   const categoryRadio = form.querySelector(`input[name="award_category"][value="${categoryValue}"]`);
   if (categoryRadio) {
     categoryRadio.checked = true;
-  } else if (categoryValue === "" || categoryValue === "None" || categoryValue === "无") {
+  } else if (categoryValue === "" || categoryValue === "None" || categoryValue === _("None")) {
     const noneRadio = form.querySelector(`input[name="award_category"][value=""]`);
     if (noneRadio) noneRadio.checked = true;
   }
@@ -2241,9 +2240,8 @@ function openEditSessionModal(sessionId) {
   if (!modal || !title || !submitBtn || !form) return;
 
   // Set modal to edit mode
-  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
-  title.textContent = isChinese ? "编辑会议环节类型" : "Edit Session Type";
-  submitBtn.textContent = isChinese ? "保存" : "Save";
+  title.textContent = _("Edit Session Type");
+  submitBtn.textContent = _("Save");
   document.getElementById("session_id_input").value = sessionId;
 
   // Populate fields
@@ -2360,9 +2358,8 @@ function openAchievementModal(id = null) {
   if (window.achievementPathSelect) window.achievementPathSelect.refresh();
 
   if (id) {
-    const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
-    title.textContent = isChinese ? "编辑成就" : "Edit Achievement";
-    submitBtn.textContent = isChinese ? "保存修改" : "Save Changes";
+    title.textContent = _("Edit Achievement");
+    submitBtn.textContent = _("Save Changes");
     idInput.value = id;
 
     // Fetch achievement data – we can find it in the table or fetch via API
@@ -2409,9 +2406,8 @@ function openAchievementModal(id = null) {
       if (window.achievementPathSelect) window.achievementPathSelect.refresh();
     }
   } else {
-    const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
-    title.textContent = isChinese ? "添加新成就" : "Add New";
-    submitBtn.textContent = isChinese ? "保存" : "Save";
+    title.textContent = _("Add New");
+    submitBtn.textContent = _("Save");
     idInput.value = "";
   }
 

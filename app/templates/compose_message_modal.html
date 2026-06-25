@@ -4,10 +4,10 @@
     <div class="compose-modal-content">
         <div class="compose-header">
             <div>
-                <div class="compose-eyebrow">Mailroom</div>
-                <h3 class="compose-title">New Message</h3>
+                <div class="compose-eyebrow">{{ _('Mailroom') }}</div>
+                <h3 class="compose-title">{{ _('New Message') }}</h3>
             </div>
-            <button class="compose-close" onclick="closeComposeModal()" aria-label="Close">
+            <button class="compose-close" onclick="closeComposeModal()" aria-label="{{ _('Close') }}">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -15,34 +15,34 @@
         <form id="composeForm" onsubmit="sendMessage(event)" autocomplete="off">
             <div class="compose-body">
                 <div class="compose-form-group" style="position: relative;">
-                    <label class="compose-label">To</label>
+                    <label class="compose-label">{{ _('To') }}</label>
                     <div class="compose-recipient-field" id="recipient_field">
-                        <input type="text" id="recipient_search" class="recipient-chip-input" placeholder="Search for a recipient…" autocomplete="off">
+                        <input type="text" id="recipient_search" class="recipient-chip-input" placeholder="{{ _('Search for a recipient…') }}" autocomplete="off">
                     </div>
                     <div id="recipient_results"></div>
                     <div class="compose-recipient-error" id="recipient_error" hidden>
                         <i class="fas fa-exclamation-circle"></i>
-                        <span>Add at least one recipient.</span>
+                        <span>{{ _('Add at least one recipient.') }}</span>
                     </div>
                 </div>
 
                 <div class="compose-form-group">
-                    <label for="subject" class="compose-label">Subject</label>
-                    <input type="text" id="subject" name="subject" class="compose-input" placeholder="Subject" required>
+                    <label for="subject" class="compose-label">{{ _('Subject') }}</label>
+                    <input type="text" id="subject" name="subject" class="compose-input" placeholder="{{ _('Subject') }}" required>
                 </div>
 
                 <div class="compose-form-group" style="margin-bottom: 0;">
-                    <label for="body" class="compose-label">Message</label>
-                    <textarea id="body" name="body" class="compose-textarea" rows="6" placeholder="Write your message…" required></textarea>
+                    <label for="body" class="compose-label">{{ _('Message') }}</label>
+                    <textarea id="body" name="body" class="compose-textarea" rows="6" placeholder="{{ _('Write your message…') }}" required></textarea>
                     <span class="compose-char-count" id="char_count">0</span>
                 </div>
             </div>
 
             <div class="compose-footer">
                 <div class="compose-footer-actions">
-                    {% call btn('cancel', attrs={'onclick': 'closeComposeModal()'}) %}Cancel{% endcall %}
+                    {% call btn('cancel', attrs={'onclick': 'closeComposeModal()'}) %}{{ _('Cancel') }}{% endcall %}
                     {% call btn('secondary', type='submit', class='btn-send') %}
-                        <span>Send</span>
+                        <span>{{ _('Send') }}</span>
                         <span class="send-arrow"><i class="fas fa-arrow-right"></i></span>
                     {% endcall %}
                 </div>

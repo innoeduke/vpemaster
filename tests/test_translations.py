@@ -79,7 +79,7 @@ class TranslationsTestCase(unittest.TestCase):
             self.assertEqual(translate('Max Votes'), '最大选票数')
             self.assertEqual(translate('Max Winners'), '最大获奖数')
             self.assertEqual(translate('Associated Roles'), '关联角色')
-            self.assertEqual(translate('Issues'), '问题反馈')
+            self.assertEqual(translate('Issues'), '问题')
             self.assertEqual(translate('Tracker'), '追踪器')
             self.assertEqual(translate('New Issue'), '新建问题')
             self.assertEqual(translate('Open Issues'), '待解决问题')

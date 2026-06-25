@@ -4,6 +4,14 @@ let currentMessageId = null;
 let currentPage = 1;
 let currentPerPage = 10;
 
+const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+function _(text) {
+  if (isChinese) {
+    return (window.__translations && window.__translations[text]) || text;
+  }
+  return text;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     currentPerPage = getAdaptivePerPage();
     // Initialize header action button visibility for the current tab
@@ -50,7 +58,8 @@ function switchTab(tab) {
     currentPage = 1;
     document.querySelectorAll('.msg-nav-item').forEach(t => t.classList.remove('active'));
     document.getElementById(`tab-${tab}`).classList.add('active');
-    document.getElementById('current-view-title').textContent = tab.charAt(0).toUpperCase() + tab.slice(1);
+    const capitalized = tab.charAt(0).toUpperCase() + tab.slice(1);
+    document.getElementById('current-view-title').textContent = _(capitalized);
 
     syncHeaderActionsForTab(tab);
 
@@ -64,7 +73,7 @@ function loadMessages(tab, silent=false, page=1) {
         list.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-spinner fa-spin"></i>
-                <p>Loading messages...</p>
+                <p>${_("Loading messages...")}</p>
             </div>
         `;
     }
@@ -77,10 +86,11 @@ function loadMessages(tab, silent=false, page=1) {
         .then(data => {
             currentMessages = data.messages;
             if (data.messages.length === 0) {
+                const emptyKey = `No messages in ${tab}`;
                 list.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-${tab === 'inbox' ? 'inbox' : (tab === 'sent' ? 'paper-plane' : 'trash-alt')}"></i>
-                        <p>No messages in ${tab}</p>
+                        <p>${_(emptyKey)}</p>
                     </div>
                 `;
                 renderPagination(0, 0, 1);
@@ -99,6 +109,7 @@ function loadMessages(tab, silent=false, page=1) {
                 const party = isReceived ? msg.sender : msg.recipient;
                 const isMember = msg.is_member !== false;
                 const memberClass = isMember ? '' : 'non-member';
+                const senderLabel = isReceived ? msg.sender : _("To: ") + msg.recipient;
                 return `
                 <div class="msg-item ${!msg.read && isReceived ? 'unread' : ''}" onclick="showDetail(${msg.id})">
                     <div class="msg-avatar-wrap">
@@ -109,19 +120,19 @@ function loadMessages(tab, silent=false, page=1) {
                     </div>
                     <div class="msg-content">
                         <div class="msg-row-top">
-                            <span class="msg-sender">${isReceived ? msg.sender : 'To: ' + msg.recipient}</span>
+                            <span class="msg-sender">${senderLabel}</span>
                             <span class="msg-time">${msg.timestamp.split(' ')[0]}</span>
                         </div>
                         <div class="msg-subject">${formatSubjectWithBadge(msg.subject)}</div>
                         <div class="msg-preview">${escapeHtml(msg.body)}</div>
                     </div>
                     ${tab === 'trash'
-                        ? `<button class="msg-row-restore-btn" onclick="event.stopPropagation(); restoreMessage(${msg.id})" title="Restore Message">
+                        ? `<button class="msg-row-restore-btn" onclick="event.stopPropagation(); restoreMessage(${msg.id})" title="${_("Restore Message")}">
                                <i class="fas fa-trash-restore"></i>
                            </button>`
                         : ''
                     }
-                    <button class="msg-row-delete-btn" onclick="event.stopPropagation(); deleteMessageFromRow(${msg.id})" title="Delete Message">
+                    <button class="msg-row-delete-btn" onclick="event.stopPropagation(); deleteMessageFromRow(${msg.id})" title="${_("Delete Message")}">
                         <i class="fas fa-trash-alt"></i>
                     </button>
                 </div>
@@ -135,7 +146,7 @@ function loadMessages(tab, silent=false, page=1) {
                 list.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-exclamation-circle" style="color:#e53e3e;"></i>
-                        <p>Error loading messages</p>
+                        <p>${_("Error loading messages")}</p>
                     </div>
                 `;
             }
@@ -154,7 +165,7 @@ function showDetail(id) {
     const memberClass = isMember ? '' : 'non-member';
 
     document.getElementById('detail-subject').innerHTML = formatSubjectWithBadge(msg.subject);
-    document.getElementById('detail-sender').textContent = (isReceived ? 'From ' : 'To ') + otherParty;
+    document.getElementById('detail-sender').textContent = (isReceived ? _("From ") : _("To ")) + otherParty;
     document.getElementById('detail-time').textContent = msg.timestamp;
     const avatarContainer = document.getElementById('detail-avatar');
     let detailAvatarSrc = msg.avatar_url;
@@ -254,10 +265,11 @@ function showDetail(id) {
         const statusClass = statusVerb === 'Accepted' ? 'message-status-card accepted' : 'message-status-card declined';
         const statusIcon = statusVerb === 'Accepted' ? 'fa-check-circle' : 'fa-times-circle';
         const noteHtml = note ? `<span class="status-note">${escapeHtml(note)}</span>` : '';
+        const statusTitle = statusVerb === 'Accepted' ? _("You Accepted this request") : _("You Declined this request");
         const statusHtml = `
             <div class="${statusClass}">
                 <i class="fas ${statusIcon} status-icon"></i>
-                <span class="status-title">You ${statusVerb} this request</span>
+                <span class="status-title">${statusTitle}</span>
                 ${noteHtml}
             </div>
         `;
@@ -271,34 +283,34 @@ function showDetail(id) {
             <div class="message-actions join-request-card join-request-card--primary">
                 <div class="join-request-header">
                     <span class="join-request-icon"><i class="fas fa-user-plus"></i></span>
-                    <h3 class="join-request-title">Club Join Request</h3>
+                    <h3 class="join-request-title">${_("Club Join Request")}</h3>
                 </div>
                 <div class="join-request-actions">
                     <button onclick="respondToJoinRequest(${msg.id}, 'join')" class="btn btn-join btn-join-accept">
-                        <i class="fas fa-check"></i> Accept
+                        <i class="fas fa-check"></i> ${_("Accept")}
                     </button>
                     <button onclick="respondToJoinRequest(${msg.id}, 'reject')" class="btn btn-join btn-join-reject">
-                        <i class="fas fa-times"></i> Reject
+                        <i class="fas fa-times"></i> ${_("Reject")}
                     </button>
                 </div>
             </div>
         `;
         bodyEl.insertAdjacentHTML('beforeend', actionsHtml);
     }
-    
+
     if (homeRequestMatch && isInbox) {
          const actionsHtml = `
             <div class="message-actions join-request-card join-request-card--info">
                 <div class="join-request-header">
                     <span class="join-request-icon"><i class="fas fa-house-chimney"></i></span>
-                    <h3 class="join-request-title">Home Club Request</h3>
+                    <h3 class="join-request-title">${_("Home Club Request")}</h3>
                 </div>
                 <div class="join-request-actions">
                     <button onclick="respondToHomeRequest(${msg.id}, 'approve')" class="btn btn-join btn-join-accept">
-                        <i class="fas fa-check"></i> Approve
+                        <i class="fas fa-check"></i> ${_("Approve")}
                     </button>
                     <button onclick="respondToHomeRequest(${msg.id}, 'reject')" class="btn btn-join btn-join-reject">
-                        <i class="fas fa-times"></i> Reject
+                        <i class="fas fa-times"></i> ${_("Reject")}
                     </button>
                 </div>
             </div>
@@ -311,14 +323,14 @@ function showDetail(id) {
             <div class="message-actions join-request-card join-request-card--warning">
                 <div class="join-request-header">
                     <span class="join-request-icon"><i class="fas fa-arrow-right-arrow-left"></i></span>
-                    <h3 class="join-request-title">Home Club Change Proposal</h3>
+                    <h3 class="join-request-title">${_("Home Club Change Proposal")}</h3>
                 </div>
                 <div class="join-request-actions">
                     <button onclick="respondToHomeProposal(${msg.id}, 'approve')" class="btn btn-join btn-join-accept">
-                        <i class="fas fa-check"></i> Approve
+                        <i class="fas fa-check"></i> ${_("Approve")}
                     </button>
                     <button onclick="respondToHomeProposal(${msg.id}, 'reject')" class="btn btn-join btn-join-reject">
-                        <i class="fas fa-times"></i> Reject
+                        <i class="fas fa-times"></i> ${_("Reject")}
                     </button>
                 </div>
             </div>
@@ -331,14 +343,14 @@ function showDetail(id) {
             <div class="message-actions join-request-card join-request-card--primary">
                 <div class="join-request-header">
                     <span class="join-request-icon"><i class="fas fa-user-plus"></i></span>
-                    <h3 class="join-request-title">Club Join Request</h3>
+                    <h3 class="join-request-title">${_("Club Join Request")}</h3>
                 </div>
                 <div class="join-request-actions">
                     <button onclick="respondToUserJoinRequest(${msg.id}, 'approve')" class="btn btn-join btn-join-accept">
-                        <i class="fas fa-check"></i> Approve
+                        <i class="fas fa-check"></i> ${_("Approve")}
                     </button>
                     <button onclick="respondToUserJoinRequest(${msg.id}, 'reject')" class="btn btn-join btn-join-reject">
-                        <i class="fas fa-times"></i> Reject
+                        <i class="fas fa-times"></i> ${_("Reject")}
                     </button>
                 </div>
             </div>
@@ -351,14 +363,14 @@ function showDetail(id) {
             <div class="message-actions join-request-card join-request-card--primary">
                 <div class="join-request-header">
                     <span class="join-request-icon"><i class="fas fa-user-minus"></i></span>
-                    <h3 class="join-request-title">Club Quit Request</h3>
+                    <h3 class="join-request-title">${_("Club Quit Request")}</h3>
                 </div>
                 <div class="join-request-actions">
                     <button onclick="respondToUserQuitRequest(${msg.id}, 'approve')" class="btn btn-join btn-join-reject">
-                        <i class="fas fa-check"></i> Approve
+                        <i class="fas fa-check"></i> ${_("Approve")}
                     </button>
                     <button onclick="respondToUserQuitRequest(${msg.id}, 'reject')" class="btn btn-join btn-join-accept">
-                        <i class="fas fa-times"></i> Reject
+                        <i class="fas fa-times"></i> ${_("Reject")}
                     </button>
                 </div>
             </div>
@@ -373,11 +385,11 @@ function showDetail(id) {
             <div class="message-actions join-request-card join-request-card--primary">
                 <div class="join-request-header">
                     <span class="join-request-icon"><i class="fas fa-tasks"></i></span>
-                    <h3 class="join-request-title">Issue Assignment</h3>
+                    <h3 class="join-request-title">${_("Issue Assignment")}</h3>
                 </div>
                 <div class="join-request-actions">
                     <a href="${issueUrl}" class="btn btn-join btn-join-accept" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">
-                        <i class="fas fa-external-link-alt" style="margin-right: 5px;"></i> View Issue #${issueId}
+                        <i class="fas fa-external-link-alt" style="margin-right: 5px;"></i> ${_("View Issue #")}${issueId}
                     </a>
                 </div>
             </div>
@@ -388,18 +400,18 @@ function showDetail(id) {
     const replyBtn = document.getElementById('detail-reply-btn');
     const restoreBtn = document.getElementById('detail-restore-btn');
     const deleteBtn = document.getElementById('detail-delete-btn');
-    
+
     if (currentTab === 'trash') {
         if (replyBtn) replyBtn.style.display = 'none';
         if (restoreBtn) restoreBtn.style.display = 'inline-flex';
         if (deleteBtn) {
-            deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Delete Permanently';
+            deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i> ' + _("Delete Permanently");
         }
     } else {
         if (replyBtn) replyBtn.style.display = 'inline-flex';
         if (restoreBtn) restoreBtn.style.display = 'none';
         if (deleteBtn) {
-            deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Delete';
+            deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i> ' + _("Delete");
         }
     }
     
@@ -432,9 +444,9 @@ function replyToMessage() {
     
     let subject = msg.subject || '';
     if (subject && !subject.toLowerCase().startsWith('re:')) {
-        subject = 'Re: ' + subject;
+        subject = _("Re: ") + subject;
     } else if (!subject) {
-        subject = 'Re: (No Subject)';
+        subject = _("Re: (No Subject)");
     }
 
     closeMessageDetailModal();
@@ -449,11 +461,11 @@ function deleteCurrentMessage() {
     const confirmSub = document.querySelector('#deleteConfirmModal .confirm-sub');
     
     if (currentTab === 'trash') {
-        if (confirmTitle) confirmTitle.textContent = 'Permanently delete this message?';
-        if (confirmSub) confirmSub.textContent = 'This action cannot be undone.';
+        if (confirmTitle) confirmTitle.textContent = _("Permanently delete this message?");
+        if (confirmSub) confirmSub.textContent = _("This action cannot be undone.");
     } else {
-        if (confirmTitle) confirmTitle.textContent = 'Delete this message?';
-        if (confirmSub) confirmSub.textContent = 'This will move it to the Trash folder.';
+        if (confirmTitle) confirmTitle.textContent = _("Delete this message?");
+        if (confirmSub) confirmSub.textContent = _("This will move it to the Trash folder.");
     }
 
     document.getElementById('deleteConfirmModal').classList.add('flex');
@@ -469,17 +481,17 @@ function restoreMessage(msgId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                showToast('Message restored successfully', 'success');
+                showToast(_("Message restored successfully"), 'success');
                 if (currentMessageId === msgId) {
                     closeMessageDetailModal();
                 }
                 loadMessages(currentTab, false, currentPage);
             } else {
-                showToast(data.error || 'Error restoring message', 'error');
+                showToast(data.error || _("Error restoring message"), 'error');
             }
         })
         .catch(err => {
-            showToast('Error restoring message', 'error');
+            showToast(_("Error restoring message"), 'error');
         });
 }
 
@@ -496,7 +508,7 @@ function confirmDeleteMessage() {
     const btn = document.querySelector('#deleteConfirmModal .btn-delete');
     if (!btn) return;
     const originalText = btn.textContent;
-    btn.textContent = 'Deleting...';
+    btn.textContent = _("Deleting...");
     btn.disabled = true;
 
     fetch(`/messages/${currentMessageId}/delete?context=${context}`, { method: 'POST' })
@@ -505,19 +517,19 @@ function confirmDeleteMessage() {
             btn.textContent = originalText;
             btn.disabled = false;
             closeDeleteConfirmModal();
-            
+
             if (data.success) {
                 closeMessageDetailModal();
                 loadMessages(currentTab, false, currentPage);
             } else {
-                alert('Error deleting message');
+                alert(_("Error deleting message"));
             }
         })
         .catch(err => {
             btn.textContent = originalText;
             btn.disabled = false;
             closeDeleteConfirmModal();
-            alert('Error deleting message');
+            alert(_("Error deleting message"));
         });
 }
 
@@ -533,7 +545,7 @@ function confirmEmptyTrash() {
     const btn = document.querySelector('#emptyTrashConfirmModal .btn-delete');
     if (!btn) return;
     const originalText = btn.textContent;
-    btn.textContent = 'Emptying...';
+    btn.textContent = _("Emptying...");
     btn.disabled = true;
 
     fetch('/messages/empty-trash', { method: 'POST' })
@@ -542,19 +554,19 @@ function confirmEmptyTrash() {
             btn.textContent = originalText;
             btn.disabled = false;
             closeEmptyTrashConfirmModal();
-            
+
             if (data.success) {
-                showToast('Trash emptied successfully', 'success');
+                showToast(_("Trash emptied successfully"), 'success');
                 loadMessages(currentTab, false, 1);
             } else {
-                showToast('Error emptying trash', 'error');
+                showToast(_("Error emptying trash"), 'error');
             }
         })
         .catch(err => {
             btn.textContent = originalText;
             btn.disabled = false;
             closeEmptyTrashConfirmModal();
-            showToast('Error emptying trash', 'error');
+            showToast(_("Error emptying trash"), 'error');
         });
 }
 
@@ -574,40 +586,40 @@ window.onclick = function(event) {
 }
 
 function formatSubjectWithBadge(subject) {
-    if (!subject) return '(No Subject)';
-    
+    if (!subject) return _("(No Subject)");
+
     const patterns = [
         {
             prefix: /^Join Request Response:\s*/i,
-            badge: '<span class="badge-msg badge-msg-join-response">Join Response</span> '
+            badge: '<span class="badge-msg badge-msg-join-response">' + _("Join Response") + '</span> '
         },
         {
             prefix: /^Join Request:\s*/i,
-            badge: '<span class="badge-msg badge-msg-join-request">Join Request</span> '
+            badge: '<span class="badge-msg badge-msg-join-request">' + _("Join Request") + '</span> '
         },
         {
             prefix: /^Invitation to join\s*/i,
-            badge: '<span class="badge-msg badge-msg-invite">Invitation</span> '
+            badge: '<span class="badge-msg badge-msg-invite">' + _("Invitation") + '</span> '
         },
         {
             prefix: /^Response to Home Club Proposal:\s*/i,
-            badge: '<span class="badge-msg badge-msg-home-response">Proposal Response</span> '
+            badge: '<span class="badge-msg badge-msg-home-response">' + _("Proposal Response") + '</span> '
         },
         {
             prefix: /^Home Club Change Proposal:\s*/i,
-            badge: '<span class="badge-msg badge-msg-home-proposal">Home Club Proposal</span> '
+            badge: '<span class="badge-msg badge-msg-home-proposal">' + _("Home Club Proposal") + '</span> '
         },
         {
             prefix: /^Request to set Home Club:\s*/i,
-            badge: '<span class="badge-msg badge-msg-home-request">Home Club Request</span> '
+            badge: '<span class="badge-msg badge-msg-home-request">' + _("Home Club Request") + '</span> '
         },
         {
             prefix: /^Home Club Request:\s*/i,
-            badge: '<span class="badge-msg badge-msg-home-request">Home Club Request</span> '
+            badge: '<span class="badge-msg badge-msg-home-request">' + _("Home Club Request") + '</span> '
         },
         {
             prefix: /^User Changed Home Club:\s*/i,
-            badge: '<span class="badge-msg badge-msg-home-change">Home Club Changed</span> '
+            badge: '<span class="badge-msg badge-msg-home-change">' + _("Home Club Changed") + '</span> '
         }
     ];
 
@@ -660,11 +672,11 @@ function respondToJoinRequest(messageId, action) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showToast(action === 'join' ? 'You have joined the club!' : 'Request rejected.', 'success');
+            showToast(action === 'join' ? _("You have joined the club!") : _("Request rejected."), 'success');
             closeMessageDetailModal();
             loadMessages(currentTab, false, currentPage);
         } else {
-            showToast(data.error || 'Action failed', 'error');
+            showToast(data.error || _("Action failed"), 'error');
             btn.innerHTML = originalText;
             if (container) {
                  container.querySelectorAll('button').forEach(b => b.disabled = false);
@@ -674,7 +686,7 @@ function respondToJoinRequest(messageId, action) {
         }
     })
     .catch(err => {
-        showToast('Error processing request', 'error');
+        showToast(_("Error processing request"), 'error');
         btn.innerHTML = originalText;
         if (container) {
              container.querySelectorAll('button').forEach(b => b.disabled = false);
@@ -707,11 +719,11 @@ function respondToHomeRequest(messageId, action) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showToast(action === 'approve' ? 'Request Approved.' : 'Request Rejected.', 'success');
+            showToast(action === 'approve' ? _("Request Approved.") : _("Request Rejected."), 'success');
             closeMessageDetailModal();
             loadMessages(currentTab, false, currentPage);
         } else {
-            showToast(data.error || 'Action failed', 'error');
+            showToast(data.error || _("Action failed"), 'error');
             btn.innerHTML = originalText;
             if (container) {
                  container.querySelectorAll('button').forEach(b => b.disabled = false);
@@ -721,7 +733,7 @@ function respondToHomeRequest(messageId, action) {
         }
     })
     .catch(err => {
-        showToast('Error processing request', 'error');
+        showToast(_("Error processing request"), 'error');
         btn.innerHTML = originalText;
         if (container) {
              container.querySelectorAll('button').forEach(b => b.disabled = false);
@@ -739,7 +751,7 @@ function respondToHomeProposal(messageId, action) {
     } else {
          btn.disabled = true;
     }
-    
+
     const originalText = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
@@ -754,11 +766,11 @@ function respondToHomeProposal(messageId, action) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showToast(action === 'approve' ? 'Proposal Accepted.' : 'Proposal Rejected.', 'success');
+            showToast(action === 'approve' ? _("Proposal Accepted.") : _("Proposal Rejected."), 'success');
             closeMessageDetailModal();
             loadMessages(currentTab, false, currentPage);
         } else {
-            showToast(data.error || 'Action failed', 'error');
+            showToast(data.error || _("Action failed"), 'error');
             btn.innerHTML = originalText;
             if (container) {
                  container.querySelectorAll('button').forEach(b => b.disabled = false);
@@ -768,7 +780,7 @@ function respondToHomeProposal(messageId, action) {
         }
     })
     .catch(err => {
-        showToast('Error processing proposal', 'error');
+        showToast(_("Error processing proposal"), 'error');
         btn.innerHTML = originalText;
         if (container) {
              container.querySelectorAll('button').forEach(b => b.disabled = false);
@@ -786,7 +798,7 @@ function respondToUserJoinRequest(messageId, action) {
     } else {
          btn.disabled = true;
     }
-    
+
     const originalText = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
@@ -801,11 +813,11 @@ function respondToUserJoinRequest(messageId, action) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showToast(action === 'approve' ? 'Request Approved.' : 'Request Rejected.', 'success');
+            showToast(action === 'approve' ? _("Request Approved.") : _("Request Rejected."), 'success');
             closeMessageDetailModal();
             loadMessages(currentTab, false, currentPage);
         } else {
-            showToast(data.error || 'Action failed', 'error');
+            showToast(data.error || _("Action failed"), 'error');
             btn.innerHTML = originalText;
             if (container) {
                  container.querySelectorAll('button').forEach(b => b.disabled = false);
@@ -815,7 +827,7 @@ function respondToUserJoinRequest(messageId, action) {
         }
     })
     .catch(err => {
-        showToast('Error processing request', 'error');
+        showToast(_("Error processing request"), 'error');
         btn.innerHTML = originalText;
         if (container) {
              container.querySelectorAll('button').forEach(b => b.disabled = false);
@@ -833,7 +845,7 @@ function respondToUserQuitRequest(messageId, action) {
     } else {
          btn.disabled = true;
     }
-    
+
     const originalText = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
@@ -848,11 +860,11 @@ function respondToUserQuitRequest(messageId, action) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showToast(action === 'approve' ? 'Request Approved.' : 'Request Rejected.', 'success');
+            showToast(action === 'approve' ? _("Request Approved.") : _("Request Rejected."), 'success');
             closeMessageDetailModal();
             loadMessages(currentTab, false, currentPage);
         } else {
-            showToast(data.error || 'Action failed', 'error');
+            showToast(data.error || _("Action failed"), 'error');
             btn.innerHTML = originalText;
             if (container) {
                  container.querySelectorAll('button').forEach(b => b.disabled = false);
@@ -862,7 +874,7 @@ function respondToUserQuitRequest(messageId, action) {
         }
     })
     .catch(err => {
-        showToast('Error processing request', 'error');
+        showToast(_("Error processing request"), 'error');
         btn.innerHTML = originalText;
         if (container) {
              container.querySelectorAll('button').forEach(b => b.disabled = false);
@@ -900,8 +912,8 @@ function renderPagination(total, pages, currentPage) {
     
     // Previous button
     html += `
-        <button class="msg-pagination-btn" ${displayCurrentPage === 1 ? 'disabled' : ''} onclick="loadMessages(currentTab, false, ${displayCurrentPage - 1})" title="Previous Page">
-            <i class="fas fa-chevron-left"></i> Prev
+        <button class="msg-pagination-btn" ${displayCurrentPage === 1 ? 'disabled' : ''} onclick="loadMessages(currentTab, false, ${displayCurrentPage - 1})" title="${_("Previous Page")}">
+            <i class="fas fa-chevron-left"></i> ${_("Prev")}
         </button>
     `;
     
@@ -937,8 +949,8 @@ function renderPagination(total, pages, currentPage) {
     
     // Next button
     html += `
-        <button class="msg-pagination-btn" ${displayCurrentPage === displayPages ? 'disabled' : ''} onclick="loadMessages(currentTab, false, ${displayCurrentPage + 1})" title="Next Page">
-            Next <i class="fas fa-chevron-right"></i>
+        <button class="msg-pagination-btn" ${displayCurrentPage === displayPages ? 'disabled' : ''} onclick="loadMessages(currentTab, false, ${displayCurrentPage + 1})" title="${_("Next Page")}">
+            ${_("Next")} <i class="fas fa-chevron-right"></i>
         </button>
     `;
     

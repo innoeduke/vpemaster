@@ -10,47 +10,47 @@
 <div class="msg-layout">
     <!-- Sidebar -->
     <div class="msg-sidebar">
-        <p class="msg-sidebar-eyebrow">Mailroom</p>
+        <p class="msg-sidebar-eyebrow">{{ _('Mailroom') }}</p>
         <button class="msg-compose-btn msg-compose-btn--sidebar" onclick="openComposeModal()">
-            <span><i class="fas fa-pen-fancy" style="margin-right:8px;"></i>Compose</span>
+            <span><i class="fas fa-pen-fancy" style="margin-right:8px;"></i>{{ _('Compose') }}</span>
             <span class="compose-arrow"><i class="fas fa-arrow-right"></i></span>
         </button>
 
         <div class="msg-nav-container">
             <div class="msg-nav-item active" onclick="switchTab('inbox')" id="tab-inbox">
-                <i class="fas fa-inbox"></i> <span>Inbox</span>
+                <i class="fas fa-inbox"></i> <span>{{ _('Inbox') }}</span>
             </div>
             <div class="msg-nav-item" onclick="switchTab('sent')" id="tab-sent">
-                <i class="fas fa-paper-plane"></i> <span>Sent</span>
+                <i class="fas fa-paper-plane"></i> <span>{{ _('Sent') }}</span>
             </div>
             <div class="msg-nav-item" onclick="switchTab('trash')" id="tab-trash">
-                <i class="fas fa-trash-alt"></i> <span>Trash</span>
+                <i class="fas fa-trash-alt"></i> <span>{{ _('Trash') }}</span>
             </div>
         </div>
     </div>
-    
+
     <!-- Main Content -->
     <div class="msg-main">
         <div class="msg-header">
-            <h2 class="msg-header-title" id="current-view-title">Inbox</h2>
+            <h2 class="msg-header-title" id="current-view-title">{{ _('Inbox') }}</h2>
             <div class="msg-header-actions">
-                <button class="msg-compose-btn msg-compose-btn--header" id="header-compose-btn" onclick="openComposeModal()" title="Compose">
-                    <i class="fas fa-pen-fancy"></i> <span>Compose</span>
+                <button class="msg-compose-btn msg-compose-btn--header" id="header-compose-btn" onclick="openComposeModal()" title="{{ _('Compose') }}">
+                    <i class="fas fa-pen-fancy"></i> <span>{{ _('Compose') }}</span>
                 </button>
-                <button class="msg-empty-trash-btn" id="empty-trash-btn" onclick="openEmptyTrashModal()" title="Empty Trash">
-                    <i class="fas fa-dumpster"></i> <span>Empty Trash</span>
+                <button class="msg-empty-trash-btn" id="empty-trash-btn" onclick="openEmptyTrashModal()" title="{{ _('Empty Trash') }}">
+                    <i class="fas fa-dumpster"></i> <span>{{ _('Empty Trash') }}</span>
                 </button>
-                <button class="msg-refresh-btn" onclick="loadMessages(currentTab)" title="Refresh" aria-label="Refresh">
+                <button class="msg-refresh-btn" onclick="loadMessages(currentTab)" title="{{ _('Refresh') }}" aria-label="{{ _('Refresh') }}">
                     <i class="fas fa-sync-alt"></i>
                 </button>
             </div>
         </div>
-        
+
         <div class="msg-list-container custom-scrollbar" id="messages-list">
             <!-- Content loaded via JS -->
             <div class="empty-state">
                 <i class="fas fa-spinner fa-spin"></i>
-                <p>Loading...</p>
+                <p>{{ _('Loading...') }}</p>
             </div>
         </div>
         <div class="msg-pagination" id="messages-pagination"></div>
@@ -65,10 +65,10 @@
     <div class="custom-modal-content">
         <div class="custom-modal-header">
             <div style="flex: 1; min-width: 0;">
-                <div class="custom-modal-eyebrow">Message</div>
-                <h3 class="custom-modal-title" id="detail-subject">Message Subject</h3>
+                <div class="custom-modal-eyebrow">{{ _('Message') }}</div>
+                <h3 class="custom-modal-title" id="detail-subject">{{ _('Message Subject') }}</h3>
             </div>
-            <button class="custom-modal-close" onclick="closeMessageDetailModal()" aria-label="Close">
+            <button class="custom-modal-close" onclick="closeMessageDetailModal()" aria-label="{{ _('Close') }}">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -88,16 +88,16 @@
         <div class="custom-modal-footer">
             <div class="footer-actions">
                 <button class="btn btn-success" id="detail-reply-btn" onclick="replyToMessage()">
-                    <i class="fas fa-reply"></i> Reply
+                    <i class="fas fa-reply"></i> {{ _('Reply') }}
                 </button>
                 <button class="btn btn-success" id="detail-restore-btn" onclick="restoreMessage(currentMessageId)" style="display: none;">
-                    <i class="fas fa-trash-restore"></i> Restore
+                    <i class="fas fa-trash-restore"></i> {{ _('Restore') }}
                 </button>
                 {% call btn('delete', id='detail-delete-btn', attrs={'onclick': 'deleteCurrentMessage()'}) %}
-                    <i class="fas fa-trash-alt"></i> Delete
+                    <i class="fas fa-trash-alt"></i> {{ _('Delete') }}
                 {% endcall %}
             </div>
-            <button class="btn btn-secondary" onclick="closeMessageDetailModal()">Close</button>
+            <button class="btn btn-secondary" onclick="closeMessageDetailModal()">{{ _('Close') }}</button>
         </div>
     </div>
 </div>
@@ -109,12 +109,12 @@
             <div class="confirm-icon">
                 <i class="fas fa-exclamation"></i>
             </div>
-            <h3 class="confirm-title">Delete this message?</h3>
-            <p class="confirm-sub">This action cannot be undone.</p>
+            <h3 class="confirm-title" id="delete-confirm-title">{{ _('Delete this message?') }}</h3>
+            <p class="confirm-sub" id="delete-confirm-sub">{{ _('This action cannot be undone.') }}</p>
         </div>
         <div class="confirm-actions">
-            <button class="btn btn-secondary" onclick="closeDeleteConfirmModal()">Cancel</button>
-            {% call btn('delete', attrs={'onclick': 'confirmDeleteMessage()'}) %}Delete{% endcall %}
+            <button class="btn btn-secondary" onclick="closeDeleteConfirmModal()">{{ _('Cancel') }}</button>
+            {% call btn('delete', attrs={'onclick': 'confirmDeleteMessage()'}) %}{{ _('Delete') }}{% endcall %}
         </div>
     </div>
 </div>
@@ -126,12 +126,12 @@
             <div class="confirm-icon confirm-icon--danger">
                 <i class="fas fa-trash-alt"></i>
             </div>
-            <h3 class="confirm-title">Empty Trash?</h3>
-            <p class="confirm-sub">This will permanently delete all messages in your trash. This action cannot be undone.</p>
+            <h3 class="confirm-title">{{ _('Empty Trash?') }}</h3>
+            <p class="confirm-sub">{{ _('This will permanently delete all messages in your trash. This action cannot be undone.') }}</p>
         </div>
         <div class="confirm-actions">
-            <button class="btn btn-secondary" onclick="closeEmptyTrashConfirmModal()">Cancel</button>
-            {% call btn('delete', attrs={'onclick': 'confirmEmptyTrash()'}) %}Empty Trash{% endcall %}
+            <button class="btn btn-secondary" onclick="closeEmptyTrashConfirmModal()">{{ _('Cancel') }}</button>
+            {% call btn('delete', attrs={'onclick': 'confirmEmptyTrash()'}) %}{{ _('Empty Trash') }}{% endcall %}
         </div>
     </div>
 </div>
@@ -139,5 +139,84 @@
 {% endblock %}
 
 {% block scripts %}
+<!-- Translation injection for client-side JavaScript (Mailroom) -->
+<script>
+  window.__translations = window.__translations || {};
+  Object.assign(window.__translations, {
+    "Inbox": "{{ _('Inbox') }}",
+    "Sent": "{{ _('Sent') }}",
+    "Trash": "{{ _('Trash') }}",
+    "Compose": "{{ _('Compose') }}",
+    "Mailroom": "{{ _('Mailroom') }}",
+    "New Message": "{{ _('New Message') }}",
+    "Reply": "{{ _('Reply') }}",
+    "Delete": "{{ _('Delete') }}",
+    "Restore": "{{ _('Restore') }}",
+    "Delete Permanently": "{{ _('Delete Permanently') }}",
+    "Close": "{{ _('Close') }}",
+    "Cancel": "{{ _('Cancel') }}",
+    "Save": "{{ _('Save') }}",
+    "Accept": "{{ _('Accept') }}",
+    "Reject": "{{ _('Reject') }}",
+    "Approve": "{{ _('Approve') }}",
+    "Loading...": "{{ _('Loading...') }}",
+    "Loading messages...": "{{ _('Loading messages...') }}",
+    "Error loading messages": "{{ _('Error loading messages') }}",
+    "Empty Trash": "{{ _('Empty Trash') }}",
+    "Empty Trash?": "{{ _('Empty Trash?') }}",
+    "Sending...": "{{ _('Sending...') }}",
+    "Sending request...": "{{ _('Sending request...') }}",
+    "Deleting...": "{{ _('Deleting...') }}",
+    "Emptying...": "{{ _('Emptying...') }}",
+    "Message restored successfully": "{{ _('Message restored successfully') }}",
+    "Error restoring message": "{{ _('Error restoring message') }}",
+    "Error deleting message": "{{ _('Error deleting message') }}",
+    "Trash emptied successfully": "{{ _('Trash emptied successfully') }}",
+    "Error emptying trash": "{{ _('Error emptying trash') }}",
+    "You have joined the club!": "{{ _('You have joined the club!') }}",
+    "Request rejected.": "{{ _('Request rejected.') }}",
+    "Request Approved.": "{{ _('Request Approved.') }}",
+    "Request Rejected.": "{{ _('Request Rejected.') }}",
+    "Proposal Accepted.": "{{ _('Proposal Accepted.') }}",
+    "Proposal Rejected.": "{{ _('Proposal Rejected.') }}",
+    "Action failed": "{{ _('Action failed') }}",
+    "Error processing request": "{{ _('Error processing request') }}",
+    "Error processing proposal": "{{ _('Error processing proposal') }}",
+    "Error sending request.": "{{ _('Error sending request.') }}",
+    "Request sent successfully to Club Admins!": "{{ _('Request sent successfully to Club Admins!') }}",
+    "Unknown error": "{{ _('Unknown error') }}",
+    "Delete this message?": "{{ _('Delete this message?') }}",
+    "Permanently delete this message?": "{{ _('Permanently delete this message?') }}",
+    "This will move it to the Trash folder.": "{{ _('This will move it to the Trash folder.') }}",
+    "This action cannot be undone.": "{{ _('This action cannot be undone.') }}",
+    "(No Subject)": "{{ _('(No Subject)') }}",
+    "Re: (No Subject)": "{{ _('Re: (No Subject)') }}",
+    "Re: ": "{{ _('Re: ') }}",
+    "From ": "{{ _('From ') }}",
+    "To ": "{{ _('To ') }}",
+    "To: ": "{{ _('To: ') }}",
+    "Error: ": "{{ _('Error: ') }}",
+    "No messages in inbox": "{{ _('No messages in inbox') }}",
+    "No messages in sent": "{{ _('No messages in sent') }}",
+    "No messages in trash": "{{ _('No messages in trash') }}",
+    "Prev": "{{ _('Prev') }}",
+    "Next": "{{ _('Next') }}",
+    "Join Response": "{{ _('Join Response') }}",
+    "Join Request": "{{ _('Join Request') }}",
+    "Invitation": "{{ _('Invitation') }}",
+    "Proposal Response": "{{ _('Proposal Response') }}",
+    "Home Club Proposal": "{{ _('Home Club Proposal') }}",
+    "Home Club Request": "{{ _('Home Club Request') }}",
+    "Home Club Changed": "{{ _('Home Club Changed') }}",
+    "Club Join Request": "{{ _('Club Join Request') }}",
+    "Home Club Change Proposal": "{{ _('Home Club Change Proposal') }}",
+    "Club Quit Request": "{{ _('Club Quit Request') }}",
+    "Issue Assignment": "{{ _('Issue Assignment') }}",
+    "View Issue #": "{{ _('View Issue #') }}",
+    "You Accepted this request": "{{ _('You Accepted this request') }}",
+    "You Declined this request": "{{ _('You Declined this request') }}",
+    "Failed to send message": "{{ _('Failed to send message') }}"
+  });
+</script>
 <script src="{{ url_for('static', filename='js/messages.js') }}"></script>
 {% endblock %}
