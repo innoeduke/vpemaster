@@ -1120,7 +1120,8 @@ def agenda():
             role_candidates[r_name].append({'id': c_id, 'name': c_name})
 
     # --- Unified Awards List ---
-    awards = get_meeting_awards(selected_meeting, configs_list=configs, winners_list=selected_meeting.award_winners)
+    winners = selected_meeting.award_winners if selected_meeting else []
+    awards = get_meeting_awards(selected_meeting, configs_list=configs, winners_list=winners)
 
     # All club awards for the "Add Award" picker
     from .models.voting import Award, AwardRole
