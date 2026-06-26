@@ -42,6 +42,11 @@ def short_circuit_cached_voting():
     the returned Response directly and skips the view AND its
     @authorized_club_required decorator entirely, eliminating the per-
     request permission / club-context DB queries on the hot path.
+
+    The club_id is read from the URL (`?club_id=`) because the session
+    isn't populated yet — `authorized_club_required` would normally do
+    that. Falling back to the session value keeps this correct for any
+    caller that lands here with session already set.
     """
     from flask import request, make_response
     from flask_login import current_user
@@ -56,11 +61,17 @@ def short_circuit_cached_voting():
         return None
 
     meeting_id = request.view_args.get('meeting_id') if request.view_args else None
-    club_id = get_current_club_id()
+    url_club_id = request.args.get('club_id')
+    if url_club_id:
+        try:
+            club_id = int(url_club_id)
+        except (TypeError, ValueError):
+            club_id = get_current_club_id()
+    else:
+        club_id = get_current_club_id()
+
     cache_key = f"voting_html_guest_{club_id}_{meeting_id or 'default'}"
     cached_html = cache.get(cache_key)
-    import sys
-    print(f"BR endpoint={request.endpoint} key={cache_key} hit={cached_html is not None}", file=sys.stderr, flush=True)
     if cached_html is None:
         return None
 
