@@ -71,14 +71,19 @@ def short_circuit_cached_voting():
         club_id = get_current_club_id()
 
     cache_key = f"voting_html_guest_{club_id}_{meeting_id or 'default'}"
+    import sys, time as _t
+    t0 = _t.perf_counter()
     cached_html = cache.get(cache_key)
-    import sys
-    print(f"BR key={cache_key} hit={cached_html is not None} len={len(cached_html) if cached_html else 0}", file=sys.stderr, flush=True)
+    t1 = _t.perf_counter()
+    print(f"BR key={cache_key} hit={cached_html is not None} cache_get_ms={(t1-t0)*1000:.2f}", file=sys.stderr, flush=True)
     if cached_html is None:
         return None
 
+    t2 = _t.perf_counter()
     resp = make_response(cached_html)
     resp.headers['Cache-Control'] = 'private, max-age=10'
+    t3 = _t.perf_counter()
+    print(f"BR make_resp_ms={(t3-t2)*1000:.2f}", file=sys.stderr, flush=True)
     return resp
 
 
