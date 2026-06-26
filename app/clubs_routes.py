@@ -959,6 +959,20 @@ def enter_club(club_id):
     from app.club_context import set_current_club_id
     set_current_club_id(club_id)
 
+    # Create audit log if user is logged in
+    if current_user.is_authenticated:
+        from app.models import PermissionAudit
+        audit = PermissionAudit(
+            admin_id=current_user.id,
+            action='ENTER_CLUB',
+            target_type='CLUB',
+            target_id=club.id,
+            target_name=club.club_name,
+            changes=f"User entered club: {club.club_name}"
+        )
+        db.session.add(audit)
+        db.session.commit()
+
     return jsonify({'success': True, 'redirect_url': url_for('agenda_bp.agenda')})
 
 

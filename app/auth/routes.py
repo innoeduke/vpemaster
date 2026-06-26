@@ -122,6 +122,19 @@ def login():
 
 
             login_user(user, remember=True)
+
+            # Create audit log for login
+            from app.models import PermissionAudit
+            audit = PermissionAudit(
+                admin_id=user.id,
+                action='LOGIN',
+                target_type='USER',
+                target_id=user.id,
+                target_name=user.username,
+                changes='User logged in'
+            )
+            db.session.add(audit)
+            db.session.commit()
             
             # Check for default password
             if password in ['leadership', 'toastmasters']:
