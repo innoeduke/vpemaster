@@ -28,7 +28,12 @@ voting_bp = Blueprint('voting_bp', __name__)
 def check_voting_enabled():
     from app.club_context import is_module_enabled
     from flask import abort
-    if not is_module_enabled('Voting'):
+    import sys, time as _t
+    t0 = _t.perf_counter()
+    enabled = is_module_enabled('Voting')
+    t1 = _t.perf_counter()
+    print(f"CHECK_VOTING enabled={enabled} ms={(t1-t0)*1000:.2f}", file=sys.stderr, flush=True)
+    if not enabled:
         abort(404)
 
 
