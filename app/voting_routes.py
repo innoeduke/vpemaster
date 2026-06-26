@@ -32,19 +32,35 @@ def check_voting_enabled():
         abort(404)
 
 
-def populate_session_log_owners(session_logs, meeting_id):
-    """Batch populates the cached owners relationship on session logs to avoid N+1 queries."""
-    if not session_logs:
-        return
-        
+def get_meeting_omr_records(meeting_id):
+    """Fetch all OwnerMeetingRoles for a meeting with Contact and MeetingRole, cached per-request."""
+    from flask import request, has_request_context
+    if has_request_context():
+        cache = getattr(request, '_meeting_omr_records_cache', None)
+        if cache is None:
+            cache = request._meeting_omr_records_cache = {}
+        if meeting_id in cache:
+            return cache[meeting_id]
+
     from app.models import OwnerMeetingRoles, Contact, MeetingRole
-    
-    # Query all OwnerMeetingRoles for this meeting with their associated Contact and MeetingRole
     omr_records = db.session.query(OwnerMeetingRoles, Contact, MeetingRole)\
         .join(Contact, OwnerMeetingRoles.contact_id == Contact.id)\
         .outerjoin(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
         .filter(OwnerMeetingRoles.meeting_id == meeting_id)\
         .all()
+
+    if has_request_context():
+        request._meeting_omr_records_cache[meeting_id] = omr_records
+
+    return omr_records
+
+
+def populate_session_log_owners(session_logs, meeting_id):
+    """Batch populates the cached owners relationship on session logs to avoid N+1 queries."""
+    if not session_logs:
+        return
+        
+    omr_records = get_meeting_omr_records(meeting_id)
         
     # Group contacts by their role_id and session_log_id
     single_owner_map = {} # (role_id, session_log_id) -> list of Contacts
@@ -238,12 +254,11 @@ def _get_roles_for_voting(meeting_id, meeting, award_configs_list=None, user_vot
     from app.models import SessionType, Waitlist
     all_logs = SessionLog.query.filter_by(meeting_id=meeting_id)\
         .options(
-            joinedload(SessionLog.session_type).joinedload(SessionType.role),
-            subqueryload(SessionLog.waitlists).joinedload(Waitlist.contact)
+            joinedload(SessionLog.session_type).joinedload(SessionType.role)
         ).all()
 
     populate_session_log_owners(all_logs, meeting_id)
-    consolidated = consolidate_session_logs(all_logs)
+    consolidated = consolidate_session_logs(all_logs, include_waitlist=False)
     logs_by_id = {log.id: log for log in all_logs}
 
     # Single aggregated vote-count query, gated by admin/track-progress perms.
@@ -419,14 +434,12 @@ def _get_roles_for_voting(meeting_id, meeting, award_configs_list=None, user_vot
             for w in winners:
                 winner_set.add((w.award_category, w.contact_id))
                 
-        # Prefetch roles for candidates in this meeting
-        from .models import OwnerMeetingRoles
-        # Fetch all contacts with their roles for this meeting in one query
-        meeting_role_takers = db.session.query(Contact, MeetingRole.id, MeetingRole.name)\
-            .join(OwnerMeetingRoles, OwnerMeetingRoles.contact_id == Contact.id)\
-            .join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
-            .filter(OwnerMeetingRoles.meeting_id == meeting.id,
-                    MeetingRole.type != 'officer').all()
+        # Construct meeting_role_takers in memory from cached OMR records (saves a query!)
+        omr_records = get_meeting_omr_records(meeting.id)
+        meeting_role_takers = []
+        for omr, contact, role in omr_records:
+            if role and role.type != 'officer':
+                meeting_role_takers.append((contact, role.id, role.name))
 
         # Parse meeting_role_takers in memory to build index mappings
         # contact_role_names: contact_id -> ordered list of role names
@@ -525,6 +538,7 @@ def _get_voting_page_context(meeting_id):
     """Gathers context for the voting page."""
     # Logic similar to booking page but for voting
     from app.club_context import get_current_club_id
+    from app.models.voting import MeetingAwardConfig
     club_id = get_current_club_id()
     
     # Show active meetings in dropdown. Skip the default-meeting lookup when
@@ -534,6 +548,7 @@ def _get_voting_page_context(meeting_id):
         limit_past=limit_past,
         columns=[Meeting.id, Meeting.Meeting_Date, Meeting.status, Meeting.Meeting_Number],
         include_default=(meeting_id is None),
+        only_with_logs=False,
     )
  
     if not meeting_id:
@@ -583,8 +598,8 @@ def _get_voting_page_context(meeting_id):
  
     selected_meeting = Meeting.query.options(
         joinedload(Meeting.club),
-        selectinload(Meeting.award_winners),
-    ).get(meeting_id)
+        selectinload(Meeting.award_configs).joinedload(MeetingAwardConfig.role_associations),
+    ).populate_existing().get(meeting_id)
     if not selected_meeting or (club_id and selected_meeting.club_id != club_id):
         return context
 
@@ -624,12 +639,8 @@ def _get_voting_page_context(meeting_id):
 
     context['selected_meeting'] = selected_meeting
 
-    # Fetch award configs once — reused by _get_roles_for_voting and the
-    # context['award_configs'] dict below (avoids a duplicate query).
-    from app.models.voting import MeetingAwardConfig
-    award_configs_list = MeetingAwardConfig.query\
-        .options(joinedload(MeetingAwardConfig.role_associations))\
-        .filter_by(meeting_id=meeting_id).all()
+    # Reuses the eager-loaded award_configs (saves a duplicate query).
+    award_configs_list = selected_meeting.award_configs if selected_meeting else []
     context['award_configs_list'] = award_configs_list
 
     # Calculate total received votes (unique voters)
@@ -664,8 +675,8 @@ def _get_voting_page_context(meeting_id):
     # can_track_progress controls seeing results WHILE running (Admin only)
     context['can_track_progress'] = is_authorized(Permissions.VOTING_TRACK_PROGRESS, meeting=selected_meeting)
 
-    # Use selected_meeting.award_winners (already eager-loaded via selectinload)
-    winners_list = selected_meeting.award_winners if selected_meeting else []
+    # Use selected_meeting.award_winners (lazy loaded on finished meetings)
+    winners_list = selected_meeting.award_winners if (selected_meeting and selected_meeting.status == 'finished') else []
     roles = _get_roles_for_voting(
         meeting_id,
         selected_meeting,
@@ -675,7 +686,7 @@ def _get_voting_page_context(meeting_id):
     )
     context['roles'] = roles
     context['sorted_role_groups'] = group_roles_by_category(roles)
-    context['best_award_ids'] = selected_meeting.get_best_award_ids() if selected_meeting else set()
+    context['best_award_ids'] = selected_meeting.get_best_award_ids() if (selected_meeting and selected_meeting.status == 'finished') else set()
 
     # Build award_configs lookup from the same list fetched above
     context['award_configs'] = {}

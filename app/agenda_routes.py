@@ -18,6 +18,8 @@ import os
 import openpyxl
 from openpyxl.styles import Font, Alignment
 from io import BytesIO
+
+_CLUB_DEFAULTS_CACHE = {}
 from .utils import derive_credentials, get_project_code, get_meetings_by_status, process_meeting_poster
 from .tally_sync import sync_participants_to_tally
 from .services.role_service import RoleService
@@ -60,12 +62,17 @@ def get_meeting_awards(meeting, configs_list=None, winners_list=None):
     if meeting and meeting.club:
         default_award_ids = meeting.club.get_default_awards()
         if default_award_ids:
-            from sqlalchemy.orm import joinedload
-            from .models.voting import Award
-            # Fetch default awards from DB with eager loaded role associations
-            club_defaults = Award.query\
-                .options(joinedload(Award.role_associations))\
-                .filter(Award.id.in_(default_award_ids)).all()
+            cache_key = tuple(sorted(default_award_ids))
+            if cache_key in _CLUB_DEFAULTS_CACHE:
+                club_defaults = _CLUB_DEFAULTS_CACHE[cache_key]
+            else:
+                from sqlalchemy.orm import joinedload
+                from .models.voting import Award
+                # Fetch default awards from DB with eager loaded role associations
+                club_defaults = Award.query\
+                    .options(joinedload(Award.role_associations))\
+                    .filter(Award.id.in_(default_award_ids)).all()
+                _CLUB_DEFAULTS_CACHE[cache_key] = club_defaults
             
     if club_defaults:
         for a in club_defaults:

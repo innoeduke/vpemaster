@@ -741,19 +741,34 @@ def get_meetings_by_status(limit_past=8, columns=None, status_filter=None, only_
     # --- Mode 2: Default Hybrid Active/Past Logic ---
     club_id = get_current_club_id()
 
-    # Fetch active meetings ('not started', 'running', and 'unpublished' if permitted)
+    # Fetch all meetings for this club in a single query (saves a database round-trip!)
     from .auth.utils import is_authorized
     from .auth.permissions import Permissions
     active_statuses = ['not started', 'running']
     if is_authorized(Permissions.MEETING_VIEW_ALL):
         active_statuses.append('unpublished')
-    active_query = db.session.query(*query_cols)\
-        .filter(Meeting.status.in_(active_statuses))
+    past_statuses = ['finished', 'cancelled']
+    target_statuses = active_statuses + past_statuses
+
+    query = db.session.query(*query_cols)\
+        .filter(Meeting.status.in_(target_statuses))
     
     if club_id:
-        active_query = active_query.filter(Meeting.club_id == club_id)
+        query = query.filter(Meeting.club_id == club_id)
         
-    active_meetings = active_query.order_by(Meeting.Meeting_Date.desc(), Meeting.id.desc()).all()
+    all_club_meetings = query.order_by(Meeting.Meeting_Date.desc(), Meeting.id.desc()).all()
+
+    # Now separate and filter in memory
+    active_meetings = []
+    past_meetings = []
+
+    for m in all_club_meetings:
+        m_status = m.status if hasattr(m, 'status') else m[2]
+        if m_status in active_statuses:
+            active_meetings.append(m)
+        elif m_status in past_statuses:
+            if limit_past is None or len(past_meetings) < limit_past:
+                past_meetings.append(m)
 
     # Sort helper to handle both objects and rows/tuples consistently
     def get_sort_key(m):
@@ -761,20 +776,6 @@ def get_meetings_by_status(limit_past=8, columns=None, status_filter=None, only_
         m_date = m.Meeting_Date if hasattr(m, 'Meeting_Date') else m[1]
         # Return a tuple for composite sorting
         return (m_date, m_id)
-
-    past_statuses = ['finished', 'cancelled']
-
-    past_query = db.session.query(*query_cols)\
-        .filter(Meeting.status.in_(past_statuses))
-    
-    if club_id:
-        past_query = past_query.filter(Meeting.club_id == club_id)
-        
-    past_query = past_query.order_by(Meeting.Meeting_Date.desc(), Meeting.id.desc())
-    if limit_past is not None:
-        past_query = past_query.limit(limit_past)
-    
-    past_meetings = past_query.all()
 
     # Combine and sort all meetings by date and id
     all_meetings = sorted(active_meetings + past_meetings,
@@ -908,7 +909,7 @@ def get_current_user_info():
     return user, current_user_contact_id
 
 
-def consolidate_session_logs(session_logs):
+def consolidate_session_logs(session_logs, include_waitlist=True):
     """
     Consolidates session logs into a dictionary of roles.
     Groups by (role_id, owner_id) unless role is marked as distinct.
@@ -916,6 +917,7 @@ def consolidate_session_logs(session_logs):
     
     Args:
         session_logs: List of SessionLog objects
+        include_waitlist (bool): Whether to consolidate and extract waitlists
     
     Returns:
         dict: Consolidated roles dictionary
@@ -960,17 +962,19 @@ def consolidate_session_logs(session_logs):
 
     # Consolidate waitlists for each group
     for dict_key, role_data in roles_dict.items():
-        seen_waitlist_ids = set()
-        for log in role_data['logs']:
-            for waitlist_entry in log.waitlists:
-                if waitlist_entry.contact_id not in seen_waitlist_ids:
-                    role_data['waitlist'].append({
-                        'name': waitlist_entry.contact.Name,
-                        'id': waitlist_entry.contact_id,
-                        'avatar_url': waitlist_entry.contact.Avatar_URL
-                    })
-                    seen_waitlist_ids.add(waitlist_entry.contact_id)
-        del role_data['logs']
+        if include_waitlist:
+            seen_waitlist_ids = set()
+            for log in role_data['logs']:
+                for waitlist_entry in log.waitlists:
+                    if waitlist_entry.contact_id not in seen_waitlist_ids:
+                        role_data['waitlist'].append({
+                            'name': waitlist_entry.contact.Name,
+                            'id': waitlist_entry.contact_id,
+                            'avatar_url': waitlist_entry.contact.Avatar_URL
+                        })
+                        seen_waitlist_ids.add(waitlist_entry.contact_id)
+        if 'logs' in role_data:
+            del role_data['logs']
 
     return roles_dict
 

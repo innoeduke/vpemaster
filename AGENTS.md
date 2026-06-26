@@ -15,6 +15,7 @@ the doc in the same change.
   **Read this for any feature touching contacts, members, or club
   membership.**
 - [docs/MAILBOX_REALTIME_DESIGN.md](file:///Users/wmu/workspace/toastmasters/vpemaster/docs/MAILBOX_REALTIME_DESIGN.md) — real-time message notification design (Server-Sent Events, MessageAnnouncer queue architecture, deployment WSGI guidelines).
+- [docs/VOTING_PERFORMANCE_WALKTHROUGH.md](file:///Users/wmu/workspace/toastmasters/vpemaster/docs/VOTING_PERFORMANCE_WALKTHROUGH.md) — Voting page performance optimization history, load testing benchmarks, and SQL query count reduction analysis.
 
 When you add new design rules, give them their own file under `docs/`
 and link it here.

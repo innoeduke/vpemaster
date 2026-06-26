@@ -743,17 +743,28 @@ class RoleService:
         if cached_result is not None:
             return cached_result
 
-        # Query OwnerMeetingRoles joined with Meeting and MeetingRole
-        query = db.session.query(OwnerMeetingRoles, MeetingRole, Contact)\
-            .join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id)\
-            .outerjoin(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
-            .join(Contact, OwnerMeetingRoles.contact_id == Contact.id)\
-            .filter(Meeting.id == meeting_id)
-        
-        if club_id:
-            query = query.filter(Meeting.club_id == club_id)
+        # Check request-level OMR cache first to avoid database query
+        from flask import request, has_request_context
+        omr_records = None
+        if has_request_context():
+            omr_cache = getattr(request, '_meeting_omr_records_cache', None)
+            if omr_cache and meeting_id in omr_cache:
+                omr_records = omr_cache[meeting_id]
+
+        if omr_records is not None:
+            results = [(omr, role, contact) for omr, contact, role in omr_records]
+        else:
+            # Query OwnerMeetingRoles joined with Meeting and MeetingRole
+            query = db.session.query(OwnerMeetingRoles, MeetingRole, Contact)\
+                .join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id)\
+                .outerjoin(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
+                .join(Contact, OwnerMeetingRoles.contact_id == Contact.id)\
+                .filter(Meeting.id == meeting_id)
             
-        results = query.all()
+            if club_id:
+                query = query.filter(Meeting.club_id == club_id)
+                
+            results = query.all()
         
         # Build map: contact_id -> [roles]
         role_takers = {}
