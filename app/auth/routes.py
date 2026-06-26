@@ -165,10 +165,24 @@ def logout():
 @auth_bp.before_app_request
 def check_password_reset():
     if current_user.is_authenticated and session.get('force_password_reset'):
-        # Allow static files and the profile page (where they can change password) and logout
-        if request.endpoint not in ['auth_bp.profile', 'auth_bp.logout'] and \
-           not request.endpoint.startswith('static') and \
-           not request.endpoint.endswith('.static'):
+        # Allow static files, the profile page (where they can change password), logout,
+        # and critical real-time message notification/event endpoints.
+        exempt_endpoints = [
+            'auth_bp.profile',
+            'auth_bp.logout',
+            'messages.unread_count',
+            'messages.message_events'
+        ]
+        endpoint = request.endpoint
+        if endpoint and endpoint not in exempt_endpoints and \
+           not (endpoint.startswith('static') or endpoint.endswith('.static')):
+            # If the request is for an API, chat, or AJAX/JSON endpoint, return a 403 Forbidden with JSON
+            # to avoid redirecting the browser to an HTML page which causes Syntax/MIME-type errors.
+            if request.path.startswith(('/api/', '/chat/')) or \
+               request.headers.get('X-Requested-With') == 'XMLHttpRequest' or \
+               (request.accept_mimetypes and 'application/json' in request.accept_mimetypes.values()):
+                return jsonify({"error": "Password change required", "code": "password_change_required"}), 403
+
             flash('You must change your password before continuing.', 'error')
             return redirect(url_for('auth_bp.profile', tab='password'))
 

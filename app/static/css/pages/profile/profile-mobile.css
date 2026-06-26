@@ -93,6 +93,7 @@
 	}
 
 	.profile-page-container .btn-primary,
+	.profile-page-container .btn-save,
 	.profile-page-container .btn-success,
 	.profile-page-container .btn-warning {
 		width: 100%;
@@ -106,5 +107,16 @@
 		border-radius: 10px;
 		border: none;
 		text-decoration: none;
+		color: #ffffff !important; /* Force text color to white on mobile */
+	}
+
+	.profile-page-container .btn-primary,
+	.profile-page-container .btn-save,
+	.profile-page-container .btn-success {
+		background-color: #772432 !important; /* Force burgundy background on mobile */
+	}
+
+	.profile-page-container .btn-warning {
+		background-color: #ff9800 !important; /* Force warning orange background on mobile */
 	}
 }
