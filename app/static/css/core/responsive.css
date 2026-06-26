@@ -272,6 +272,11 @@
         /* Show the overlay when nav is expanded */
     }
 
+    /* Position toast/flash messages higher on mobile to prevent blocking bottom navigation/logout */
+    .flash-messages {
+        bottom: 96px;
+    }
+
     /* Make logout button full width on mobile */
     .nav-pane .logout-container a {
         width: 100%;

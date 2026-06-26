@@ -977,6 +977,7 @@ function showFlashMessage(message, category = 'info') {
 
   // Auto-remove after 3 seconds matching the base.html behavior
   setTimeout(() => {
+    flash.style.pointerEvents = 'none';
     flash.style.opacity = '0';
     flash.style.transform = 'translateY(20px)';
     flash.addEventListener('transitionend', () => {
