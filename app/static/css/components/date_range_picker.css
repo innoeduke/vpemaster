@@ -99,13 +99,12 @@ body.modal-open .date-range-picker {
 
 .date-range-card {
     position: relative;
-    z-index: var(--z-inline);
+    z-index: var(--z-modal);
     width: 100%;
     max-width: 480px;
     background: #ffffff;
     border-radius: 14px;
     box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
-    overflow: hidden;
     animation: drf-pop-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -121,13 +120,14 @@ body.modal-open .date-range-picker {
 
 .date-range-header {
     position: relative;
-    z-index: var(--z-inline);
+    z-index: var(--z-modal);
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 16px 20px;
     background: linear-gradient(135deg, #004165 0%, #003554 100%);
     color: #ffffff;
+    border-radius: 14px 14px 0 0;
 }
 
 .date-range-header h3 {
@@ -246,7 +246,7 @@ body.modal-open .date-range-picker {
     top: calc(100% + 6px);
     left: 0;
     right: 0;
-    z-index: var(--z-inline);
+    z-index: var(--z-popover);
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
