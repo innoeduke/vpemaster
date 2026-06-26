@@ -718,38 +718,32 @@ def voting(meeting_id):
     from app.club_context import get_current_club_id
     from app import cache
 
-    context = _get_voting_page_context(meeting_id)
-
     # Anonymous (guest) views share an identical render — same meeting, no
     # per-session voter_token embedded in HTML. Cache the rendered response
-    # keyed by (club, meeting, total_voters) so:
-    #   - the 30s TTL bounds staleness, and
-    #   - the total_voters component invalidates the key on each new vote.
-    # Authenticated users get a per-session render (has_voted, vote widgets)
-    # and skip the cache entirely.
-    if not current_user.is_authenticated:
+    # keyed only on (club_id, meeting_id) so the cache lookup happens BEFORE
+    # any DB queries. The 30s TTL bounds staleness on `total_voters` and
+    # other vote-driven fields; batch_vote / vote_for_award bust this key.
+    # Authenticated users get a per-session render and skip the cache.
+    is_cacheable = not current_user.is_authenticated
+    cache_key = None
+    if is_cacheable:
         club_id = get_current_club_id()
-        cache_key = (
-            f"voting_html_guest_{club_id}"
-            f"_{meeting_id or 'default'}"
-            f"_{context.get('total_voters', 0)}"
-            f"_{context.get('db_status') or 'na'}"
-        )
+        cache_key = f"voting_html_guest_{club_id}_{meeting_id or 'default'}"
         cached_html = cache.get(cache_key)
         if cached_html is not None:
             resp = make_response(cached_html)
             resp.headers['Cache-Control'] = 'private, max-age=10'
             return resp
 
+    context = _get_voting_page_context(meeting_id)
     rendered = render_template('voting.html', **context)
 
-    if not current_user.is_authenticated:
+    if is_cacheable:
         cache.set(cache_key, rendered, timeout=30)
-        resp = make_response(rendered)
-        resp.headers['Cache-Control'] = 'private, max-age=10'
-        return resp
 
-    return make_response(rendered)
+    resp = make_response(rendered)
+    resp.headers['Cache-Control'] = 'private, max-age=10'
+    return resp
 
 
 @voting_bp.route('/voting/batch_vote', methods=['POST'])
