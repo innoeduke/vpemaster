@@ -31,6 +31,52 @@ def check_voting_enabled():
         abort(404)
 
 
+def populate_session_log_owners(session_logs, meeting_id):
+    """Batch populates the cached owners relationship on session logs to avoid N+1 queries."""
+    if not session_logs:
+        return
+        
+    from app.models import OwnerMeetingRoles, Contact, MeetingRole
+    
+    # Query all OwnerMeetingRoles for this meeting with their associated Contact and MeetingRole
+    omr_records = db.session.query(OwnerMeetingRoles, Contact, MeetingRole)\
+        .join(Contact, OwnerMeetingRoles.contact_id == Contact.id)\
+        .outerjoin(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
+        .filter(OwnerMeetingRoles.meeting_id == meeting_id)\
+        .all()
+        
+    # Group contacts by their role_id and session_log_id
+    single_owner_map = {} # (role_id, session_log_id) -> list of Contacts
+    shared_owner_map = {} # role_id -> list of Contacts
+    
+    for omr, contact, role in omr_records:
+        if not role:
+            continue
+        role_id = role.id
+        has_single_owner = role.has_single_owner
+        
+        if has_single_owner:
+            key = (role_id, omr.session_log_id)
+            single_owner_map.setdefault(key, []).append(contact)
+        else:
+            shared_owner_map.setdefault(role_id, []).append(contact)
+            
+    # Assign cached owners to each session log
+    for log in session_logs:
+        if not log.session_type or not log.session_type.role:
+            log._cached_owners = []
+            continue
+            
+        role = log.session_type.role
+        role_id = role.id
+        has_single_owner = role.has_single_owner
+        
+        if has_single_owner:
+            log._cached_owners = single_owner_map.get((role_id, log.id), [])
+        else:
+            log._cached_owners = shared_owner_map.get(role_id, [])
+
+
 def _enrich_role_data_for_voting(roles_dict, selected_meeting):
     """
     Enriches role data with voting-specific information (awards, vote counts).
@@ -175,8 +221,16 @@ def _get_roles_for_voting(meeting_id, meeting):
         
     # Fetch roles and enrich them
     club_id = meeting.club_id
-    # Re-fetch logs for consolidation to be safe if RoleService doesn't provide enough info
-    all_logs = SessionLog.query.filter_by(meeting_id=meeting_id).all()
+    # Re-fetch logs with eager-loaded relationships to avoid N+1 queries during consolidation
+    from sqlalchemy.orm import joinedload, subqueryload
+    from app.models import SessionType, Waitlist
+    all_logs = SessionLog.query.filter_by(meeting_id=meeting_id)\
+        .options(
+            joinedload(SessionLog.session_type).joinedload(SessionType.role),
+            subqueryload(SessionLog.waitlists).joinedload(Waitlist.contact)
+        ).all()
+        
+    populate_session_log_owners(all_logs, meeting_id)
     consolidated = consolidate_session_logs(all_logs)
     
     enriched_roles = _enrich_role_data_for_voting(consolidated, meeting)
