@@ -627,7 +627,9 @@ def _get_voting_page_context(meeting_id):
     # Fetch award configs once — reused by _get_roles_for_voting and the
     # context['award_configs'] dict below (avoids a duplicate query).
     from app.models.voting import MeetingAwardConfig
-    award_configs_list = MeetingAwardConfig.query.filter_by(meeting_id=meeting_id).all()
+    award_configs_list = MeetingAwardConfig.query\
+        .options(joinedload(MeetingAwardConfig.role_associations))\
+        .filter_by(meeting_id=meeting_id).all()
     context['award_configs_list'] = award_configs_list
 
     # Calculate total received votes (unique voters)

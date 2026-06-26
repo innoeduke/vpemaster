@@ -60,9 +60,12 @@ def get_meeting_awards(meeting, configs_list=None, winners_list=None):
     if meeting and meeting.club:
         default_award_ids = meeting.club.get_default_awards()
         if default_award_ids:
+            from sqlalchemy.orm import joinedload
             from .models.voting import Award
-            # Fetch default awards from DB
-            club_defaults = Award.query.filter(Award.id.in_(default_award_ids)).all()
+            # Fetch default awards from DB with eager loaded role associations
+            club_defaults = Award.query\
+                .options(joinedload(Award.role_associations))\
+                .filter(Award.id.in_(default_award_ids)).all()
             
     if club_defaults:
         for a in club_defaults:
