@@ -713,17 +713,12 @@ def _get_voting_page_context(meeting_id):
 @authorized_club_required
 def voting(meeting_id):
     """Main voting page route."""
+    import sys
     from flask import make_response
     from flask_login import current_user
     from app.club_context import get_current_club_id
     from app import cache
 
-    # Anonymous (guest) views share an identical render — same meeting, no
-    # per-session voter_token embedded in HTML. Cache the rendered response
-    # keyed only on (club_id, meeting_id) so the cache lookup happens BEFORE
-    # any DB queries. The 30s TTL bounds staleness on `total_voters` and
-    # other vote-driven fields; batch_vote / vote_for_award bust this key.
-    # Authenticated users get a per-session render and skip the cache.
     is_cacheable = not current_user.is_authenticated
     cache_key = None
     if is_cacheable:
@@ -731,15 +726,18 @@ def voting(meeting_id):
         cache_key = f"voting_html_guest_{club_id}_{meeting_id or 'default'}"
         cached_html = cache.get(cache_key)
         if cached_html is not None:
+            print(f"VOTE_HIT key={cache_key}", file=sys.stderr, flush=True)
             resp = make_response(cached_html)
             resp.headers['Cache-Control'] = 'private, max-age=10'
             return resp
+        print(f"VOTE_MISS key={cache_key}", file=sys.stderr, flush=True)
 
     context = _get_voting_page_context(meeting_id)
     rendered = render_template('voting.html', **context)
 
     if is_cacheable:
         cache.set(cache_key, rendered, timeout=30)
+        print(f"VOTE_SET key={cache_key} bytes={len(rendered)}", file=sys.stderr, flush=True)
 
     resp = make_response(rendered)
     resp.headers['Cache-Control'] = 'private, max-age=10'
