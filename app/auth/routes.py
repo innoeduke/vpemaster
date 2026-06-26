@@ -159,8 +159,11 @@ def login():
                 else:
                     next_page = url_for('clubs_bp.list_clubs')
             return redirect(next_page)
+        elif not user:
+            flash('No account found with that username, email, phone, or member ID.', 'error')
+            return redirect(url_for('auth_bp.login'))
         else:
-            flash('Invalid username or password.', 'error')
+            flash('Incorrect password. Please try again.', 'error')
             return redirect(url_for('auth_bp.login'))
             
     clubs = Club.query.filter(Club.club_no != '000001').all()

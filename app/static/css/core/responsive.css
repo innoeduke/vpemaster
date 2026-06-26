@@ -272,9 +272,27 @@
         /* Show the overlay when nav is expanded */
     }
 
-    /* Position toast/flash messages higher on mobile to prevent blocking bottom navigation/logout */
+    /* Position toast/flash messages at top-center on mobile to prevent blocking bottom navigation/logout */
     .flash-messages {
-        bottom: 96px;
+        bottom: auto;
+        top: 20px;
+        left: 20px;
+        right: 20px;
+        align-items: center;
+    }
+
+    body > .toast {
+        bottom: auto;
+        top: 20px;
+        left: 20px;
+        right: 20px;
+        margin: 0 auto;
+    }
+
+    .flash-messages .flash,
+    body > .toast {
+        width: 100%;
+        max-width: 400px;
     }
 
     /* Make logout button full width on mobile */

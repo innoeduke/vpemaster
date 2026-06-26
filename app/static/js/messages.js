@@ -886,16 +886,34 @@ function respondToUserQuitRequest(messageId, action) {
 
 // Simple toast notification helper
 function showToast(message, type = 'info') {
+    let container = document.querySelector('.flash-messages');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'flash-messages';
+        const wrapper = document.querySelector('.content-wrapper');
+        if (wrapper) {
+            wrapper.insertBefore(container, wrapper.firstChild);
+        } else {
+            document.body.appendChild(container);
+        }
+    }
+
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : (type === 'error' ? 'exclamation-circle' : 'info-circle')}"></i> <span>${message}</span>`;
     
-    document.body.appendChild(toast);
+    container.appendChild(toast);
     
     setTimeout(() => {
+        toast.style.pointerEvents = 'none';
         toast.style.opacity = '0';
         toast.style.transform = 'translateY(20px)';
-        toast.addEventListener('transitionend', () => toast.remove());
+        toast.addEventListener('transitionend', () => {
+            toast.remove();
+            if (container.children.length === 0) {
+                container.remove();
+            }
+        });
     }, 3000);
 }
 

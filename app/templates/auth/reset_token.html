@@ -17,7 +17,9 @@
 </head>
 
 <body>
+
   <div class="login-container">
+
     <div class="login-content-wrapper">
       <img src="{{ url_for('static', filename='images/logo.webp') }}" alt="Memory Maker Logo" class="login-logo" />
       <h2 style="margin-bottom: 5px;">Set New Password</h2>
@@ -25,7 +27,7 @@
 
       {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-      <div class="flash-messages">
+      <div class="flash-container-inline">
         {% for category, message in messages %}
         <div class="flash {{ category }}">
           {% if category == 'success' %}
@@ -36,11 +38,10 @@
           <i class="fas fa-info-circle"></i>
           {% endif %}
           <span>{{ message }}</span>
-          <span class="close-flash" onclick="this.parentElement.remove();">&times;</span>
+          <span class="close-flash" onclick="this.parentElement.remove();">&#x00D7;</span>
         </div>
         {% endfor %}
       </div>
-      <script defer src="{{ url_for('static', filename='js/flash_handler.js') }}"></script>
       {% endif %}
       {% endwith %}
 
@@ -72,6 +73,8 @@
       </div>
     </div>
   </div>
+
+  <script defer src="{{ url_for('static', filename='js/flash_handler.js') }}"></script>
 </body>
 
 </html>

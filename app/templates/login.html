@@ -24,7 +24,7 @@
       <h1>Memory Maker</h1>
       {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-      <div class="flash-messages">
+      <div class="flash-container-inline">
         {% for category, message in messages %}
         <div class="flash {{ category }}">
           {% if category == 'success' %}
@@ -35,11 +35,10 @@
           <i class="fas fa-info-circle"></i>
           {% endif %}
           <span>{{ message }}</span>
-          <span class="close-flash" onclick="this.parentElement.remove();">&times;</span>
+          <span class="close-flash" onclick="this.parentElement.remove();">&#x00D7;</span>
         </div>
         {% endfor %}
       </div>
-      <script defer src="{{ url_for('static', filename='js/login_init.js') }}"></script>
       {% endif %}
       {% endwith %}
       <form action="{{ url_for('auth_bp.login') }}{% if request.args.get('next') %}?next={{ request.args.get('next') }}{% endif %}" method="post" class="login-form">
@@ -85,6 +84,7 @@
   <script>
     window.LOGIN_REGISTER_URL = "{{ url_for('auth_bp.register') }}";
   </script>
+  <script defer src="{{ url_for('static', filename='js/login_init.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/login_signup.js') }}"></script>
 </body>
 

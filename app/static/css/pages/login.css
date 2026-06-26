@@ -379,11 +379,16 @@ h6 {
 
 /* Mobile Responsive Adjustments (390x844 and similar) */
 @media (max-width: 768px) {
+  html {
+    scrollbar-gutter: auto;
+  }
+
   .login-content-wrapper {
     flex: 1;
-    /* Restore flexible growth */
+    width: 100% !important;
+    max-width: none !important;
+    /* Remove desktop max-width cap — container padding (10px each side) controls the width on mobile */
     justify-content: flex-start;
-    /* Align content vertically to the top within wrapper */
   }
 
   .login-container .app-footer {
@@ -392,8 +397,9 @@ h6 {
   }
 
   .login-container {
-    padding: 10px;
-    padding-top: 30px;
+    width: 100% !important;
+    padding: 10px !important;
+    padding-top: 30px !important;
     min-height: 100vh;
     height: auto;
     /* justify-content: center removed because wrapper handles centering */
@@ -417,6 +423,7 @@ h6 {
 
   .login-form {
     padding: 20px;
+    width: 100% !important;
   }
 
   .login-form input,
