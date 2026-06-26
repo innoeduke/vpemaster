@@ -30,7 +30,8 @@ class Config:
     MAX_CLUB_STORAGE = 100 * 1024 * 1024  # 100MB limit per club
 
     # Cache settings
-    CACHE_TYPE = 'SimpleCache'
+    CACHE_TYPE = os.getenv('CACHE_TYPE', 'SimpleCache')
+    CACHE_REDIS_URL = os.getenv('CACHE_REDIS_URL', 'redis://localhost:6379/0')
     CACHE_DEFAULT_TIMEOUT = 300
 
 
