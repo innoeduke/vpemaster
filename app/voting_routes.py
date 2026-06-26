@@ -492,7 +492,7 @@ def _get_voting_page_context(meeting_id):
     # Show active meetings in dropdown
     limit_past = None if is_authorized(Permissions.MEDIA_MANAGE) else 8
     upcoming_meetings, default_meeting_id = get_meetings_by_status(
-        limit_past=limit_past, status_filter=['unpublished', 'not started', 'running', 'finished'],
+        limit_past=limit_past,
         columns=[Meeting.id, Meeting.Meeting_Date, Meeting.status, Meeting.Meeting_Number])
  
     if not meeting_id:
