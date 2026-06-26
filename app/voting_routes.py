@@ -28,12 +28,7 @@ voting_bp = Blueprint('voting_bp', __name__)
 def check_voting_enabled():
     from app.club_context import is_module_enabled
     from flask import abort
-    import sys, time as _t
-    t0 = _t.perf_counter()
-    enabled = is_module_enabled('Voting')
-    t1 = _t.perf_counter()
-    print(f"CHECK_VOTING enabled={enabled} ms={(t1-t0)*1000:.2f}", file=sys.stderr, flush=True)
-    if not enabled:
+    if not is_module_enabled('Voting'):
         abort(404)
 
 
@@ -76,19 +71,12 @@ def short_circuit_cached_voting():
         club_id = get_current_club_id()
 
     cache_key = f"voting_html_guest_{club_id}_{meeting_id or 'default'}"
-    import sys, time as _t
-    t0 = _t.perf_counter()
     cached_html = cache.get(cache_key)
-    t1 = _t.perf_counter()
     if cached_html is None:
         return None
 
-    t2 = _t.perf_counter()
     resp = make_response(cached_html)
     resp.headers['Cache-Control'] = 'private, max-age=10'
-    t3 = _t.perf_counter()
-    elapsed_ms = (_t.perf_counter() - t0) * 1000
-    print(f"BR hit total_ms={elapsed_ms:.2f} cache_get={((t1-t0)*1000):.2f} make_resp={((t3-t2)*1000):.2f}", file=sys.stderr, flush=True)
     return resp
 
 
