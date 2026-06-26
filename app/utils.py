@@ -161,6 +161,44 @@ def get_role_aliases():
     }
 
 
+def get_projects_dropdown_data(club_id, user=None):
+    """
+    Fetch only project details and completed projects metadata for dropdowns.
+    Avoids fetching all other heavy dropdown metadata (pathways, roles, contacts).
+    """
+    projects = Project.query.order_by(Project.Project_Name).all()
+    all_pp = db.session.query(PathwayProject, Pathway.abbr).join(Pathway).all()
+    
+    project_codes_lookup = {}
+    for pp, path_abbr in all_pp:
+        if pp.project_id not in project_codes_lookup:
+            project_codes_lookup[pp.project_id] = {}
+        project_codes_lookup[pp.project_id][path_abbr] = {
+            'code': pp.code,
+            'level': pp.level
+        }
+    
+    completed_ids = set()
+    if user and user.is_authenticated:
+        contact = user.get_contact(club_id)
+        if contact:
+            completed_ids = contact.get_completed_project_ids()
+
+    projects_data = [
+        {
+            "id": p.id,
+            "Project_Name": p.Project_Name,
+            "Format": p.Format,
+            "is_completed": p.id in completed_ids,
+            "path_codes": project_codes_lookup.get(p.id, {}),
+            "Duration_Min": p.Duration_Min,
+            "Duration_Max": p.Duration_Max
+        }
+        for p in projects
+    ]
+    return projects_data
+
+
 def get_dropdown_metadata():
     """
     Fetch all dropdown metadata (pathways, roles, projects) in one

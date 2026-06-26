@@ -1023,11 +1023,6 @@ def agenda():
     ensure_default_templates(club_id)
     meeting_types = get_template_filename_map(club_id)
 
-    members = Contact.query.join(ContactClub).filter(
-        ContactClub.club_id == club_id,
-        Contact.Type == 'Member'
-    ).order_by(Contact.Name.asc()).all()
-
     # Default meeting start time (can be overridden by Club model if needed)
     default_start_time = '18:55'
 
@@ -1043,15 +1038,23 @@ def agenda():
         next_meeting_date = datetime.now().strftime('%Y-%m-%d')
 
     # --- Projects for Speech Modal ---
-    from .utils import get_dropdown_metadata
-    dropdown_data = get_dropdown_metadata()
+    from .utils import get_projects_dropdown_data
+    projects_data = get_projects_dropdown_data(club_id, current_user)
     
     # Get qualified voting candidates from voting page context
     from app.voting_routes import _get_roles_for_voting
     voting_roles = []
+    configs = []
     if selected_meeting:
+        from .models.voting import MeetingAwardConfig
+        configs = MeetingAwardConfig.query.filter_by(meeting_id=selected_meeting.id).all()
         try:
-            voting_roles = _get_roles_for_voting(selected_meeting_id, selected_meeting)
+            voting_roles = _get_roles_for_voting(
+                selected_meeting_id,
+                selected_meeting,
+                award_configs_list=configs,
+                winners_list=selected_meeting.award_winners
+            )
         except Exception:
             pass
 
@@ -1095,8 +1098,6 @@ def agenda():
     # --- Award Configs ---
     award_configs = {}
     if selected_meeting:
-        from .models.voting import MeetingAwardConfig
-        configs = MeetingAwardConfig.query.filter_by(meeting_id=selected_meeting.id).all()
         for c in configs:
             award_configs[c.award_category] = {
                 'max_votes_per_user': c.max_votes_per_user,
@@ -1119,7 +1120,7 @@ def agenda():
             role_candidates[r_name].append({'id': c_id, 'name': c_name})
 
     # --- Unified Awards List ---
-    awards = get_meeting_awards(selected_meeting)
+    awards = get_meeting_awards(selected_meeting, configs_list=configs, winners_list=selected_meeting.award_winners)
 
     # All club awards for the "Add Award" picker
     from .models.voting import Award, AwardRole
@@ -1158,8 +1159,7 @@ def agenda():
                            meeting_ids=meeting_ids,
                            selected_meeting_id=selected_meeting_id,
                            selected_meeting=selected_meeting,  # Pass the Meeting object
-                           members=members,                 # If needed elsewhere
-                           projects=dropdown_data['projects'],
+                           projects=projects_data,
                            project_speakers=project_speakers,  # For JS
                            meeting_types=meeting_types,
                            default_start_time=default_start_time,
