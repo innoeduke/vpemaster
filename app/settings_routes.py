@@ -1432,9 +1432,9 @@ def get_permissions_default_info():
 @settings_bp.route('/api/audit-log', methods=['GET'])
 @login_required
 def get_audit_log():
-    if not is_authorized(Permissions.SETTINGS_VIEW):
+    # Only the sysadmin viewing the super club is authorized to retrieve the audit log.
+    if not (current_user.is_sysadmin and get_current_club_id() == GLOBAL_CLUB_ID):
         return jsonify(success=False, message="Permission denied"), 403
-    # club_id = get_current_club_id()
 
     logs = PermissionAudit.query.order_by(PermissionAudit.timestamp.desc()).limit(100).all()
     return jsonify([l.to_dict() for l in logs])

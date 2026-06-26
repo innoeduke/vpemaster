@@ -59,3 +59,62 @@ def test_login_and_enter_club_audit_logging(client, app, default_club):
         assert enter_log.target_id == club_id
         assert enter_log.target_name == club_name
         assert enter_log.changes == f"User entered club: {club_name}"
+
+
+def test_audit_log_endpoint_restrictions(client, app, default_club):
+    with app.app_context():
+        from app import db
+        # 1. Create a super club (ID=1) if it doesn't exist
+        super_club = Club.query.get(1)
+        if not super_club:
+            super_club = Club(id=1, club_name="Super Club", club_no="000001")
+            db.session.add(super_club)
+        
+        # Create a separate normal club (ID=2)
+        normal_club = Club.query.get(2)
+        if not normal_club:
+            normal_club = Club(id=2, club_name="Normal Club", club_no="000002")
+            db.session.add(normal_club)
+
+        # 2. Create a sysadmin user
+        sysadmin = User(username='sysadmin', email='sysadmin@example.com', status='active')
+        sysadmin.set_password('password')
+        db.session.add(sysadmin)
+        db.session.flush()
+
+        # Link sysadmin to super club
+        uc_sys = UserClub(user_id=sysadmin.id, club_id=1, is_home=True)
+        db.session.add(uc_sys)
+
+        # 3. Create a normal user
+        normal_user = User(username='normal_audit_user', email='normal_audit@example.com', status='active')
+        normal_user.set_password('password')
+        db.session.add(normal_user)
+        db.session.flush()
+
+        # Link normal user to normal_club
+        uc_norm = UserClub(user_id=normal_user.id, club_id=2, is_home=True)
+        db.session.add(uc_norm)
+        db.session.commit()
+
+    # A. Test normal user gets blocked
+    client.post('/login', data={'username': 'normal_audit_user', 'password': 'password'})
+    response = client.get('/api/audit-log')
+    assert response.status_code == 403
+
+    client.get('/logout')
+
+    # B. Test sysadmin in normal club gets blocked
+    client.post('/login', data={'username': 'sysadmin', 'password': 'password'})
+    # Switch active club to normal club (ID=2)
+    client.post('/clubs/2/enter')
+    
+    response = client.get('/api/audit-log')
+    assert response.status_code == 403
+
+    # C. Test sysadmin in super club (ID=1) is allowed
+    # Switch active club back to super club
+    client.post('/clubs/1/enter')
+    response = client.get('/api/audit-log')
+    assert response.status_code == 200
+

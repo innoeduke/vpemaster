@@ -859,14 +859,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const defaultTab = urlParams.get("default_tab");
   const savedTab = localStorage.getItem("settings_active_tab");
 
-  if (defaultTab) {
-    openTab(null, defaultTab);
-  } else if (savedTab) {
-    openTab(null, savedTab);
-  } else {
-    // Default to general if nothing is set
-    openTab(null, "modules-settings");
+  let tabToOpen = "modules-settings";
+  if (defaultTab && document.getElementById(defaultTab)) {
+    tabToOpen = defaultTab;
+  } else if (savedTab && document.getElementById(savedTab)) {
+    tabToOpen = savedTab;
   }
+  openTab(null, tabToOpen);
 
   // --- 2. Modal Logic ---
   // Initialize icon matrix for role modal

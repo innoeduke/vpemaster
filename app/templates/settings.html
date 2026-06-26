@@ -42,9 +42,11 @@
       <button class="nav-item" onclick="openTab(event, 'awards-settings')">
         {{ _('Awards') }}
       </button>
+      {% if current_user.is_sysadmin and club_id == GLOBAL_CLUB_ID %}
       <button class="nav-item" onclick="openTab(event, 'audit-log')">
         {{ _('Audit Log') }}
       </button>
+      {% endif %}
       
     </div>
 
@@ -624,6 +626,7 @@
 
   </div>
 
+  {% if current_user.is_sysadmin and club_id == GLOBAL_CLUB_ID %}
   <div id="audit-log" class="tab-content">
     <div class="settings-header">
       <h2>{{ _('Permission Audit Log') }}</h2>
@@ -648,6 +651,7 @@
       </table>
     </div>
   </div>
+  {% endif %}
   {% include '_session_modal.html' %}
   {% include '_role_modal.html' %}
   {% include '_ticket_modal.html' %}
