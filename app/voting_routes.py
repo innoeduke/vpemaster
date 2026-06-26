@@ -72,6 +72,8 @@ def short_circuit_cached_voting():
 
     cache_key = f"voting_html_guest_{club_id}_{meeting_id or 'default'}"
     cached_html = cache.get(cache_key)
+    import sys
+    print(f"BR key={cache_key} hit={cached_html is not None} len={len(cached_html) if cached_html else 0}", file=sys.stderr, flush=True)
     if cached_html is None:
         return None
 
