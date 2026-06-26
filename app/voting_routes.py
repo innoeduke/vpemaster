@@ -75,7 +75,6 @@ def short_circuit_cached_voting():
     t0 = _t.perf_counter()
     cached_html = cache.get(cache_key)
     t1 = _t.perf_counter()
-    print(f"BR key={cache_key} hit={cached_html is not None} cache_get_ms={(t1-t0)*1000:.2f} req_id={id(request)}", file=sys.stderr, flush=True)
     if cached_html is None:
         return None
 
@@ -83,25 +82,9 @@ def short_circuit_cached_voting():
     resp = make_response(cached_html)
     resp.headers['Cache-Control'] = 'private, max-age=10'
     t3 = _t.perf_counter()
-    print(f"BR make_resp_ms={(t3-t2)*1000:.2f} req_id={id(request)}", file=sys.stderr, flush=True)
+    elapsed_ms = (_t.perf_counter() - t0) * 1000
+    print(f"BR hit total_ms={elapsed_ms:.2f} cache_get={((t1-t0)*1000):.2f} make_resp={((t3-t2)*1000):.2f}", file=sys.stderr, flush=True)
     return resp
-
-
-@voting_bp.before_request
-def time_request_entry():
-    """Log time spent in request setup BEFORE this hook."""
-    import sys, time as _t
-    request._t_enter = _t.perf_counter()
-
-
-@voting_bp.after_request
-def time_request_exit(response):
-    """Log total time from request entry to response ready."""
-    import sys, time as _t
-    if hasattr(request, '_t_enter'):
-        elapsed = (_t.perf_counter() - request._t_enter) * 1000
-        print(f"FULL req_ms={elapsed:.2f} status={response.status_code} len={len(response.get_data())} req_id={id(request)}", file=sys.stderr, flush=True)
-    return response
 
 
 def get_meeting_omr_records(meeting_id):
