@@ -713,13 +713,31 @@ def _get_voting_page_context(meeting_id):
 @authorized_club_required
 def voting(meeting_id):
     """Main voting page route."""
+    from flask_login import current_user
+    from app.club_context import get_current_club_id
+    from app import cache
+
+    is_cacheable = not current_user.is_authenticated
+
+    if is_cacheable:
+        club_id = get_current_club_id()
+        cache_key = f"voting_html_guest_{club_id}_{meeting_id or 'default'}"
+        cached_html = cache.get(cache_key)
+        if cached_html is not None:
+            return cached_html
+
     context = _get_voting_page_context(meeting_id)
     
     # Handle notice context from dictionary returns
     if isinstance(context, dict) and 'notice_image' in context:
-        return render_template('voting.html', **context)
-                 
-    return render_template('voting.html', **context)
+        rendered = render_template('voting.html', **context)
+    else:
+        rendered = render_template('voting.html', **context)
+
+    if is_cacheable:
+        cache.set(cache_key, rendered, timeout=30)
+
+    return rendered
 
 
 @voting_bp.route('/voting/batch_vote', methods=['POST'])
