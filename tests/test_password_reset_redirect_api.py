@@ -52,3 +52,11 @@ def test_password_reset_redirection_api(client, app, default_club):
     assert response.json is not None
     assert response.json['error'] == 'Password change required'
     assert response.json['code'] == 'password_change_required'
+
+    # Verify that switching/entering a club is allowed (returns 200, not redirect/403)
+    response = client.post(f'/clubs/{club_id}/enter')
+    assert response.status_code == 200
+    assert response.json is not None
+    assert response.json['success'] is True
+    assert 'redirect_url' in response.json
+

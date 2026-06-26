@@ -171,7 +171,8 @@ def check_password_reset():
             'auth_bp.profile',
             'auth_bp.logout',
             'messages.unread_count',
-            'messages.message_events'
+            'messages.message_events',
+            'clubs_bp.enter_club'
         ]
         endpoint = request.endpoint
         if endpoint and endpoint not in exempt_endpoints and \
