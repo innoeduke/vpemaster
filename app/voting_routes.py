@@ -32,6 +32,41 @@ def check_voting_enabled():
         abort(404)
 
 
+@voting_bp.before_request
+def short_circuit_cached_voting():
+    """Return the cached voting HTML before any DB / auth work.
+
+    Runs after check_voting_enabled (which short-circuits with 404 if the
+    Voting module is disabled for the club — a fast per-request g-cached
+    query). On cache hit for an anonymous GET /voting request, Flask uses
+    the returned Response directly and skips the view AND its
+    @authorized_club_required decorator entirely, eliminating the per-
+    request permission / club-context DB queries on the hot path.
+    """
+    from flask import request, make_response
+    from flask_login import current_user
+    from app.club_context import get_current_club_id
+    from app import cache
+
+    if request.method != 'GET':
+        return None
+    if request.endpoint != 'voting_bp.voting':
+        return None
+    if current_user.is_authenticated:
+        return None
+
+    meeting_id = request.view_args.get('meeting_id') if request.view_args else None
+    club_id = get_current_club_id()
+    cache_key = f"voting_html_guest_{club_id}_{meeting_id or 'default'}"
+    cached_html = cache.get(cache_key)
+    if cached_html is None:
+        return None
+
+    resp = make_response(cached_html)
+    resp.headers['Cache-Control'] = 'private, max-age=10'
+    return resp
+
+
 def get_meeting_omr_records(meeting_id):
     """Fetch all OwnerMeetingRoles for a meeting with Contact and MeetingRole, cached per-request."""
     from flask import request, has_request_context
@@ -712,9 +747,12 @@ def _get_voting_page_context(meeting_id):
 @voting_bp.route('/voting/<int:meeting_id>', methods=['GET'])
 @authorized_club_required
 def voting(meeting_id):
-    """Main voting page route."""
-    import sys
-    from flask import make_response
+    """Main voting page route.
+
+    Cache hit short-circuit happens in `short_circuit_cached_voting`
+    (before_request). On cache miss we still consult the cache here so
+    `current_user` and `meeting_id` are resolved once.
+    """
     from flask_login import current_user
     from app.club_context import get_current_club_id
     from app import cache
@@ -726,19 +764,18 @@ def voting(meeting_id):
         cache_key = f"voting_html_guest_{club_id}_{meeting_id or 'default'}"
         cached_html = cache.get(cache_key)
         if cached_html is not None:
-            print(f"VOTE_HIT key={cache_key}", file=sys.stderr, flush=True)
+            from flask import make_response
             resp = make_response(cached_html)
             resp.headers['Cache-Control'] = 'private, max-age=10'
             return resp
-        print(f"VOTE_MISS key={cache_key}", file=sys.stderr, flush=True)
 
     context = _get_voting_page_context(meeting_id)
     rendered = render_template('voting.html', **context)
 
     if is_cacheable:
         cache.set(cache_key, rendered, timeout=30)
-        print(f"VOTE_SET key={cache_key} bytes={len(rendered)}", file=sys.stderr, flush=True)
 
+    from flask import make_response
     resp = make_response(rendered)
     resp.headers['Cache-Control'] = 'private, max-age=10'
     return resp
