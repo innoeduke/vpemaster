@@ -82,11 +82,15 @@ def _enrich_role_data_for_voting(roles_dict, selected_meeting):
         for cid, cat, count in counts:
             vote_counts[(cid, cat)] = count
 
+    # Prefetch all meeting roles to avoid N+1 query pattern
+    all_meeting_roles = MeetingRole.query.all()
+    roles_by_name = {r.name: r for r in all_meeting_roles}
+
     enriched_roles = []
     for _, role_data in roles_dict.items():
         role_obj = role_data.get('role_obj')
         if not role_obj:
-            role_obj = MeetingRole.query.filter_by(name=role_data['role']).first()
+            role_obj = roles_by_name.get(role_data['role'])
 
         role_data['icon'] = role_obj.icon if role_obj and role_obj.icon else "fa-question-circle"
         role_data['session_id'] = role_data['session_ids'][0]
@@ -566,27 +570,23 @@ def _get_voting_page_context(meeting_id):
                 'max_winners': config.max_winners
             }
 
-    # Fetch existing meeting rating
+    # Fetch existing meeting rating and feedback in a single query
     context['meeting_rating_score'] = None
-    if voter_identifier:
-        rating_vote = Vote.query.filter_by(
-            meeting_id=meeting_id,
-            voter_identifier=voter_identifier,
-            question="How likely are you to recommend this meeting to a friend or colleague?"
-        ).first()
-        if rating_vote:
-            context['meeting_rating_score'] = rating_vote.score
-
-    # Fetch existing meeting feedback
     context['meeting_feedback_comment'] = ""
     if voter_identifier:
-        feedback_vote = Vote.query.filter_by(
-            meeting_id=meeting_id,
-            voter_identifier=voter_identifier,
-            question="More feedback/comments"
-        ).first()
-        if feedback_vote:
-            context['meeting_feedback_comment'] = feedback_vote.comments
+        feedback_votes = Vote.query.filter(
+            Vote.meeting_id == meeting_id,
+            Vote.voter_identifier == voter_identifier,
+            Vote.question.in_([
+                "How likely are you to recommend this meeting to a friend or colleague?",
+                "More feedback/comments"
+            ])
+        ).all()
+        for vote in feedback_votes:
+            if vote.question == "How likely are you to recommend this meeting to a friend or colleague?":
+                context['meeting_rating_score'] = vote.score
+            elif vote.question == "More feedback/comments":
+                context['meeting_feedback_comment'] = vote.comments
 
     return context
 

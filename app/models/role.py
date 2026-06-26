@@ -64,10 +64,33 @@ class Role(db.Model):
         if club_id is None:
             return any(p.name == permission_name for p in self.permissions)
 
+        from flask import g, has_request_context
+        cache_available = has_request_context()
+
+        # Check request-scoped cache
+        if cache_available:
+            if not hasattr(g, '_role_permission_cache'):
+                g._role_permission_cache = {}
+            cache_key = (self.id, permission_name, club_id)
+            if cache_key in g._role_permission_cache:
+                return g._role_permission_cache[cache_key]
+
         from .permission import Permission
         from .role_permission import RolePermission
 
-        perm_id = db.session.query(Permission.id).filter_by(name=permission_name).scalar()
+        # Get and cache permission ID
+        perm_id = None
+        if cache_available:
+            if not hasattr(g, '_permission_id_cache'):
+                g._permission_id_cache = {}
+            if permission_name in g._permission_id_cache:
+                perm_id = g._permission_id_cache[permission_name]
+
+        if perm_id is None:
+            perm_id = db.session.query(Permission.id).filter_by(name=permission_name).scalar()
+            if cache_available and perm_id is not None:
+                g._permission_id_cache[permission_name] = perm_id
+
         if perm_id is None:
             return False
             
@@ -75,13 +98,21 @@ class Role(db.Model):
         has_specific = db.session.query(RolePermission.id).filter_by(
             role_id=self.id, permission_id=perm_id, club_id=club_id
         ).first() is not None
+        
+        result = False
         if has_specific:
-            return True
+            result = True
+        else:
+            # Fallback to check if a default/global mapping exists (club_id is None)
+            result = db.session.query(RolePermission.id).filter_by(
+                role_id=self.id, permission_id=perm_id, club_id=None
+            ).first() is not None
+
+        # Store in request cache
+        if cache_available:
+            g._role_permission_cache[cache_key] = result
             
-        # Fallback to check if a default/global mapping exists (club_id is None)
-        return db.session.query(RolePermission.id).filter_by(
-            role_id=self.id, permission_id=perm_id, club_id=None
-        ).first() is not None
+        return result
     
     def add_permission(self, permission):
         """Add a permission to this role."""
