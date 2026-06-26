@@ -8,6 +8,7 @@ from . import db
 from datetime import datetime
 import secrets
 from sqlalchemy import func, distinct
+from sqlalchemy.orm import joinedload, selectinload
 from flask_login import current_user
 from .club_context import get_current_club_id, authorized_club_required
 
@@ -77,14 +78,20 @@ def populate_session_log_owners(session_logs, meeting_id):
             log._cached_owners = shared_owner_map.get(role_id, [])
 
 
-def _enrich_role_data_for_voting(roles_dict, selected_meeting):
+def _enrich_role_data_for_voting(roles_dict, selected_meeting, vote_counts=None, logs_by_id=None):
     """
     Enriches role data with voting-specific information (awards, vote counts).
-    
+
     Args:
         roles_dict: Dictionary of consolidated roles
         selected_meeting: Meeting object
-    
+        vote_counts: Optional pre-computed {(contact_id, award_category): count}
+            dict. If None, falls back to an empty dict (vote counts are
+            admin-only anyway; the caller decides whether to populate this).
+        logs_by_id: Optional dict {session_log_id: SessionLog} pre-loaded with
+            joinedload(session_type.role). Used to resolve the first log of
+            Keynote Speaker roles without a fresh db.session.get.
+
     Returns:
         list: Enriched roles list
     """
@@ -95,7 +102,7 @@ def _enrich_role_data_for_voting(roles_dict, selected_meeting):
     if selected_meeting.status == 'running':
         # For a running meeting, the "winner" is who the current user voted for
         voter_identifier = get_session_voter_identifier()
-        
+
         if voter_identifier:
             user_votes = Vote.query.filter_by(
                 meeting_id=selected_meeting.id,
@@ -118,25 +125,16 @@ def _enrich_role_data_for_voting(roles_dict, selected_meeting):
             if selected_meeting.best_role_taker_id: winner_set.add(('role-taker', selected_meeting.best_role_taker_id))
             if selected_meeting.best_debater_id: winner_set.add(('debater', selected_meeting.best_debater_id))
 
-    # Vote counts for officers
-    vote_counts = {}
-    if (is_authorized(Permissions.MEETING_MANAGE, meeting=selected_meeting) or is_authorized(Permissions.VOTING_TRACK_PROGRESS, meeting=selected_meeting)) and selected_meeting and selected_meeting.status in ['running', 'finished']:
-        counts = db.session.query(Vote.contact_id, Vote.award_category, func.count(Vote.id)).filter(
-            Vote.meeting_id == selected_meeting.id
-        ).group_by(Vote.contact_id, Vote.award_category).all()
-        
-        for cid, cat, count in counts:
-            vote_counts[(cid, cat)] = count
+    if vote_counts is None:
+        vote_counts = {}
 
-    # Prefetch all meeting roles to avoid N+1 query pattern
-    all_meeting_roles = MeetingRole.query.all()
-    roles_by_name = {r.name: r for r in all_meeting_roles}
-
+    # role_obj is preloaded by the joinedload in _get_roles_for_voting
+    # (SessionLog.session_type.role), and consolidate_session_logs skips logs
+    # without a role. A missing role_obj here would indicate a data integrity
+    # issue; fall through with None rather than re-querying.
     enriched_roles = []
     for _, role_data in roles_dict.items():
         role_obj = role_data.get('role_obj')
-        if not role_obj:
-            role_obj = roles_by_name.get(role_data['role'])
 
         role_data['icon'] = role_obj.icon if role_obj and role_obj.icon else "fa-question-circle"
         role_data['session_id'] = role_data['session_ids'][0]
@@ -146,11 +144,14 @@ def _enrich_role_data_for_voting(roles_dict, selected_meeting):
 
         if role_obj and role_obj.name == 'Keynote Speaker':
             from .constants import ProjectID
-            # Check the first session log for project details
-            # Note: 'logs' key is removed in consolidate_roles, must fetch by ID
             session_ids = role_data.get('session_ids')
-            first_log = db.session.get(SessionLog, session_ids[0]) if session_ids else None
-            
+            first_log = None
+            if session_ids and logs_by_id is not None:
+                first_log = logs_by_id.get(session_ids[0])
+            elif session_ids:
+                # Fallback only when caller didn't supply a pre-loaded map.
+                first_log = db.session.get(SessionLog, session_ids[0])
+
             if first_log:
                 # If no project or generic project, disqualify from voting
                 if not first_log.Project_ID or first_log.Project_ID == ProjectID.GENERIC:
@@ -205,14 +206,17 @@ def _sort_roles_for_voting(roles):
     return roles
 
 
-def _get_roles_for_voting(meeting_id, meeting):
+def _get_roles_for_voting(meeting_id, meeting, award_configs_list=None):
     """
     Helper function to get and process roles for the voting page.
-    
+
     Args:
         meeting_id: Meeting ID
         meeting: Meeting object
-    
+        award_configs_list: Pre-fetched list of MeetingAwardConfig for this
+            meeting. Fetched by the caller to avoid a duplicate query inside
+            this function. If None, the function falls back to fetching it.
+
     Returns:
         list: Processed roles for voting
     """
@@ -222,23 +226,42 @@ def _get_roles_for_voting(meeting_id, meeting):
     # Fetch roles and enrich them
     club_id = meeting.club_id
     # Re-fetch logs with eager-loaded relationships to avoid N+1 queries during consolidation
-    from sqlalchemy.orm import joinedload, subqueryload
+    from sqlalchemy.orm import subqueryload
     from app.models import SessionType, Waitlist
     all_logs = SessionLog.query.filter_by(meeting_id=meeting_id)\
         .options(
             joinedload(SessionLog.session_type).joinedload(SessionType.role),
             subqueryload(SessionLog.waitlists).joinedload(Waitlist.contact)
         ).all()
-        
+
     populate_session_log_owners(all_logs, meeting_id)
     consolidated = consolidate_session_logs(all_logs)
-    
-    enriched_roles = _enrich_role_data_for_voting(consolidated, meeting)
+    logs_by_id = {log.id: log for log in all_logs}
+
+    # Single aggregated vote-count query, gated by admin/track-progress perms.
+    # This replaces three separate GROUP BYs that used to live in the
+    # officer / role-taker / custom-config blocks below.
+    can_see_vote_counts = (
+        meeting.status in ('running', 'finished')
+        and (
+            is_authorized(Permissions.MEETING_MANAGE, meeting=meeting)
+            or is_authorized(Permissions.VOTING_TRACK_PROGRESS, meeting=meeting)
+        )
+    )
+    from .services.voting_aggregation import aggregate_votes_for_meeting
+    vote_counts = (
+        aggregate_votes_for_meeting(meeting_id) if can_see_vote_counts else {}
+    )
+
+    enriched_roles = _enrich_role_data_for_voting(consolidated, meeting, vote_counts, logs_by_id)
     
     # 4. Handle custom awards configurations & disabled awards
     from .models.voting import MeetingAwardConfig, MeetingAwardWinner
     from .agenda_routes import get_meeting_awards
-    configs = MeetingAwardConfig.query.filter_by(meeting_id=meeting.id).all()
+    if award_configs_list is None:
+        configs = MeetingAwardConfig.query.filter_by(meeting_id=meeting.id).all()
+    else:
+        configs = award_configs_list
     disabled_cats = {c.award_category for c in configs if c.max_votes_per_user == 0 or c.max_winners == 0}
 
     # The set of award categories that are actually enabled for this meeting.
@@ -291,15 +314,12 @@ def _get_roles_for_voting(meeting_id, meeting):
             elif meeting.best_role_taker_id:
                 role_taker_winner_ids.add(meeting.best_role_taker_id)
 
-        # Vote counts for role-takers (admins only)
-        vote_counts = {}
-        if (is_authorized(Permissions.MEETING_MANAGE, meeting=meeting) or is_authorized(Permissions.VOTING_TRACK_PROGRESS, meeting=meeting)) and meeting.status in ['running', 'finished']:
-            counts = db.session.query(Vote.contact_id, func.count(Vote.id)).filter(
-                Vote.meeting_id == meeting_id,
-                Vote.award_category == 'role-taker'
-            ).group_by(Vote.contact_id).all()
-            for cid, count in counts:
-                vote_counts[cid] = count
+        # Vote counts for role-takers (admins only) — slice the precomputed
+        # aggregate to avoid a third GROUP BY on the votes table.
+        role_taker_vote_counts = {
+            cid: n for (cid, cat), n in vote_counts.items()
+            if cat == 'role-taker'
+        }
 
         for contact_id_str, roles in role_takers_map.items():
             # Filter roles for this person that belong to the 'role-taker' award category
@@ -332,7 +352,7 @@ def _get_roles_for_voting(meeting_id, meeting):
                 'award_category': 'role-taker',
                 'award_category_open': not category_has_winner,
                 'award_type': 'role-taker' if is_winner else None,
-                'vote_count': vote_counts.get(contact_id, 0)
+                'vote_count': role_taker_vote_counts.get(contact_id, 0)
             }
             consolidated_role_takers.append(role_entry)
 
@@ -380,14 +400,6 @@ def _get_roles_for_voting(meeting_id, meeting):
             winners = MeetingAwardWinner.query.filter_by(meeting_id=meeting.id).all()
             for w in winners:
                 winner_set.add((w.award_category, w.contact_id))
-                
-        vote_counts = {}
-        if (is_authorized(Permissions.MEETING_MANAGE, meeting=meeting) or is_authorized(Permissions.VOTING_TRACK_PROGRESS, meeting=meeting)) and meeting.status in ['running', 'finished']:
-            counts = db.session.query(Vote.contact_id, Vote.award_category, func.count(Vote.id)).filter(
-                Vote.meeting_id == meeting.id
-            ).group_by(Vote.contact_id, Vote.award_category).all()
-            for cid, cat, count in counts:
-                vote_counts[(cid, cat)] = count
                 
         # Prefetch roles for candidates in this meeting
         from .models import OwnerMeetingRoles
@@ -489,11 +501,14 @@ def _get_voting_page_context(meeting_id):
     from app.club_context import get_current_club_id
     club_id = get_current_club_id()
     
-    # Show active meetings in dropdown
+    # Show active meetings in dropdown. Skip the default-meeting lookup when
+    # the caller already supplied a meeting_id — it adds 3 redundant queries.
     limit_past = None if is_authorized(Permissions.MEDIA_MANAGE) else 8
     upcoming_meetings, default_meeting_id = get_meetings_by_status(
         limit_past=limit_past,
-        columns=[Meeting.id, Meeting.Meeting_Date, Meeting.status, Meeting.Meeting_Number])
+        columns=[Meeting.id, Meeting.Meeting_Date, Meeting.status, Meeting.Meeting_Number],
+        include_default=(meeting_id is None),
+    )
  
     if not meeting_id:
         # Stay on the meeting of today's date if the user has VOTING_VIEW_RESULTS permission
@@ -540,7 +555,10 @@ def _get_voting_page_context(meeting_id):
         context['notice_image'] = 'not_started.webp'
         return context
  
-    selected_meeting = Meeting.query.get(meeting_id)
+    selected_meeting = Meeting.query.options(
+        joinedload(Meeting.club),
+        selectinload(Meeting.award_winners),
+    ).get(meeting_id)
     if not selected_meeting or (club_id and selected_meeting.club_id != club_id):
         return context
 
@@ -550,7 +568,7 @@ def _get_voting_page_context(meeting_id):
     # Check if we should override status for display and bypass notices
     is_meeting_date = selected_meeting.Meeting_Date == datetime.today().date()
     has_voting_view_results = is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=selected_meeting)
-    
+
     if is_meeting_date and has_voting_view_results:
         # Eager load relations we will read after the expunge to avoid
         # DetachedInstanceError: award_winners (used below) and club (used
@@ -573,9 +591,15 @@ def _get_voting_page_context(meeting_id):
         vote_exists = Vote.query.filter_by(meeting_id=meeting_id, voter_identifier=voter_identifier).first()
         if vote_exists:
             context['has_voted'] = True
-    
+
     context['selected_meeting'] = selected_meeting
-    
+
+    # Fetch award configs once — reused by _get_roles_for_voting and the
+    # context['award_configs'] dict below (avoids a duplicate query).
+    from app.models.voting import MeetingAwardConfig
+    award_configs_list = MeetingAwardConfig.query.filter_by(meeting_id=meeting_id).all()
+    context['award_configs_list'] = award_configs_list
+
     # Calculate total received votes (unique voters)
     total_voters = db.session.query(func.count(distinct(Vote.voter_identifier)))\
         .filter(Vote.meeting_id == meeting_id)\
@@ -608,21 +632,18 @@ def _get_voting_page_context(meeting_id):
     # can_track_progress controls seeing results WHILE running (Admin only)
     context['can_track_progress'] = is_authorized(Permissions.VOTING_TRACK_PROGRESS, meeting=selected_meeting)
 
-    roles = _get_roles_for_voting(meeting_id, selected_meeting)
+    roles = _get_roles_for_voting(meeting_id, selected_meeting, award_configs_list)
     context['roles'] = roles
     context['sorted_role_groups'] = group_roles_by_category(roles)
     context['best_award_ids'] = selected_meeting.get_best_award_ids() if selected_meeting else set()
 
-    # Fetch award configs
+    # Build award_configs lookup from the same list fetched above
     context['award_configs'] = {}
-    if selected_meeting:
-        from app.models.voting import MeetingAwardConfig
-        configs = MeetingAwardConfig.query.filter_by(meeting_id=meeting_id).all()
-        for config in configs:
-            context['award_configs'][config.award_category] = {
-                'max_votes': config.max_votes_per_user,
-                'max_winners': config.max_winners
-            }
+    for config in award_configs_list:
+        context['award_configs'][config.award_category] = {
+            'max_votes': config.max_votes_per_user,
+            'max_winners': config.max_winners
+        }
 
     # Fetch existing meeting rating and feedback in a single query
     context['meeting_rating_score'] = None

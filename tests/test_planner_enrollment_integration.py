@@ -21,6 +21,13 @@ def integration_setup(app, default_club):
         db.session.add(program)
         db.session.flush()
 
+        # Create a Timer role to get its ID for role completion type task
+        role_timer = MeetingRole.query.filter_by(name="Timer", club_id=None).first()
+        if not role_timer:
+            role_timer = MeetingRole(name="Timer", type="Standard", needs_approval=False, has_single_owner=True)
+            db.session.add(role_timer)
+            db.session.flush()
+
         # Add tasks
         task_manual = ProgramTask(
             program_id=program.id,
@@ -31,26 +38,29 @@ def integration_setup(app, default_club):
         task_pathway = ProgramTask(
             program_id=program.id,
             title="Select Pathway",
-            completion_type="pathway_selected",
+            completion_type="path",
+            completion_config={"path_ids": [1]},
             display_order=2
         )
         task_mentor = ProgramTask(
             program_id=program.id,
             title="Assign Mentor",
-            completion_type="mentor_assigned",
+            completion_type="field",
+            completion_config={"field": "mentor_id"},
             display_order=3
         )
         task_icebreaker = ProgramTask(
             program_id=program.id,
             title="Deliver Ice Breaker",
-            completion_type="ice_breaker",
+            completion_type="project",
+            completion_config={"project_ids": [101]},
             display_order=4
         )
         task_sessionlog = ProgramTask(
             program_id=program.id,
             title="Serve as Timer",
-            completion_type="sessionlog",
-            completion_config={"role_name": "Timer"},
+            completion_type="role",
+            completion_config={"role_ids": [role_timer.id]},
             display_order=5
         )
         db.session.add_all([task_manual, task_pathway, task_mentor, task_icebreaker, task_sessionlog])
@@ -104,6 +114,7 @@ def test_enrollment_seeding_and_auto_detection(app, default_club, integration_se
         uc = UserClub.query.filter_by(user_id=user.id, club_id=default_club.id).first()
         uc.current_path_id = 1  # Fake ID
         uc.mentor_id = 999  # Fake contact ID
+        contact.Mentor_ID = 999
         db.session.commit()
 
         planner_service.bulk_refresh(enrollment)

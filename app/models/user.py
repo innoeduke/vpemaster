@@ -371,20 +371,34 @@ class User(UserMixin, db.Model):
 
     def get_user_club(self, club_id):
         """Get the UserClub record for a specific club."""
+        from flask import request, has_request_context
         from .user_club import UserClub
         from ..club_context import get_current_club_id
-        
+
         if not club_id:
             club_id = get_current_club_id()
-            
+
         if not club_id:
             return None
-            
-        # Optimization: Use cached record if available for the requested club
-        if hasattr(self, '_current_user_club') and self._current_user_club and self._current_user_club.club_id == club_id:
-            return self._current_user_club
-            
-        return UserClub.query.filter_by(user_id=self.id, club_id=club_id).first()
+
+        # Per-request cache: is_authorized() can be called 5-10 times per
+        # voting page render. Without this, each call hits UserClub with a
+        # separate SELECT. Cache lives on flask.request for the request lifetime.
+        if has_request_context():
+            cache = getattr(request, '_user_club_cache', None)
+            if cache is None:
+                cache = request._user_club_cache = {}
+            cache_key = (self.id, club_id)
+            if cache_key in cache:
+                uc = cache[cache_key]
+                if uc is None or uc in db.session:
+                    return uc
+
+        uc = UserClub.query.filter_by(user_id=self.id, club_id=club_id).first()
+
+        if has_request_context():
+            cache[cache_key] = uc
+        return uc
 
     def get_contact(self, club_id=None):
         """Get the contact record for this user in a specific club."""

@@ -693,7 +693,7 @@ def get_unique_identifier(request):
 
 
 
-def get_meetings_by_status(limit_past=8, columns=None, status_filter=None, only_with_logs=True):
+def get_meetings_by_status(limit_past=8, columns=None, status_filter=None, only_with_logs=True, include_default=True):
     """
     Fetches meetings, categorizing them as 'active' or 'past' based on status.
     
@@ -808,7 +808,10 @@ def get_meetings_by_status(limit_past=8, columns=None, status_filter=None, only_
     else:
         final_meetings = all_meetings
 
-    default_meeting_id = get_default_meeting_id()
+    # Skip the default-meeting lookup (3 extra queries) when the caller already
+    # has a meeting in mind — e.g. /voting?meeting_id=N. Callers that need the
+    # default should pass include_default=True (the default).
+    default_meeting_id = get_default_meeting_id() if include_default else None
 
     return final_meetings, default_meeting_id
 

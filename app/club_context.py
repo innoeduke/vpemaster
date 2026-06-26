@@ -26,16 +26,35 @@ def set_current_club_id(club_id):
     session['current_club_id'] = club_id
 
 
+# Sentinel used to distinguish "not yet resolved" from "resolved to None".
+_MISSING = object()
+
+
 def get_or_set_default_club():
     """
     Get current club ID or set to default if not set.
-    
+
     Returns:
         int: Current club ID
     """
-    from app.models import Club
-    from flask import request
-    
+    from flask import request, has_request_context
+
+    if has_request_context():
+        cached = getattr(request, '_club_id_resolved', _MISSING)
+        if cached is not _MISSING:
+            return cached
+
+    club_id = _resolve_club_id()
+
+    if has_request_context():
+        request._club_id_resolved = club_id
+    return club_id
+
+
+def _resolve_club_id():
+    """Inner helper to perform the actual club ID resolution."""
+    from flask import request, has_request_context
+
     # 0. Check request arguments (e.g., from redirection query param) FIRST
     # If explicitly passed via URL, this should override session context.
     try:
@@ -49,12 +68,12 @@ def get_or_set_default_club():
 
     # If the request is rendering the club directory, do not auto-restore
     # a default club context — the directory is a global view.
-    from flask import g, has_request_context
     if has_request_context() and getattr(g, 'in_club_directory', False):
         return session.get('current_club_id')
 
+    from app.models import Club
     club_id = get_current_club_id()
-    
+
     # If club_id is set in session, VALIDATE it for the current authenticated user
     if club_id:
         from flask_login import current_user
@@ -62,11 +81,10 @@ def get_or_set_default_club():
             # SysAdmin bypass: Allow SysAdmin to maintain ANY club context
             if current_user.is_sysadmin:
                 return club_id
-                
+
             from app.models import UserClub
-            # Check if user is a member of this club
             user_club = UserClub.query.filter_by(user_id=current_user.id, club_id=club_id).first()
-            
+
             if not user_club:
                 # Invalid context for this regular user! Clear it.
                 club_id = None
@@ -81,20 +99,21 @@ def get_or_set_default_club():
             if home_uc:
                 set_current_club_id(home_uc.club_id)
                 return home_uc.club_id
-            
+
             # Fallback to any club membership
             any_uc = UserClub.query.filter_by(user_id=current_user.id).first()
             if any_uc:
                 set_current_club_id(any_uc.club_id)
                 return any_uc.club_id
-        
+
         # Fallback to first club
         default_club = Club.query.first()
         if default_club:
             set_current_club_id(default_club.id)
             return default_club.id
-    
+
     return club_id
+
 
 
 def require_club_context(f):

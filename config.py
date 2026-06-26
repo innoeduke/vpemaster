@@ -29,8 +29,16 @@ class Config:
     MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB limit
     MAX_CLUB_STORAGE = 100 * 1024 * 1024  # 100MB limit per club
 
-    # Cache settings
-    CACHE_TYPE = os.getenv('CACHE_TYPE', 'SimpleCache')
+    # Cache settings.
+    # Default to RedisCache when FLASK_ENV=production so the role_takers
+    # cache (and other Flask-Caching entries) are shared across gunicorn
+    # workers. Dev keeps SimpleCache to avoid an external dependency.
+    _is_prod = os.getenv('FLASK_ENV', '').lower() == 'production' \
+        or os.getenv('ENVIRONMENT', '').lower() == 'production'
+    CACHE_TYPE = os.getenv(
+        'CACHE_TYPE',
+        'RedisCache' if _is_prod else 'SimpleCache',
+    )
     CACHE_REDIS_URL = os.getenv('CACHE_REDIS_URL', 'redis://localhost:6379/0')
     CACHE_DEFAULT_TIMEOUT = 300
 

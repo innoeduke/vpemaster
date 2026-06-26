@@ -214,6 +214,14 @@ class PlannerService:
                 return log.date_modified
             return now
 
+        def _completed_at_from_contact(contact):
+            if contact:
+                if hasattr(contact, 'date_modified') and contact.date_modified:
+                    return contact.date_modified
+                if getattr(contact, 'Date_Created', None):
+                    return datetime.combine(contact.Date_Created, datetime.min.time()).replace(tzinfo=timezone.utc)
+            return now
+
         if task.completion_type == 'path':
             config = task.completion_config or {}
             path_ids = set(config.get('path_ids') or [])
@@ -226,7 +234,7 @@ class PlannerService:
             if contact and contact.Current_Path:
                 names = {p.name for p in Pathway.query.filter(Pathway.id.in_(path_ids)).all()}
                 if contact.Current_Path in names:
-                    return True, (contact.date_modified or now), None
+                    return True, _completed_at_from_contact(contact), None
             return False, None, None
 
         if task.completion_type == 'level':
@@ -257,7 +265,7 @@ class PlannerService:
                     PathwayProject.level.isnot(None),
                 ).scalar() or 0
             if max_level >= required_level:
-                return True, (contact.date_modified or now), None
+                return True, _completed_at_from_contact(contact), None
             return False, None, None
 
         if task.completion_type == 'role':
@@ -304,7 +312,7 @@ class PlannerService:
             contact = user.get_contact(club_id)
             if not contact:
                 return False, None, None
-            completed_at = contact.date_modified or now
+            completed_at = _completed_at_from_contact(contact)
             if field == 'member_no':
                 return bool(contact.Member_ID), completed_at, None
             if field == 'dtm':
