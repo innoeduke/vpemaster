@@ -37,7 +37,7 @@ DEFAULT_AWARD_CATEGORIES = [
 ]
 
 
-def get_meeting_awards(meeting):
+def get_meeting_awards(meeting, configs_list=None, winners_list=None):
     """Build a unified list of award dicts for a meeting.
 
     Each dict has:
@@ -102,9 +102,12 @@ def get_meeting_awards(meeting):
     if meeting:
         # 2. Merge in any saved configs (including custom categories)
         from sqlalchemy.orm import joinedload
-        configs = MeetingAwardConfig.query\
-            .options(joinedload(MeetingAwardConfig.role_associations))\
-            .filter_by(meeting_id=meeting.id).all()
+        if configs_list is None:
+            configs = MeetingAwardConfig.query\
+                .options(joinedload(MeetingAwardConfig.role_associations))\
+                .filter_by(meeting_id=meeting.id).all()
+        else:
+            configs = configs_list
         for c in configs:
             selected_role_ids = [a.meeting_role_id for a in c.role_associations]
             if c.award_category in awards_map:
@@ -128,7 +131,10 @@ def get_meeting_awards(meeting):
                 }
 
         # 3. Fill in winner_ids
-        winners = MeetingAwardWinner.query.filter_by(meeting_id=meeting.id).all()
+        if winners_list is None:
+            winners = MeetingAwardWinner.query.filter_by(meeting_id=meeting.id).all()
+        else:
+            winners = winners_list
         for w in winners:
             if w.award_category in awards_map:
                 awards_map[w.award_category]['winner_ids'].append(w.contact_id)

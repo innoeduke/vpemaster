@@ -78,7 +78,7 @@ def populate_session_log_owners(session_logs, meeting_id):
             log._cached_owners = shared_owner_map.get(role_id, [])
 
 
-def _enrich_role_data_for_voting(roles_dict, selected_meeting, vote_counts=None, logs_by_id=None):
+def _enrich_role_data_for_voting(roles_dict, selected_meeting, vote_counts=None, logs_by_id=None, user_votes=None, winners_list=None):
     """
     Enriches role data with voting-specific information (awards, vote counts).
 
@@ -91,6 +91,8 @@ def _enrich_role_data_for_voting(roles_dict, selected_meeting, vote_counts=None,
         logs_by_id: Optional dict {session_log_id: SessionLog} pre-loaded with
             joinedload(session_type.role). Used to resolve the first log of
             Keynote Speaker roles without a fresh db.session.get.
+        user_votes: Optional list of Vote objects for the current voter.
+        winners_list: Optional list of MeetingAwardWinner objects.
 
     Returns:
         list: Enriched roles list
@@ -104,17 +106,21 @@ def _enrich_role_data_for_voting(roles_dict, selected_meeting, vote_counts=None,
         voter_identifier = get_session_voter_identifier()
 
         if voter_identifier:
-            user_votes = Vote.query.filter_by(
-                meeting_id=selected_meeting.id,
-                voter_identifier=voter_identifier
-            ).all()
+            if user_votes is None:
+                user_votes = Vote.query.filter_by(
+                    meeting_id=selected_meeting.id,
+                    voter_identifier=voter_identifier
+                ).all()
             for vote in user_votes:
                 if vote.award_category:
                     winner_set.add((vote.award_category, vote.contact_id))
 
     elif selected_meeting.status == 'finished':
-        from .models.voting import MeetingAwardWinner
-        winners = MeetingAwardWinner.query.filter_by(meeting_id=selected_meeting.id).all()
+        if winners_list is None:
+            from .models.voting import MeetingAwardWinner
+            winners = MeetingAwardWinner.query.filter_by(meeting_id=selected_meeting.id).all()
+        else:
+            winners = winners_list
         if winners:
             for w in winners:
                 winner_set.add((w.award_category, w.contact_id))
@@ -206,7 +212,7 @@ def _sort_roles_for_voting(roles):
     return roles
 
 
-def _get_roles_for_voting(meeting_id, meeting, award_configs_list=None):
+def _get_roles_for_voting(meeting_id, meeting, award_configs_list=None, user_votes=None, winners_list=None):
     """
     Helper function to get and process roles for the voting page.
 
@@ -216,6 +222,8 @@ def _get_roles_for_voting(meeting_id, meeting, award_configs_list=None):
         award_configs_list: Pre-fetched list of MeetingAwardConfig for this
             meeting. Fetched by the caller to avoid a duplicate query inside
             this function. If None, the function falls back to fetching it.
+        user_votes: Optional pre-fetched list of Vote objects.
+        winners_list: Optional pre-fetched list of MeetingAwardWinner objects.
 
     Returns:
         list: Processed roles for voting
@@ -253,7 +261,7 @@ def _get_roles_for_voting(meeting_id, meeting, award_configs_list=None):
         aggregate_votes_for_meeting(meeting_id) if can_see_vote_counts else {}
     )
 
-    enriched_roles = _enrich_role_data_for_voting(consolidated, meeting, vote_counts, logs_by_id)
+    enriched_roles = _enrich_role_data_for_voting(consolidated, meeting, vote_counts, logs_by_id, user_votes, winners_list)
     
     # 4. Handle custom awards configurations & disabled awards
     from .models.voting import MeetingAwardConfig, MeetingAwardWinner
@@ -273,7 +281,7 @@ def _get_roles_for_voting(meeting_id, meeting, award_configs_list=None):
     # default award will not appear in this set, so we will not render an
     # accordion for them on the voting page.
     enabled_cats = {
-        a['category'] for a in get_meeting_awards(meeting)
+        a['category'] for a in get_meeting_awards(meeting, configs_list=configs, winners_list=winners_list)
         if a['category'] not in disabled_cats
     }
 
@@ -297,18 +305,24 @@ def _get_roles_for_voting(meeting_id, meeting, award_configs_list=None):
         voter_identifier = get_session_voter_identifier()
         user_vote_ids = set()
         if meeting.status == 'running' and voter_identifier:
-            votes = Vote.query.filter_by(
-                meeting_id=meeting_id,
-                voter_identifier=voter_identifier,
-                award_category='role-taker'
-            ).all()
+            if user_votes is None:
+                votes = Vote.query.filter_by(
+                    meeting_id=meeting_id,
+                    voter_identifier=voter_identifier,
+                    award_category='role-taker'
+                ).all()
+            else:
+                votes = [v for v in user_votes if v.award_category == 'role-taker']
             for vote in votes:
                 if vote.contact_id:
                     user_vote_ids.add(vote.contact_id)
                 
         role_taker_winner_ids = set()
         if meeting.status == 'finished':
-            winners = MeetingAwardWinner.query.filter_by(meeting_id=meeting.id, award_category='role-taker').all()
+            if winners_list is None:
+                winners = MeetingAwardWinner.query.filter_by(meeting_id=meeting.id, award_category='role-taker').all()
+            else:
+                winners = [w for w in winners_list if w.award_category == 'role-taker']
             if winners:
                 role_taker_winner_ids = {w.contact_id for w in winners}
             elif meeting.best_role_taker_id:
@@ -389,36 +403,52 @@ def _get_roles_for_voting(meeting_id, meeting, award_configs_list=None):
         voter_identifier = get_session_voter_identifier()
         if meeting.status == 'running':
             if voter_identifier:
-                user_votes = Vote.query.filter_by(
-                    meeting_id=meeting.id,
-                    voter_identifier=voter_identifier
-                ).all()
+                if user_votes is None:
+                    user_votes = Vote.query.filter_by(
+                        meeting_id=meeting.id,
+                        voter_identifier=voter_identifier
+                    ).all()
                 for vote in user_votes:
                     if vote.award_category:
                         winner_set.add((vote.award_category, vote.contact_id))
         elif meeting.status == 'finished':
-            winners = MeetingAwardWinner.query.filter_by(meeting_id=meeting.id).all()
+            if winners_list is None:
+                winners = MeetingAwardWinner.query.filter_by(meeting_id=meeting.id).all()
+            else:
+                winners = winners_list
             for w in winners:
                 winner_set.add((w.award_category, w.contact_id))
                 
         # Prefetch roles for candidates in this meeting
         from .models import OwnerMeetingRoles
-        contact_meeting_roles = db.session.query(Contact.id, MeetingRole.id, MeetingRole.name)\
+        # Fetch all contacts with their roles for this meeting in one query
+        meeting_role_takers = db.session.query(Contact, MeetingRole.id, MeetingRole.name)\
             .join(OwnerMeetingRoles, OwnerMeetingRoles.contact_id == Contact.id)\
             .join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
             .filter(OwnerMeetingRoles.meeting_id == meeting.id,
                     MeetingRole.type != 'officer').all()
 
+        # Parse meeting_role_takers in memory to build index mappings
         # contact_role_names: contact_id -> ordered list of role names
         # contact_role_ids:   contact_id -> set of role ids
+        # role_id_to_contacts: role_id -> list of Contact objects
+        # role_name_to_contacts: role_name -> list of Contact objects
         contact_role_names = {}
         contact_role_ids = {}
-        for c_id, r_id, r_name in contact_meeting_roles:
+        role_id_to_contacts = {}
+        role_name_to_contacts = {}
+
+        for contact, r_id, r_name in meeting_role_takers:
+            c_id = contact.id
             contact_role_names.setdefault(c_id, [])
             contact_role_ids.setdefault(c_id, set())
             if r_name not in contact_role_names[c_id]:
                 contact_role_names[c_id].append(r_name)
             contact_role_ids[c_id].add(r_id)
+
+            # Build list of Contacts per role_id and role_name
+            role_id_to_contacts.setdefault(r_id, []).append(contact)
+            role_name_to_contacts.setdefault(r_name, []).append(contact)
 
         for config in custom_configs:
             cat = config.award_category
@@ -430,20 +460,17 @@ def _get_roles_for_voting(meeting_id, meeting, award_configs_list=None):
             if config.role_associations:
                 # New path: use the associative table
                 config_role_ids = {a.meeting_role_id for a in config.role_associations}
-                role_takers = db.session.query(Contact)\
-                    .join(OwnerMeetingRoles, OwnerMeetingRoles.contact_id == Contact.id)\
-                    .filter(OwnerMeetingRoles.meeting_id == meeting.id,
-                            OwnerMeetingRoles.role_id.in_(config_role_ids))\
-                    .distinct().all()
+                seen_candidates = set()
+                role_takers = []
+                for r_id in config_role_ids:
+                    for contact in role_id_to_contacts.get(r_id, []):
+                        if contact.id not in seen_candidates:
+                            seen_candidates.add(contact.id)
+                            role_takers.append(contact)
                 candidates_to_use = role_takers
             elif config.associated_role:
                 # Legacy fallback: pre-migration data, or awards never re-saved through the picker
-                role_takers = db.session.query(Contact)\
-                    .join(OwnerMeetingRoles, OwnerMeetingRoles.contact_id == Contact.id)\
-                    .join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
-                    .filter(OwnerMeetingRoles.meeting_id == meeting.id,
-                            MeetingRole.name == config.associated_role)\
-                    .distinct().all()
+                role_takers = role_name_to_contacts.get(config.associated_role, [])
                 candidates_to_use = role_takers
             else:
                 candidates_to_use = roster_contacts
@@ -457,10 +484,9 @@ def _get_roles_for_voting(meeting_id, meeting, award_configs_list=None):
                 # Show only the role names that are actually associated with this
                 # award — not every role the contact took in the meeting.
                 if config_role_ids is not None:
-                    contact_ids = contact_role_ids.get(owner_id, set())
                     assigned_roles = [
-                        r_name for c_id, r_id, r_name in contact_meeting_roles
-                        if c_id == owner_id and r_id in config_role_ids
+                        r_name for c, r_id, r_name in meeting_role_takers
+                        if c.id == owner_id and r_id in config_role_ids
                     ]
                 else:
                     assigned_roles = contact_role_names.get(owner_id, [])
@@ -587,9 +613,13 @@ def _get_voting_page_context(meeting_id):
 
     # Check if user has voted for this meeting
     voter_identifier = get_session_voter_identifier()
+    user_votes = []
     if voter_identifier:
-        vote_exists = Vote.query.filter_by(meeting_id=meeting_id, voter_identifier=voter_identifier).first()
-        if vote_exists:
+        user_votes = Vote.query.filter_by(
+            meeting_id=meeting_id,
+            voter_identifier=voter_identifier
+        ).all()
+        if user_votes:
             context['has_voted'] = True
 
     context['selected_meeting'] = selected_meeting
@@ -632,7 +662,15 @@ def _get_voting_page_context(meeting_id):
     # can_track_progress controls seeing results WHILE running (Admin only)
     context['can_track_progress'] = is_authorized(Permissions.VOTING_TRACK_PROGRESS, meeting=selected_meeting)
 
-    roles = _get_roles_for_voting(meeting_id, selected_meeting, award_configs_list)
+    # Use selected_meeting.award_winners (already eager-loaded via selectinload)
+    winners_list = selected_meeting.award_winners if selected_meeting else []
+    roles = _get_roles_for_voting(
+        meeting_id,
+        selected_meeting,
+        award_configs_list=award_configs_list,
+        user_votes=user_votes,
+        winners_list=winners_list
+    )
     context['roles'] = roles
     context['sorted_role_groups'] = group_roles_by_category(roles)
     context['best_award_ids'] = selected_meeting.get_best_award_ids() if selected_meeting else set()
@@ -645,23 +683,14 @@ def _get_voting_page_context(meeting_id):
             'max_winners': config.max_winners
         }
 
-    # Fetch existing meeting rating and feedback in a single query
+    # Extract existing meeting rating and feedback from the pre-fetched user_votes in memory
     context['meeting_rating_score'] = None
     context['meeting_feedback_comment'] = ""
-    if voter_identifier:
-        feedback_votes = Vote.query.filter(
-            Vote.meeting_id == meeting_id,
-            Vote.voter_identifier == voter_identifier,
-            Vote.question.in_([
-                "How likely are you to recommend this meeting to a friend or colleague?",
-                "More feedback/comments"
-            ])
-        ).all()
-        for vote in feedback_votes:
-            if vote.question == "How likely are you to recommend this meeting to a friend or colleague?":
-                context['meeting_rating_score'] = vote.score
-            elif vote.question == "More feedback/comments":
-                context['meeting_feedback_comment'] = vote.comments
+    for vote in user_votes:
+        if vote.question == "How likely are you to recommend this meeting to a friend or colleague?":
+            context['meeting_rating_score'] = vote.score
+        elif vote.question == "More feedback/comments":
+            context['meeting_feedback_comment'] = vote.comments
 
     return context
 
