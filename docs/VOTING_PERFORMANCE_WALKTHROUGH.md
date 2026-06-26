@@ -52,6 +52,46 @@ The full raw data is saved in [results.csv](file:///Users/wmu/.gemini/antigravit
 
 ---
 
+## Python Concurrency Benchmark (Real-world Client Simulation)
+
+Due to potential reliability issues with `ab` on macOS (socket limits, TLS handshake storm queuing, and lack of connection pool pre-warming), we created a custom Python concurrency test script: [test_voting_concurrency.py](file:///Users/wmu/workspace/toastmasters/vpemaster/scripts/test_voting_concurrency.py).
+
+This script simulates 30 concurrent users using Python's `ThreadPoolExecutor` and a `requests.Session` with a pooled connection adapter (reusing TLS/TCP connections). It also supports pre-warming the connection pool to measure steady-state performance without initial TLS handshakes.
+
+### Test Configuration
+* **Concurrency (c)**: 30
+* **Total Requests (n)**: 100
+* **Target URL**: `https://dev.moleqode.com/voting?club_id=2`
+* **Warmup Pool**: Enabled
+
+### Benchmark Results (Warmup Pool Enabled)
+* **Total Time Taken**: 4.730 seconds
+* **Requests per Second**: 21.14 RPS
+* **Successful Requests**: 100 / 100 (100.0%)
+* **Failed Requests**: 0 / 100 (0.0%)
+
+#### Latency Distribution
+| Bracket | Request Count | Percentage |
+| :--- | :---: | :---: |
+| < 100ms | 0 | 0.0% |
+| 100ms - 200ms | 1 | 1.0% |
+| 200ms - 500ms | 46 | 46.0% |
+| 500ms - 1000ms | 15 | 15.0% |
+| 1000ms - 2000ms | 20 | 20.0% |
+| > 2000ms | 18 | 18.0% |
+
+#### Latency Statistics
+* **Minimum Latency**: 171.09 ms
+* **Average Latency**: 1151.13 ms
+* **Median (p50) Latency**: 623.90 ms
+* **90th Percentile**: 3145.30 ms
+* **95th Percentile**: 3801.44 ms
+* **Maximum Latency**: 4700.95 ms
+
+*Note: Without HTTP Keep-Alive (forcing a new TLS handshake per request), the performance drops to **9.93 RPS** with an average latency of **2644.68 ms**, illustrating the high cost of initiating TLS connections concurrently under load.*
+
+---
+
 ## Code Optimizations Implemented
 
 The optimizations were successfully committed to local branch `feat/stress-test` (commit `83ef752e`) and deployed to `dev.moleqode.com`:
