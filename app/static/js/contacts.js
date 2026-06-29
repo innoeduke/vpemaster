@@ -1,8 +1,8 @@
 // --- Modal Variables ---
 // These are needed by the openContactModal() function in base.html
-const contactModal = document.getElementById("contactModal");
+const contactModal = document.getElementById("contactModal-overlay");
 const contactForm = document.getElementById("contactForm");
-const contactModalTitle = document.getElementById("contactModalTitle");
+const contactModalTitle = document.getElementById("contactModal-title");
 
 // --- Pagination State ---
 let allContactsCache = []; // Cache of all contacts from API

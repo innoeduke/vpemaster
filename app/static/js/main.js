@@ -134,9 +134,9 @@ function switchContactTab(tabName) {
 window.switchContactTab = switchContactTab;
 
 function openContactModal(contactId) {
-  const contactModal = document.getElementById("contactModal");
+  const contactModal = document.getElementById("contactModal-overlay");
   const contactForm = document.getElementById("contactForm");
-  const contactModalTitle = document.getElementById("contactModalTitle");
+  const contactModalTitle = document.getElementById("contactModal-title");
 
   contactForm.reset();
   const ignoreInput = document.getElementById('ignore_duplicate_name');
@@ -391,12 +391,11 @@ function openContactModal(contactId) {
 
     switchContactTab('basic-info');
   }
-  contactModal.style.display = "flex";
+  openActionModal("contactModal");
 }
 
 function closeContactModal() {
-  const contactModal = document.getElementById("contactModal");
-  if (contactModal) contactModal.style.display = "none";
+  closeActionModal("contactModal");
 }
 
 function showDuplicateModal(message, duplicateData) {

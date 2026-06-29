@@ -1,4 +1,4 @@
-{% macro render_action_modal(id, title, form_id, save_btn_text='Save', cancel_btn_text='Cancel', modal_max_width='480px', header_extra=None, footer_buttons=None) %}
+{% macro render_action_modal(id, title, form_id, save_btn_text='Save', cancel_btn_text='Cancel', modal_max_width='480px', header_extra=None, footer_buttons=None, method=None, enctype=None) %}
 <div id="{{ id }}-overlay" class="action-modal-overlay" onclick="if(event.target===this) closeActionModal('{{ id }}');">
   <div class="action-modal-box" style="max-width: {{ modal_max_width }};">
     <div class="action-modal-header">
@@ -10,7 +10,7 @@
       </h3>
       <button type="button" class="action-modal-close" onclick="closeActionModal('{{ id }}')">&times;</button>
     </div>
-    <form id="{{ form_id }}">
+    <form id="{{ form_id }}" {% if method %}method="{{ method }}"{% endif %} {% if enctype %}enctype="{{ enctype }}"{% endif %}>
       <div class="action-modal-body">
         {{ caller() }}
       </div>

@@ -165,8 +165,8 @@ class TablePaginator {
 }
 
 function openUserModal(userId = null, source = null) {
-  const modal = document.getElementById('userModal');
-  const title = document.getElementById('user-modal-title');
+  const modal = document.getElementById('userModal-overlay');
+  const title = document.getElementById('userModal-title');
   const form = document.getElementById('user-form');
 
   if (!modal || !form) return;
@@ -253,12 +253,11 @@ function openUserModal(userId = null, source = null) {
     }
   }
 
-  modal.style.display = 'flex';
+  openActionModal('userModal');
 }
 
 function closeUserModal() {
-  const modal = document.getElementById('userModal');
-  if (modal) modal.style.display = 'none';
+  closeActionModal('userModal');
 }
 
 async function handleUserSubmit(e) {
@@ -940,6 +939,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('blur', checkUserDuplicates);
   });
+
+  // Bind User Form Submit Listener
+  const userForm = document.getElementById('user-form');
+  if (userForm) {
+    userForm.addEventListener('submit', handleUserSubmit);
+  }
 
   // Setup Search Filter
   const searchInput = document.getElementById('global-settings-search');

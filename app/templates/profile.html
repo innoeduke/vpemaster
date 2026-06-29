@@ -21,9 +21,6 @@
 </div>
 
 <div id="basic-info" class="tab-content" style="display: block;">
-  <h2 style="text-align: center; margin-top: 20px; margin-bottom: 20px">
-    Basic Information
-  </h2>
   <form id="profile-form" method="POST" action="{{ request.path }}" enctype="multipart/form-data"
     style="max-width: 700px; margin: 0 auto">
     <div class="profile-avatar-container">
@@ -136,10 +133,6 @@
 
 {% if is_own_profile or can_reset_password %}
 <div id="reset-password" class="tab-content" style="display: none;">
-  <h2 style="text-align: center; margin-top: 20px; margin-bottom: 20px">
-    Reset Password
-  </h2>
-  
   <form method="POST" action="{% if is_own_profile %}{{ url_for('auth_bp.profile', tab='password') }}{% else %}{{ url_for('auth_bp.profile', contact_id=user.contact.id, tab='password') }}{% endif %}"
     style="max-width: 700px; margin: 0 auto">
     <input type="hidden" name="action" value="reset_password" />

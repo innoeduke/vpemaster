@@ -1,82 +1,80 @@
-{% from "partials/_button_macros.html" import btn %}
-<!-- Add/Edit User Modal -->
-<div id="userModal" class="planner-modal">
-  <div class="planner-modal-content planner-modal-medium">
-    <span class="planner-close-modal" onclick="closeUserModal()"><i class="fas fa-times"></i></span>
-    <div class="planner-modal-header text-center">
-      <h3 id="user-modal-title">{{ _('Add New User') }}</h3>
+{% from "components/action_modal.html" import render_action_modal %}
+
+<!-- Add/Edit User Modal (Redesigned) -->
+{% set user_footer_buttons %}
+  <button type="button" class="btn btn-cancel btn-danger" onclick="closeUserModal()">{{ _('Cancel') }}</button>
+  <button type="submit" id="user-submit-btn" class="btn btn-success">{{ _('Save') }}</button>
+{% endset %}
+
+{% call render_action_modal(
+    id='userModal',
+    title='Add New User',
+    form_id='user-form',
+    modal_max_width='520px',
+    footer_buttons=user_footer_buttons
+) %}
+    <input type="hidden" id="user_id" name="user_id" value="" />
+    <input type="hidden" id="user_contact_id" name="contact_id" value="" />
+    <input type="hidden" name="club_id" value="{{ club_id or '' }}" />
+    
+    <div class="user-grid">
+      <!-- Row 1: Username (2) | Role (2) -->
+      <div class="form-group planner-form-group span-2">
+        <label for="username">{{ _('Username') }} <span class="required-field">*</span></label>
+        <input type="text" id="username" name="username" class="form-control planner-form-control" required pattern="[A-Za-z0-9_]+" title="{{ _('Letters, digits, and underscores only.') }}" placeholder="{{ _("User's login name") }}" data-readonly-when-editing="{% if not is_super_club_sysadmin %}true{% else %}false{% endif %}" autocomplete="username" />
+      </div>
+      <div class="form-group planner-form-group span-2 roles-selection-group">
+        <label for="role_id_select">{{ _('Role') }}</label>
+        <select id="role_id_select" name="role_id" class="form-control planner-form-control">
+          {% if all_auth_roles %}
+            {% for role in all_auth_roles %}
+              <option value="{{ role.id }}" data-name="{{ role.name }}" {% if role.name == 'Member' %}selected{% endif %}>
+                {{ _(role.name) }}
+              </option>
+            {% endfor %}
+          {% else %}
+            <option value="">{{ _('No roles found') }}</option>
+          {% endif %}
+        </select>
+      </div>
+
+      <!-- Row 2: First Name | Last Name -->
+      <div class="form-group planner-form-group span-2">
+        <label for="first_name">{{ _('First Name') }} <span class="required-field">*</span></label>
+        <input type="text" id="first_name" name="first_name" class="form-control planner-form-control" required placeholder="{{ _('First Name') }}" />
+      </div>
+      <div class="form-group planner-form-group span-2">
+        <label for="last_name">{{ _('Last Name') }} <span class="required-field">*</span></label>
+        <input type="text" id="last_name" name="last_name" class="form-control planner-form-control" required placeholder="{{ _('Last Name') }}" />
+      </div>
+
+      <!-- Row 3: Email (Full Width) -->
+      <div class="form-group planner-form-group span-4">
+        <label for="email">{{ _('Email') }} <span class="required-field">*</span></label>
+        <input type="email" id="email" name="email" class="form-control planner-form-control" required placeholder="email@example.com" />
+      </div>
+
+      <!-- Row 4: Phone (Full Width) -->
+      <div class="form-group planner-form-group span-4">
+        <label for="phone">{{ _('Phone') }}</label>
+        <input type="text" id="phone" name="phone" class="form-control planner-form-control" placeholder="{{ _('Phone Number') }}" />
+      </div>
+
+      <!-- Row 5: Password (Full Width) -->
+      <div class="form-group planner-form-group span-4">
+        <label for="password">{{ _('Password') }}</label>
+        <input type="password" id="password" name="password" class="form-control planner-form-control" placeholder="{{ _('Leave blank to keep current') }}" autocomplete="current-password" />
+        <small class="text-muted" style="color: #9ca3af; display: block; margin-top: 4px;">{{ _("Default is 'toastmasters' for new users.") }}</small>
+      </div>
     </div>
-    <form id="user-form" onsubmit="handleUserSubmit(event)">
-      <div class="planner-modal-body">
-        <input type="hidden" id="user_id" name="user_id" value="" />
-        <input type="hidden" id="user_contact_id" name="contact_id" value="" />
-        <input type="hidden" name="club_id" value="{{ club_id or '' }}" />
-        
-        <div class="user-grid">
-          <!-- Row 1: Username (2) | Role (2) -->
-          <div class="planner-form-group span-2">
-            <label for="username">{{ _('Username') }} <span class="required-field">*</span></label>
-            <input type="text" id="username" name="username" class="planner-form-control" required pattern="[A-Za-z0-9_]+" title="Letters, digits, and underscores only." placeholder="{{ _("User's login name") }}" data-readonly-when-editing="{% if not is_super_club_sysadmin %}true{% else %}false{% endif %}" />
-          </div>
-          <div class="planner-form-group span-2 roles-selection-group">
-            <label for="role_id_select">{{ _('Role') }}</label>
-            <select id="role_id_select" name="role_id" class="planner-form-control">
-              {% if all_auth_roles %}
-                {% for role in all_auth_roles %}
-                  <option value="{{ role.id }}" data-name="{{ role.name }}" {% if role.name == 'Member' %}selected{% endif %}>
-                    {{ _(role.name) }}
-                  </option>
-                {% endfor %}
-              {% else %}
-                <option value="">{{ _('No roles found') }}</option>
-              {% endif %}
-            </select>
-          </div>
 
-          <!-- Row 2: First Name | Last Name -->
-          <div class="planner-form-group span-2">
-            <label for="first_name">{{ _('First Name') }} <span class="required-field">*</span></label>
-            <input type="text" id="first_name" name="first_name" class="planner-form-control" required placeholder="{{ _('First Name') }}" />
-          </div>
-          <div class="planner-form-group span-2">
-            <label for="last_name">{{ _('Last Name') }} <span class="required-field">*</span></label>
-            <input type="text" id="last_name" name="last_name" class="planner-form-control" required placeholder="{{ _('Last Name') }}" />
-          </div>
-
-          <!-- Row 3: Email (Full Width) -->
-          <div class="planner-form-group span-4">
-            <label for="email">{{ _('Email') }} <span class="required-field">*</span></label>
-            <input type="email" id="email" name="email" class="planner-form-control" required placeholder="email@example.com" />
-          </div>
-
-          <!-- Row 4: Phone (Full Width) -->
-          <div class="planner-form-group span-4">
-            <label for="phone">{{ _('Phone') }}</label>
-            <input type="text" id="phone" name="phone" class="planner-form-control" placeholder="{{ _('Phone Number') }}" />
-          </div>
-
-          <!-- Row 5: Password (Full Width) -->
-          <div class="planner-form-group span-4">
-            <label for="password">{{ _('Password') }}</label>
-            <input type="password" id="password" name="password" class="planner-form-control" placeholder="{{ _('Leave blank to keep current') }}" autocomplete="current-password" />
-            <small class="text-muted" style="color: #9ca3af;">{{ _("Default is 'toastmasters' for new users.") }}</small>
-          </div>
-        </div>
-
-        <!-- Alert for club context -->
-        {% if club_name %}
-        <div class="modal-info-bar">
-          <i class="fas fa-info-circle"></i> {{ _('Roles will be applied to:') }} <strong>{{ club_name }}</strong>
-        </div>
-        {% endif %}
-      </div>
-      <div class="planner-modal-footer">
-        {% call btn('cancel', attrs={'onclick': 'closeUserModal()'}) %}{{ _('Cancel') }}{% endcall %}
-        {% call btn('save', type='submit', id='user-submit-btn') %}{{ _('Save') }}{% endcall %}
-      </div>
-    </form>
-  </div>
-</div>
+    <!-- Alert for club context -->
+    {% if club_name %}
+    <div class="modal-info-bar" style="margin-top: 15px; display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #772432; background: #faf0f1; padding: 10px 12px; border-radius: 6px; border-left: 3px solid #772432;">
+      <i class="fas fa-info-circle"></i> <span>{{ _('Roles will be applied to:') }} <strong>{{ club_name }}</strong></span>
+    </div>
+    {% endif %}
+{% endcall %}
 
 <!-- Duplicate Detection Modal -->
 <div id="duplicateModal" class="planner-modal" style="z-index: var(--z-modal);">

@@ -38,6 +38,13 @@
   transform: scale(1) translateY(0);
 }
 
+.action-modal-box form {
+  display: block !important;
+  flex-direction: unset !important;
+  align-items: unset !important;
+  gap: 0 !important;
+}
+
 .action-modal-header {
   background: linear-gradient(135deg, #772432, #9b2226);
   color: #ffffff;
