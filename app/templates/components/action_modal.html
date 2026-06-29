@@ -1,0 +1,30 @@
+{% macro render_action_modal(id, title, form_id, save_btn_text='Save', cancel_btn_text='Cancel', modal_max_width='480px', header_extra=None, footer_buttons=None) %}
+<div id="{{ id }}-overlay" class="action-modal-overlay" onclick="if(event.target===this) closeActionModal('{{ id }}');">
+  <div class="action-modal-box" style="max-width: {{ modal_max_width }};">
+    <div class="action-modal-header">
+      <h3 id="{{ id }}-title">
+        {{ _(title) }}
+        {% if header_extra %}
+          {{ header_extra | safe }}
+        {% endif %}
+      </h3>
+      <button type="button" class="action-modal-close" onclick="closeActionModal('{{ id }}')">&times;</button>
+    </div>
+    <form id="{{ form_id }}">
+      <div class="action-modal-body">
+        {{ caller() }}
+      </div>
+      
+      <div class="action-modal-footer">
+        {% if footer_buttons %}
+          {{ footer_buttons | safe }}
+        {% else %}
+          <button type="button" class="btn btn-danger" onclick="closeActionModal('{{ id }}')">{{ _(cancel_btn_text) }}</button>
+          <button type="submit" class="btn btn-success">{{ _(save_btn_text) }}</button>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+{% endmacro %}
+

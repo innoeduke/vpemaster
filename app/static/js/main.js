@@ -991,7 +991,36 @@ function showFlashMessage(message, category = 'info') {
 window.showFlashMessage = showFlashMessage;
 
 
+/**
+ * Global helper to open the reusable action modal.
+ * @param {string} id The unique identifier of the modal (without the suffix).
+ * @param {string|null} title Optional title to dynamically update the modal's title text.
+ */
+function openActionModal(id, title = null) {
+  const overlay = document.getElementById(id + '-overlay');
+  if (title) {
+    const titleEl = document.getElementById(id + '-title');
+    if (titleEl) titleEl.textContent = title;
+  }
+  if (overlay) {
+    overlay.style.display = 'flex';
+    setTimeout(() => overlay.classList.add('active'), 10);
+  }
+}
 
+/**
+ * Global helper to close the reusable action modal.
+ * @param {string} id The unique identifier of the modal.
+ */
+function closeActionModal(id) {
+  const overlay = document.getElementById(id + '-overlay');
+  if (overlay) {
+    overlay.classList.remove('active');
+    setTimeout(() => {
+      overlay.style.display = 'none';
+    }, 300);
+  }
+}
 
-
-
+window.openActionModal = openActionModal;
+window.closeActionModal = closeActionModal;

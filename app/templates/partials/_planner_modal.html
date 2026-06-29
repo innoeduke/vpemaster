@@ -1,87 +1,93 @@
-{% from "partials/_button_macros.html" import btn %}
+{% from "components/action_modal.html" import render_action_modal %}
 {% from "components/info_box.html" import render_info_box %}
-<!-- Plan Modal -->
-<div id="planModal" class="planner-modal">
-    <div class="planner-modal-content">
-        <span class="planner-close-modal" onclick="closeModal()"><i class="fas fa-times"></i></span>
-        <div class="planner-modal-header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f0f0f0; padding-bottom: 1rem; margin-bottom: 2rem;">
-            <h3 style="margin: 0; display: inline-flex; align-items: center; gap: 8px;">
-                {{ _('Task Details') }}
-                <i class="fas fa-info-circle" id="planner-help-toggle" style="font-size: 1.1rem; color: #772432; cursor: pointer; opacity: 0.7; transition: opacity 0.2s;" title="{{ _('How to use') }}"></i>
-            </h3>
-        </div>
-        <form id="planForm">
-            <input type="hidden" id="plan-id">
-            <input type="hidden" id="plan-status" value="draft">
 
-            <!-- Step 1: Role (first) -->
-            <div class="planner-form-group">
-                <label for="meeting_role_id">{{ _('Meeting Role') }}</label>
-                <select id="meeting_role_id" class="planner-form-control" required>
-                    <option value="">{{ _('Select Role') }}</option>
-                    <!-- Populated dynamically from /api/planner/roles -->
-                </select>
-            </div>
+<!-- Plan Modal (Redesigned) -->
+{% set planner_header_extra %}
+    <i class="fas fa-info-circle" id="planner-help-toggle" style="font-size: 1.1rem; color: #ffffff; cursor: pointer; opacity: 0.7; transition: opacity 0.2s; margin-left: 8px;" title="{{ _('How to use') }}"></i>
+{% endset %}
 
-            <!-- Step 2: Meeting (second, loaded after role chosen) -->
-            <div class="planner-form-group">
-                <label for="meeting_id">{{ _('Meeting') }}</label>
-                <select id="meeting_id" class="planner-form-control" required>
-                    <option value="">{{ _('Select Meeting') }}</option>
-                    <!-- Populated dynamically from /api/planner/role/<id>/meetings -->
-                </select>
-            </div>
+{% set planner_footer_buttons %}
+    <button type="button" class="btn btn-danger" onclick="closeModal()">{{ _('Cancel') }}</button>
+    <button type="submit" id="save-plan-btn" class="btn btn-success">{{ _('Draft Box') }}</button>
+    <button type="button" id="book-btn" class="btn btn-primary" style="display: none;" onclick="bookPlan()">{{ _('Book') }}</button>
+{% endset %}
 
-            <div id="planner-pathway-group" class="planner-form-group" style="display: none;">
-                <label for="planner_pathway">{{ _('Pathway') }}</label>
-                <select id="planner_pathway" class="planner-form-control">
-                    <option value="">{{ _('Select Pathway') }}</option>
-                </select>
-            </div>
-            <div id="planner-project-checkbox-group" class="planner-form-group" style="display: none; margin-bottom: 10px;">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                    {{ _('Project') }} <input type="checkbox" id="has_project_chk">
-                </label>
-            </div>
-            <div id="planner-project-group" class="planner-form-group" style="display: none;">
-                <select id="project_id" class="planner-form-control">
-                    <option value="">{{ _('Select Project') }}</option>
-                    {% for level, projs in grouped_projects %}
-                    <optgroup label="{{ _('Level') }} {{ level }}">
-                        {% for project in projs %}
-                        <option value="{{ project.id }}" data-format="{{ project.Format }}"
-                            data-code="{{ project.full_code }}"
-                            data-icon="{{ 'fas fa-check-circle' if project.is_completed else 'far fa-circle' }}"
-                            data-icon-color="{{ '#2a9d5c' if project.is_completed else '#9ca3af' }}"
-                            class="{% if project.is_completed %}project-completed{% endif %}">
-                            {{ project.Project_Name }}
-                        </option>
-                        {% endfor %}
-                    </optgroup>
-                    {% endfor %}
-                </select>
-            </div>
-            <div id="title-group" class="planner-form-group" style="display: none;">
-                <label for="title">{{ _('Title') }}</label>
-                <input type="text" id="title" class="planner-form-control" placeholder="{{ _('Speech Title') }}">
-            </div>
-            <div class="planner-form-group">
-                <label for="notes">{{ _('Notes') }}</label>
-                <textarea id="notes" class="planner-form-control" rows="3"></textarea>
-            </div>
-            {% call render_info_box('planner-usage-info', 'How to Plan & Book a Task:') %}
-            <ol style="margin: 0; padding-left: 15px; color: #666;">
-                <li>{{ _('Select a <strong>Meeting Role</strong> first.') | safe }}</li>
-                <li>{{ _('Choose a <strong>Meeting</strong> (✅ = available; 🔒 = booked or requires approval).') | safe }}</li>
-                <li>{{ _('Optionally select your <strong>Pathway & Project</strong> if applicable.') | safe }}</li>
-                <li>{{ _('Click <strong>Draft Box</strong> to save as a offline draft, or <strong>Book / Join Waitlist</strong> to reserve the slot (books immediately if available and doesn\'t require VPE approval, otherwise adds you to the waitlist).') | safe }}</li>
-            </ol>
-            {% endcall %}
-            <div class="planner-modal-footer">
-                {% call btn('cancel', attrs={'onclick': 'closeModal()'}) %}{{ _('Cancel') }}{% endcall %}
-                {% call btn('new', id='save-plan-btn', type='submit') %}{{ _('Draft Box') }}{% endcall %}
-                {% call btn('book', id='book-btn', attrs={'style': 'display: none;', 'onclick': 'bookPlan()'}) %}{{ _('Book') }}{% endcall %}
-            </div>
-        </form>
+{% call render_action_modal(
+    id='planModal',
+    title='New Task',
+    form_id='planForm',
+    modal_max_width='480px',
+    header_extra=planner_header_extra,
+    footer_buttons=planner_footer_buttons
+) %}
+    <input type="hidden" id="plan-id">
+    <input type="hidden" id="plan-status" value="draft">
+
+    <!-- Step 1: Role (first) -->
+    <div class="form-group planner-form-group">
+        <label for="meeting_role_id">{{ _('Meeting Role') }}</label>
+        <select id="meeting_role_id" class="form-control planner-form-control" required>
+            <option value="">{{ _('Select Role') }}</option>
+            <!-- Populated dynamically from /api/planner/roles -->
+        </select>
     </div>
-</div>
+
+    <!-- Step 2: Meeting (second, loaded after role chosen) -->
+    <div class="form-group planner-form-group">
+        <label for="meeting_id">{{ _('Meeting') }}</label>
+        <select id="meeting_id" class="form-control planner-form-control" required>
+            <option value="">{{ _('Select Meeting') }}</option>
+            <!-- Populated dynamically from /api/planner/role/<id>/meetings -->
+        </select>
+    </div>
+
+    <div id="planner-pathway-group" class="form-group planner-form-group" style="display: none;">
+        <label for="planner_pathway">{{ _('Pathway') }}</label>
+        <select id="planner_pathway" class="form-control planner-form-control">
+            <option value="">{{ _('Select Pathway') }}</option>
+        </select>
+    </div>
+
+    <div id="planner-project-checkbox-group" class="form-group form-group-checkbox planner-form-group" style="display: none; margin-bottom: 10px;">
+        <input type="checkbox" id="has_project_chk">
+        <label for="has_project_chk">{{ _('Project') }}</label>
+    </div>
+
+    <div id="planner-project-group" class="form-group planner-form-group" style="display: none;">
+        <select id="project_id" class="form-control planner-form-control">
+            <option value="">{{ _('Select Project') }}</option>
+            {% for level, projs in grouped_projects %}
+            <optgroup label="{{ _('Level') }} {{ level }}">
+                {% for project in projs %}
+                <option value="{{ project.id }}" data-format="{{ project.Format }}"
+                    data-code="{{ project.full_code }}"
+                    data-icon="{{ 'fas fa-check-circle' if project.is_completed else 'far fa-circle' }}"
+                    data-icon-color="{{ '#2a9d5c' if project.is_completed else '#9ca3af' }}"
+                    class="{% if project.is_completed %}project-completed{% endif %}">
+                    {{ project.Project_Name }}
+                </option>
+                {% endfor %}
+            </optgroup>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div id="title-group" class="form-group planner-form-group" style="display: none;">
+        <label for="title">{{ _('Title') }}</label>
+        <input type="text" id="title" class="form-control planner-form-control" placeholder="{{ _('Speech Title') }}">
+    </div>
+
+    <div class="form-group planner-form-group">
+        <label for="notes">{{ _('Notes') }}</label>
+        <textarea id="notes" class="form-control planner-form-control" rows="3"></textarea>
+    </div>
+
+    {% call render_info_box('planner-usage-info', 'How to Plan & Book a Task:') %}
+    <ol style="margin: 0; padding-left: 15px; color: #666;">
+        <li>{{ _('Select a <strong>Meeting Role</strong> first.') | safe }}</li>
+        <li>{{ _('Choose a <strong>Meeting</strong> (✅ = available; 🔒 = booked or requires approval).') | safe }}</li>
+        <li>{{ _('Optionally select your <strong>Pathway & Project</strong> if applicable.') | safe }}</li>
+        <li>{{ _('Click <strong>Draft Box</strong> to save as a offline draft, or <strong>Book / Join Waitlist</strong> to reserve the slot (books immediately if available and doesn\'t require VPE approval, otherwise adds you to the waitlist).') | safe }}</li>
+    </ol>
+    {% endcall %}
+{% endcall %}
