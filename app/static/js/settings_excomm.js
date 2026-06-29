@@ -4,21 +4,13 @@ function openExcommModal() {
     if (form) form.reset();
     
     document.getElementById('excomm-id').value = '';
-    document.getElementById('excomm-modal-title').textContent = 'Add Excomm Team';
+    document.getElementById('excommModal-title').textContent = 'Add Excomm Team';
     
-    const overlay = document.getElementById('excomm-modal-overlay');
-    if (overlay) {
-        overlay.style.display = 'flex';
-        setTimeout(() => overlay.classList.add('active'), 10);
-    }
+    openActionModal('excommModal');
 }
 
 function closeExcommModal() {
-    const overlay = document.getElementById('excomm-modal-overlay');
-    if (overlay) {
-        overlay.classList.remove('active');
-        setTimeout(() => overlay.style.display = 'none', 300);
-    }
+    closeActionModal('excommModal');
 }
 
 function openEditExcommModal(btn) {
@@ -34,13 +26,9 @@ function openEditExcommModal(btn) {
     document.getElementById('excomm-start').value = start;
     document.getElementById('excomm-end').value = end;
     
-    document.getElementById('excomm-modal-title').textContent = 'Edit Excomm Team';
+    document.getElementById('excommModal-title').textContent = 'Edit Excomm Team';
     
-    const overlay = document.getElementById('excomm-modal-overlay');
-    if (overlay) {
-        overlay.style.display = 'flex';
-        setTimeout(() => overlay.classList.add('active'), 10);
-    }
+    openActionModal('excommModal');
 }
 
 // Officer Modal Controls
@@ -52,21 +40,13 @@ function openOfficerModal() {
     document.getElementById('officer-contact-id').value = '';
     document.getElementById('officer-search').value = '';
     document.getElementById('officer-is-assistant').checked = false;
-    document.getElementById('officer-modal-title').textContent = 'Add Officer';
+    document.getElementById('officerModal-title').textContent = 'Add Officer';
     
-    const overlay = document.getElementById('officer-modal-overlay');
-    if (overlay) {
-        overlay.style.display = 'flex';
-        setTimeout(() => overlay.classList.add('active'), 10);
-    }
+    openActionModal('officerModal');
 }
 
 function closeOfficerModal() {
-    const overlay = document.getElementById('officer-modal-overlay');
-    if (overlay) {
-        overlay.classList.remove('active');
-        setTimeout(() => overlay.style.display = 'none', 300);
-    }
+    closeActionModal('officerModal');
 }
 
 function openEditOfficerModal(btn) {
@@ -82,13 +62,9 @@ function openEditOfficerModal(btn) {
     document.getElementById('officer-search').value = contactName;
     document.getElementById('officer-is-assistant').checked = isAssistant;
     
-    document.getElementById('officer-modal-title').textContent = 'Edit Officer';
+    document.getElementById('officerModal-title').textContent = 'Edit Officer';
     
-    const overlay = document.getElementById('officer-modal-overlay');
-    if (overlay) {
-        overlay.style.display = 'flex';
-        setTimeout(() => overlay.classList.add('active'), 10);
-    }
+    openActionModal('officerModal');
 }
 
 document.addEventListener('DOMContentLoaded', function() {

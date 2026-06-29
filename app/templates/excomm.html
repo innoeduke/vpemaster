@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "partials/_button_macros.html" import btn %}
-
+{% from "components/action_modal.html" import render_action_modal %}
 {% block title %}Excomm History & Officers{% endblock %}
 
 {% block head_extra %}
@@ -296,91 +296,83 @@
   </main>
 </div>
 
-<!-- 1. Excomm Term Add/Edit Modal (Premium Redesigned) -->
-<div id="excomm-modal-overlay" class="excomm-modal-overlay" onclick="if(event.target===this) closeExcommModal();">
-  <div class="excomm-modal-box">
-    <div class="excomm-modal-header">
-      <h3 id="excomm-modal-title">{{ _('Add Excomm Team') }}</h3>
-      <button type="button" class="excomm-modal-close" onclick="closeExcommModal()">&times;</button>
-    </div>
-    <form id="excomm-form">
-      <div class="excomm-modal-body">
-        <input type="hidden" id="excomm-id" name="id">
-        
-        <div class="form-group">
-          <label for="excomm-term">{{ _('Term:') }}</label>
-          <input type="text" id="excomm-term" name="term" required class="form-control" placeholder="e.g. 26H1">
-        </div>
-        
-        <div class="form-group">
-          <label for="excomm-name">{{ _('Team Name:') }}</label>
-          <input type="text" id="excomm-name" name="name" class="form-control" placeholder="e.g. The Dream Team">
-        </div>
-        
-        <div class="form-group-row" style="display: flex; gap: 15px;">
-          <div class="form-group" style="flex: 1;">
-            <label for="excomm-start">{{ _('Start Date:') }}</label>
-            <input type="date" id="excomm-start" name="start_date" required class="form-control">
-          </div>
-          <div class="form-group" style="flex: 1;">
-            <label for="excomm-end">{{ _('End Date:') }}</label>
-            <input type="date" id="excomm-end" name="end_date" required class="form-control">
-          </div>
-        </div>
-      </div>
-      
-      <div class="excomm-modal-footer">
-        <button type="button" class="btn btn-danger" onclick="closeExcommModal()">{{ _('Cancel') }}</button>
-        <button type="submit" class="btn btn-success">{{ _('Save') }}</button>
-      </div>
-    </form>
-  </div>
-</div>
+<!-- 1. Excomm Term Add/Edit Modal (Premium Redesigned with Action Modal) -->
+{% set excomm_footer_buttons %}
+  <button type="button" class="btn btn-cancel btn-danger" onclick="closeExcommModal()">{{ _('Cancel') }}</button>
+  <button type="submit" class="btn btn-success">{{ _('Save') }}</button>
+{% endset %}
 
-<!-- 2. Add/Edit Officer Modal (Premium Redesigned) -->
-<div id="officer-modal-overlay" class="excomm-modal-overlay" onclick="if(event.target===this) closeOfficerModal();">
-  <div class="excomm-modal-box">
-    <div class="excomm-modal-header">
-      <h3 id="officer-modal-title">{{ _('Add Officer') }}</h3>
-      <button type="button" class="excomm-modal-close" onclick="closeOfficerModal()">&times;</button>
-    </div>
-    <form id="officer-form">
-      <div class="excomm-modal-body">
-        <input type="hidden" id="officer-link-id" name="id">
-        <input type="hidden" id="officer-excomm-id" name="excomm_id" value="{{ selected_excomm.id if selected_excomm else '' }}">
-        
-        <div class="form-group">
-          <label for="officer-role">{{ _('Officer Role:') }}</label>
-          <select id="officer-role" name="role_id" required class="form-control">
-            <option value="">-- {{ _('Select a Role') }} --</option>
-            {% for role in officer_roles %}
-              <option value="{{ role.id }}">{{ _('IPP') if role.name == 'Immediate Past President' else _(role.name) }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <!-- Changed label text to "Name" and converted search field input to search type -->
-          <label for="officer-search">{{ _('Name:') }}</label>
-          <div class="autocomplete-container" style="position: relative;">
-            <input type="search" id="officer-search" required class="form-control" placeholder="{{ _('Search member...') }}">
-            <input type="hidden" id="officer-contact-id" name="contact_id">
-          </div>
-        </div>
-        
-        <div class="form-group form-group-checkbox">
-          <input type="checkbox" id="officer-is-assistant" name="is_assistant">
-          <label for="officer-is-assistant">{{ _('Mark as assistant to the officer') }}</label>
-        </div>
-      </div>
-      
-      <div class="excomm-modal-footer">
-        <button type="button" class="btn btn-danger" onclick="closeOfficerModal()">{{ _('Cancel') }}</button>
-        <button type="submit" class="btn btn-success">{{ _('Save') }}</button>
-      </div>
-    </form>
+{% call render_action_modal(
+    id='excommModal',
+    title='Add Excomm Team',
+    form_id='excomm-form',
+    modal_max_width='480px',
+    footer_buttons=excomm_footer_buttons
+) %}
+  <input type="hidden" id="excomm-id" name="id">
+  
+  <div class="form-group">
+    <label for="excomm-term">{{ _('Term:') }}</label>
+    <input type="text" id="excomm-term" name="term" required class="form-control" placeholder="e.g. 26H1">
   </div>
-</div>
+  
+  <div class="form-group">
+    <label for="excomm-name">{{ _('Team Name:') }}</label>
+    <input type="text" id="excomm-name" name="name" class="form-control" placeholder="e.g. The Dream Team">
+  </div>
+  
+  <div class="form-group-row" style="display: flex; gap: 15px;">
+    <div class="form-group" style="flex: 1;">
+      <label for="excomm-start">{{ _('Start Date:') }}</label>
+      <input type="date" id="excomm-start" name="start_date" required class="form-control">
+    </div>
+    <div class="form-group" style="flex: 1;">
+      <label for="excomm-end">{{ _('End Date:') }}</label>
+      <input type="date" id="excomm-end" name="end_date" required class="form-control">
+    </div>
+  </div>
+{% endcall %}
+
+<!-- 2. Add/Edit Officer Modal (Premium Redesigned with Action Modal) -->
+{% set officer_footer_buttons %}
+  <button type="button" class="btn btn-cancel btn-danger" onclick="closeOfficerModal()">{{ _('Cancel') }}</button>
+  <button type="submit" class="btn btn-success">{{ _('Save') }}</button>
+{% endset %}
+
+{% call render_action_modal(
+    id='officerModal',
+    title='Add Officer',
+    form_id='officer-form',
+    modal_max_width='480px',
+    footer_buttons=officer_footer_buttons
+) %}
+  <input type="hidden" id="officer-link-id" name="id">
+  <input type="hidden" id="officer-excomm-id" name="excomm_id" value="{{ selected_excomm.id if selected_excomm else '' }}">
+  
+  <div class="form-group">
+    <label for="officer-role">{{ _('Officer Role:') }}</label>
+    <select id="officer-role" name="role_id" required class="form-control">
+      <option value="">-- {{ _('Select a Role') }} --</option>
+      {% for role in officer_roles %}
+        <option value="{{ role.id }}">{{ _('IPP') if role.name == 'Immediate Past President' else _(role.name) }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  
+  <div class="form-group">
+    <!-- Changed label text to "Name" and converted search field input to search type -->
+    <label for="officer-search">{{ _('Name:') }}</label>
+    <div class="autocomplete-container" style="position: relative;">
+      <input type="search" id="officer-search" required class="form-control" placeholder="{{ _('Search member...') }}">
+      <input type="hidden" id="officer-contact-id" name="contact_id">
+    </div>
+  </div>
+  
+  <div class="form-group form-group-checkbox">
+    <input type="checkbox" id="officer-is-assistant" name="is_assistant">
+    <label for="officer-is-assistant">{{ _('Mark as assistant to the officer') }}</label>
+  </div>
+{% endcall %}
 
 <div id="contacts-data-storage" data-contacts='{{ contacts_list | tojson | safe if contacts_list is defined else "[]" }}' style="display: none;"></div>
 
