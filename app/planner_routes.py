@@ -179,13 +179,24 @@ def planner():
     contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id, Contact.Type == 'Member').order_by(Contact.Name).all()
     Contact.populate_users(contacts, club_id=club_id)
 
+    # Determine if user is enrolled, is mentoring, or has admin privileges
+    is_admin = is_authorized(Permissions.PROGRAMS_MANAGE)
+    has_any_enrollments = False
+    if is_admin:
+        has_any_enrollments = True
+    else:
+        has_mentee = ProgramEnrollment.query.filter_by(club_id=club_id, user_id=current_user.id).first() is not None
+        has_mentor = ProgramEnrollment.query.filter_by(club_id=club_id, mentor_user_id=current_user.id).first() is not None
+        has_any_enrollments = has_mentee or has_mentor
+
     return render_template('planner.html',
                          plans=plans,
                          enrollments=enrollments,
                          view_mode=view_mode,
                          active_programs=active_programs,
                          contacts=contacts,
-                         is_admin=is_authorized(Permissions.PROGRAMS_MANAGE),
+                         is_admin=is_admin,
+                         has_any_enrollments=has_any_enrollments,
                          can_manage_members=is_authorized(Permissions.MEMBERS_MANAGE),
                          meetings=unpublished_meetings,
                          terms=terms,
@@ -238,6 +249,7 @@ def get_meeting_info(meeting_id):
                 'expected_format': RoleService.get_expected_format_for_session(session_title),
                 'session_id': r.get('session_id'),
                 'is_available': not owner_id,
+                'needs_approval': r.get('needs_approval', False),
                 'icon': r.get('icon'),
                 'score': score
             }
@@ -268,6 +280,219 @@ def get_meeting_info(meeting_id):
         'date': meeting.Meeting_Date.strftime('%Y-%m-%d') if meeting.Meeting_Date else 'N/A',
         'roles': sorted_roles
     })
+
+@planner_bp.route('/api/planner/roles')
+@login_required
+def get_planner_roles():
+    """Return unique bookable roles across all upcoming published meetings (single bulk query)."""
+    from sqlalchemy import or_, func
+    from .models import Waitlist
+    club_id = get_current_club_id()
+
+    # Re-use same upcoming meetings filter as the planner page
+    query = Meeting.query.filter(
+        Meeting.club_id == club_id,
+        Meeting.status != 'unpublished',
+        Meeting.status != 'finished',
+        Meeting.Meeting_Date >= func.current_date()
+    )
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    if start_date and end_date:
+        query = query.filter(Meeting.Meeting_Date.between(start_date, end_date))
+    meeting_ids = [m.id for m in query.with_entities(Meeting.id).all()]
+
+    if not meeting_ids:
+        return jsonify(roles=[])
+
+    # Single bulk query: all session logs + role info for all meetings
+    from sqlalchemy.orm import joinedload
+    logs = (
+        db.session.query(SessionLog)
+        .options(joinedload(SessionLog.session_type).joinedload(SessionType.role))
+        .join(SessionType, SessionLog.Type_ID == SessionType.id)
+        .join(MeetingRole, SessionType.role_id == MeetingRole.id)
+        .filter(
+            SessionLog.meeting_id.in_(meeting_ids),
+            MeetingRole.name != '',
+            MeetingRole.name.isnot(None),
+            MeetingRole.type != 'officer',
+        )
+        .all()
+    )
+
+    seen_role_ids = {}
+    for log in logs:
+        if not log.session_type or not log.session_type.role:
+            continue
+        role = log.session_type.role
+        if role.id not in seen_role_ids:
+            seen_role_ids[role.id] = {
+                'id': role.id,
+                'name': role.name.strip(),
+                'icon': role.icon or '',
+                'valid_for_project': log.session_type.Valid_for_Project or False,
+            }
+
+    sorted_roles = sorted(seen_role_ids.values(), key=lambda r: r['name'])
+    return jsonify(roles=sorted_roles)
+
+
+@planner_bp.route('/api/planner/role/<int:role_id>/meetings')
+@login_required
+def get_meetings_for_role(role_id):
+    """Return upcoming meetings that have the given role, with per-slot availability (single bulk query)."""
+    from sqlalchemy import or_, func
+    from .models import Waitlist
+    club_id = get_current_club_id()
+
+    # Get upcoming meetings in same date range
+    query = Meeting.query.filter(
+        Meeting.club_id == club_id,
+        Meeting.status != 'unpublished',
+        Meeting.status != 'finished',
+        Meeting.Meeting_Date >= func.current_date()
+    )
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    if start_date and end_date:
+        query = query.filter(Meeting.Meeting_Date.between(start_date, end_date))
+    meetings = query.order_by(Meeting.Meeting_Date.asc()).all()
+    meeting_ids = [m.id for m in meetings]
+
+    if not meeting_ids:
+        return jsonify(meetings=[])
+
+    # Bulk load all session logs for this role across all meetings (2 queries via subqueryload)
+    from sqlalchemy.orm import joinedload, subqueryload
+    logs = (
+        db.session.query(SessionLog)
+        .options(
+            joinedload(SessionLog.session_type).joinedload(SessionType.role),
+            subqueryload(SessionLog.waitlists),
+        )
+        .join(SessionType, SessionLog.Type_ID == SessionType.id)
+        .join(MeetingRole, SessionType.role_id == MeetingRole.id)
+        .filter(
+            SessionLog.meeting_id.in_(meeting_ids),
+            MeetingRole.id == role_id,
+        )
+        .all()
+    )
+
+    if not logs:
+        return jsonify(meetings=[])
+
+    # Determine effective_needs_approval from club policy (1 query)
+    from app.models.club_rule import ClubRule
+    policy_record = ClubRule.query.filter_by(
+        club_id=club_id, rule_name='direct_booking_approval'
+    ).first()
+    policy_off = policy_record is not None and not policy_record.is_enabled
+
+    role_needs_approval = bool(logs[0].session_type.role.needs_approval) if (
+        logs[0].session_type and logs[0].session_type.role) else False
+    effective_needs_approval = role_needs_approval and not policy_off
+
+    # Detect if this role uses single-owner slots or shared ownership
+    role_has_single_owner = True
+    if logs[0].session_type and logs[0].session_type.role:
+        role_has_single_owner = logs[0].session_type.role.has_single_owner
+
+    # Bulk load owners via OwnerMeetingRoles — avoids N+1 from log.owner property (1 query)
+    from .models import OwnerMeetingRoles
+    log_ids = [log.id for log in logs]
+
+    if role_has_single_owner:
+        # Single-owner roles: OMR keyed by session_log_id
+        omr_rows = (
+            db.session.query(OwnerMeetingRoles.session_log_id, OwnerMeetingRoles.contact_id)
+            .filter(
+                OwnerMeetingRoles.session_log_id.in_(log_ids),
+                OwnerMeetingRoles.role_id == role_id,
+            )
+            .all()
+        )
+        owners_by_log = {}
+        for omr_slog_id, omr_contact_id in omr_rows:
+            owners_by_log.setdefault(omr_slog_id, []).append(omr_contact_id)
+        # Build owners_by_meeting as pass-through (same log per meeting for single-owner)
+        owners_by_meeting = {}
+        log_meeting_map = {log.id: log.meeting_id for log in logs}
+        for slog_id, contact_ids in owners_by_log.items():
+            mid = log_meeting_map.get(slog_id)
+            if mid:
+                owners_by_meeting.setdefault(mid, set()).update(contact_ids)
+    else:
+        # Shared roles: OMR keyed by meeting_id + role_id
+        omr_rows = (
+            db.session.query(OwnerMeetingRoles.meeting_id, OwnerMeetingRoles.contact_id)
+            .filter(
+                OwnerMeetingRoles.meeting_id.in_(meeting_ids),
+                OwnerMeetingRoles.role_id == role_id,
+            )
+            .all()
+        )
+        owners_by_meeting = {}
+        for omr_meeting_id, omr_contact_id in omr_rows:
+            owners_by_meeting.setdefault(omr_meeting_id, set()).add(omr_contact_id)
+
+    # Current user's contact id for self-booking check
+    contact = current_user.get_contact(club_id)
+    my_contact_id = contact.id if contact else None
+
+    # Group logs by meeting_id, pick the best slot (least occupied)
+    best_by_meeting = {}
+    for log in logs:
+        mid = log.meeting_id
+        owner_ids = list(owners_by_meeting.get(mid, set()))
+        has_owner = bool(owner_ids)
+        waitlist_contact_ids = [w.contact_id for w in log.waitlists]
+        waitlist_count = len(waitlist_contact_ids)
+        score = (1 if has_owner else 0) + waitlist_count
+        is_available = not has_owner
+        is_booked_by_me = bool(my_contact_id and (
+            my_contact_id in owner_ids or my_contact_id in waitlist_contact_ids
+        ))
+
+        if mid not in best_by_meeting:
+            best_by_meeting[mid] = {
+                'session_id': log.id,
+                'is_available': is_available,
+                'is_booked_by_me': is_booked_by_me,
+                'score': score,
+            }
+        else:
+            current_best = best_by_meeting[mid]
+            if score < current_best['score'] or (
+                score == current_best['score'] and is_available and not current_best['is_available']
+            ):
+                best_by_meeting[mid] = {
+                    'session_id': log.id,
+                    'is_available': is_available,
+                    'is_booked_by_me': is_booked_by_me,
+                    'score': score,
+                }
+            # Propagate booked_by_me across slots in the same meeting
+            if is_booked_by_me:
+                best_by_meeting[mid]['is_booked_by_me'] = True
+
+    result = []
+    for m in meetings:
+        if m.id not in best_by_meeting:
+            continue  # This meeting has no slot for this role
+        slot = best_by_meeting[m.id]
+        result.append({
+            'id': m.id,
+            'number': m.Meeting_Number,
+            'date': m.Meeting_Date.strftime('%b %d, %Y') if m.Meeting_Date else 'N/A',
+            'session_id': slot['session_id'],
+            'is_available': slot['is_available'],
+            'is_booked_by_me': slot['is_booked_by_me'],
+            'needs_approval': effective_needs_approval,
+        })
+
+    return jsonify(meetings=result)
 
 @planner_bp.route('/api/planner', methods=['POST'])
 @login_required

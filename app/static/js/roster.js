@@ -737,6 +737,21 @@ document.addEventListener("DOMContentLoaded", async function () {
       }
     });
   }
+
+  // Setup help info toggle
+  const rosterHelpToggle = document.getElementById("roster-help-toggle");
+  const rosterUsageInfo = document.getElementById("roster-usage-info");
+  if (rosterHelpToggle && rosterUsageInfo) {
+    rosterHelpToggle.addEventListener("click", function () {
+      if (rosterUsageInfo.style.display === "none") {
+        rosterUsageInfo.style.display = "flex";
+        rosterHelpToggle.style.opacity = "1";
+      } else {
+        rosterUsageInfo.style.display = "none";
+        rosterHelpToggle.style.opacity = "0.7";
+      }
+    });
+  }
 });
 
 // Helper to handle direct PDF export on mobile without showing modal

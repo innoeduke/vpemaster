@@ -12,155 +12,48 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/planner/planner-desktop.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/planner/planner-ipad.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/planner/planner-mobile.css') }}">
-<style>
-    .templates-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 20px;
-        margin-top: 15px;
-    }
-    .template-card {
-        background: var(--card-bg, #ffffff);
-        border: 1px solid var(--border-color, #e0e0e0);
-        border-radius: 8px;
-        padding: 20px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.04);
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .template-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(0,0,0,0.06);
-    }
-    .template-card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 12px;
-    }
-    .template-card-title {
-        font-size: 1.15rem;
-        font-weight: 600;
-        margin: 0;
-        color: var(--text-color, #333);
-    }
-    .template-card-actions {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 10px;
-        margin-top: 15px;
-    }
-
-    .enrollment-open-btn {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        text-align: center;
-        border-radius: 4px;
-        padding: 6px;
-    }
-
-    /* Delete enrollment confirmation modal */
-    .enrollment-confirm-modal {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.45);
-        backdrop-filter: blur(4px);
-        z-index: var(--z-modal);
-        display: none;
-        justify-content: center;
-        align-items: center;
-    }
-    .enrollment-confirm-modal.is-open {
-        display: flex;
-    }
-    .enrollment-confirm-modal .custom-modal-content {
-        background: #fff;
-        border-radius: 14px;
-        width: 92%;
-        max-width: 440px;
-        box-shadow: 0 18px 38px rgba(20, 20, 30, 0.18);
-        overflow: hidden;
-        animation: confirmModalIn 0.22s ease-out;
-    }
-    .enrollment-confirm-modal .custom-modal-body {
-        padding: 28px 26px 18px;
-        text-align: center;
-    }
-    .enrollment-confirm-modal .confirm-icon {
-        width: 58px;
-        height: 58px;
-        margin: 0 auto 14px;
-        border-radius: 50%;
-        background: #fdf0ee;
-        color: #b64339;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.45rem;
-    }
-    .enrollment-confirm-modal .confirm-title {
-        font-family: "Montserrat", sans-serif;
-        font-weight: 700;
-        font-size: 1.15rem;
-        color: #1a1a1a;
-        margin: 0 0 10px;
-    }
-    .enrollment-confirm-modal .confirm-sub {
-        font-family: "Inter", sans-serif;
-        font-size: 0.92rem;
-        color: #5b5b66;
-        margin: 0;
-        line-height: 1.5;
-    }
-    .enrollment-confirm-modal .confirm-sub strong {
-        color: #2a2a35;
-    }
-    .enrollment-confirm-modal .confirm-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-        padding: 14px 22px 22px;
-        border-top: 1px solid #f0ece4;
-        background: #fafafa;
-    }
-    @keyframes confirmModalIn {
-        from { transform: scale(0.94); opacity: 0; }
-        to   { transform: scale(1);    opacity: 1; }
-    }
-</style>
 {% endblock %}
  
 {% block content %}
 <div class="page-container">
     <h1><i class="fas fa-tasks"></i> {{ _('Programs & Planner') }}</h1>
 
-    <!-- View selection tabs -->
-    <div style="display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid var(--border-color, #eee); padding-bottom: 15px;">
-        <a href="{{ url_for('planner_bp.planner', view='mine') }}" class="btn btn-sm {% if view_mode == 'mine' %}btn-primary{% else %}btn-secondary{% endif %}">
-            <i class="fas fa-user"></i> {{ _('Mine') }}
-        </a>
-        <a href="{{ url_for('planner_bp.planner', view='mentor') }}" class="btn btn-sm {% if view_mode == 'mentor' %}btn-primary{% else %}btn-secondary{% endif %}">
-            <i class="fas fa-hands-helping"></i> {{ _('As Mentor') }}
-        </a>
-        {% if is_admin %}
-        <a href="{{ url_for('planner_bp.planner', view='all') }}" class="btn btn-sm {% if view_mode == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">
-            <i class="fas fa-users-cog"></i> {{ _('All Enrollments') }}
-        </a>
+    <!-- View selection & Date Range row -->
+    <div class="planner-header-row">
+        {% if has_any_enrollments %}
+        <div class="planner-tab-group">
+            <a href="{{ url_for('planner_bp.planner', view='mine') }}" class="btn btn-sm {% if view_mode == 'mine' %}btn-primary{% else %}btn-secondary{% endif %}">
+                <i class="fas fa-user"></i><span class="planner-tab-text"> {{ _('Mine') }}</span>
+            </a>
+            <a href="{{ url_for('planner_bp.planner', view='mentor') }}" class="btn btn-sm {% if view_mode == 'mentor' %}btn-primary{% else %}btn-secondary{% endif %}">
+                <i class="fas fa-hands-helping"></i><span class="planner-tab-text"> {{ _('As Mentor') }}</span>
+            </a>
+            {% if is_admin %}
+            <a href="{{ url_for('planner_bp.planner', view='all') }}" class="btn btn-sm {% if view_mode == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">
+                <i class="fas fa-users-cog"></i><span class="planner-tab-text"> {{ _('All Enrollments') }}</span>
+            </a>
+            {% endif %}
+        </div>
         {% endif %}
+        <div class="planner-date-group" style="{% if not has_any_enrollments %}margin-left: auto;{% endif %}">
+            <label class="filter-label" for="planner-date-range-btn">{{ _('Month Range:') }}</label>
+            {{ render_date_range_picker(
+                range_label=range_label,
+                action_url=url_for('planner_bp.planner'),
+                start_month=start_month,
+                end_month=end_month,
+                id_prefix='planner-date-range'
+            ) }}
+        </div>
     </div>
 
     <!-- Program Enrollments Section -->
+    {% if has_any_enrollments %}
     <div id="enrollments-section" style="margin-bottom: 40px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h3>{{ _('Program Enrollments') }}</h3>
             {% if is_admin %}
-                {% call btn('new', id='enroll-member-btn', attrs={'onclick': 'openEnrollmentModal()'}) %}<i class="fas fa-plus"></i> {{ _('New Enrollment') }}{% endcall %}
+                {% call btn('new', id='enroll-member-btn', attrs={'onclick': 'openEnrollmentModal()'}) %}<i class="fas fa-plus"></i> {{ _('New') }}{% endcall %}
             {% endif %}
         </div>
         
@@ -245,27 +138,12 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
     <!-- Standalone Meeting Plans Section -->
-    <div class="filters-control premium">
-        <div class="filter-row-premium">
-            <div class="filter-left">
-                <h3>{{ _('Meeting Plans') }}</h3>
-                <div class="filter-group" style="margin-top: 10px;">
-                    <label class="filter-label" for="planner-date-range-btn">{{ _('Month Range:') }}</label>
-                    {{ render_date_range_picker(
-                        range_label=range_label,
-                        action_url=url_for('planner_bp.planner'),
-                        start_month=start_month,
-                        end_month=end_month,
-                        id_prefix='planner-date-range'
-                    ) }}
-                </div>
-            </div>
-            <div class="filter-right" style="align-self: flex-end;">
-                {% call btn('new', id='add-plan-btn') %}<i class="fas fa-plus"></i> {{ _('New Task') }}{% endcall %}
-            </div>
-        </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; margin-top: 20px;">
+        <h3>{{ _('Meeting Plans') }}</h3>
+        {% call btn('new', id='add-plan-btn') %}<i class="fas fa-plus"></i> {{ _('New') }}{% endcall %}
     </div>
  
     <div class="planner-table-container">

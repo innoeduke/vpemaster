@@ -89,6 +89,7 @@ if (typeof window.CustomSelect === 'undefined') {
 		const selectedOpt = this.select.options[this.select.selectedIndex];
 		const text = selectedOpt ? selectedOpt.text : 'Select...';
 		let icon = selectedOpt ? selectedOpt.dataset.icon : null;
+		const iconColor = selectedOpt ? (selectedOpt.dataset.color || selectedOpt.dataset.iconColor || '') : '';
 
 		let innerHTML = '';
 		if (icon) {
@@ -99,7 +100,8 @@ if (typeof window.CustomSelect === 'undefined') {
 				// Has 'fa-...' but no 'fas '
 				icon = 'fas ' + icon;
 			}
-			innerHTML += `<i class="${icon} custom-select-icon"></i> `;
+			const colorStyle = iconColor ? ` style="color:${iconColor}"` : '';
+			innerHTML += `<i class="${icon} custom-select-icon"${colorStyle}></i> `;
 		}
 		innerHTML += `<span class="custom-select-text">${text}</span>`;
 		this.trigger.innerHTML = innerHTML;
@@ -140,6 +142,7 @@ if (typeof window.CustomSelect === 'undefined') {
 		// Check for data-code to bold it
 		const code = opt.dataset.code;
 		let icon = opt.dataset.icon;
+		const iconColor = opt.dataset.color || opt.dataset.iconColor || '';
 
 		let innerHTML = '';
 		if (icon) {
@@ -150,7 +153,8 @@ if (typeof window.CustomSelect === 'undefined') {
 				// Has 'fa-...' but no 'fas '
 				icon = 'fas ' + icon;
 			}
-			innerHTML += `<i class="${icon} custom-option-icon"></i> `;
+			const colorStyle = iconColor ? ` style="color:${iconColor}"` : '';
+			innerHTML += `<i class="${icon} custom-option-icon"${colorStyle}></i> `;
 		}
 
 		if (code) {

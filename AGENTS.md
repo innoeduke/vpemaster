@@ -34,6 +34,10 @@ and link it here.
 - **Empty states**: when a value is logically absent (e.g. a guest
   contact's home club), render an explicit empty marker like "—" in the
   UI. Do not default to a plausible-looking value.
+- **Avoid N+1 Queries**: When building APIs or backend endpoints fetching roles or slots across multiple meetings, avoid accessing lazy relationships or dynamic properties (such as `.owner` or `.waitlists`) in loops. Instead, pre-fetch relationship IDs (e.g. from table links like `OwnerMeetingRoles`) in a single bulk query and index them in memory.
+- **Jinja HTML Translations**: Jinja's translation block `{{ _('text') }}` escapes HTML tags by default. If a translation string contains HTML markup (like `<strong>` or `<a>`), always append the `| safe` filter (e.g., `{{ _('Select a <strong>role</strong>.') | safe }}`) to ensure the HTML renders correctly in the browser.
+- **Info / Help Boxes**: Avoid raw inline HTML blocks for info or instruction sections. Use the reusable component macro `render_info_box` from `components/info_box.html`. Use the club theme maroon color styling (`#772432`) for titles, borders, and icons, paired with the light pink background (`#faf0f1`).
 - **Per-feature decisions** (column placement, display format, scope)
   belong in the PR description, not the design doc. Design docs capture
   invariants, not implementation choices for a single feature.
+

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "components/meeting_filter.html" import render_meeting_filter %}
 {% from "components/custom_select.html" import render_custom_select %}
+{% from "components/info_box.html" import render_info_box %}
 
 {% block title %}{{ _('Roster') }}{% endblock %}
 
@@ -25,7 +26,10 @@
     data-server-now="{{ now.strftime('%Y-%m-%d %H:%M:%S') if now else '' }}"
 >
     <div class="roster-header-grid">
-        <h1><i class="fas fa-users"></i> {{ _('Meeting Roster') }}</h1>
+        <h1 style="display: inline-flex; align-items: center; gap: 8px;">
+            <i class="fas fa-users"></i> {{ _('Meeting Roster') }}
+            <i class="fas fa-info-circle" id="roster-help-toggle" style="font-size: 1.1rem; color: #772432; cursor: pointer; opacity: 0.7; transition: opacity 0.2s;" title="{{ _('How to use') }}"></i>
+        </h1>
         {% if selected_meeting %}
         <div class="kpi-container">
             <div class="attendance-kpi">
@@ -60,6 +64,14 @@
             </div>
         </div>
     </div>
+
+    {% call render_info_box('roster-usage-info', 'How to Use Roster & Check-In:') %}
+    <ul style="margin: 0; padding-left: 15px; color: #666; list-style-type: disc;">
+        <li>{{ _('<strong>Check-In:</strong> Click the check/circle icon next to a name in the list to check them in or out.') | safe }}</li>
+        <li>{{ _('<strong>Ticketing & Registration:</strong> Enter name, contact type, ticket type, quantity, and order number. Click <strong>Register</strong> to add them.') | safe }}</li>
+        <li>{{ _('<strong>Manage:</strong> Click on a contact\'s name to view/edit contact details, or use edit/delete buttons in the Actions column.') | safe }}</li>
+    </ul>
+    {% endcall %}
 
     {% if selected_meeting %}
     <div class="roster-main-content">

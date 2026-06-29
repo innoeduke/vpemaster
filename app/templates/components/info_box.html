@@ -1,0 +1,9 @@
+{% macro render_info_box(id, title) %}
+<div id="{{ id }}" class="usage-info-box" style="display: none; font-size: 0.85rem; line-height: 1.5; color: #555; background: #faf0f1; padding: 12px 14px; border-radius: 8px; border-left: 4px solid #772432; margin-bottom: 1.5rem; align-items: flex-start; gap: 10px; width: 100%; box-sizing: border-box;">
+    <i class="fas fa-info-circle" style="color: #772432; margin-top: 3px; font-size: 0.95rem; flex-shrink: 0;"></i>
+    <div>
+        <strong style="color: #772432; display: block; margin-bottom: 4px;">{{ _(title) }}</strong>
+        {{ caller() }}
+    </div>
+</div>
+{% endmacro %}

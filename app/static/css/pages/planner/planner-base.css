@@ -853,3 +853,121 @@ optgroup option {
   flex-shrink: 0;
   margin-left: auto;
 }
+
+/* Delete enrollment confirmation modal */
+.enrollment-confirm-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: var(--z-modal);
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+.enrollment-confirm-modal.is-open {
+  display: flex;
+}
+.enrollment-confirm-modal .custom-modal-content {
+  background: #fff;
+  border-radius: 14px;
+  width: 92%;
+  max-width: 440px;
+  box-shadow: 0 18px 38px rgba(20, 20, 30, 0.18);
+  overflow: hidden;
+  animation: confirmModalIn 0.22s ease-out;
+}
+.enrollment-confirm-modal .custom-modal-body {
+  padding: 28px 26px 18px;
+  text-align: center;
+}
+.enrollment-confirm-modal .confirm-icon {
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  background: #fdf0ee;
+  color: #b64339;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.45rem;
+}
+.enrollment-confirm-modal .confirm-title {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: #1a1a1a;
+  margin: 0 0 10px;
+}
+.enrollment-confirm-modal .confirm-sub {
+  font-family: "Inter", sans-serif;
+  font-size: 0.92rem;
+  color: #5b5b66;
+  margin: 0;
+  line-height: 1.5;
+}
+.enrollment-confirm-modal .confirm-sub strong {
+  color: #2a2a35;
+}
+.enrollment-confirm-modal .confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 22px 22px;
+  border-top: 1px solid #f0ece4;
+  background: #fafafa;
+}
+@keyframes confirmModalIn {
+  from { transform: scale(0.94); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+/* Planner View & Date Range Row */
+.planner-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  border-bottom: 1px solid var(--border-color, #eee);
+  padding-bottom: 15px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.planner-tab-group {
+  display: flex;
+  gap: 10px;
+}
+
+.planner-date-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.planner-date-group .filter-label {
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .planner-header-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .planner-date-group {
+    justify-content: space-between;
+  }
+  .planner-tab-group {
+    justify-content: space-between;
+  }
+  .planner-tab-group a {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+  }
+  .planner-tab-text {
+    display: none;
+  }
+}
