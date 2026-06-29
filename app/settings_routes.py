@@ -86,6 +86,18 @@ def settings():
             standard_officers = ['President', 'VPE', 'VPM', 'VPPR', 'Secretary', 'Treasurer', 'SAA', 'Immediate Past President']
             officer_roles = [r for r in all_roles if r.name in standard_officers]
 
+        role_order = {
+            'President': 0,
+            'VPE': 1,
+            'VPM': 2,
+            'VPPR': 3,
+            'Secretary': 4,
+            'Treasurer': 5,
+            'SAA': 6,
+            'Immediate Past President': 7
+        }
+        officer_roles.sort(key=lambda r: role_order.get(r.name, 999))
+
     # All Contacts: For autocomplete search
     all_contacts_data = []
     if club_id:
@@ -174,25 +186,6 @@ def add_excomm():
             end_date=datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else None
         )
         db.session.add(excomm)
-        db.session.flush() # Get ID
-        
-        # Handle Officers
-        officers_data = data.get('officers', {}) # {role_id: contact_id}
-        from .models import ExcommOfficer
-        
-        for role_id, contact_id in officers_data.items():
-            if contact_id:
-                db.session.add(ExcommOfficer(
-                    excomm_id=excomm.id,
-                    contact_id=int(contact_id),
-                    meeting_role_id=int(role_id)
-                ))
-                
-        # Sync is_officer flag for all contacts assigned to this excomm team
-        new_officer_ids = {int(contact_id) for contact_id in officers_data.values() if contact_id}
-        if new_officer_ids:
-            sync_club_officer_status(club_id, list(new_officer_ids))
-                
         db.session.commit()
         return jsonify(success=True, message="Excomm team added successfully")
         
@@ -224,33 +217,124 @@ def update_excomm():
         excomm.start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else None
         excomm.end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else None
         
-        # Update Officers
-        # Simple strategy: Delete all existing and re-add (or sync)
-        # To be safe and clean, let's sync.
-        # Get existing officers before deletion to sync their status later
-        old_officer_ids = {o.contact_id for o in ExcommOfficer.query.filter_by(excomm_id=excomm.id).all()}
-        
-        # Remove existing officers
-        ExcommOfficer.query.filter_by(excomm_id=excomm.id).delete()
-        
-        officers_data = data.get('officers', {}) # {role_id: contact_id}
-        for role_id, contact_id in officers_data.items():
-            if contact_id: # Only add if a contact is selected
-                db.session.add(ExcommOfficer(
-                    excomm_id=excomm.id,
-                    contact_id=int(contact_id),
-                    meeting_role_id=int(role_id)
-                ))
-        
-        # Sync is_officer flag for affected contacts
-        # Union of old and new officers to ensure removal works too
-        new_officer_ids = {int(contact_id) for contact_id in officers_data.values() if contact_id}
-        affected_contact_ids = old_officer_ids.union(new_officer_ids)
-        if affected_contact_ids:
-            sync_club_officer_status(club_id, list(affected_contact_ids))
-        
         db.session.commit()
         return jsonify(success=True, message="Excomm team updated successfully")
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+
+@settings_bp.route('/settings/excomm/officer/add', methods=['POST'])
+@login_required
+@authorized_club_required
+def add_excomm_officer():
+    if not is_authorized(Permissions.SETTINGS_VIEW):
+        return jsonify(success=False, message="Permission denied"), 403
+        
+    club_id = get_current_club_id()
+    data = request.json
+    excomm_id = data.get('excomm_id')
+    role_id = data.get('role_id')
+    contact_id = data.get('contact_id')
+    is_assistant = bool(data.get('is_assistant'))
+    
+    try:
+        excomm = db.session.get(ExComm, excomm_id)
+        if not excomm or excomm.club_id != club_id:
+            return jsonify(success=False, message="Excomm not found"), 404
+            
+        if not is_assistant:
+            existing_primary = ExcommOfficer.query.filter_by(
+                excomm_id=excomm_id,
+                meeting_role_id=role_id,
+                is_assistant=False
+            ).first()
+            if existing_primary:
+                return jsonify(success=False, message="This role already has a primary officer assigned. Mark as assistant or edit the existing officer."), 400
+                
+        officer = ExcommOfficer(
+            excomm_id=int(excomm_id),
+            meeting_role_id=int(role_id),
+            contact_id=int(contact_id),
+            is_assistant=is_assistant
+        )
+        db.session.add(officer)
+        sync_club_officer_status(club_id, [int(contact_id)])
+        
+        db.session.commit()
+        return jsonify(success=True, message="Officer added successfully")
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+
+@settings_bp.route('/settings/excomm/officer/update', methods=['POST'])
+@login_required
+@authorized_club_required
+def update_excomm_officer():
+    if not is_authorized(Permissions.SETTINGS_VIEW):
+        return jsonify(success=False, message="Permission denied"), 403
+        
+    club_id = get_current_club_id()
+    data = request.json
+    officer_id = data.get('id')
+    role_id = data.get('role_id')
+    contact_id = data.get('contact_id')
+    is_assistant = bool(data.get('is_assistant'))
+    
+    try:
+        officer = db.session.get(ExcommOfficer, officer_id)
+        if not officer or officer.excomm.club_id != club_id:
+            return jsonify(success=False, message="Officer link not found"), 404
+            
+        old_contact_id = officer.contact_id
+        
+        if not is_assistant:
+            existing_primary = ExcommOfficer.query.filter(
+                ExcommOfficer.excomm_id == officer.excomm_id,
+                ExcommOfficer.meeting_role_id == role_id,
+                ExcommOfficer.is_assistant == False,
+                ExcommOfficer.id != officer_id
+            ).first()
+            if existing_primary:
+                return jsonify(success=False, message="This role already has a primary officer assigned. Mark as assistant or edit the existing officer."), 400
+                
+        officer.meeting_role_id = int(role_id)
+        officer.contact_id = int(contact_id)
+        officer.is_assistant = is_assistant
+        
+        sync_club_officer_status(club_id, list({old_contact_id, int(contact_id)}))
+        
+        db.session.commit()
+        return jsonify(success=True, message="Officer updated successfully")
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+
+@settings_bp.route('/settings/excomm/officer/delete/<int:id>', methods=['POST'])
+@login_required
+@authorized_club_required
+def delete_excomm_officer(id):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
+        return jsonify(success=False, message="Permission denied"), 403
+        
+    club_id = get_current_club_id()
+    
+    try:
+        officer = db.session.get(ExcommOfficer, id)
+        if not officer or officer.excomm.club_id != club_id:
+            return jsonify(success=False, message="Officer assignment not found"), 404
+            
+        contact_id = officer.contact_id
+        db.session.delete(officer)
+        sync_club_officer_status(club_id, [contact_id])
+        
+        db.session.commit()
+        return jsonify(success=True, message="Officer assignment removed successfully")
         
     except Exception as e:
         db.session.rollback()

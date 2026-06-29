@@ -201,6 +201,12 @@
           </a>
         </li>
         {% endif %}
+        <li class="{% if request.endpoint and request.endpoint == 'about_club_bp.excomm_page' %}active{% endif %}">
+          <a href="{{ url_for('about_club_bp.excomm_page') }}" title="{{ _('View club excomm history and teams') }}">
+            <i class="fas fa-sitemap nav-icon"></i>
+            <span>{{ _('Excomm') }}</span>
+          </a>
+        </li>
         {% if is_authorized(Permissions.ROSTER_VIEW) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
           <a href="{{ url_for('contacts_bp.show_contacts') }}" title="{{ _('Manage club contacts and members') }}">
@@ -449,6 +455,7 @@
             request.endpoint.startswith('settings_bp') or
             request.endpoint.startswith('clubs_bp') or
             request.endpoint.startswith('program_bp') or
+            request.endpoint == 'about_club_bp.excomm_page' or
             request.endpoint == 'speech_logs_bp.show_project_view'
           ) %}
           {% if is_authorized(Permissions.MEMBERS_MANAGE) or is_authorized(Permissions.ROSTER_VIEW) or (is_authorized(Permissions.SETTINGS_VIEW) and current_user.primary_role_name != 'Guest') or is_authorized(Permissions.PROGRAMS_MANAGE) %}
@@ -465,8 +472,13 @@
                 </a>
               </li>
               {% endif %}
+              <li class="{% if request.endpoint and request.endpoint == 'about_club_bp.excomm_page' %}submenu-active{% endif %}">
+                <a href="{{ url_for('about_club_bp.excomm_page') }}">
+                  <i class="fas fa-sitemap"></i> {{ _('Excomm') }}
+                </a>
+              </li>
               {% if is_authorized(Permissions.ROSTER_VIEW) %}
-              <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}submenu-active{% endif %}">
+              <li class="{% if request.endpoint and request.endpoint and request.endpoint.startswith('contacts_bp') %}submenu-active{% endif %}">
                 <a href="{{ url_for('contacts_bp.show_contacts') }}">
                   <i class="fas fa-address-book"></i> {{ _('Contacts') }}
                 </a>

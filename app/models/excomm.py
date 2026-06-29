@@ -35,10 +35,26 @@ class ExComm(db.Model):
         
         # Populate from association table
         for officer_link in self.officers:
-            role_name = officer_link.meeting_role.name
-            officers[role_name] = officer_link.contact
+            if not officer_link.is_assistant:
+                role_name = officer_link.meeting_role.name
+                officers[role_name] = officer_link.contact
             
         return officers
+
+    def get_officers_json(self):
+        """
+        Returns list of all officer links.
+        """
+        res = []
+        for o in self.officers:
+            res.append({
+                'role_id': o.meeting_role_id,
+                'role_name': o.meeting_role.name,
+                'contact_id': o.contact_id,
+                'contact_name': o.contact.Name,
+                'is_assistant': o.is_assistant
+            })
+        return res
     
     def get_officer_by_role(self, role_name):
         """

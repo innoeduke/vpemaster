@@ -1,0 +1,655 @@
+/* Excomm Page Stylesheet */
+
+.excomm-page-container {
+  display: flex;
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  min-height: calc(100vh - 120px);
+}
+
+/* Sidebar navigation */
+.excomm-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sidebar-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.02);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.sidebar-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #334155;
+  font-weight: 700;
+}
+
+.btn-new-team {
+  font-size: 0.8rem;
+  padding: 5px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 6px;
+}
+
+.term-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 550px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.term-item {
+  display: block;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: #ffffff;
+  transition: all 0.25s ease;
+  position: relative;
+  cursor: pointer;
+}
+
+.term-item:hover {
+  background: #f1f5f9;
+  transform: translateX(2px);
+}
+
+.term-item.active {
+  background: #ffffff;
+  border-color: rgba(119, 36, 50, 0.25);
+  box-shadow: 0 2px 8px rgba(119, 36, 50, 0.08);
+}
+
+.term-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 15%;
+  height: 70%;
+  width: 4px;
+  background-color: #772432;
+  border-radius: 0 4px 4px 0;
+}
+
+.term-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.term-code {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #772432;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.term-name {
+  font-size: 0.8rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Main Body Content */
+.excomm-main {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.main-header-card {
+  background: #ffffff;
+  border: 1px solid rgba(228, 232, 236, 0.8);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.main-header-info h1 {
+  margin: 0 0 6px 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.main-header-info p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* Contact Cards Grid */
+.cards-grid-title {
+  margin: 0 0 15px 0;
+  font-size: 1.15rem;
+  color: #555;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+/* Glassmorphic Contact Card */
+.officer-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(228, 232, 236, 0.8);
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.officer-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.07);
+  border-color: rgba(119, 36, 50, 0.15);
+}
+
+.officer-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: var(--role-accent, #772432);
+}
+
+/* Card Avatar Section */
+.avatar-container {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.avatar-circle {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--role-bg-light, #faf0f1);
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-initials {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--role-accent, #772432);
+  letter-spacing: -1px;
+  text-transform: uppercase;
+}
+
+/* Card details */
+.officer-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 4px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.dtm-badge {
+  background-color: #ee9b00;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+  line-height: 1;
+}
+
+/* Position Badges */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  margin-bottom: 15px;
+  background-color: var(--role-bg-light, #faf0f1);
+  color: var(--role-accent, #772432);
+  border: 1px solid var(--role-border-light, rgba(119, 36, 50, 0.15));
+}
+
+.role-badge.assistant-badge {
+  background-color: transparent;
+  border-style: dashed;
+  font-weight: 600;
+}
+
+/* Details list */
+.officer-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+  text-decoration: none;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+a.detail-item:hover {
+  color: #772432;
+}
+
+.detail-item i {
+  width: 16px;
+  color: var(--role-accent, #772432);
+  opacity: 0.8;
+}
+
+/* Pathway tag */
+.pathway-tag {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #f0f4f8;
+  color: #475a70;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 5px;
+}
+
+/* Bio description */
+.officer-bio {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(228, 232, 236, 0.6);
+  font-size: 0.8rem;
+  color: #777;
+  font-style: italic;
+  width: 100%;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Empty State styling */
+.empty-state {
+  text-align: center;
+  padding: 50px 30px;
+  background: #ffffff;
+  border: 1px dashed rgba(119, 36, 50, 0.2);
+  border-radius: 12px;
+}
+
+.empty-state i {
+  font-size: 3rem;
+  color: rgba(119, 36, 50, 0.25);
+  margin-bottom: 15px;
+}
+
+.empty-state h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.empty-state p {
+  color: #666;
+  margin: 0 0 20px 0;
+}
+
+/* Role Specific Variables */
+.role-president {
+  --role-accent: #772432;
+  --role-bg-light: #faf0f1;
+  --role-border-light: rgba(119, 36, 50, 0.15);
+}
+
+.role-vpe {
+  --role-accent: #004165;
+  --role-bg-light: #e6f0f6;
+  --role-border-light: rgba(0, 65, 101, 0.15);
+}
+
+.role-vpm {
+  --role-accent: #005f73;
+  --role-bg-light: #e6f5f7;
+  --role-border-light: rgba(0, 95, 115, 0.15);
+}
+
+.role-vppr {
+  --role-accent: #0a9396;
+  --role-bg-light: #e7f7f7;
+  --role-border-light: rgba(10, 147, 150, 0.15);
+}
+
+.role-secretary {
+  --role-accent: #9b2226;
+  --role-bg-light: #fdf0f0;
+  --role-border-light: rgba(155, 34, 38, 0.15);
+}
+
+.role-treasurer {
+  --role-accent: #b27a00;
+  --role-bg-light: #fdf8e6;
+  --role-border-light: rgba(178, 122, 0, 0.15);
+}
+
+.role-saa {
+  --role-accent: #ca6702;
+  --role-bg-light: #fdf3e6;
+  --role-border-light: rgba(202, 103, 2, 0.15);
+}
+
+.role-ipp {
+  --role-accent: #5c677d;
+  --role-bg-light: #f0f1f5;
+  --role-border-light: rgba(92, 103, 125, 0.15);
+}
+
+/* Dynamic Assistant Fields Grid inside Modal */
+.assistant-field-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.remove-assistant-btn {
+  background: none;
+  border: none;
+  color: #d9534f;
+  cursor: pointer;
+  padding: 5px;
+  font-size: 1rem;
+  line-height: 1;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+}
+
+.remove-assistant-btn:hover {
+  color: #b52b27;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .excomm-page-container {
+    flex-direction: column;
+  }
+  .excomm-sidebar {
+    width: 100%;
+  }
+  .term-list {
+    max-height: 200px;
+  }
+}
+
+/* Hover Action Buttons Group on Cards */
+.officer-card-actions {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transform: translateY(-5px);
+  transition: all 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.officer-card:hover .officer-card-actions {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Redesigned Premium Modals */
+.excomm-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: var(--z-modal);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+}
+
+.excomm-modal-overlay.active {
+  opacity: 1;
+  display: flex;
+}
+
+.excomm-modal-box {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 480px;
+  padding: 0;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  transform: scale(0.95) translateY(15px);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+}
+
+.excomm-modal-overlay.active .excomm-modal-box {
+  transform: scale(1) translateY(0);
+}
+
+.excomm-modal-header {
+  background: linear-gradient(135deg, #772432, #9b2226);
+  color: #ffffff;
+  padding: 18px 24px;
+  font-weight: 700;
+  font-size: 1.2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 16px 16px 0 0;
+}
+
+.excomm-modal-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.excomm-modal-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: color 0.2s;
+  line-height: 1;
+  padding: 0;
+}
+
+.excomm-modal-close:hover {
+  color: #ffffff;
+}
+
+.excomm-modal-body {
+  padding: 24px;
+}
+
+.excomm-modal-body label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #444;
+  font-size: 0.9rem;
+}
+
+.excomm-modal-body .form-control {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #333;
+  background-color: #fafbfc;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.excomm-modal-body .form-control:focus {
+  outline: none;
+  border-color: #772432;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(119, 36, 50, 0.12);
+}
+
+.excomm-modal-body .form-group {
+  margin-bottom: 18px;
+}
+
+.excomm-modal-body .form-group:last-child {
+  margin-bottom: 0;
+}
+
+.excomm-modal-footer {
+  padding: 16px 24px 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid #edf2f7;
+  background-color: #fafbfc;
+  border-radius: 0 0 16px 16px;
+}
+
+.excomm-modal-footer .btn {
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: 8px;
+}
+
+.form-group-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  cursor: pointer;
+}
+
+.form-group-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #772432;
+  cursor: pointer;
+}
+
+.form-group-checkbox label {
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
+/* Button Macro - Outlined New Button Variant */
+.btn.btn-new-outline {
+  background: #ffffff;
+  color: #772432;
+  border: 1px solid rgba(119, 36, 50, 0.25);
+  box-shadow: 0 1px 2px rgba(43, 11, 22, 0.04);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 6px;
+}
+
+.btn.btn-new-outline:hover:not(:disabled) {
+  background: #fbf4f5;
+  color: #5a1a26;
+  border-color: rgba(119, 36, 50, 0.45);
+  box-shadow: 0 4px 10px rgba(119, 36, 50, 0.08);
+}
+
+.btn.btn-new-outline:disabled {
+  background: #f8fafc;
+  color: #94a3b8;
+  border-color: #e2e8f0;
+  cursor: not-allowed;
+  box-shadow: none;
+}

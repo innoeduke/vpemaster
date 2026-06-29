@@ -9,14 +9,16 @@ class ExcommOfficer(db.Model):
     contact_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'), nullable=False)
     meeting_role_id = db.Column(db.Integer, db.ForeignKey('meeting_roles.id'), nullable=False)
     
+    is_assistant = db.Column(db.Boolean, default=False, nullable=False)
+    
     # Relationships
     excomm = db.relationship('ExComm', back_populates='officers')
     contact = db.relationship('Contact', backref='officer_roles')
     meeting_role = db.relationship('MeetingRole')
     
     __table_args__ = (
-        db.UniqueConstraint('excomm_id', 'meeting_role_id', name='uq_excomm_role'),
+        db.UniqueConstraint('excomm_id', 'contact_id', 'meeting_role_id', name='uq_excomm_contact_role'),
     )
 
     def __repr__(self):
-        return f'<ExcommOfficer {self.excomm_id} {self.meeting_role.name}: {self.contact.Name}>'
+        return f'<ExcommOfficer {self.excomm_id} {self.meeting_role.name}: {self.contact.Name}{" (Asst)" if self.is_assistant else ""}>'

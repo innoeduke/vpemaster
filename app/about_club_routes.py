@@ -250,3 +250,104 @@ def upload_club_logo():
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
 
+
+@about_club_bp.route('/excomm')
+@login_required
+@authorized_club_required
+def excomm_page():
+    """Renders the Excomm page showing past terms and contact cards."""
+    club_id = get_current_club_id()
+    club = db.session.get(Club, club_id) if club_id else Club.query.first()
+    
+    # 1. Fetch all excomm terms for the club, sorted by start_date descending
+    # Eager-load officers and related roles/contacts to prevent N+1 queries in sidebar serialization
+    excomm_list = []
+    if club:
+        excomm_list = ExComm.query.options(
+            db.joinedload(ExComm.officers).joinedload(ExcommOfficer.contact),
+            db.joinedload(ExComm.officers).joinedload(ExcommOfficer.meeting_role)
+        ).filter_by(club_id=club.id).order_by(ExComm.start_date.desc()).all()
+        
+    # 2. Identify the selected Excomm term
+    selected_excomm = None
+    term_id = request.args.get('term_id', type=int)
+    
+    if term_id:
+        selected_excomm = ExComm.query.filter_by(id=term_id, club_id=club.id).first()
+    elif club and club.current_excomm_id:
+        selected_excomm = ExComm.query.get(club.current_excomm_id)
+        
+    # Fallback to the most recent term if none selected/current
+    if not selected_excomm and excomm_list:
+        selected_excomm = excomm_list[0]
+        
+    # 3. Fetch officer roles and sort them in the correct order
+    all_roles = MeetingRole.get_all_for_club(club.id if club else None)
+    officer_roles = [r for r in all_roles if r.type == 'officer']
+    if not officer_roles:
+        standard_officers = ['President', 'VPE', 'VPM', 'VPPR', 'Secretary', 'Treasurer', 'SAA', 'Immediate Past President']
+        officer_roles = [r for r in all_roles if r.name in standard_officers]
+        
+    role_order = {
+        'President': 0,
+        'VPE': 1,
+        'VPM': 2,
+        'VPPR': 3,
+        'Secretary': 4,
+        'Treasurer': 5,
+        'SAA': 6,
+        'Immediate Past President': 7
+    }
+    officer_roles.sort(key=lambda r: role_order.get(r.name, 999))
+    
+    # 4. Group and sort the actual officers for the selected term
+    primary_officers = []
+    assistant_officers = []
+    
+    if selected_excomm:
+        # Group by role name
+        role_to_officers = {}
+        # Fetch officer assignments with eager loaded contacts/roles to prevent N+1 queries
+        officer_links = ExcommOfficer.query.options(
+            db.joinedload(ExcommOfficer.contact),
+            db.joinedload(ExcommOfficer.meeting_role)
+        ).filter_by(excomm_id=selected_excomm.id).all()
+        for o in officer_links:
+            role_name = o.meeting_role.name
+            if role_name not in role_to_officers:
+                role_to_officers[role_name] = []
+            role_to_officers[role_name].append(o)
+            
+        # Add primary officers in sorted role order
+        for role in officer_roles:
+            role_links = role_to_officers.get(role.name, [])
+            primary = next((o for o in role_links if not o.is_assistant), None)
+            if primary:
+                primary_officers.append(primary)
+                
+        # Add assistant officers in sorted role order
+        for role in officer_roles:
+            role_links = role_to_officers.get(role.name, [])
+            assistants = [o for o in role_links if o.is_assistant]
+            assistant_officers.extend(assistants)
+            
+    # 5. Fetch all contacts for ExComm officer selection
+    all_contacts = []
+    if club:
+        all_contacts = Contact.query.join(ContactClub).filter(
+            ContactClub.club_id == club.id
+        ).order_by(Contact.Name.asc()).all()
+    contacts_list = [{'id': c.id, 'Name': c.Name} for c in all_contacts]
+    
+    return render_template(
+        'excomm.html',
+        club=club,
+        excomm_list=excomm_list,
+        selected_excomm=selected_excomm,
+        primary_officers=primary_officers,
+        assistant_officers=assistant_officers,
+        officer_roles=officer_roles,
+        contacts_list=contacts_list,
+        Permissions=Permissions
+    )
+

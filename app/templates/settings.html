@@ -24,9 +24,6 @@
       <button class="nav-item active" onclick="openTab(event, 'modules-settings')">
         {{ _('Modules') }}
       </button>
-      <button class="nav-item" onclick="openTab(event, 'excomm-settings')">
-        {{ _('Excomm') }}
-      </button>
       <button class="nav-item" onclick="openTab(event, 'agenda-settings')">
         {{ _('Roles') }} 
       </button>
@@ -97,69 +94,6 @@
       </div>
     </div>
   </div>
-
-  <div id="excomm-settings" class="tab-content">
-      <div class="settings-header">
-        <h2>{{ _('Excomm Management') }}</h2>
-        <div class="button-group">
-          <button id="add-excomm-btn" class="btn btn-success" onclick="openExcommModal()">
-            <i class="fas fa-plus"></i> {{ _('New') }}
-          </button>
-        </div>
-      </div>
-      <div class="table-container">
-        <table id="excomm-table">
-          <thead>
-            <tr>
-              <th>{{ _('ID') }}</th>
-              <th>{{ _('Term') }}</th>
-              <th>{{ _('Team Name') }}</th>
-              <!-- Dynamic Officer Columns -->
-              {% for role in officer_roles %}
-                <th>{{ _('IPP') if role.name == 'Immediate Past President' else _(role.name) }}</th>
-              {% endfor %}
-              <th>{{ _('Actions') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for exc in excomm_history %}
-              <tr data-id="{{ exc.id }}" data-start="{{ exc.start_date }}" data-end="{{ exc.end_date }}">
-                <td>{{ exc.id }}</td>
-                <td>
-                  {{ exc.excomm_term }}
-                  {% if exc.club.current_excomm_id == exc.id %}
-                    <span class="badge bg-success ms-2">{{ _('Current') }}</span>
-                  {% endif %}
-                </td>
-                <td>{{ exc.excomm_name or '' }}</td>
-                
-                {% set officers = exc.get_officers() %}
-                {% for role in officer_roles %}
-                  <td data-role-id="{{ role.id }}" data-contact-id="{{ officers.get(role.name).id if officers.get(role.name) else '' }}">
-                    {% if officers.get(role.name) %}
-                      {{ officers.get(role.name).Name }}
-                    {% else %}
-                      <span class="text-muted">-</span>
-                    {% endif %}
-                  </td>
-                {% endfor %}
-                
-                <td>
-                  <div class="action-links">
-                    <button class="edit-btn icon-btn" onclick="openEditExcommModal(this)" title="{{ _('Edit') }}">
-                      <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="delete-btn icon-btn" onclick="openDeleteModal('/settings/excomm/delete/{{ exc.id }}', 'Excomm Team')" title="{{ _('Delete') }}">
-                      <i class="fas fa-trash-alt"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
 
     <div id="sessions" class="tab-content">
       <!-- Standard Sessions (left) + Custom Sessions (right) — side by side -->
@@ -734,60 +668,6 @@
   </div>
 </div>
 
-<!-- Excomm Modal -->
-<div id="excomm-modal" class="modal" style="display: none;">
-  <div class="modal-content">
-    <span class="close" onclick="closeExcommModal()">&times;</span>
-    <h2 id="excomm-modal-title" style="margin-top: 0;">{{ _('Add/Edit Excomm Team') }}</h2>
-    <form id="excomm-form">
-      <input type="hidden" id="excomm-id" name="id">
-      
-      <div class="form-group compact-form">
-        <label for="excomm-term">{{ _('Term:') }}</label>
-        <input type="text" id="excomm-term" name="term" required class="form-control" placeholder="e.g. 26H1">
-      </div>
-      
-      <div class="form-group compact-form">
-        <label for="excomm-name">{{ _('Team Name:') }}</label>
-        <input type="text" id="excomm-name" name="name" class="form-control" placeholder="e.g. The Dream Team">
-      </div>
-      
-      <fieldset class="modal-frame">
-        <legend>{{ _('Duration:') }}</legend>
-        <div class="form-group-row" style="display: flex; gap: 15px;">
-          <div class="form-group compact-form" style="flex: 1;">
-            <label for="excomm-start">{{ _('Start Date:') }}</label>
-            <input type="date" id="excomm-start" name="start_date" required class="form-control">
-          </div>
-          <div class="form-group compact-form" style="flex: 1;">
-            <label for="excomm-end">{{ _('End Date:') }}</label>
-            <input type="date" id="excomm-end" name="end_date" required class="form-control">
-          </div>
-        </div>
-      </fieldset>
-      
-      <fieldset class="modal-frame">
-        <legend>{{ _('Officers:') }}</legend>
-        <div class="officer-fields-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-          {% for role in officer_roles %}
-            <div class="form-group compact-form">
-              <label for="officer-search-{{ role.id }}">{{ _('IPP') if role.name == 'Immediate Past President' else _(role.name) }}:</label>
-              <div class="autocomplete-container" style="position: relative;">
-                <input type="text" id="officer-search-{{ role.id }}" class="form-control officer-search-input" placeholder="{{ _('Search member...') }}">
-                <input type="hidden" id="officer-role-{{ role.id }}" name="officer_{{ role.id }}" class="officer-select">
-              </div>
-            </div>
-          {% endfor %}
-        </div>
-      </fieldset>
-
-      <div class="modal-buttons">
-        <button type="button" class="btn btn-danger" onclick="closeExcommModal()">{{ _('Cancel') }}</button>
-        <button type="submit" class="btn btn-success">{{ _('Save') }}</button>
-      </div>
-    </form>
-  </div>
-</div>
 
 <script>
     window.__translations = window.__translations || {};
@@ -852,6 +732,6 @@
 <script defer src="{{ url_for('static', filename='js/settings.js') }}?v={{ 'js/settings.js' | static_version }}"></script>
 <script src="{{ url_for('static', filename='js/autocomplete.js') }}"></script>
 <script src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>
-<script src="{{ url_for('static', filename='js/settings_excomm.js') }}"></script>
+
 <script src="{{ url_for('static', filename='js/settings_awards.js') }}"></script>
 {% endblock %}
