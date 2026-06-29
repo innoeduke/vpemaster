@@ -585,7 +585,9 @@
 
 .page-container .cell-name {
 	font-weight: 700;
-	white-space: nowrap;
+	white-space: normal;
+	overflow-wrap: break-word;
+	word-break: break-word;
 	max-width: 320px;
 }
 

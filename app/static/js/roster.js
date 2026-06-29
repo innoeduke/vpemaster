@@ -794,9 +794,13 @@ async function handleDirectMobilePDF(btn) {
 }
 
 // Populate the print pages (shared by modal and direct export)
-function createPrintPage(titlePrefix, meetingNum, formattedDate, regionText, clubLogoUrl, rows, headerTitle) {
+function createPrintPage(titlePrefix, meetingNum, formattedDate, regionText, clubLogoUrl, rows, headerTitle, options) {
+  options = options || {};
+  const showOrderNum = !!options.showOrderNum;
+
   const pageDiv = document.createElement('div');
   pageDiv.className = 'print-page';
+  if (showOrderNum) pageDiv.dataset.showOrderNum = '1';
 
   // Page Header
   const headerDiv = document.createElement('div');
@@ -829,11 +833,15 @@ function createPrintPage(titlePrefix, meetingNum, formattedDate, regionText, clu
   pageDiv.appendChild(headerDiv);
 
   const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+  const orderHeader = isChinese ? "#" : "#";
   const nameHeader = isChinese ? "姓名" : "Name";
   const ticketHeader = isChinese ? "门票" : "Ticket";
   const priceHeader = isChinese ? "票价" : "Ticket Price";
   const rolesHeader = isChinese ? "角色" : "Roles";
   const qtyHeader = isChinese ? "数量" : "Qty";
+
+  // Column widths: with order col (Name 164, Order 54) vs without (Name 200). Total = 714px.
+  const nameWidth = showOrderNum ? 164 : 200;
 
   // Page Table
   const table = document.createElement('table');
@@ -841,7 +849,8 @@ function createPrintPage(titlePrefix, meetingNum, formattedDate, regionText, clu
   table.innerHTML = `
     <thead>
         <tr>
-            <th style="width: 200px;">${nameHeader}</th>
+            <th style="width: ${nameWidth}px;">${nameHeader}</th>
+            ${showOrderNum ? `<th style="width: 54px; text-align: center; white-space: nowrap;">${orderHeader}</th>` : ''}
             <th style="width: 130px;">${ticketHeader}</th>
             <th style="width: 100px;">${priceHeader}</th>
             <th style="width: 230px;">${rolesHeader}</th>
@@ -927,6 +936,7 @@ function populateExportPages() {
       const tr = document.createElement("tr");
 
       // Column order: Name | Ticket | Ticket Price | Roles | Qty
+      // (Order column is injected after Name in paginateGroup for paid rows only)
 
       const tdName = document.createElement("td");
       if (nameCell) {
@@ -966,6 +976,8 @@ function populateExportPages() {
         const orderVal = row.dataset.order;
         const isOrderNull = (orderVal === undefined || orderVal === null || orderVal === "" || orderVal === "None" || orderVal === "null");
         if (!isOrderNull) {
+          // Store the actual order number for display in the paid roster column
+          tr._orderNum = orderVal;
           paidRows.push(tr);
         } else {
           unpaidRows.push(tr);
@@ -993,11 +1005,15 @@ function populateExportPages() {
       const tbody = table.querySelector('tbody');
       const headerDiv = pageDiv.querySelector('.print-header');
       const maxHeight = 1010;
+      const hasOrderCol = pageDiv.dataset.showOrderNum === '1';
+      const emptyCells = hasOrderCol
+        ? '<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>'
+        : '<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>';
 
       while (true) {
         const emptyTr = document.createElement('tr');
         emptyTr.className = 'print-empty-row';
-        emptyTr.innerHTML = '<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>';
+        emptyTr.innerHTML = emptyCells;
         tbody.appendChild(emptyTr);
 
         const currentHeight = headerDiv.offsetHeight + 20 + table.offsetHeight;
@@ -1009,11 +1025,35 @@ function populateExportPages() {
     }
 
     // Helper to paginate a list of rows under a specific group title
-    function paginateGroup(rows, groupHeaderTitle) {
+    // options: { showOrderNum: bool }
+    function paginateGroup(rows, groupHeaderTitle, options) {
+      options = options || {};
+      const showOrderNum = !!options.showOrderNum;
+
+      // For paid roster, inject the actual order number <td> after the Name cell.
+      if (showOrderNum) {
+        rows.forEach((row) => {
+          // Remove any previously injected order cell (idempotent)
+          const existing = row.querySelector('.print-order-cell');
+          if (existing) existing.remove();
+          const tdOrder = document.createElement('td');
+          tdOrder.className = 'print-order-cell';
+          tdOrder.style.cssText = 'text-align: center; color: #555; font-size: 13px; white-space: nowrap;';
+          tdOrder.textContent = row._orderNum || '';
+          // Insert after the first cell (Name)
+          const nameCell = row.cells[0];
+          if (nameCell && nameCell.nextSibling) {
+            row.insertBefore(tdOrder, nameCell.nextSibling);
+          } else {
+            row.appendChild(tdOrder);
+          }
+        });
+      }
+
       if (rows.length === 0) {
         const pageDiv = createPrintPage(
           null, meetingNum, formattedDate, regionText, clubLogoUrl, [],
-          groupHeaderTitle
+          groupHeaderTitle, options
         );
         pagesContainer.appendChild(pageDiv);
         padPageWithEmptyRows(pageDiv);
@@ -1022,7 +1062,7 @@ function populateExportPages() {
 
       let pageDiv = createPrintPage(
         null, meetingNum, formattedDate, regionText, clubLogoUrl, [],
-        groupHeaderTitle
+        groupHeaderTitle, options
       );
       pagesContainer.appendChild(pageDiv);
 
@@ -1050,7 +1090,7 @@ function populateExportPages() {
           // Start a new page
           pageDiv = createPrintPage(
             null, meetingNum, formattedDate, regionText, clubLogoUrl, [],
-            groupHeaderTitle
+            groupHeaderTitle, options
           );
           pagesContainer.appendChild(pageDiv);
 
@@ -1073,7 +1113,7 @@ function populateExportPages() {
       paginateGroup([], isChinese ? "会议花名册" : "Meeting Roster");
     } else {
       if (paidRows.length > 0) {
-        paginateGroup(paidRows, isChinese ? "已付费名单" : "Paid Roster");
+        paginateGroup(paidRows, isChinese ? "已付费名单" : "Paid Roster", { showOrderNum: true });
       }
       if (unpaidRows.length > 0) {
         paginateGroup(unpaidRows, isChinese ? "未付费名单" : "Unpaid Roster");
