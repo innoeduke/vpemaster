@@ -606,6 +606,19 @@ a.detail-item:hover {
   border-radius: 8px;
 }
 
+.excomm-modal-footer .btn-danger {
+  background-color: transparent !important;
+  border: 1px solid #d2d6dc !important;
+  color: #4a5568 !important;
+  box-shadow: none !important;
+}
+
+.excomm-modal-footer .btn-danger:hover {
+  background-color: #f7fafc !important;
+  border-color: #cbd5e0 !important;
+  color: #2d3748 !important;
+}
+
 .form-group-checkbox {
   display: flex;
   align-items: center;
