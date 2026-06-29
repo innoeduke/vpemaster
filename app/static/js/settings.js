@@ -2082,7 +2082,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .match(/'([^']+)'/)[1];
       if (tabName === "modules-settings") {
         loadModules();
-      } else if (tabName === "roles-permissions") {
+      } else if (tabName === "roles-permissions" || tabName === "security-groups") {
         loadPermissionsMatrix();
       } else if (tabName === "audit-log") {
         loadAuditLog();
@@ -2094,7 +2094,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const activeTab = localStorage.getItem("settings_active_tab");
   if (activeTab === "modules-settings") {
     loadModules();
-  } else if (activeTab === "roles-permissions") {
+  } else if (activeTab === "roles-permissions" || activeTab === "security-groups") {
     loadPermissionsMatrix();
   } else if (activeTab === "audit-log") {
     loadAuditLog();

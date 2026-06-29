@@ -33,6 +33,9 @@
       <button class="nav-item" onclick="openTab(event, 'tickets-settings')">
         {{ _('Tickets') }}
       </button>
+      <button class="nav-item" onclick="openTab(event, 'security-groups')">
+        {{ _('Security Groups') }}
+      </button>
       <button class="nav-item" onclick="openTab(event, 'roles-permissions')">
         {{ _('Permissions') }}
       </button>
@@ -421,7 +424,7 @@
 
   </div>
 
-  <div id="roles-permissions" class="tab-content">
+  <div id="security-groups" class="tab-content" style="display: none;">
     <div class="roles-modules-row">
       <!-- Security Groups -->
       <div class="roles-column">
@@ -455,7 +458,9 @@
         </div>
       </div>
     </div>
+  </div>
 
+  <div id="roles-permissions" class="tab-content">
     <div class="settings-header">
       <h2>{{ _('Permissions Matrix') }}</h2>
       <div class="button-group">
