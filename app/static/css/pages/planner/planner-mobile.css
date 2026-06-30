@@ -12,7 +12,56 @@
 
   #add-plan-btn {
     white-space: nowrap;
-    width: 100%;
+  }
+
+  h3 {
+    font-size: 1.1rem;
+  }
+
+  .planner-header-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: nowrap;
+    border-bottom: 1px solid #d1d5db;
+    padding-bottom: 15px;
+  }
+
+  .planner-date-group {
+    order: 1;
+    justify-content: flex-start;
+  }
+
+  .planner-date-group .filter-label {
+    display: none;
+  }
+
+  .planner-tab-group {
+    order: 2;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .planner-tab-group a.btn {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    min-height: 30px;
+    padding: 0;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    font-size: 0;
+  }
+
+  .planner-tab-group a.btn i {
+    font-size: 13px;
+    margin: 0;
+    padding: 0;
   }
 
 
@@ -240,5 +289,11 @@
     align-items: center;
     gap: 6px;
     width: 100%;
+  }
+
+  #enrollments-section {
+    border-bottom: 1px solid #d1d5db;
+    padding-bottom: 25px;
+    margin-bottom: 25px !important;
   }
 }

@@ -50,10 +50,10 @@
     <!-- Program Enrollments Section -->
     {% if has_any_enrollments %}
     <div id="enrollments-section" style="margin-bottom: 40px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <div class="planner-section-header">
             <h3>{{ _('Program Enrollments') }}</h3>
             {% if is_admin %}
-                {% call btn('new', id='enroll-member-btn', attrs={'onclick': 'openEnrollmentModal()'}) %}<i class="fas fa-plus"></i> {{ _('New') }}{% endcall %}
+                {% call btn('outline', id='enroll-member-btn', attrs={'onclick': 'openEnrollmentModal()'}) %}<i class="fas fa-plus"></i> {{ _('New') }}{% endcall %}
             {% endif %}
         </div>
         
@@ -141,9 +141,9 @@
     {% endif %}
 
     <!-- Standalone Meeting Plans Section -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; margin-top: 20px;">
+    <div class="planner-section-header" style="margin-top: 20px;">
         <h3>{{ _('Meeting Plans') }}</h3>
-        {% call btn('new', id='add-plan-btn') %}<i class="fas fa-plus"></i> {{ _('New') }}{% endcall %}
+        {% call btn('outline', id='add-plan-btn') %}<i class="fas fa-plus"></i> {{ _('New') }}{% endcall %}
     </div>
  
     <div class="planner-table-container">

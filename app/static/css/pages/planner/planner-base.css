@@ -938,6 +938,24 @@ optgroup option {
   to   { transform: scale(1);    opacity: 1; }
 }
 
+.planner-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #004165;
+  color: #ffffff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.planner-section-header h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
 /* Planner View & Date Range Row */
 .planner-header-row {
   display: flex;

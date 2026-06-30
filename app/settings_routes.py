@@ -177,7 +177,7 @@ def add_excomm():
     try:
         start_date_str = data.get('start_date')
         end_date_str = data.get('end_date')
-        
+
         excomm = ExComm(
             club_id=club_id,
             excomm_term=data.get('term'),
@@ -186,6 +186,12 @@ def add_excomm():
             end_date=datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else None
         )
         db.session.add(excomm)
+        db.session.flush()
+
+        if data.get('is_current'):
+            club = db.session.get(Club, club_id)
+            club.current_excomm_id = excomm.id
+
         db.session.commit()
         return jsonify(success=True, message="Excomm team added successfully")
         
@@ -216,7 +222,13 @@ def update_excomm():
         excomm.excomm_name = data.get('name')
         excomm.start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else None
         excomm.end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else None
-        
+
+        club = db.session.get(Club, club_id)
+        if data.get('is_current'):
+            club.current_excomm_id = excomm.id
+        elif club.current_excomm_id == excomm.id:
+            club.current_excomm_id = None
+
         db.session.commit()
         return jsonify(success=True, message="Excomm team updated successfully")
         

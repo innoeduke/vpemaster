@@ -2,10 +2,11 @@
 function openExcommModal() {
     const form = document.getElementById('excomm-form');
     if (form) form.reset();
-    
+
     document.getElementById('excomm-id').value = '';
+    document.getElementById('excomm-is-current').checked = false;
     document.getElementById('excommModal-title').textContent = 'Add Excomm Team';
-    
+
     openActionModal('excommModal');
 }
 
@@ -19,15 +20,17 @@ function openEditExcommModal(btn) {
     const name = btn.dataset.name;
     const start = btn.dataset.start;
     const end = btn.dataset.end;
-    
+    const isCurrent = btn.dataset.current === 'true';
+
     document.getElementById('excomm-id').value = id;
     document.getElementById('excomm-term').value = term;
     document.getElementById('excomm-name').value = name;
     document.getElementById('excomm-start').value = start;
     document.getElementById('excomm-end').value = end;
-    
+    document.getElementById('excomm-is-current').checked = isCurrent;
+
     document.getElementById('excommModal-title').textContent = 'Edit Excomm Team';
-    
+
     openActionModal('excommModal');
 }
 
@@ -82,7 +85,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 term: document.getElementById('excomm-term').value,
                 name: document.getElementById('excomm-name').value,
                 start_date: document.getElementById('excomm-start').value,
-                end_date: document.getElementById('excomm-end').value
+                end_date: document.getElementById('excomm-end').value,
+                is_current: document.getElementById('excomm-is-current').checked
             };
             
             fetch(url, {
