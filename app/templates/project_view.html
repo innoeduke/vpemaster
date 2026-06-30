@@ -67,7 +67,7 @@
 {% endblock %}
 
 {% block speech_log_main %}
-	<div class="chart-container">
+	<div class="projects-chart-wrapper">
  		<h3 id="project-metrics-header">{{ _('Project Completion Metrics') }}
  			{% if start_date and end_date %}
  				<span id="header-date-text">({{ start_date }} - {{ end_date }})</span>
@@ -94,19 +94,21 @@
 					{{ item.project_name }}
 				</div>
 				<div class="bar-wrapper">
-					<div class="stacked-bar-container" style="width: {{ (item.count / max_count) * 60 }}%;">
-						{% for level in [1, 2, 3, 4, 5, 'Other'] %}
-						{% set l_count = item.level_counts.get(level, 0) %}
-						{% if l_count > 0 %}
-						{% set l_pct = (l_count / item.count) * 100 %}
-						<div class="bar-fill level-{{ level|lower }}" style="width: {{ l_pct }}%;"
-							title="{{ _('Level') }} {{ level }}: {{ l_count }}">
-							{% if l_pct > 12 %}
-							<span class="bar-count">{{ l_count }}</span>
+					<div class="bar-track">
+						<div class="stacked-bar-container" style="width: {{ (item.count / max_count) * 100 }}%;">
+							{% for level in [1, 2, 3, 4, 5, 'Other'] %}
+							{% set l_count = item.level_counts.get(level, 0) %}
+							{% if l_count > 0 %}
+							{% set l_pct = (l_count / item.count) * 100 %}
+							<div class="bar-fill level-{{ level|lower }}" style="width: {{ l_pct }}%;"
+								title="{{ _('Level') }} {{ level }}: {{ l_count }}">
+								{% if l_pct > 12 %}
+								<span class="bar-count">{{ l_count }}</span>
+								{% endif %}
+							</div>
 							{% endif %}
+							{% endfor %}
 						</div>
-						{% endif %}
-						{% endfor %}
 					</div>
 
 
