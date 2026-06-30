@@ -87,3 +87,27 @@ The optimizations were successfully committed to local branch `dev` and deployed
    Deleted the query looking up all club members in [app/agenda_routes.py](file:///Users/wmu/workspace/toastmasters/vpemaster/app/agenda_routes.py) because the `members` variable is never referenced in the HTML layout or any modals.
 3. **Reused In-Memory Configs and Winners**:
    Passed the pre-fetched `configs` list and `selected_meeting.award_winners` collection to `_get_roles_for_voting()` and `get_meeting_awards()` in the agenda route, eliminating redundant queries on `MeetingAwardConfig` and `MeetingAwardWinner`.
+
+---
+
+## 5. Members Page — `/api/settings/users` Cartesian-product fix
+
+The members page background-loads the full user list via `/api/settings/users`. The first request after a page load blocked the user's search — they typed a name, the search filter applied to the 10 server-rendered rows and reported "No records found," and only after the full list returned could the filter re-run and find a match. The contacts page didn't have this problem because its `/api/contacts/all` endpoint was already lean.
+
+### Root cause
+
+`_build_users_data` in `app/settings_routes.py` was using `db.joinedload(User.club_memberships)`. `User.club_memberships` is a 1:N relationship, and through the auto-joined `UserClub.auth_role` (lazy='joined') and `Role.permissions` chain, the resulting query multiplies every user row by the count of all permissions across all of that user's role rows. The underlying SQL is fast (the raw JOIN runs in ~20ms) but the ORM has to materialize a Cartesian-product result set in Python, which dominated wall-clock time.
+
+### Benchmarks (53-member club)
+
+| Endpoint | Before | After | Speedup |
+| :--- | :---: | :---: | :---: |
+| `/api/settings/users` (full list, background fetch) | ~1955 ms | ~120 ms | **~16×** |
+| `/api/settings/users` (first page, server render) | ~210 ms | ~30 ms | **~7×** |
+| `/api/contacts/all` (for reference) | ~115 ms | — | — |
+
+### Fix
+
+Changed `db.joinedload(User.club_memberships)` to `db.selectinload(User.club_memberships)` in `_build_users_data` (`app/settings_routes.py:1131-1139`). `selectinload` issues a separate `IN (...)` query for the related rows, avoiding the Cartesian product. This is the same pattern as the prior fix in `Contact.populate_users` (`app/models/contact.py:432-435`).
+
+Query count after the fix: 4 (count, users main, populate_contacts, selectinload IN) — no N+1 introduced.

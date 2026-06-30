@@ -1129,7 +1129,11 @@ def _build_users_data(per_page=None, offset=0):
     total = base_query.count()
 
     query = base_query.options(
-        db.joinedload(User.club_memberships),
+        # selectinload instead of joinedload: User.club_memberships is
+        # 1:N, and the joinedload path triggers ~1.7s of ORM hydration
+        # overhead even when the underlying JOIN itself is fast. Same
+        # pattern as Contact.populate_users (see comment there).
+        db.selectinload(User.club_memberships),
         db.defer(User.bio),
         db.defer(User.password_hash)
     ).order_by(User.username.asc())
