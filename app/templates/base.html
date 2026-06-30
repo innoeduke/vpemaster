@@ -472,11 +472,6 @@
                 </a>
               </li>
               {% endif %}
-              <li class="{% if request.endpoint and request.endpoint == 'about_club_bp.excomm_page' %}submenu-active{% endif %}">
-                <a href="{{ url_for('about_club_bp.excomm_page') }}">
-                  <i class="fas fa-sitemap"></i> {{ _('Excomm') }}
-                </a>
-              </li>
               {% if is_authorized(Permissions.ROSTER_VIEW) %}
               <li class="{% if request.endpoint and request.endpoint and request.endpoint.startswith('contacts_bp') %}submenu-active{% endif %}">
                 <a href="{{ url_for('contacts_bp.show_contacts') }}">
@@ -498,6 +493,11 @@
                 </a>
               </li>
               {% endif %}
+              <li class="{% if request.endpoint and request.endpoint == 'about_club_bp.excomm_page' %}submenu-active{% endif %}">
+                <a href="{{ url_for('about_club_bp.excomm_page') }}">
+                  <i class="fas fa-sitemap"></i> {{ _('Excomm') }}
+                </a>
+              </li>
               {% if is_authorized(Permissions.SETTINGS_VIEW) and current_user.primary_role_name != 'Guest' %}
               <li class="{% if request.endpoint and request.endpoint.startswith('settings_bp') %}submenu-active{% endif %}">
                 <a href="{{ url_for('settings_bp.settings') }}">
