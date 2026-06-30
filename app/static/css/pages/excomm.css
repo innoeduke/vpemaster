@@ -531,6 +531,7 @@ a.detail-item:hover {
   }
   .cards-grid-title .btn {
     margin-left: auto !important;
+    margin-right: 15px !important;
   }
 }
 
