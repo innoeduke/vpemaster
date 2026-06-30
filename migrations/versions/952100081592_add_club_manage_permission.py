@@ -52,16 +52,21 @@ def upgrade():
 
         if role_row:
             rid = role_row[0]
-            exists = conn.execute(
-                sa.text("SELECT 1 FROM role_permissions WHERE role_id = :rid AND permission_id = :pid"),
-                {'rid': rid, 'pid': pid}
-            ).fetchone()
+            clubs = conn.execute(
+                sa.text("SELECT id FROM clubs WHERE status = 'active'")
+            ).fetchall()
+            for club_row in clubs:
+                cid = club_row[0]
+                exists = conn.execute(
+                    sa.text("SELECT 1 FROM role_permissions WHERE role_id = :rid AND permission_id = :pid AND club_id = :cid"),
+                    {'rid': rid, 'pid': pid, 'cid': cid}
+                ).fetchone()
 
-            if not exists:
-                conn.execute(
-                    sa.text("INSERT INTO role_permissions (role_id, permission_id) VALUES (:rid, :pid)"),
-                    {'rid': rid, 'pid': pid}
-                )
+                if not exists:
+                    conn.execute(
+                        sa.text("INSERT INTO role_permissions (role_id, permission_id, club_id) VALUES (:rid, :pid, :cid)"),
+                        {'rid': rid, 'pid': pid, 'cid': cid}
+                    )
 
 
 def downgrade():
