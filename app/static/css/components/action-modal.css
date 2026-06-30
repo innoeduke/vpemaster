@@ -246,22 +246,22 @@
 /* Others and Presentation Style */
 .register-pathway-option[data-pathway-type="others"],
 .register-pathway-option[data-pathway-type="presentation"] {
-  background-color: #dcfce7;
+  background-color: #f3f4f6;
 }
 .register-pathway-option[data-pathway-type="others"]:hover,
 .register-pathway-option[data-pathway-type="presentation"]:hover {
-  background-color: #bbf7d0;
-  border-color: #86efac;
+  background-color: #e5e7eb;
+  border-color: #d1d5db;
 }
 .register-pathway-option.selected[data-pathway-type="others"],
 .register-pathway-option.selected[data-pathway-type="presentation"] {
-  background-color: #86efac !important;
-  border-color: #16a34a !important;
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
+  background-color: #d1d5db !important;
+  border-color: #4b5563 !important;
+  box-shadow: 0 0 0 3px rgba(75, 85, 99, 0.2);
 }
 .register-pathway-option.selected[data-pathway-type="others"] .select-indicator,
 .register-pathway-option.selected[data-pathway-type="presentation"] .select-indicator {
-  color: #16a34a !important;
+  color: #4b5563 !important;
 }
 
 .register-pathway-option .select-indicator {
