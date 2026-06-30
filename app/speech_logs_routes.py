@@ -346,7 +346,7 @@ def _get_pathway_info(viewed_contact, raw_pathway, filters):
             }
             all_active = Pathway.query.filter(
                 Pathway.status == 'active',
-                Pathway.type.in_(['pathway', 'program', 'traditional', 'others', 'presentation'])
+                Pathway.type.in_(['pathway', 'program', 'others'])
             ).order_by(Pathway.name).all()
             available_pathways = [
                 {'pathway_id': p.id, 'name': p.name, 'abbr': p.abbr, 'type': p.type}
