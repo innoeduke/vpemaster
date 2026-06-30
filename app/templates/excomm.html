@@ -150,7 +150,7 @@
 
                 <!-- Name & Credentials -->
                 <h3 class="officer-name">
-                  {{ contact.Name }}{% if contact.credentials and contact.credentials.upper() != 'DTM' %}<span class="credentials-text">, {{ contact.credentials }}</span>{% endif %}
+                  {{ contact.Name }}{% if contact.credentials and contact.credentials.upper() != 'DTM' %}<span class="credentials-text"> {{ contact.credentials }}</span>{% endif %}
                   {% if contact.DTM or (contact.credentials and contact.credentials.upper() == 'DTM') %}
                     <span class="dtm-badge" title="Distinguished Toastmaster">DTM</span>
                   {% endif %}
@@ -233,7 +233,7 @@
 
                 <!-- Name & Credentials -->
                 <h3 class="officer-name">
-                  {{ contact.Name }}{% if contact.credentials and contact.credentials.upper() != 'DTM' %}<span class="credentials-text">, {{ contact.credentials }}</span>{% endif %}
+                  {{ contact.Name }}{% if contact.credentials and contact.credentials.upper() != 'DTM' %}<span class="credentials-text"> {{ contact.credentials }}</span>{% endif %}
                   {% if contact.DTM or (contact.credentials and contact.credentials.upper() == 'DTM') %}
                     <span class="dtm-badge" title="Distinguished Toastmaster">DTM</span>
                   {% endif %}
