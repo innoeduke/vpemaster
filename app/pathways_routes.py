@@ -150,10 +150,10 @@ def get_contact_pathways(contact_id):
     # Only show pathways with type 'pathway' or 'program' for registration
     available_pathways = Pathway.query.filter(
         Pathway.status == 'active',
-        Pathway.type.in_(['pathway', 'program'])
+        Pathway.type.in_(['pathway', 'program', 'traditional', 'others', 'presentation'])
     ).order_by(Pathway.name).all()
     available = [
-        {'id': p.id, 'name': p.name, 'abbr': p.abbr}
+        {'id': p.id, 'name': p.name, 'abbr': p.abbr, 'type': p.type}
         for p in available_pathways if p.id not in registered_ids
     ]
 
