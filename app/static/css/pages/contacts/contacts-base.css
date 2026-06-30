@@ -865,10 +865,7 @@
   }
 
   #contactForm {
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 30px;
+    display: block;
   }
 
   #contactModal .profile-avatar-section {
