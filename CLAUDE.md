@@ -8,7 +8,6 @@ Prefer Makefile targets — they wrap pytest with the right flags. The Makefile 
 
 ```bash
 make run                          # dev server on :5001
-make run-prod                     # gunicorn (matches deploy setup)
 make test-fast                    # parallel pytest — preferred for full suite
 ```
 

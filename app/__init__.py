@@ -5,6 +5,11 @@ from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 
 import os
+import warnings
+
+# Suppress benign multiprocessing resource tracker warnings on shutdown (common in Python 3.12+ / 3.13 on macOS)
+warnings.filterwarnings("ignore", category=UserWarning, module="multiprocessing.resource_tracker")
+
 
 
 # 1. Create extension instances WITHOUT an app

@@ -507,7 +507,21 @@ a.detail-item:hover {
   transition: all 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
-.officer-card:hover .officer-card-actions {
+.officer-card:hover .officer-card-actions,
+.officer-card:focus-within .officer-card-actions {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Hide term-item action buttons by default; reveal on hover/focus */
+.term-item .tm-action-buttons {
+  opacity: 0;
+  transform: translateY(-3px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.term-item:hover .tm-action-buttons,
+.term-item:focus-within .tm-action-buttons {
   opacity: 1;
   transform: translateY(0);
 }
