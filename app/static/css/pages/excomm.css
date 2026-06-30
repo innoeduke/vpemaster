@@ -80,7 +80,7 @@
 }
 
 .term-item.active {
-  background: #ffffff;
+  background: #faf0f1;
   border-color: rgba(119, 36, 50, 0.25);
   box-shadow: 0 2px 8px rgba(119, 36, 50, 0.08);
 }
