@@ -63,6 +63,7 @@
 
 .planner-table tbody tr {
   transition: background-color 0.15s ease;
+  vertical-align: middle !important;
 }
 
 .planner-table tbody tr:hover {
