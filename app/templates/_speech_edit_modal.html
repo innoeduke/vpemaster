@@ -28,8 +28,8 @@
             <header class="sem-section-header">
               <span class="sem-section-icon sem-section-icon--owners"><i class="fas fa-user"></i></span>
               <div>
-                <h3 class="sem-section-title">{{ _('Owners & Pathway') }}</h3>
-                <p class="sem-section-desc">{{ _('The member(s) assigned and their pathway progress.') }}</p>
+                <h3 class="sem-section-title">{{ _('Owners & Path') }}</h3>
+                <p class="sem-section-desc">{{ _('Members delivering this slot, and the Path and Level for the speech or project.') }}</p>
               </div>
             </header>
 
@@ -37,19 +37,21 @@
             <div class="role-owner-card" id="pathway-group" style="display: none; flex-direction: column;">
               <div class="card-owner-name" id="project-role-owner-name">{{ _('Owner Name') }}</div>
               <div class="form-group">
-                <label for="pathway-select-dropdown">{{ _('Pathway') }}</label>
+                <label for="pathway-select-dropdown">{{ _('Path') }}</label>
+                <div class="form-help">{{ _('The Path tied to this speech or project') }}</div>
                 <select id="pathway-select-dropdown" name="pathway_dropdown">
-                  <option value="">{{ _('-- Select Pathway --') }}</option>
+                  <option value="">{{ _('-- Select Path --') }}</option>
                 </select>
               </div>
               <div class="form-group" id="level-group">
-                <label for="level-select-dropdown">{{ _('Level') }}</label>
-                <select id="level-select-dropdown" name="level_dropdown">
-                  <option value="">{{ _('-- Select Level --') }}</option>
+                <label>{{ _('Level') }}</label>
+                <div class="form-help">{{ _('The Level tied to this speech or project') }}</div>
+                <div class="level-radio-group" id="level-select-dropdown" role="radiogroup" aria-label="{{ _('Level') }}">
                   {% for i in range(1, 6) %}
-                  <option value="{{ i }}">{{ _('Level') }} {{ i }}</option>
+                  <input type="radio" name="level_dropdown" value="{{ i }}" id="level-dropdown-opt-{{ i }}" class="level-radio-input" data-level="{{ i }}">
+                  <label for="level-dropdown-opt-{{ i }}" class="level-radio-label">{{ i }}</label>
                   {% endfor %}
-                </select>
+                </div>
               </div>
             </div>
 
@@ -58,17 +60,19 @@
               <div class="role-owner-card" id="speech-owner-card" style="display: flex; flex-direction: column;">
                 <div class="card-owner-name" id="speech-owner-name">{{ _('Owner Name') }}</div>
                 <div class="form-group" id="pathway-generic-row">
-                  <label for="edit-pathway" id="label-pathway-series">{{ _('Pathway') }}</label>
+                  <label for="edit-pathway" id="label-pathway-series">{{ _('Path') }}</label>
+                  <div class="form-help">{{ _('The Path tied to this speech or project') }}</div>
                   <select id="edit-pathway" name="pathway" onchange="updateDynamicOptions()" required></select>
                 </div>
                 <div class="form-group" id="level-select-group">
-                  <label for="edit-level" id="label-level">{{ _('Level') }}</label>
-                  <select id="edit-level" name="level" onchange="updateDynamicOptions()">
-                    <option value="">{{ _('-- Select Level --') }}</option>
+                  <label id="label-level">{{ _('Level') }}</label>
+                  <div class="form-help">{{ _('The Level tied to this speech or project') }}</div>
+                  <div class="level-radio-group" id="edit-level" role="radiogroup" aria-label="{{ _('Level') }}">
                     {% for i in range(1, 6) %}
-                    <option value="{{ i }}">{{ _('Level') }} {{ i }}</option>
+                    <input type="radio" name="level" value="{{ i }}" id="edit-level-opt-{{ i }}" class="level-radio-input" data-level="{{ i }}">
+                    <label for="edit-level-opt-{{ i }}" class="level-radio-label">{{ i }}</label>
                     {% endfor %}
-                  </select>
+                  </div>
                 </div>
               </div>
             </div>
@@ -172,8 +176,8 @@
             <header class="sem-section-header">
               <span class="sem-section-icon sem-section-icon--owners"><i class="fas fa-users"></i></span>
               <div>
-                <h3 class="sem-section-title">{{ _('Owners & Pathway') }}</h3>
-                <p class="sem-section-desc">{{ _('Members assigned to this role and their pathway progress.') }}</p>
+                <h3 class="sem-section-title">{{ _('Owners & Path') }}</h3>
+                <p class="sem-section-desc">{{ _('Members filling this role, and the Path and Level for it.') }}</p>
               </div>
             </header>
             <div id="role-owners-scroll" class="role-owners-scroll">
@@ -240,7 +244,7 @@
     "No matches for \"{val}\"": "{{ _('No matches for \"{val}\"') }}",
     "Loading members… (open the Edit Details modal after the agenda has loaded)": "{{ _('Loading members… (open the Edit Details modal after the agenda has loaded)') }}",
     "No matches": "{{ _('No matches') }}",
-    "-- Select Pathway --": "{{ _('-- Select Pathway --') }}",
+    "-- Select Path --": "{{ _('-- Select Path --') }}",
     "Non Pathway": "{{ _('Non Pathway') }}",
     "-- Select Level --": "{{ _('-- Select Level --') }}",
     "Level ": "{{ _('Level ') }}",
@@ -249,7 +253,7 @@
     "Level 3": "{{ _('Level 3') }}",
     "Level 4": "{{ _('Level 4') }}",
     "Level 5": "{{ _('Level 5') }}",
-    "Pathway": "{{ _('Pathway') }}",
+    "Path": "{{ _('Path') }}",
     "Level": "{{ _('Level') }}",
     "Change owner...": "{{ _('Change owner...') }}",
     "Add owner...": "{{ _('Add owner...') }}",
@@ -257,7 +261,7 @@
     "Add Owner": "{{ _('Add Owner') }}",
     "Saving...": "{{ _('Saving...') }}",
     "Session Title:": "{{ _('Session Title:') }}",
-    "Pathway:": "{{ _('Pathway:') }}",
+    "Path:": "{{ _('Path:') }}",
     "Level:": "{{ _('Level:') }}",
     "Project:": "{{ _('Project:') }}",
     "Evaluator for:": "{{ _('Evaluator for:') }}",

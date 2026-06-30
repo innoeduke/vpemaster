@@ -36,7 +36,7 @@ const modalElements = {
   pathwaySelect: document.querySelector("#speech-mode-fields #edit-pathway"),
   isProjectCheckbox: document.querySelector("#speech-mode-fields #edit-is-project"),
   levelSelectGroup: document.querySelector("#speech-mode-fields #level-select-group"),
-  levelSelect: document.querySelector("#speech-mode-fields #edit-level"),
+  levelSelect: wrapLevelGroup(document.querySelector("#speech-mode-fields #edit-level")),
   projectSelectGroup: document.querySelector("#speech-mode-fields #project-select-group"),
   projectSelect: document.querySelector("#speech-mode-fields #edit-project"),
   labelPathway: document.querySelector("#speech-mode-fields #label-pathway-series"),
@@ -48,7 +48,7 @@ const modalElements = {
   pathwayGroup: document.querySelector("#speech-mode-fields #pathway-group"),
   pathwaySelectDropdown: document.querySelector("#speech-mode-fields #pathway-select-dropdown"),
   levelGroup: document.querySelector("#speech-mode-fields #level-group"),
-  levelSelectDropdown: document.querySelector("#speech-mode-fields #level-select-dropdown"),
+  levelSelectDropdown: wrapLevelGroup(document.querySelector("#speech-mode-fields #level-select-dropdown")),
   speechModeFields: document.getElementById("speech-mode-fields"),
   roleModeFields: document.getElementById("role-mode-fields"),
   roleNameDisplay: document.getElementById("role-name-display"),
@@ -61,6 +61,100 @@ const modalElements = {
   roleDurationMin: document.getElementById("role-duration-min"),
   roleDurationMax: document.getElementById("role-duration-max"),
 };
+
+// --- Utility Functions ---
+
+/**
+ * Wrap a `.level-radio-group` element with a controller that mimics the
+ * `<select>` API used elsewhere in the modal: read/write `.value`, toggle
+ * `.disabled`, and forward DOM events through `.addEventListener`.
+ *
+ * The radios must already be in the DOM (5 inputs named `level` or
+ * `level_dropdown` with values "1".."5"). The wrapper's existing ids are
+ * preserved so `modalElements` lookups keep working.
+ */
+function wrapLevelGroup(wrapper) {
+  if (!wrapper) return null;
+  // Already wrapped (re-init guard during long-lived page sessions).
+  if (wrapper._levelController) return wrapper._levelController;
+
+  const inputs = Array.from(wrapper.querySelectorAll('input[type="radio"]'));
+  const labels = inputs.map((input) => {
+    const id = input.id;
+    return id ? wrapper.querySelector(`label[for="${CSS.escape(id)}"]`) : null;
+  });
+
+  function applyDisabled(disabled) {
+    inputs.forEach((input, idx) => {
+      input.disabled = disabled;
+      const lbl = labels[idx];
+      if (lbl) lbl.classList.toggle('is-disabled', disabled);
+    });
+    wrapper.classList.toggle('is-disabled', disabled);
+    if (disabled) {
+      inputs.forEach((input) => { input.checked = false; });
+    }
+  }
+
+  function fireChange() {
+    wrapper.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  inputs.forEach((input) => {
+    input.addEventListener('change', fireChange);
+  });
+
+  const controller = {
+    el: wrapper,
+    get value() {
+      const checked = inputs.find((input) => input.checked);
+      return checked ? checked.value : '';
+    },
+    set value(v) {
+      const match = String(v ?? '');
+      inputs.forEach((input) => {
+        input.checked = input.value === match;
+      });
+      fireChange();
+    },
+    get disabled() {
+      return inputs.length > 0 && inputs.every((input) => input.disabled);
+    },
+    set disabled(disabled) {
+      applyDisabled(!!disabled);
+    },
+    addEventListener(type, handler) {
+      wrapper.addEventListener(type, handler);
+    },
+    /**
+     * Restrict the selectable levels to the given list (e.g. `[3, 4, 5]`
+     * when a pathway only supports those levels). Disabled radios remain
+     * visible but unselectable; the current value is cleared if no
+     * longer valid.
+     */
+    setValidLevels(levels) {
+      const valid = new Set(levels.map((l) => String(l)));
+      inputs.forEach((input, idx) => {
+        const isValid = valid.size === 0 ? true : valid.has(input.value);
+        input.disabled = !isValid;
+        const lbl = labels[idx];
+        if (lbl) lbl.classList.toggle('is-disabled', !isValid);
+      });
+      wrapper.classList.toggle(
+        'is-disabled',
+        inputs.every((input) => input.disabled)
+      );
+      const currentVal = this.value;
+      if (currentVal && !valid.has(currentVal)) {
+        inputs.forEach((input) => { input.checked = false; });
+        fireChange();
+      }
+    },
+  };
+
+  wrapper._levelController = controller;
+  return controller;
+}
 
 // --- Utility Functions ---
 
@@ -484,9 +578,7 @@ function validateOwnerCards() {
     }
 
     if (pathway !== "Non Pathway") {
-      const level = (card._levelHolder && card._levelHolder.el)
-        ? card._levelHolder.el.value
-        : (card.querySelector(".role-card-level")?.value || "");
+      const level = card._levelHolder ? card._levelHolder.value : "";
       if (!level) {
         allValid = false;
       }
@@ -614,7 +706,7 @@ async function openEditDetailsModal(
         }
 
         if (regPaths.length > 0) {
-          sel.innerHTML = '<option value="">' + _("-- Select Pathway --") + '</option>';
+          sel.innerHTML = '<option value="">' + _("-- Select Path --") + '</option>';
           regPaths.forEach((name) => {
             sel.appendChild(new Option(_(name), name));
           });
@@ -629,13 +721,94 @@ async function openEditDetailsModal(
 
       // Helper: build a level <select>
       function buildLevelSelect() {
-        const sel = document.createElement("select");
-        sel.className = "role-card-level";
-        sel.innerHTML = '<option value="">' + _("-- Select Level --") + '</option>';
+        // Mirrors `wrapLevelGroup` but builds the radios from scratch with a
+        // unique `name` per card so multiple cards can coexist in the form
+        // without their radios sharing a group.
+        const wrapper = document.createElement("div");
+        wrapper.className = "level-radio-group role-card-level";
+        wrapper.setAttribute("role", "radiogroup");
+        wrapper.setAttribute("aria-label", _("Level"));
+
+        const radioName = `role-card-level-${Math.random().toString(36).slice(2, 10)}`;
+        const inputs = [];
+        const labels = [];
         for (let i = 1; i <= 5; i++) {
-          sel.appendChild(new Option(_(`Level ${i}`), i));
+          const id = `${radioName}-opt-${i}`;
+          const input = document.createElement("input");
+          input.type = "radio";
+          input.name = radioName;
+          input.value = String(i);
+          input.id = id;
+          input.className = "level-radio-input";
+          input.dataset.level = i;
+
+          const label = document.createElement("label");
+          label.htmlFor = id;
+          label.className = "level-radio-label";
+          label.textContent = String(i);
+
+          wrapper.appendChild(input);
+          wrapper.appendChild(label);
+          inputs.push(input);
+          labels.push(label);
         }
-        return sel;
+
+        function fireChange() {
+          wrapper.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        inputs.forEach((input) => input.addEventListener("change", fireChange));
+
+        const controller = {
+          el: wrapper,
+          get value() {
+            const checked = inputs.find((input) => input.checked);
+            return checked ? checked.value : "";
+          },
+          set value(v) {
+            const match = String(v ?? "");
+            inputs.forEach((input) => {
+              input.checked = input.value === match;
+            });
+            fireChange();
+          },
+          get disabled() {
+            return inputs.length > 0 && inputs.every((input) => input.disabled);
+          },
+          set disabled(disabled) {
+            inputs.forEach((input, idx) => {
+              input.disabled = !!disabled;
+              const lbl = labels[idx];
+              if (lbl) lbl.classList.toggle("is-disabled", !!disabled);
+            });
+            wrapper.classList.toggle("is-disabled", !!disabled);
+            if (disabled) {
+              inputs.forEach((input) => { input.checked = false; });
+            }
+          },
+          addEventListener(type, handler) {
+            wrapper.addEventListener(type, handler);
+          },
+          setValidLevels(levels) {
+            const valid = new Set(levels.map((l) => String(l)));
+            inputs.forEach((input, idx) => {
+              const isValid = valid.size === 0 ? true : valid.has(input.value);
+              input.disabled = !isValid;
+              const lbl = labels[idx];
+              if (lbl) lbl.classList.toggle("is-disabled", !isValid);
+            });
+            wrapper.classList.toggle(
+              "is-disabled",
+              inputs.every((input) => input.disabled)
+            );
+            const currentVal = this.value;
+            if (currentVal && !valid.has(currentVal)) {
+              inputs.forEach((input) => { input.checked = false; });
+              fireChange();
+            }
+          },
+        };
+
+        return controller;
       }
 
       // Helper: determine default pathway + level for an owner
@@ -694,16 +867,20 @@ async function openEditDetailsModal(
         card.dataset.ownerId = initialOwnerId || "";
 
         // Holder objects so the closures always reference the current
-        // pathway/level <select> elements (they get rebuilt on owner change).
+        // pathway select / level radio controller (they get rebuilt on owner change).
         const pathHolder = { el: buildPathwaySelect(initialOwnerId) };
-        const levelHolder = { el: buildLevelSelect() };
-        
+        const levelHolder = buildLevelSelect();
+
         // Pathway group
         const pathGroup = document.createElement("div");
         pathGroup.className = "form-group";
         const pathLabel = document.createElement("label");
-        pathLabel.textContent = "Pathway";
+        pathLabel.textContent = _("Path");
         pathGroup.appendChild(pathLabel);
+        const pathHelp = document.createElement("div");
+        pathHelp.className = "form-help";
+        pathHelp.textContent = _("The Path tied to this role");
+        pathGroup.appendChild(pathHelp);
         pathGroup.appendChild(pathHolder.el);
         card.appendChild(pathGroup);
 
@@ -711,22 +888,26 @@ async function openEditDetailsModal(
         const levelGroup = document.createElement("div");
         levelGroup.className = "form-group";
         const levelLabel = document.createElement("label");
-        levelLabel.textContent = "Level";
+        levelLabel.textContent = _("Level");
         levelGroup.appendChild(levelLabel);
+        const levelHelp = document.createElement("div");
+        levelHelp.className = "form-help";
+        levelHelp.textContent = _("The Level tied to this role");
+        levelGroup.appendChild(levelHelp);
         levelGroup.appendChild(levelHolder.el);
         card.appendChild(levelGroup);
 
         const syncLevel = () => {
           if (!pathHolder.el.value || pathHolder.el.value === "Non Pathway") {
-            levelHolder.el.value = "";
-            levelHolder.el.disabled = true;
+            levelHolder.value = "";
+            levelHolder.disabled = true;
           } else {
-            levelHolder.el.disabled = false;
+            levelHolder.disabled = false;
           }
           validateOwnerCards();
         };
         pathHolder.el.addEventListener("change", syncLevel);
-        levelHolder.el.addEventListener("change", validateOwnerCards);
+        levelHolder.addEventListener("change", validateOwnerCards);
 
         const refreshPathwayForOwner = (ownerId) => {
           const newPath = buildPathwaySelect(ownerId);
@@ -749,10 +930,10 @@ async function openEditDetailsModal(
             if (newContact) {
               const defaults = getOwnerDefaults(newOwnerId);
               pathHolder.el.value = defaults.pathway;
-              levelHolder.el.value = defaults.level;
+              levelHolder.value = defaults.level;
             } else {
               pathHolder.el.value = "";
-              levelHolder.el.value = "";
+              levelHolder.value = "";
             }
             syncLevel();
           },
@@ -766,10 +947,10 @@ async function openEditDetailsModal(
         if (initialOwnerId) {
           const defaults = getOwnerDefaults(initialOwnerId);
           pathHolder.el.value = defaults.pathway;
-          levelHolder.el.value = defaults.level;
+          levelHolder.value = defaults.level;
         } else {
           pathHolder.el.value = "";
-          levelHolder.el.value = "";
+          levelHolder.value = "";
         }
         syncLevel();
 
@@ -930,7 +1111,7 @@ async function saveEditDetailsChanges(event) {
         ownerId = "";
       }
       const pathwayName = (card._pathHolder && card._pathHolder.el) ? card._pathHolder.el.value : (card.querySelector(".role-card-pathway")?.value || "");
-      const levelVal = (card._levelHolder && card._levelHolder.el) ? card._levelHolder.el.value : (card.querySelector(".role-card-level")?.value || "");
+      const levelVal = card._levelHolder ? card._levelHolder.value : "";
       const suffixVal = (card._suffixHolder && card._suffixHolder.el) ? card._suffixHolder.el.value : (card.querySelector(".role-card-suffix")?.value || "");
 
       if (ownerId) {
@@ -1191,7 +1372,7 @@ function resetModal(logData, sessionType) {
   });
 
   modalElements.speechTitleLabel.textContent = _("Session Title:");
-  modalElements.labelPathway.textContent = _("Pathway:");
+  modalElements.labelPathway.textContent = _("Path:");
   modalElements.labelLevel.textContent = _("Level:");
   modalElements.labelProject.textContent = _("Project:");
   modalElements.pathwaySelect.required = false;
@@ -1210,7 +1391,7 @@ const SpeechModalSetupManager = {
 
     dropdown.innerHTML = '';
     if (regPaths.length > 0) {
-      dropdown.add(new Option(_("-- Select Pathway --"), ""));
+      dropdown.add(new Option(_("-- Select Path --"), ""));
       regPaths.forEach((name) => {
         dropdown.add(new Option(_(name), name));
       });
@@ -1538,7 +1719,7 @@ const SpeechModalSetupManager = {
     }
 
     if (sessionType === "Presentation") {
-      modalElements.labelPathway.textContent = _("Pathway:");
+      modalElements.labelPathway.textContent = _("Path:");
       modalElements.labelProject.textContent = _("Project:");
       modalElements.labelLevel.textContent = _("Level:");
       modalElements.pathwaySelect.required = true;
@@ -1595,11 +1776,10 @@ const SpeechModalSetupManager = {
       }
       modalElements.pathwaySelect.value = pathwayToSelect || "";
 
-      // Rebuild levels to 3, 4, 5
-      modalElements.levelSelect.innerHTML = '<option value="">' + _("-- Select Level --") + '</option>';
-      for (let i = 3; i <= 5; i++) {
-        modalElements.levelSelect.add(new Option(_(`Level ${i}`), i));
-      }
+      // Restrict the level radio group to the levels this pathway supports
+      // (e.g. Presentation is Levels 3-5). Invalid levels disable rather
+      // than disappear, so the chip layout stays consistent.
+      modalElements.levelSelect.setValidLevels([3, 4, 5]);
 
       const currentOwnerId = logData.owner_id;
       let initialLevel = logData.target_level || "";
@@ -1614,19 +1794,15 @@ const SpeechModalSetupManager = {
         modalElements.projectSelect.innerHTML = '<option value="">-- No Owner Selected --</option>';
       }
 
-      modalElements.levelSelect.onchange = () => {
+      const fetchForCurrentSelections = () => {
         const selectedOwnerId = modalElements.ownerPicker ? modalElements.ownerPicker.getOwnerId() : logData.owner_id;
         const selectedLevel = modalElements.levelSelect.value;
         const selectedPathway = modalElements.pathwaySelect.value;
         fetchPresentationProjects(selectedOwnerId, selectedLevel, logData.Project_ID, selectedPathway);
       };
 
-      modalElements.pathwaySelect.onchange = () => {
-        const selectedOwnerId = modalElements.ownerPicker ? modalElements.ownerPicker.getOwnerId() : logData.owner_id;
-        const selectedLevel = modalElements.levelSelect.value;
-        const selectedPathway = modalElements.pathwaySelect.value;
-        fetchPresentationProjects(selectedOwnerId, selectedLevel, logData.Project_ID, selectedPathway);
-      };
+      modalElements.levelSelect.addEventListener("change", fetchForCurrentSelections);
+      modalElements.pathwaySelect.onchange = fetchForCurrentSelections;
 
       return;
     }
@@ -1653,7 +1829,7 @@ const SpeechModalSetupManager = {
       },
     });
 
-    modalElements.labelPathway.textContent = _("Pathway:");
+    modalElements.labelPathway.textContent = _("Path:");
     modalElements.labelProject.textContent = _("Project:");
     modalElements.labelLevel.textContent = _("Level:");
 
@@ -1750,14 +1926,19 @@ function updateDynamicOptions() {
   }
   const pathway = modalElements.pathwaySelect.value;
   if (pathway === "Non Pathway") {
-    // Clear project options — Non Pathway has no projects — but leave the
-    // Is Project checkbox and the disabled state alone so the user stays in
-    // control.
+    // Clear project options — Non Pathway has no projects — and disable the
+    // level chips so the user can't pick a level for a non-pathway speech.
     if (modalElements.projectSelect) {
       modalElements.projectSelect.value = "";
       modalElements.projectSelect.innerHTML = '<option value="">-- Select --</option>';
     }
+    if (modalElements.levelSelect) {
+      modalElements.levelSelect.disabled = true;
+    }
   } else {
+    if (modalElements.levelSelect) {
+      modalElements.levelSelect.disabled = false;
+    }
     updateLevelOptions();
     updateProjectOptions();
   }
@@ -1766,15 +1947,15 @@ function updateDynamicOptions() {
 function updateLevelOptions() {
   const { pathwaySelect, levelSelect } = modalElements;
   const pathwayName = pathwaySelect.value;
-  const currentLevel = levelSelect.value;
 
   if (!pathwayName) return;
 
   const codeSuffix = (typeof pathwayMap !== 'undefined' ? pathwayMap[pathwayName] : null);
-
   if (!codeSuffix) return;
 
-  // Find all unique levels for this pathway
+  // Compute which levels this pathway supports, then enable only those
+  // radios. The chip group always shows 1-5; unsupported levels become
+  // disabled and the current selection is cleared if no longer valid.
   const availableLevels = new Set();
 
   allProjects.forEach(p => {
@@ -1784,27 +1965,8 @@ function updateLevelOptions() {
     }
   });
 
-  // Sort levels
   const sortedLevels = Array.from(availableLevels).sort((a, b) => a - b);
-
-  // Rebuild Level Options
-  // Keep "All Levels" or empty option if that's desired? 
-  // Usually for editing a speech, we want to force valid selection.
-  // But let's keep a default prompt.
-  levelSelect.innerHTML = '<option value="">-- Select Level --</option>';
-
-  sortedLevels.forEach(lvl => {
-    levelSelect.add(new Option(`Level ${lvl}`, lvl));
-  });
-
-  // Restore selection if valid, otherwise clear
-  if (availableLevels.has(parseInt(currentLevel))) {
-    levelSelect.value = currentLevel;
-  } else if (availableLevels.has(currentLevel)) { // Check string match
-    levelSelect.value = currentLevel;
-  } else {
-    levelSelect.value = "";
-  }
+  levelSelect.setValidLevels(sortedLevels);
 }
 
 function updateProjectOptions(selectedProjectId = null) {
