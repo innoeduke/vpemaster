@@ -76,16 +76,17 @@
       <div class="main-header-card">
         <div class="main-header-info">
           <h1>{{ selected_excomm.excomm_name or _('Unnamed Excomm Team') }}</h1>
-          <p>
-            <span><i class="far fa-calendar-alt"></i> {{ _('Term:') }} <strong>{{ selected_excomm.excomm_term }}</strong></span>
-            {% if selected_excomm.start_date or selected_excomm.end_date %}
-              <span><i class="far fa-clock"></i> 
-                {{ selected_excomm.start_date.strftime('%b %d, %Y') if selected_excomm.start_date else '?' }} 
-                {{ _('to') }} 
-                {{ selected_excomm.end_date.strftime('%b %d, %Y') if selected_excomm.end_date else '?' }}
-              </span>
-            {% endif %}
-          </p>
+          {% if selected_excomm.start_date or selected_excomm.end_date %}
+            <p class="term-dates">
+              <i class="far fa-calendar-alt"></i> 
+              {{ selected_excomm.start_date.strftime('%b %d, %Y') if selected_excomm.start_date else '?' }} 
+              {{ _('to') }} 
+              {{ selected_excomm.end_date.strftime('%b %d, %Y') if selected_excomm.end_date else '?' }}
+            </p>
+          {% endif %}
+        </div>
+        <div class="main-header-badge" title="{{ _('Term Code') }}">
+          <i class="far fa-clock"></i> <strong>{{ selected_excomm.excomm_term }}</strong>
         </div>
       </div>
 

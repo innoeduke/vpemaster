@@ -130,70 +130,63 @@
 }
 
 .main-header-card {
-  background: linear-gradient(135deg, #772432 0%, #4a121c 100%);
-  border: none;
-  border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(119, 36, 50, 0.15);
-  padding: 24px 30px;
+  background: #ffffff;
+  border: 1px solid rgba(228, 232, 236, 0.8);
+  border-left: 4px solid #772432;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+  padding: 20px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  position: relative;
-  overflow: hidden;
-  color: #ffffff;
+  color: #333;
 }
 
-.main-header-card::after {
-  content: '';
-  position: absolute;
-  right: -50px;
-  top: -50px;
-  width: 200px;
-  height: 200px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 50%;
-  pointer-events: none;
+.main-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .main-header-info h1 {
-  margin: 0 0 12px 0;
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: #ffffff;
-  letter-spacing: -0.5px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: -0.3px;
 }
 
-.main-header-info p {
+.main-header-info .term-dates {
   margin: 0;
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.85rem;
+  color: #64748b;
   display: flex;
   align-items: center;
-  gap: 15px;
-  flex-wrap: wrap;
+  gap: 6px;
 }
 
-.main-header-info p span {
+.main-header-info .term-dates i {
+  color: #772432;
+  opacity: 0.85;
+}
+
+.main-header-badge {
+  background: #faf0f1;
+  color: #772432;
+  border: 1px solid rgba(119, 36, 50, 0.2);
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 6px 14px;
+  border-radius: 30px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.08);
-  padding: 6px 14px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  gap: 6px;
+  box-shadow: 0 1px 2px rgba(119, 36, 50, 0.04);
 }
 
-.main-header-info p span i {
-  color: #fbaf3f;
-  font-size: 0.9rem;
-}
-
-.main-header-info p span strong {
-  color: #ffffff;
-  font-weight: 700;
+.main-header-badge i {
+  font-size: 0.95rem;
+  opacity: 0.9;
 }
 
 /* Contact Cards Grid */
