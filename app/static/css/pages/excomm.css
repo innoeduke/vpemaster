@@ -502,19 +502,23 @@ a.detail-item:hover {
   }
   .term-select-mobile {
     display: block;
-    margin-bottom: 12px;
+    margin-bottom: 0;
   }
   .mobile-term-info {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 6px;
-    font-size: 0.85rem;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.82rem;
     color: #64748b;
+    font-weight: 500;
   }
   .mobile-term-info i {
     color: #772432;
     opacity: 0.85;
+    font-size: 0.9rem;
   }
   .main-header-card {
     display: none !important;
