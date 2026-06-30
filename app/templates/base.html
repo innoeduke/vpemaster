@@ -201,12 +201,14 @@
           </a>
         </li>
         {% endif %}
+        {% if is_authorized(Permissions.CLUB_VIEW) %}
         <li class="{% if request.endpoint and request.endpoint == 'about_club_bp.excomm_page' %}active{% endif %}">
           <a href="{{ url_for('about_club_bp.excomm_page') }}" title="{{ _('View club excomm history and teams') }}">
             <i class="fas fa-sitemap nav-icon"></i>
             <span>{{ _('Excomm') }}</span>
           </a>
         </li>
+        {% endif %}
         {% if is_authorized(Permissions.ROSTER_VIEW) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
           <a href="{{ url_for('contacts_bp.show_contacts') }}" title="{{ _('Manage club contacts and members') }}">
@@ -493,11 +495,13 @@
                 </a>
               </li>
               {% endif %}
+              {% if is_authorized(Permissions.CLUB_VIEW) %}
               <li class="{% if request.endpoint and request.endpoint == 'about_club_bp.excomm_page' %}submenu-active{% endif %}">
                 <a href="{{ url_for('about_club_bp.excomm_page') }}">
                   <i class="fas fa-sitemap"></i> {{ _('Excomm') }}
                 </a>
               </li>
+              {% endif %}
               {% if is_authorized(Permissions.SETTINGS_VIEW) and current_user.primary_role_name != 'Guest' %}
               <li class="{% if request.endpoint and request.endpoint.startswith('settings_bp') %}submenu-active{% endif %}">
                 <a href="{{ url_for('settings_bp.settings') }}">
