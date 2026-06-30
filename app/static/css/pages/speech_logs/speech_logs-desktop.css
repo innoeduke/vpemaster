@@ -16,8 +16,8 @@
 
 	.speech-logs-content {
 		max-width: none;
-		margin-left: -5% !important;
-		margin-right: -5% !important;
+		margin-left: -5%;
+		margin-right: -5%;
 	}
 
 	.progress-table .level-cell {
@@ -37,5 +37,17 @@
 
 	.member-view-mode .speech-log-main-content {
 		display: none;
+	}
+
+	div.speech-logs-content.project-view-container {
+		max-width: none;
+		margin-left: -5%;
+		margin-right: -5%;
+		padding-left: 5%;
+		padding-right: 5%;
+		width: auto;
+		margin-top: -80px;
+		margin-bottom: -32px;
+		padding-top: 104px;
 	}
 }

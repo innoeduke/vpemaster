@@ -7,7 +7,7 @@
   <title>Memory Maker - {% block title %}{% endblock %}</title>
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='icons/favicon.ico') }}" />
   {% assets "css_all" %}
-  <link rel="stylesheet" href="{{ ASSET_URL }}">
+  <link rel="stylesheet" href="{{ ASSET_URL }}?v=1.0.4">
   {% endassets %}
 
   {% block head_extra %}{% endblock %}

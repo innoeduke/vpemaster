@@ -259,8 +259,11 @@
     gap: 5px;
   }
 
-  .project-label {
+  .project-view-container .project-label {
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    flex-shrink: 1;
     text-align: left;
     padding-right: 0;
   }
@@ -426,5 +429,16 @@
   .journals-back-btn {
     width: 34px;
     height: 34px;
+  }
+
+  div.speech-logs-content.project-view-container {
+    padding-left: 12px;
+    padding-right: 12px;
+    margin-left: -15px;
+    margin-right: -15px;
+    width: auto;
+    margin-top: -80px;
+    margin-bottom: -32px;
+    padding-top: 96px;
   }
 }

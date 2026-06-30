@@ -54,7 +54,7 @@
             <div class="search-container filter-group-premium" style="margin-left: auto; margin-right: 15px;">
                 <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" id="global-search-form" style="display: flex; align-items: center; position: relative;">
                     <input type="hidden" name="view_mode" value="search">
-                    <input type="text" name="q" class="search-box" placeholder="{{ _('Search sessions (e.g. name, role)...') }}" value="{{ request.args.get('q', '') }}" style="width: 280px; padding-left: 35px; border-radius: 6px; border: 1px solid #ddd; height: 36px; box-sizing: border-box; font-family: 'Montserrat', sans-serif;">
+                    <input type="text" name="q" class="search-box" placeholder="{{ _('Search sessions (e.g. name, role)...') }}" value="{{ request.args.get('q', '') }}" style="width: 340px; padding-left: 35px; border-radius: 6px; border: 1px solid #ddd; height: 36px; box-sizing: border-box; font-family: 'Montserrat', sans-serif;">
                     <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; pointer-events: none;"></i>
                     {% if request.args.get('q') %}
                     <button type="button" class="clear-search-btn" onclick="window.location.href='{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}'" style="right: 12px;">&times;</button>
@@ -91,7 +91,9 @@
 			{% for item in chart_data %}
 			<div class="chart-row">
 				<div class="project-label" title="{{ item.project_name }}">
-					{{ item.project_name }}
+					<a href="{{ url_for('pathways_bp.pathway_library') }}?project_id={{ item.id }}" class="project-title-link">
+						{{ item.project_name }}
+					</a>
 				</div>
 				<div class="bar-wrapper">
 					<div class="bar-track">

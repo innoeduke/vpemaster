@@ -343,8 +343,24 @@ document.addEventListener("DOMContentLoaded", function () {
   const levelParam = urlParams.get("level");
   const projectIdParam = urlParams.get("project_id");
 
+  let foundPathAbbr = null;
+  let foundLevel = null;
+  if (projectIdParam) {
+    const projectIdInt = parseInt(projectIdParam, 10);
+    for (const pw of pathways) {
+      const proj = pw.projects.find(p => p.id === projectIdInt);
+      if (proj) {
+        foundPathAbbr = pw.abbr;
+        foundLevel = String(proj.level);
+        break;
+      }
+    }
+  }
+
   if (pathParam) {
     pathSelect.value = pathParam;
+  } else if (foundPathAbbr) {
+    pathSelect.value = foundPathAbbr;
   } else {
     const pmPathway = pathways.find((p) => p.abbr === "PM");
     if (pmPathway) {
@@ -360,6 +376,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (levelParam) {
     levelSelect.value = levelParam;
+  } else if (foundLevel) {
+    levelSelect.value = foundLevel;
   } else {
     // Default to '1' if available, else ''
     // Check if level 1 exists for this pathway
