@@ -23,7 +23,58 @@
         <div id="speech-mode-fields">
           <input type="hidden" id="edit-session-owner" />
 
-          <!-- Section 1: Project Information -->
+          <!-- Section 1: Owners & Pathway -->
+          <section class="sem-section sem-section--owners">
+            <header class="sem-section-header">
+              <span class="sem-section-icon sem-section-icon--owners"><i class="fas fa-user"></i></span>
+              <div>
+                <h3 class="sem-section-title">{{ _('Owners & Pathway') }}</h3>
+                <p class="sem-section-desc">{{ _('The member(s) assigned and their pathway progress.') }}</p>
+              </div>
+            </header>
+
+            <!-- Project role case: owner card with pathway/level -->
+            <div class="role-owner-card" id="pathway-group" style="display: none; flex-direction: column;">
+              <div class="card-owner-name" id="project-role-owner-name">{{ _('Owner Name') }}</div>
+              <div class="form-group">
+                <label for="pathway-select-dropdown">{{ _('Pathway') }}</label>
+                <select id="pathway-select-dropdown" name="pathway_dropdown">
+                  <option value="">{{ _('-- Select Pathway --') }}</option>
+                </select>
+              </div>
+              <div class="form-group" id="level-group">
+                <label for="level-select-dropdown">{{ _('Level') }}</label>
+                <select id="level-select-dropdown" name="level_dropdown">
+                  <option value="">{{ _('-- Select Level --') }}</option>
+                  {% for i in range(1, 6) %}
+                  <option value="{{ i }}">{{ _('Level') }} {{ i }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <!-- Standard speech case: owner card with pathway/level -->
+            <div id="standard-selection" style="display: none;">
+              <div class="role-owner-card" id="speech-owner-card" style="display: flex; flex-direction: column;">
+                <div class="card-owner-name" id="speech-owner-name">{{ _('Owner Name') }}</div>
+                <div class="form-group" id="pathway-generic-row">
+                  <label for="edit-pathway" id="label-pathway-series">{{ _('Pathway') }}</label>
+                  <select id="edit-pathway" name="pathway" onchange="updateDynamicOptions()" required></select>
+                </div>
+                <div class="form-group" id="level-select-group">
+                  <label for="edit-level" id="label-level">{{ _('Level') }}</label>
+                  <select id="edit-level" name="level" onchange="updateDynamicOptions()">
+                    <option value="">{{ _('-- Select Level --') }}</option>
+                    {% for i in range(1, 6) %}
+                    <option value="{{ i }}">{{ _('Level') }} {{ i }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Section 2: Project Information -->
           <section class="sem-section sem-section--info">
             <header class="sem-section-header">
               <span class="sem-section-icon sem-section-icon--info"><i class="fas fa-info-circle"></i></span>
@@ -97,57 +148,6 @@
             </div>
           </section>
 
-          <!-- Section 2: Owners & Pathway -->
-          <section class="sem-section sem-section--owners">
-            <header class="sem-section-header">
-              <span class="sem-section-icon sem-section-icon--owners"><i class="fas fa-user"></i></span>
-              <div>
-                <h3 class="sem-section-title">{{ _('Owners & Pathway') }}</h3>
-                <p class="sem-section-desc">{{ _('The member(s) assigned and their pathway progress.') }}</p>
-              </div>
-            </header>
-
-            <!-- Project role case: owner card with pathway/level -->
-            <div class="role-owner-card" id="pathway-group" style="display: none; flex-direction: column;">
-              <div class="card-owner-name" id="project-role-owner-name">{{ _('Owner Name') }}</div>
-              <div class="form-group">
-                <label for="pathway-select-dropdown">{{ _('Pathway') }}</label>
-                <select id="pathway-select-dropdown" name="pathway_dropdown">
-                  <option value="">{{ _('-- Select Pathway --') }}</option>
-                </select>
-              </div>
-              <div class="form-group" id="level-group">
-                <label for="level-select-dropdown">{{ _('Level') }}</label>
-                <select id="level-select-dropdown" name="level_dropdown">
-                  <option value="">{{ _('-- Select Level --') }}</option>
-                  {% for i in range(1, 6) %}
-                  <option value="{{ i }}">{{ _('Level') }} {{ i }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
-
-            <!-- Standard speech case: owner card with pathway/level -->
-            <div id="standard-selection" style="display: none;">
-              <div class="role-owner-card" id="speech-owner-card" style="display: flex; flex-direction: column;">
-                <div class="card-owner-name" id="speech-owner-name">{{ _('Owner Name') }}</div>
-                <div class="form-group" id="pathway-generic-row">
-                  <label for="edit-pathway" id="label-pathway-series">{{ _('Pathway') }}</label>
-                  <select id="edit-pathway" name="pathway" onchange="updateDynamicOptions()" required></select>
-                </div>
-                <div class="form-group" id="level-select-group">
-                  <label for="edit-level" id="label-level">{{ _('Level') }}</label>
-                  <select id="edit-level" name="level" onchange="updateDynamicOptions()">
-                    <option value="">{{ _('-- Select Level --') }}</option>
-                    {% for i in range(1, 6) %}
-                    <option value="{{ i }}">{{ _('Level') }} {{ i }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-              </div>
-            </div>
-          </section>
-
           <!-- Section 3: Media -->
           <section class="sem-section sem-section--media">
             <header class="sem-section-header">
@@ -168,6 +168,19 @@
 
         <!-- Role Mode Fields Container -->
         <div id="role-mode-fields" style="display: none;">
+          <section class="sem-section sem-section--owners">
+            <header class="sem-section-header">
+              <span class="sem-section-icon sem-section-icon--owners"><i class="fas fa-users"></i></span>
+              <div>
+                <h3 class="sem-section-title">{{ _('Owners & Pathway') }}</h3>
+                <p class="sem-section-desc">{{ _('Members assigned to this role and their pathway progress.') }}</p>
+              </div>
+            </header>
+            <div id="role-owners-scroll" class="role-owners-scroll">
+              <!-- Cards populated dynamically -->
+            </div>
+          </section>
+
           <div class="sem-sections-row">
             <section class="sem-section">
               <header class="sem-section-header">
@@ -207,19 +220,6 @@
               </div>
             </section>
           </div>
-
-          <section class="sem-section sem-section--owners">
-            <header class="sem-section-header">
-              <span class="sem-section-icon sem-section-icon--owners"><i class="fas fa-users"></i></span>
-              <div>
-                <h3 class="sem-section-title">{{ _('Owners & Pathway') }}</h3>
-                <p class="sem-section-desc">{{ _('Members assigned to this role and their pathway progress.') }}</p>
-              </div>
-            </header>
-            <div id="role-owners-scroll" class="role-owners-scroll">
-              <!-- Cards populated dynamically -->
-            </div>
-          </section>
         </div>
       </div>
 

@@ -83,6 +83,11 @@
             background: linear-gradient(135deg, #f5f3ff 0%, #f8fafc 70%);
             border-color: #ddd6fe;
         }
+
+        /* Extra breathing room between the Owners section and the Role/Session row (role mode only). */
+        #speechEditModal #role-mode-fields .sem-section--owners {
+            margin-bottom: 16px;
+        }
         #speechEditModal .sem-section--info {
             background: linear-gradient(135deg, #f0f9ff 0%, #f8fafc 70%);
             border-color: #bae6fd;
