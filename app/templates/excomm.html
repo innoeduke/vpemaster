@@ -205,7 +205,7 @@
       <!-- Officers Section -->
       <div>
         <h2 class="cards-grid-title">
-          <i class="fas fa-user-shield"></i> {{ _('Club Officers') }}
+          <span><i class="fas fa-user-shield"></i> {{ _('Club Officers') }}</span>
           {% call btn(variant='new-outline', size='sm', disabled=not is_authorized(Permissions.CLUB_MANAGE), class='ms-3', attrs={'onclick': 'openOfficerModal()'}) %}
             <i class="fas fa-plus"></i> {{ _('New') }}
           {% endcall %}

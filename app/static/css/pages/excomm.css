@@ -524,6 +524,20 @@ a.detail-item:hover {
   .term-item .tm-action-buttons {
     display: none;
   }
+  .cards-grid-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+  .cards-grid-title span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cards-grid-title .btn {
+    margin-left: 0 !important;
+  }
 }
 
 /* Hover Action Buttons Group on Cards */
