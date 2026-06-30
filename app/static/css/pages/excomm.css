@@ -30,25 +30,37 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #edf2f7;
+  margin: -14px -14px 12px -14px;
+  padding: 10px 14px;
+  background-color: #772432;
+  border-top-left-radius: 11px;
+  border-top-right-radius: 11px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .sidebar-header h3 {
   margin: 0;
-  font-size: 1.05rem;
-  color: #334155;
+  font-size: 0.95rem;
+  color: #ffffff;
   font-weight: 700;
 }
 
-.btn-new-team {
+.sidebar-header .btn {
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  color: #ffffff !important;
+  background-color: transparent !important;
   font-size: 0.8rem;
   padding: 5px 10px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   border-radius: 6px;
+}
+
+.sidebar-header .btn:hover {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  border-color: #ffffff !important;
+  color: #ffffff !important;
 }
 .term-list {
   display: flex;
