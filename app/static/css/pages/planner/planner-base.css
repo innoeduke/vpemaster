@@ -81,6 +81,7 @@
   font-weight: 500;
   display: inline-block;
   vertical-align: middle !important;
+  margin: 0 !important;
 }
 
 .status-draft {
