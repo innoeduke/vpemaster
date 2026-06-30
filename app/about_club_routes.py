@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify, current_app
-from .auth.utils import login_required, is_authorized
+from .auth.utils import login_required, is_authorized, club_permission_required
 from .auth.permissions import Permissions
 from flask_login import current_user
 from .club_context import get_current_club_id, authorized_club_required
@@ -69,7 +69,7 @@ def about_club():
 @authorized_club_required
 def about_club_update():
     """Update club settings from the about club page."""
-    if not is_authorized(Permissions.ROSTER_EDIT):
+    if not is_authorized(Permissions.CLUB_MANAGE):
         return jsonify(success=False, message="Permission denied"), 403
     
     try:
@@ -219,7 +219,7 @@ def about_club_update():
 @authorized_club_required
 def upload_club_logo():
     """Handle club logo upload."""
-    if not is_authorized(Permissions.ROSTER_EDIT):
+    if not is_authorized(Permissions.CLUB_MANAGE):
         return jsonify(success=False, message="Permission denied"), 403
     
     try:
@@ -254,6 +254,7 @@ def upload_club_logo():
 @about_club_bp.route('/excomm')
 @login_required
 @authorized_club_required
+@club_permission_required(Permissions.ROSTER_VIEW)
 def excomm_page():
     """Renders the Excomm page showing past terms and contact cards."""
     club_id = get_current_club_id()

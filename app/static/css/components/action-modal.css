@@ -38,11 +38,11 @@
   transform: scale(1) translateY(0);
 }
 
-.action-modal-box form {
-  display: block !important;
-  flex-direction: unset !important;
-  align-items: unset !important;
-  gap: 0 !important;
+.action-modal-overlay .action-modal-box form {
+  display: block;
+  flex-direction: unset;
+  align-items: unset;
+  gap: 0;
 }
 
 .action-modal-header {
@@ -188,8 +188,8 @@
 
 /* Warning Info Box override inside Register Modal */
 #register-pathway-warning {
-  display: flex !important;
-  margin-bottom: 16px !important;
+  display: flex;
+  margin-bottom: 16px;
 }
 
 /* Pathways (Standard) Style */
@@ -201,12 +201,12 @@
   border-color: #7dd3fc;
 }
 .register-pathway-option.selected[data-pathway-type="pathway"] {
-  background-color: #7dd3fc !important;
-  border-color: #0284c7 !important;
+  background-color: #7dd3fc;
+  border-color: #0284c7;
   box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2);
 }
 .register-pathway-option.selected[data-pathway-type="pathway"] .select-indicator {
-  color: #0284c7 !important;
+  color: #0284c7;
 }
 
 /* Programs (Custom/Advanced) Style */
@@ -218,12 +218,12 @@
   border-color: #d8b4fe;
 }
 .register-pathway-option.selected[data-pathway-type="program"] {
-  background-color: #d8b4fe !important;
-  border-color: #7c3aed !important;
+  background-color: #d8b4fe;
+  border-color: #7c3aed;
   box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
 }
 .register-pathway-option.selected[data-pathway-type="program"] .select-indicator {
-  color: #7c3aed !important;
+  color: #7c3aed;
 }
 
 /* Traditional Style */
@@ -235,12 +235,12 @@
   border-color: #fbd38d;
 }
 .register-pathway-option.selected[data-pathway-type="traditional"] {
-  background-color: #feebc8 !important;
-  border-color: #dd6b20 !important;
+  background-color: #feebc8;
+  border-color: #dd6b20;
   box-shadow: 0 0 0 3px rgba(221, 107, 32, 0.2);
 }
 .register-pathway-option.selected[data-pathway-type="traditional"] .select-indicator {
-  color: #dd6b20 !important;
+  color: #dd6b20;
 }
 
 /* Others and Presentation Style */
@@ -255,13 +255,13 @@
 }
 .register-pathway-option.selected[data-pathway-type="others"],
 .register-pathway-option.selected[data-pathway-type="presentation"] {
-  background-color: #d1d5db !important;
-  border-color: #4b5563 !important;
+  background-color: #d1d5db;
+  border-color: #4b5563;
   box-shadow: 0 0 0 3px rgba(75, 85, 99, 0.2);
 }
 .register-pathway-option.selected[data-pathway-type="others"] .select-indicator,
 .register-pathway-option.selected[data-pathway-type="presentation"] .select-indicator {
-  color: #4b5563 !important;
+  color: #4b5563;
 }
 
 .register-pathway-option .select-indicator {

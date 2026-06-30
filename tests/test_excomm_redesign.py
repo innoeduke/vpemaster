@@ -1,6 +1,6 @@
 """Tests for redesigned Excomm features, sorting, and assistant officers."""
 import pytest
-from app.models import Club, ExComm, Contact, MeetingRole, ExcommOfficer, User
+from app.models import Club, ExComm, Contact, MeetingRole, ExcommOfficer, User, AuthRole, UserClub, Permission, RolePermission
 from app import db
 from datetime import date
 
@@ -133,11 +133,12 @@ def test_excomm_endpoints(client, app, default_club):
             user.set_password('password')
             db.session.add(user)
             db.session.commit()
+        uid = user.id
             
     # Mock logged in session via client
     with client.session_transaction() as sess:
-        sess['user_id'] = user.id
-        sess['_user_id'] = str(user.id)
+        sess['user_id'] = uid
+        sess['_user_id'] = str(uid)
         sess['club_id'] = default_club.id
         sess['_fresh'] = True
 
@@ -243,12 +244,79 @@ def test_excomm_route_access(client, app, default_club):
             user.set_password('password')
             db.session.add(user)
             db.session.commit()
+        uid = user.id
             
     with client.session_transaction() as sess:
-        sess['user_id'] = user.id
-        sess['_user_id'] = str(user.id)
+        sess['user_id'] = uid
+        sess['_user_id'] = str(uid)
         sess['club_id'] = default_club.id
         sess['_fresh'] = True
         
     response = client.get('/excomm')
     assert response.status_code == 200
+
+
+def test_excomm_club_manage_permission(client, app, default_club):
+    """Test that club_manage permission controls editing excomm records."""
+    with app.app_context():
+        # Clean up any existing member test user
+        old_user = User.query.filter_by(username='test_member').first()
+        if old_user:
+            UserClub.query.filter_by(user_id=old_user.id).delete()
+            db.session.delete(old_user)
+            db.session.commit()
+
+        # Seed Member role if not present
+        member_role = AuthRole.query.filter_by(name='Member').first()
+        if not member_role:
+            member_role = AuthRole(name='Member', level=1)
+            db.session.add(member_role)
+            db.session.commit()
+
+        # Seed ROSTER_VIEW permission if not present
+        roster_view_perm = Permission.query.filter_by(name='ROSTER_VIEW').first()
+        if not roster_view_perm:
+            roster_view_perm = Permission(name='ROSTER_VIEW', category='roster')
+            db.session.add(roster_view_perm)
+            db.session.commit()
+
+        # Link ROSTER_VIEW to Member role for the club
+        rp = RolePermission.query.filter_by(role_id=member_role.id, permission_id=roster_view_perm.id, club_id=default_club.id).first()
+        if not rp:
+            rp = RolePermission(role_id=member_role.id, permission_id=roster_view_perm.id, club_id=default_club.id)
+            db.session.add(rp)
+            db.session.commit()
+
+        # Create user
+        user = User(username='test_member', email='member@example.com')
+        user.set_password('password')
+        db.session.add(user)
+        db.session.commit()
+        
+        uc = UserClub(user_id=user.id, club_id=default_club.id, auth_role_id=member_role.id)
+        db.session.add(uc)
+        db.session.commit()
+        
+        uid = user.id
+
+    # Log in as test_member
+    with client.session_transaction() as sess:
+        sess['user_id'] = uid
+        sess['_user_id'] = str(uid)
+        sess['club_id'] = default_club.id
+        sess['_fresh'] = True
+
+    # 1. Member has ROSTER_VIEW, so they should be able to view /excomm (status code 200)
+    response = client.get('/excomm')
+    assert response.status_code == 200
+
+    # 2. But Member does NOT have CLUB_MANAGE, so attempting to add excomm should return 403 Forbidden
+    res = client.post('/settings/excomm/add', json={
+        'term': '27H1',
+        'name': 'Test Forbidden Team',
+        'start_date': '2027-01-01',
+        'end_date': '2027-06-30'
+    })
+    assert res.status_code == 403
+
+

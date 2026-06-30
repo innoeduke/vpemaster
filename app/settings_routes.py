@@ -168,7 +168,7 @@ def settings():
 @login_required
 @authorized_club_required
 def add_excomm():
-    if not is_authorized(Permissions.SETTINGS_VIEW):
+    if not is_authorized(Permissions.CLUB_MANAGE):
         return jsonify(success=False, message="Permission denied"), 403
     
     club_id = get_current_club_id()
@@ -197,7 +197,7 @@ def add_excomm():
 @login_required
 @authorized_club_required
 def update_excomm():
-    if not is_authorized(Permissions.SETTINGS_VIEW):
+    if not is_authorized(Permissions.CLUB_MANAGE):
         return jsonify(success=False, message="Permission denied"), 403
     
     club_id = get_current_club_id()
@@ -229,7 +229,7 @@ def update_excomm():
 @login_required
 @authorized_club_required
 def add_excomm_officer():
-    if not is_authorized(Permissions.SETTINGS_VIEW):
+    if not is_authorized(Permissions.CLUB_MANAGE):
         return jsonify(success=False, message="Permission denied"), 403
         
     club_id = get_current_club_id()
@@ -274,7 +274,7 @@ def add_excomm_officer():
 @login_required
 @authorized_club_required
 def update_excomm_officer():
-    if not is_authorized(Permissions.SETTINGS_VIEW):
+    if not is_authorized(Permissions.CLUB_MANAGE):
         return jsonify(success=False, message="Permission denied"), 403
         
     club_id = get_current_club_id()
@@ -319,7 +319,7 @@ def update_excomm_officer():
 @login_required
 @authorized_club_required
 def delete_excomm_officer(id):
-    if not is_authorized(Permissions.SETTINGS_VIEW):
+    if not is_authorized(Permissions.CLUB_MANAGE):
         return jsonify(success=False, message="Permission denied"), 403
         
     club_id = get_current_club_id()
@@ -344,7 +344,7 @@ def delete_excomm_officer(id):
 @login_required
 @authorized_club_required
 def delete_excomm(id):
-    if not is_authorized(Permissions.SETTINGS_VIEW):
+    if not is_authorized(Permissions.CLUB_MANAGE):
         return jsonify(success=False, message="Permission denied"), 403
     
     club_id = get_current_club_id()

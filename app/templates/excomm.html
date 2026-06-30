@@ -11,7 +11,7 @@
   <div class="officer-card {{ role_class }}">
     
     <!-- Hover actions overlay -->
-    {% if is_authorized(Permissions.ROSTER_EDIT) %}
+    {% if is_authorized(Permissions.CLUB_MANAGE) %}
     <div class="officer-card-actions">
       <button class="tm-action-btn" 
               onclick="openEditOfficerModal(this)"
@@ -95,7 +95,7 @@
     <div class="sidebar-card">
       <div class="sidebar-header">
         <h3>{{ _('Excomm Terms') }}</h3>
-        {% if is_authorized(Permissions.ROSTER_EDIT) %}
+        {% if is_authorized(Permissions.CLUB_MANAGE) %}
         {% call btn(variant='new', id='add-excomm-btn', class='btn-new-team', attrs={'onclick': 'openExcommModal()'}) %}
           <i class="fas fa-plus"></i> {{ _('New') }}
         {% endcall %}
@@ -111,7 +111,7 @@
                 <!-- Highlighted Name -->
                 <span class="term-code">{{ term.excomm_name or _('Unnamed Team') }}</span>
                 
-                {% if is_authorized(Permissions.ROSTER_EDIT) %}
+                {% if is_authorized(Permissions.CLUB_MANAGE) %}
                 <div class="tm-action-buttons" onclick="event.stopPropagation();">
                   <button class="tm-action-btn" 
                           onclick="openEditExcommModal(this)" 
@@ -173,7 +173,7 @@
       <div>
         <h2 class="cards-grid-title">
           <i class="fas fa-user-shield"></i> {{ _('Club Officers') }}
-          {% call btn(variant='new-outline', size='sm', disabled=not is_authorized(Permissions.ROSTER_EDIT), class='ms-3', attrs={'onclick': 'openOfficerModal()'}) %}
+          {% call btn(variant='new-outline', size='sm', disabled=not is_authorized(Permissions.CLUB_MANAGE), class='ms-3', attrs={'onclick': 'openOfficerModal()'}) %}
             <i class="fas fa-plus"></i> {{ _('New') }}
           {% endcall %}
         </h2>
@@ -205,7 +205,7 @@
           <i class="fas fa-user-friends"></i>
           <h3>{{ _('No officers assigned') }}</h3>
           <p>{{ _('This Excomm team does not have any officers assigned yet.') }}</p>
-          {% if is_authorized(Permissions.ROSTER_EDIT) %}
+          {% if is_authorized(Permissions.CLUB_MANAGE) %}
             <button class="btn btn-primary" onclick="openOfficerModal()">
               <i class="fas fa-plus"></i> {{ _('Assign Officer') }}
             </button>
@@ -218,7 +218,7 @@
         <i class="fas fa-sitemap"></i>
         <h3>{{ _('No Excomm Team setup') }}</h3>
         <p>{{ _('Please set up an Excomm term and assign officer roles to get started.') }}</p>
-        {% if is_authorized(Permissions.ROSTER_EDIT) %}
+        {% if is_authorized(Permissions.CLUB_MANAGE) %}
           <button class="btn btn-success" onclick="openExcommModal()">
             <i class="fas fa-plus"></i> {{ _('Create Excomm Team') }}
           </button>

@@ -120,6 +120,9 @@ class Permissions:
     ROSTER_VIEW = 'ROSTER_VIEW'
     ROSTER_EDIT = 'ROSTER_EDIT'
 
+    # Club (Category: club)
+    CLUB_MANAGE = 'CLUB_MANAGE'
+
     # Tools (Category: tools)
     LIBRARY_VIEW = 'LIBRARY_VIEW'
     LUCKY_DRAW_EDIT = 'LUCKY_DRAW_EDIT'
