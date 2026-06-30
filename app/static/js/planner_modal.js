@@ -417,7 +417,7 @@ function updateProjectVisibility() {
         const isValidForProject = !!roleProjectMapping[selectedRole.name];
 
         if (isValidForProject) {
-            projectChkGroup.style.display = 'block';
+            projectChkGroup.style.display = 'flex';
             projectChk.disabled = false;
             projectChk.parentElement.style.opacity = '1';
             projectChk.parentElement.style.cursor = 'pointer';
