@@ -122,6 +122,7 @@ class Permissions:
 
     # Club (Category: club)
     CLUB_MANAGE = 'CLUB_MANAGE'
+    CLUB_VIEW = 'CLUB_VIEW'
 
     # Tools (Category: tools)
     LIBRARY_VIEW = 'LIBRARY_VIEW'

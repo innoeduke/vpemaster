@@ -752,19 +752,24 @@ function showNotification(message, type = "info") {
 
   const notification = document.createElement("div");
   notification.id = "settings-notification";
-  notification.className = `alert alert-${type} alert-dismissible fade show`;
+  notification.className = `alert alert-${type} fade show`;
   notification.style.cssText = `
     position: fixed;
-    top: 20px;
+    bottom: 20px;
     right: 20px;
     z-index: var(--z-toast);
-    min-width: 300px;
     max-width: 500px;
+    width: fit-content;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 0.75rem 1.25rem;
   `;
 
   notification.innerHTML = `
-    ${message}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <span>${message}</span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="font-size: 1.2rem; line-height: 1; background: none; border: none; outline: none; opacity: 0.5; color: inherit; cursor: pointer; padding: 0;">&times;</button>
   `;
 
   document.body.appendChild(notification);

@@ -2,15 +2,18 @@
 
 .cards-page-container {
     padding: 20px;
-    max-width: 1400px;
-    margin: 0 auto;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0;
 }
 
 .member-cards-header {
     display: flex;
-    flex-direction: column;
-    align-items: center; /* Center items in header */
-    text-align: center; /* Center text in header */
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    text-align: left;
     margin-bottom: 30px;
     border-bottom: 2px solid #f1f5f9;
     padding-bottom: 20px;
@@ -20,7 +23,7 @@
 }
 
 .cards-header-info {
-    width: 100%;
+    text-align: left;
 }
 
 .member-cards-header h1 {
@@ -37,15 +40,15 @@
     margin: 5px 0 0 0;
     color: #64748b;
     font-size: 1rem;
+    text-align: left;
 }
 
 .cards-header-actions {
     display: flex;
     gap: 15px;
     align-items: center;
-    justify-content: center; /* Center buttons and search */
+    justify-content: flex-end;
     flex-wrap: wrap;
-    width: 100%;
     position: relative;
     z-index: var(--z-inline);
 }
@@ -125,8 +128,7 @@
 /* Grid Layout */
 .member-cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 350px)); /* Use auto-fit for better centering */
-    justify-content: center; /* Center the grid items */
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 25px;
     width: 100%;
 }
@@ -288,7 +290,9 @@
 
 @media (max-width: 576px) {
     .member-cards-header {
+        flex-direction: column;
         align-items: center;
+        text-align: center;
         gap: 20px;
         padding-bottom: 25px;
     }

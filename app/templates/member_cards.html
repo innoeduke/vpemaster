@@ -19,9 +19,11 @@
                 <input type="text" id="cardSearch" placeholder="{{ _('Search members...') }}" onkeyup="filterCards()" />
             </div>
             <div class="cards-header-buttons">
+                {% if not is_authorized(Permissions.CLUB_VIEW) %}
                 <button onclick="window.print()" class="btn btn-export">
                     <i class="fas fa-file-pdf"></i> {{ _('Export') }}
                 </button>
+                {% endif %}
                 <a href="{{ url_for('users_bp.show_users') }}" class="btn btn-outline-secondary btn-table-view">
                     <i class="fas fa-table"></i> {{ _('Table View') }}
                 </a>

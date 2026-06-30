@@ -125,3 +125,66 @@ def test_verify_all_permissions_exist_in_db(app, seeded_permissions):
         assert not missing_perms, f"Missing permissions in database: {missing_perms}"
         print(f"Verified {len(expected_perms)} permissions exist in database.")
 
+
+def test_club_view_only_access(client, app, default_club, seeded_permissions):
+    """Verify that a user with only CLUB_VIEW can access Excomm and Members pages but not action endpoints."""
+    from app.models import User, AuthRole, RolePermission, Permission, UserClub
+    
+    with app.app_context():
+        # Create a special role for CLUB_VIEW only
+        view_role = AuthRole.query.filter_by(name='ViewOnlyRole').first()
+        if not view_role:
+            view_role = AuthRole(name='ViewOnlyRole', level=1, club_id=default_club.id)
+            db.session.add(view_role)
+            db.session.commit()
+
+        # Link CLUB_VIEW to ViewOnlyRole for the club
+        club_view_perm = Permission.query.filter_by(name='CLUB_VIEW').first()
+        rp = RolePermission.query.filter_by(role_id=view_role.id, permission_id=club_view_perm.id, club_id=default_club.id).first()
+        if not rp:
+            rp = RolePermission(role_id=view_role.id, permission_id=club_view_perm.id, club_id=default_club.id)
+            db.session.add(rp)
+            db.session.commit()
+
+        # Create user
+        user = User(username='view_only_user', email='viewer@example.com')
+        user.set_password('password')
+        db.session.add(user)
+        db.session.commit()
+        
+        uc = UserClub(user_id=user.id, club_id=default_club.id, auth_role_id=view_role.id)
+        db.session.add(uc)
+        db.session.commit()
+        
+        uid = user.id
+
+    # Log in as view_only_user
+    with client.session_transaction() as sess:
+        sess['user_id'] = uid
+        sess['_user_id'] = str(uid)
+        sess['club_id'] = default_club.id
+        sess['_fresh'] = True
+
+    # 1. Access read-only pages (should succeed)
+    res_excomm = client.get('/excomm')
+    assert res_excomm.status_code == 200
+
+    res_users = client.get('/users')
+    assert res_users.status_code == 200
+
+    res_cards = client.get('/users/cards')
+    assert res_cards.status_code == 200
+
+    # 2. Attempt actions (should be forbidden 403)
+    res_edit_user = client.get('/user/form')
+    assert res_edit_user.status_code == 403
+
+    res_update_club = client.post('/about_club/update', json={})
+    assert res_update_club.status_code == 403
+
+    # 3. Blocked from Contacts page (redirect to agenda)
+    res_contacts = client.get('/contacts')
+    assert res_contacts.status_code == 302
+    assert 'agenda' in res_contacts.location
+
+

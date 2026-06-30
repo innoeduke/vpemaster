@@ -1085,7 +1085,7 @@ DEFAULT_USERS_PER_PAGE = 10
 @login_required
 @authorized_club_required
 def get_settings_users():
-    if not is_authorized(Permissions.MEMBERS_MANAGE):
+    if not is_authorized(Permissions.MEMBERS_MANAGE) and not is_authorized(Permissions.CLUB_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
 
     page = request.args.get('page', type=int)
@@ -1115,7 +1115,7 @@ def _build_users_data(per_page=None, offset=0):
     same shape the members page expects. ``total`` is the total count
     before pagination. ``error`` is non-None on permission failure.
     """
-    if not is_authorized(Permissions.MEMBERS_MANAGE):
+    if not is_authorized(Permissions.MEMBERS_MANAGE) and not is_authorized(Permissions.CLUB_VIEW):
         return None, None, 'Permission denied'
 
     club_id = get_current_club_id()

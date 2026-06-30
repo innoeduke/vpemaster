@@ -72,6 +72,10 @@
   white-space: nowrap;
 }
 
+#user-settings-table.hide-actions .col-actions {
+  display: none !important;
+}
+
 /* --- Members Page Specific Styles --- */
 .member-management-container {
   background-color: var(--card-bg, #fff);

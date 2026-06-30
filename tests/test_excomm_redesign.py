@@ -273,17 +273,17 @@ def test_excomm_club_manage_permission(client, app, default_club):
             db.session.add(member_role)
             db.session.commit()
 
-        # Seed ROSTER_VIEW permission if not present
-        roster_view_perm = Permission.query.filter_by(name='ROSTER_VIEW').first()
-        if not roster_view_perm:
-            roster_view_perm = Permission(name='ROSTER_VIEW', category='roster')
-            db.session.add(roster_view_perm)
+        # Seed CLUB_VIEW permission if not present
+        club_view_perm = Permission.query.filter_by(name='CLUB_VIEW').first()
+        if not club_view_perm:
+            club_view_perm = Permission(name='CLUB_VIEW', category='club')
+            db.session.add(club_view_perm)
             db.session.commit()
 
-        # Link ROSTER_VIEW to Member role for the club
-        rp = RolePermission.query.filter_by(role_id=member_role.id, permission_id=roster_view_perm.id, club_id=default_club.id).first()
+        # Link CLUB_VIEW to Member role for the club
+        rp = RolePermission.query.filter_by(role_id=member_role.id, permission_id=club_view_perm.id, club_id=default_club.id).first()
         if not rp:
-            rp = RolePermission(role_id=member_role.id, permission_id=roster_view_perm.id, club_id=default_club.id)
+            rp = RolePermission(role_id=member_role.id, permission_id=club_view_perm.id, club_id=default_club.id)
             db.session.add(rp)
             db.session.commit()
 
@@ -306,7 +306,7 @@ def test_excomm_club_manage_permission(client, app, default_club):
         sess['club_id'] = default_club.id
         sess['_fresh'] = True
 
-    # 1. Member has ROSTER_VIEW, so they should be able to view /excomm (status code 200)
+    # 1. Member has CLUB_VIEW, so they should be able to view /excomm (status code 200)
     response = client.get('/excomm')
     assert response.status_code == 200
 

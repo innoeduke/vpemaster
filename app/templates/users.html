@@ -32,22 +32,22 @@
           </div>
 
           <div class="button-group">
+            {% if is_authorized(Permissions.MEMBERS_MANAGE) %}
             {% call btn('success', attrs={'onclick': 'openUserModal()'}) %}{{ _('Add New') }}{% endcall %}
             <button type="button" class="btn btn-info" id="bulk-import-btn" onclick="window.location.href='{{ url_for('users_bp.bulk_import_members') }}';">
               {{ _('Bulk Import') }}
             </button>
-            {% if is_authorized(Permissions.ROSTER_VIEW) %}
-            <button type="button" class="btn btn-maroon" onclick="window.location.href='{{ url_for('contacts_bp.member_cards') }}';" title="{{ _('Grid View') }}">
+            {% endif %}
+            <button type="button" class="btn btn-maroon" onclick="window.location.href='{{ url_for('users_bp.member_cards') }}';" title="{{ _('Grid View') }}">
               <i class="fas fa-th-large"></i>
             </button>
-            {% endif %}
           </div>
         </div>
       </div>
     </div>
 
     <div class="member-table-container">
-      <table id="user-settings-table">
+      <table id="user-settings-table" class="{% if not is_authorized(Permissions.MEMBERS_MANAGE) %}hide-actions{% endif %}">
         <thead>
           <tr>
             <th class="sortable col-no" data-column-index="0">{{ _('No.') }}</th>
@@ -58,7 +58,9 @@
             <th class="sortable col-mentor" data-column-index="5">{{ _('Mentor') }}</th>
             <th class="sortable col-path" data-column-index="6">{{ _('Current Path') }}</th>
             <th class="sortable col-project" data-column-index="7">{{ _('Next Project') }}</th>
+            {% if is_authorized(Permissions.MEMBERS_MANAGE) %}
             <th class="col-actions" data-column-index="8">{{ _('Actions') }}</th>
+            {% endif %}
           </tr>
         </thead>
         <tbody id="users-table-body">
@@ -121,6 +123,7 @@
                 {%- endif -%}
               </td>
               <td class="col-project">{{ user.next_project if user.next_project and user.next_project != 'null' else '-' }}</td>
+              {% if is_authorized(Permissions.MEMBERS_MANAGE) %}
               <td class="col-actions">
                 <div class="tm-action-buttons">
                   {%- if user.contact_id -%}
@@ -136,6 +139,7 @@
                   </button>
                 </div>
               </td>
+              {% endif %}
             </tr>
           {%- endmacro -%}
           {%- if initial_users -%}
@@ -144,7 +148,7 @@
             {%- endfor -%}
           {%- else -%}
             <tr>
-              <td colspan="9" class="text-center py-4">
+              <td colspan="{% if is_authorized(Permissions.MEMBERS_MANAGE) %}9{% else %}8{% endif %}" class="text-center py-4">
                 <i class="fas fa-spinner fa-spin fa-2x"></i>
                 <p class="mt-2 text-muted">{{ _('Loading users...') }}</p>
               </td>
@@ -177,6 +181,7 @@
 <script>
   const CURRENT_CLUB_ID = {{ club_id }};
   const CAN_EDIT_USERS = {{ 'true' if is_authorized(Permissions.ROSTER_EDIT) else 'false' }};
+  const CAN_MANAGE_MEMBERS = {{ 'true' if is_authorized(Permissions.MEMBERS_MANAGE) else 'false' }};
   const IS_SUPER_CLUB_SYSADMIN = {{ 'true' if is_super_club_sysadmin else 'false' }};
   const INITIAL_USERS = {{ initial_users|tojson }};
   const USERS_TOTAL = {{ users_total }};

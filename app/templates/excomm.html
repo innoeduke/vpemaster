@@ -206,9 +206,11 @@
       <div>
         <h2 class="cards-grid-title">
           <i class="fas fa-user-shield"></i> {{ _('Club Officers') }}
-          {% call btn(variant='new-outline', size='sm', disabled=not is_authorized(Permissions.CLUB_MANAGE), class='ms-3', attrs={'onclick': 'openOfficerModal()'}) %}
+          {% if is_authorized(Permissions.CLUB_MANAGE) %}
+          {% call btn(variant='new-outline', size='sm', class='ms-3', attrs={'onclick': 'openOfficerModal()'}) %}
             <i class="fas fa-plus"></i> {{ _('New') }}
           {% endcall %}
+          {% endif %}
         </h2>
         {% if primary_officers %}
           <div class="cards-grid">

@@ -154,7 +154,7 @@ def _save_user_data(user=None, **kwargs):
 @users_bp.route('/users')
 @login_required
 def show_users():
-    if not is_authorized(Permissions.MEMBERS_MANAGE):
+    if not is_authorized(Permissions.MEMBERS_MANAGE) and not is_authorized(Permissions.CLUB_VIEW):
         abort(403)
 
     from .models import AuthRole
@@ -742,3 +742,18 @@ def respond_join():
     db.session.commit()
     
     return jsonify({'success': True})
+
+
+@users_bp.route('/users/cards')
+@login_required
+def member_cards():
+    """Renders the member cards view page."""
+    can_view_members = is_authorized(Permissions.MEMBERS_MANAGE) or is_authorized(Permissions.CLUB_VIEW)
+
+    if not can_view_members:
+        flash("You don't have permission to view this page.", 'error')
+        return redirect(url_for('agenda_bp.agenda'))
+
+    return render_template('member_cards.html',
+                           can_view_members=can_view_members)
+

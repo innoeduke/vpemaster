@@ -151,20 +151,7 @@ def show_contacts():
                            current_term=current_term)
 
 
-@contacts_bp.route('/contacts/cards')
-@login_required
-def member_cards():
-    """Renders the member cards view page."""
-    can_view_all = is_authorized(Permissions.ROSTER_VIEW)
-    can_view_members = is_authorized(Permissions.ROSTER_VIEW)
 
-    if not can_view_all:
-        flash("You don't have permission to view this page.", 'error')
-        return redirect(url_for('agenda_bp.agenda'))
-
-    return render_template('member_cards.html',
-                           can_view_members=can_view_members,
-                           can_view_all=can_view_all)
 
 
 @contacts_bp.route('/contact/form', methods=['GET', 'POST'])
@@ -724,8 +711,8 @@ def get_all_contacts_api():
     compat with the background loader). With `page` + `per_page`, returns
     a single page envelope: ``{rows: [...], total: N}``.
     """
-    can_view_all = is_authorized(Permissions.ROSTER_VIEW)
-    can_view_members = is_authorized(Permissions.ROSTER_VIEW)
+    can_view_all = is_authorized(Permissions.ROSTER_VIEW) or is_authorized(Permissions.CLUB_VIEW)
+    can_view_members = is_authorized(Permissions.ROSTER_VIEW) or is_authorized(Permissions.CLUB_VIEW)
 
     if not can_view_all:
         return jsonify({'error': 'Permission denied'}), 403
@@ -758,7 +745,7 @@ def _build_contacts_data(per_page=None, offset=0):
     count of contacts the query would return. ``error`` is non-None on
     permission failure.
     """
-    can_view_all = is_authorized(Permissions.ROSTER_VIEW)
+    can_view_all = is_authorized(Permissions.ROSTER_VIEW) or is_authorized(Permissions.CLUB_VIEW)
 
     if not can_view_all:
         return None, None, 'Permission denied'

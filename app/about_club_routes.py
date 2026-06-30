@@ -261,7 +261,7 @@ def upload_club_logo():
 @about_club_bp.route('/excomm')
 @login_required
 @authorized_club_required
-@club_permission_required(Permissions.ROSTER_VIEW)
+@club_permission_required(Permissions.CLUB_VIEW)
 def excomm_page():
     """Renders the Excomm page showing past terms and contact cards."""
     club_id = get_current_club_id()
