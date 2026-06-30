@@ -22,23 +22,30 @@ def about_club():
     club_id = get_current_club_id()
     club = db.session.get(Club, club_id) if club_id else Club.query.first()
     
-    # Get current excomm team from database
+    # Get current excomm team from database.
+    # Note: the IPP officer role is stored as 'IPP' in the DB (meeting_roles.name),
+    # not 'Immediate Past President'. All lookups must use the stored name.
     excomm = None
     excomm_team = {
-        'name': '', 
-        'term': '', 
+        'name': '',
+        'term': '',
         'members': {
-            'President': '', 'VPE': '', 'VPM': '', 'VPPR': '', 
-            'Secretary': '', 'Treasurer': '', 'SAA': '', 'Immediate Past President': ''
+            'President': '', 'VPE': '', 'VPM': '', 'VPPR': '',
+            'Secretary': '', 'Treasurer': '', 'SAA': '', 'IPP': ''
         }
     }
-    
-    if club and club.current_excomm_id:
-        excomm = ExComm.query.get(club.current_excomm_id)
+
+    if club:
+        # Prefer the pinned current excomm; fall back to the most recent term.
+        if club.current_excomm_id:
+            excomm = ExComm.query.get(club.current_excomm_id)
+        if not excomm:
+            excomm = ExComm.query.filter_by(club_id=club.id).order_by(ExComm.start_date.desc()).first()
+
         if excomm:
             # Use get_officers() which returns {role_name: Contact}
             active_officers = excomm.get_officers()
-            
+
             excomm_team = {
                 'name': excomm.excomm_name or '',
                 'term': excomm.excomm_term or '',
@@ -50,7 +57,7 @@ def about_club():
                     'Secretary': active_officers['Secretary'].Name if active_officers.get('Secretary') else '',
                     'Treasurer': active_officers['Treasurer'].Name if active_officers.get('Treasurer') else '',
                     'SAA': active_officers['SAA'].Name if active_officers.get('SAA') else '',
-                    'Immediate Past President': active_officers['Immediate Past President'].Name if active_officers.get('Immediate Past President') else ''
+                    'IPP': active_officers['IPP'].Name if active_officers.get('IPP') else '',
                 }
             }
 
@@ -297,7 +304,7 @@ def excomm_page():
         'Secretary': 4,
         'Treasurer': 5,
         'SAA': 6,
-        'Immediate Past President': 7
+        'IPP': 7
     }
     officer_roles.sort(key=lambda r: role_order.get(r.name, 999))
     

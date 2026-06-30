@@ -83,7 +83,7 @@ def settings():
         
         # Fallback: if no officer roles found (unlikely if Global is set up), try standard names match on what we have
         if not officer_roles:
-            standard_officers = ['President', 'VPE', 'VPM', 'VPPR', 'Secretary', 'Treasurer', 'SAA', 'Immediate Past President']
+            standard_officers = ['President', 'VPE', 'VPM', 'VPPR', 'Secretary', 'Treasurer', 'SAA', 'IPP']
             officer_roles = [r for r in all_roles if r.name in standard_officers]
 
         role_order = {
@@ -94,7 +94,7 @@ def settings():
             'Secretary': 4,
             'Treasurer': 5,
             'SAA': 6,
-            'Immediate Past President': 7
+            'IPP': 7
         }
         officer_roles.sort(key=lambda r: role_order.get(r.name, 999))
 
