@@ -94,7 +94,7 @@ def settings():
             'Secretary': 4,
             'Treasurer': 5,
             'SAA': 6,
-            'IPP': 7
+            'Immediate Past President': 7
         }
         officer_roles.sort(key=lambda r: role_order.get(r.name, 999))
 

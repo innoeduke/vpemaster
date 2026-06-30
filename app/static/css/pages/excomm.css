@@ -44,6 +44,14 @@
   font-weight: 700;
 }
 
+.btn-new-team {
+  font-size: 0.8rem;
+  padding: 5px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 6px;
+}
 .term-list {
   display: flex;
   flex-direction: column;
@@ -128,9 +136,8 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
   padding: 20px 24px;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
+  justify-content: space-between;
+  align-items: center;
   color: #333;
 }
 
@@ -170,6 +177,24 @@
   opacity: 0.85;
 }
 
+.main-header-badge {
+  background: #faf0f1;
+  color: #772432;
+  border: 1px solid rgba(119, 36, 50, 0.2);
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 6px 14px;
+  border-radius: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 1px 2px rgba(119, 36, 50, 0.04);
+}
+
+.main-header-badge i {
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
 /* Contact Cards Grid */
 .cards-grid-title {
   margin: 0 0 15px 0;
@@ -466,7 +491,6 @@ a.detail-item:hover {
 .term-select-mobile {
   display: none;
 }
-
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .excomm-page-container {

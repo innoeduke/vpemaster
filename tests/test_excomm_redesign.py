@@ -320,3 +320,4 @@ def test_excomm_club_manage_permission(client, app, default_club):
     assert res.status_code == 403
 
 
+
