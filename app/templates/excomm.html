@@ -148,21 +148,16 @@
                   </div>
                 </div>
 
-                <!-- Name & DTM -->
+                <!-- Name & Credentials -->
                 <h3 class="officer-name">
-                  {{ contact.Name }}
-                  {% if contact.DTM %}
+                  {{ contact.Name }}{% if contact.credentials and contact.credentials.upper() != 'DTM' %}, {{ contact.credentials }}{% endif %}
+                  {% if contact.DTM or (contact.credentials and contact.credentials.upper() == 'DTM') %}
                     <span class="dtm-badge" title="Distinguished Toastmaster">DTM</span>
                   {% endif %}
                 </h3>
 
-                <!-- Credentials and Completed Paths -->
+                <!-- Completed Paths -->
                 <div class="officer-details">
-                  {% if contact.credentials %}
-                    <div class="detail-item" title="{{ _('Credential') }}">
-                      <i class="fas fa-award"></i> {{ contact.credentials }}
-                    </div>
-                  {% endif %}
                   {% set completed = contact.Completed_Paths or contact._Completed_Paths %}
                   {% if completed %}
                     <div class="detail-item" title="{{ _('Completed Paths') }}">
@@ -236,21 +231,16 @@
                   </div>
                 </div>
 
-                <!-- Name & DTM -->
+                <!-- Name & Credentials -->
                 <h3 class="officer-name">
-                  {{ contact.Name }}
-                  {% if contact.DTM %}
+                  {{ contact.Name }}{% if contact.credentials and contact.credentials.upper() != 'DTM' %}, {{ contact.credentials }}{% endif %}
+                  {% if contact.DTM or (contact.credentials and contact.credentials.upper() == 'DTM') %}
                     <span class="dtm-badge" title="Distinguished Toastmaster">DTM</span>
                   {% endif %}
                 </h3>
 
-                <!-- Credentials and Completed Paths -->
+                <!-- Completed Paths -->
                 <div class="officer-details">
-                  {% if contact.credentials %}
-                    <div class="detail-item" title="{{ _('Credential') }}">
-                      <i class="fas fa-award"></i> {{ contact.credentials }}
-                    </div>
-                  {% endif %}
                   {% set completed = contact.Completed_Paths or contact._Completed_Paths %}
                   {% if completed %}
                     <div class="detail-item" title="{{ _('Completed Paths') }}">
