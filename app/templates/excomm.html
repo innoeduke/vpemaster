@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "partials/_button_macros.html" import btn %}
 {% from "components/action_modal.html" import render_action_modal %}
+{% from "components/custom_select.html" import render_custom_select %}
 
 {# Reusable macro to render an officer card and eliminate code duplication #}
 {% macro render_officer_card(officer, is_assistant) %}
@@ -96,12 +97,33 @@
       <div class="sidebar-header">
         <h3>{{ _('Excomm Terms') }}</h3>
         {% if is_authorized(Permissions.CLUB_MANAGE) %}
-        {% call btn(variant='new', id='add-excomm-btn', class='btn-new-team', attrs={'onclick': 'openExcommModal()'}) %}
+        {% call btn(variant='new-outline', size='sm', id='add-excomm-btn', attrs={'onclick': 'openExcommModal()'}) %}
           <i class="fas fa-plus"></i> {{ _('New') }}
         {% endcall %}
         {% endif %}
       </div>
-      
+
+      {# Mobile-only: premium select replaces the term list (touch has no hover) #}
+      {% set term_options = [] %}
+      {% for t in excomm_list %}
+        {% set display = (t.excomm_term ~ ' — ' ~ (t.excomm_name or _('Unnamed Team'))) %}
+        {% set _ = term_options.append({'value': t.id, 'text': display}) %}
+      {% endfor %}
+      {% set _selected_term_id = (selected_excomm.id|string if selected_excomm else '') %}
+      <div class="term-select-mobile"
+           data-href-base="{{ url_for('about_club_bp.excomm_page') }}">
+        {% if term_options %}
+          {{ render_custom_select(
+              term_options,
+              _selected_term_id,
+              select_id='excomm-term-select',
+              placeholder=_('Select a term…')
+          ) }}
+        {% else %}
+          <div class="text-muted text-center py-2">{{ _('No excomm terms set up.') }}</div>
+        {% endif %}
+      </div>
+
       <div class="term-list">
         {% if excomm_list %}
           {% for term in excomm_list %}
@@ -157,15 +179,12 @@
           <h1>{{ selected_excomm.excomm_name or _('Unnamed Excomm Team') }}</h1>
           {% if selected_excomm.start_date or selected_excomm.end_date %}
             <p class="term-dates">
-              <i class="far fa-calendar-alt"></i> 
-              {{ selected_excomm.start_date.strftime('%b %d, %Y') if selected_excomm.start_date else '?' }} 
-              {{ _('to') }} 
+              <i class="far fa-calendar-alt"></i>
+              {{ selected_excomm.start_date.strftime('%b %d, %Y') if selected_excomm.start_date else '?' }}
+              {{ _('to') }}
               {{ selected_excomm.end_date.strftime('%b %d, %Y') if selected_excomm.end_date else '?' }}
             </p>
           {% endif %}
-        </div>
-        <div class="main-header-badge" title="{{ _('Term Code') }}">
-          <i class="far fa-clock"></i> <strong>{{ selected_excomm.excomm_term }}</strong>
         </div>
       </div>
 
@@ -318,6 +337,21 @@
     } catch (e) {
         console.error("Error parsing contacts data:", e);
     }
+</script>
+
+{# Navigate when the mobile term-select changes #}
+<script>
+(function() {
+    const sel = document.getElementById('excomm-term-select');
+    const wrap = document.querySelector('.term-select-mobile');
+    if (!sel || !wrap) return;
+    const base = wrap.dataset.hrefBase || '/excomm';
+    sel.addEventListener('change', function() {
+        if (this.value) {
+            window.location.href = base + (base.includes('?') ? '&' : '?') + 'term_id=' + encodeURIComponent(this.value);
+        }
+    });
+})();
 </script>
 {% endblock %}
 

@@ -44,15 +44,6 @@
   font-weight: 700;
 }
 
-.btn-new-team {
-  font-size: 0.8rem;
-  padding: 5px 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  border-radius: 6px;
-}
-
 .term-list {
   display: flex;
   flex-direction: column;
@@ -137,17 +128,20 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
   padding: 20px 24px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
   color: #333;
 }
 
 .main-header-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   align-items: flex-start;
   text-align: left;
+  -webkit-font-smoothing: antialiased;
+  font-smoothing: antialiased;
 }
 
 .main-header-info h1 {
@@ -156,7 +150,9 @@
   font-weight: 700;
   color: #1e293b;
   letter-spacing: -0.3px;
+  line-height: 1.2;
   text-align: left;
+  text-wrap: balance;
 }
 
 .main-header-info .term-dates {
@@ -166,30 +162,12 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  font-variant-numeric: tabular-nums;
 }
 
 .main-header-info .term-dates i {
   color: #772432;
   opacity: 0.85;
-}
-
-.main-header-badge {
-  background: #faf0f1;
-  color: #772432;
-  border: 1px solid rgba(119, 36, 50, 0.2);
-  font-weight: 700;
-  font-size: 0.9rem;
-  padding: 6px 14px;
-  border-radius: 30px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  box-shadow: 0 1px 2px rgba(119, 36, 50, 0.04);
-}
-
-.main-header-badge i {
-  font-size: 0.95rem;
-  opacity: 0.9;
 }
 
 /* Contact Cards Grid */
@@ -482,6 +460,13 @@ a.detail-item:hover {
   color: #b52b27;
 }
 
+/* Mobile-only: swap the clickable term list for a premium select.
+   Touch devices have no hover, so per-item hover actions are unreliable;
+   the select handles navigation and edit/delete buttons are hidden. */
+.term-select-mobile {
+  display: none;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .excomm-page-container {
@@ -490,8 +475,16 @@ a.detail-item:hover {
   .excomm-sidebar {
     width: 100%;
   }
+  .term-select-mobile {
+    display: block;
+    margin-bottom: 12px;
+  }
   .term-list {
-    max-height: 200px;
+    display: none;
+  }
+  /* Per-term edit/delete buttons are unreachable on touch; hide entirely */
+  .term-item .tm-action-buttons {
+    display: none;
   }
 }
 
