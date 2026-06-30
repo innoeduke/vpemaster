@@ -15,15 +15,24 @@
 	}
 
 	.speech-logs-content {
-		max-width: 1400px;
+		max-width: none;
+		margin-left: -5% !important;
+		margin-right: -5% !important;
 	}
 
 	.progress-table .level-cell {
-		width: 100px;
+		width: 1% !important;
+		white-space: nowrap;
 	}
 
 	.progress-table .speech-column {
-		width: 18%;
+		width: 1% !important;
+		white-space: nowrap;
+	}
+
+	.progress-table td.actions-cell {
+		width: 1% !important;
+		white-space: nowrap;
 	}
 
 	.member-view-mode .speech-log-main-content {

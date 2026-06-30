@@ -20,9 +20,17 @@
 		font-size: 0.9em;
 	}
 
+	.speech-logs-content {
+		max-width: none;
+		margin-left: -5% !important;
+		margin-right: -5% !important;
+	}
+
 	.progress-table .level-cell {
 		font-size: 0.9em;
 		padding: 8px 10px;
+		width: 1% !important;
+		white-space: nowrap;
 	}
 
 	.progress-table th,
@@ -32,8 +40,13 @@
 	}
 
 	.progress-table .speech-column {
-		width: 8%;
-		min-width: 60px;
+		width: 1% !important;
+		white-space: nowrap;
+	}
+
+	.progress-table td.actions-cell {
+		width: 1% !important;
+		white-space: nowrap;
 	}
 
 	.member-view-mode .speech-log-main-content {
