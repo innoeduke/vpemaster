@@ -187,7 +187,6 @@
   font-size: 0.95rem;
   opacity: 0.9;
 }
-/* Contact Cards Grid */
 .cards-grid-title {
   margin: 0 0 15px 0;
   font-size: 1.15rem;
@@ -196,6 +195,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.cards-grid-title .btn {
+  margin-left: auto !important;
 }
 
 .cards-grid {
@@ -524,13 +527,7 @@ a.detail-item:hover {
   .term-item .tm-action-buttons {
     display: none;
   }
-  .cards-grid-title {
-    display: flex;
-    align-items: center;
-    width: 100%;
-  }
   .cards-grid-title .btn {
-    margin-left: auto !important;
     margin-right: 15px !important;
   }
 }
