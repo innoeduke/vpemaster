@@ -1,6 +1,7 @@
 {% extends "speech_logs.html" %}
 {% from "partials/_button_macros.html" import btn %}
-
+{% from "components/action_modal.html" import render_action_modal %}
+{% from "components/info_box.html" import render_info_box %}
 {% block content_class %}member-view-mode{% endblock %}
 
 {% block page_heading %}
@@ -442,33 +443,32 @@
 {% block speech_log_modals %}
 {{ super() }}
 <!-- Register Pathway Modal -->
-<div id="registerPathwayModal" class="history-modal" style="display: none;">
-    <div class="history-modal-content" style="max-width: 420px;">
-        <div class="history-modal-header">
-            <h3>{{ _('Register New Path') }}</h3>
-            <span class="close-history" onclick="closeRegisterPathwayModal()">&times;</span>
+{% set register_pathway_footer_buttons %}
+    <button type="button" onclick="closeRegisterPathwayModal()" class="btn btn-cancel btn-danger">{{ _('Cancel') }}</button>
+    <button type="button" id="btn-confirm-register-pathway" disabled onclick="confirmRegisterPathway()" class="btn btn-success" style="opacity: 0.5;">{{ _('Register') }}</button>
+{% endset %}
+
+{% call render_action_modal(
+    id='registerPathwayModal',
+    title='Register New Path',
+    form_id='registerPathwayForm',
+    modal_max_width='440px',
+    footer_buttons=register_pathway_footer_buttons
+) %}
+    {% call render_info_box('register-pathway-warning', 'Warning:') %}
+        {{ _('Pathway registration cannot be reverted. Please confirm before proceeding.') }}
+    {% endcall %}
+
+    <div style="max-height: 220px; overflow-y: auto; margin-bottom: 16px; padding: 4px;">
+        {% for p in available_pathways %}
+        <div class="register-pathway-option" data-pathway-id="{{ p.pathway_id }}" data-pathway-name="{{ p.name }}" data-pathway-type="{{ p.type or 'pathway' }}" onclick="selectRegisterPathway(this, {{ p.pathway_id }}, '{{ p.name|replace("'", "\\'") }}')">
+            <i class="far fa-circle select-indicator"></i>
+            <span style="font-size: 13px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #333; flex: 1;">{{ p.name }}</span>
+            {% if p.abbr %}<span style="font-size: 11px; color: #888;">({{ p.abbr }})</span>{% endif %}
         </div>
-        <div style="padding: 16px;">
-            <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 0.85em; color: #856404; font-family: 'Montserrat', sans-serif;">
-                <i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i>
-                <strong>{{ _('Warning') }}:</strong> {{ _('Pathway registration cannot be reverted. Please confirm before proceeding.') }}
-            </div>
-            <div style="max-height: 220px; overflow-y: auto; margin-bottom: 16px;">
-                {% for p in available_pathways %}
-                <div class="register-pathway-option" data-pathway-id="{{ p.pathway_id }}" data-pathway-name="{{ p.name }}" onclick="selectRegisterPathway(this, {{ p.pathway_id }}, '{{ p.name|replace("'", "\\'") }}')" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; border: 1px solid #eee; border-radius: 6px; margin-bottom: 6px; transition: all 0.15s;" onmouseover="if (!this.classList.contains('selected')) this.style.background='#f8f9fa'" onmouseout="if (!this.classList.contains('selected')) this.style.background='white'">
-                    <i class="far fa-circle select-indicator" style="color: #ccc; font-size: 1em; transition: color 0.15s;"></i>
-                    <span style="font-size: 13px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #333; flex: 1;">{{ p.name }}</span>
-                    {% if p.abbr %}<span style="font-size: 11px; color: #888;">({{ p.abbr }})</span>{% endif %}
-                </div>
-                {% endfor %}
-            </div>
-            <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                <button type="button" onclick="closeRegisterPathwayModal()" style="padding: 8px 18px; border: 1px solid #ddd; border-radius: 6px; background: #fff; color: #666; font-size: 0.9em; cursor: pointer; font-family: 'Montserrat', sans-serif; font-weight: 600;">{{ _('Cancel') }}</button>
-                <button type="button" id="btn-confirm-register-pathway" disabled onclick="confirmRegisterPathway()" style="padding: 8px 18px; border: none; border-radius: 6px; background: #28a745; color: #fff; font-size: 0.9em; cursor: pointer; font-family: 'Montserrat', sans-serif; font-weight: 600; opacity: 0.5;">{{ _('Register') }}</button>
-            </div>
-        </div>
+        {% endfor %}
     </div>
-</div>
+{% endcall %}
 {% endblock %}
 
 {% block speech_log_scripts %}

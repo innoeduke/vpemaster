@@ -4,12 +4,12 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     const listContainer = document.getElementById('templates-list-container');
-    const modal = document.getElementById('programTemplateModal');
+    const modal = document.getElementById('programTemplateModal-overlay');
     const form = document.getElementById('programTemplateForm');
     const addTemplateBtn = document.getElementById('add-template-btn');
     const cancelTemplateBtn = document.getElementById('cancel-template-btn');
     const closeTemplateModalBtn = document.getElementById('close-template-modal-btn');
-    const modalTitle = document.getElementById('template-modal-title');
+    const modalTitle = document.getElementById('programTemplateModal-title');
     
     // Task elements
     const tasksSection = document.getElementById('tasks-editor-section');
@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const taskTemplate = document.getElementById('task-row-template');
 
     // Task modal elements
-    const taskModal = document.getElementById('programTaskModal');
+    const taskModal = document.getElementById('programTaskModal-overlay');
     const taskForm = document.getElementById('programTaskForm');
     const closeTaskModalBtn = document.getElementById('close-task-modal-btn');
     const cancelTaskBtn = document.getElementById('cancel-task-btn');
@@ -466,11 +466,11 @@ document.addEventListener('DOMContentLoaded', function() {
             tasksSection.style.display = 'none'; // Only show tasks editor after program is saved/exists
         }
         
-        modal.style.display = 'flex';
+        openActionModal('programTemplateModal');
     }
 
     function closeTemplateModal() {
-        modal.style.display = 'none';
+        closeActionModal('programTemplateModal');
     }
 
     async function loadProgramTasks(programId) {
@@ -543,7 +543,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let currentType = 'manual';
         let currentConfig = {};
         if (row) {
-            document.getElementById('task-modal-title').innerText = 'Edit Program Task';
+            document.getElementById('programTaskModal-title').innerText = 'Edit Program Task';
             modalTaskTitle.value = row.querySelector('.task-title').value;
             modalTaskDesc.value = row.querySelector('.task-desc').value;
             currentType = row.querySelector('.task-completion-type').value || 'manual';
@@ -555,7 +555,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             modalTaskIsRequired.checked = row.querySelector('.task-is-required-val').value === 'true';
         } else {
-            document.getElementById('task-modal-title').innerText = 'New Program Task';
+            document.getElementById('programTaskModal-title').innerText = 'New Program Task';
             modalTaskIsRequired.checked = true;
         }
 
@@ -563,11 +563,11 @@ document.addEventListener('DOMContentLoaded', function() {
         showConfigForType(currentType);
         applyTypeConfig(currentType, currentConfig);
 
-        taskModal.style.display = 'flex';
+        openActionModal('programTaskModal');
     }
 
     function closeTaskModal() {
-        taskModal.style.display = 'none';
+        closeActionModal('programTaskModal');
         activeTaskRow = null;
         phaseNewRow.style.display = 'none';
         modalTaskPhaseNew.value = '';

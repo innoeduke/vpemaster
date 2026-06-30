@@ -1,0 +1,271 @@
+/* --- Reusable Action Modals --- */
+.action-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: var(--z-modal);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+}
+
+.action-modal-overlay.active {
+  opacity: 1;
+  display: flex;
+}
+
+.action-modal-box {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 480px;
+  padding: 0;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  transform: scale(0.95) translateY(15px);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+}
+
+.action-modal-overlay.active .action-modal-box {
+  transform: scale(1) translateY(0);
+}
+
+.action-modal-box form {
+  display: block !important;
+  flex-direction: unset !important;
+  align-items: unset !important;
+  gap: 0 !important;
+}
+
+.action-modal-header {
+  background: linear-gradient(135deg, #772432, #9b2226);
+  color: #ffffff;
+  padding: 18px 24px;
+  font-weight: 700;
+  font-size: 1.2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 16px 16px 0 0;
+}
+
+.action-modal-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.action-modal-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: color 0.2s;
+  line-height: 1;
+  padding: 0;
+}
+
+.action-modal-close:hover {
+  color: #ffffff;
+}
+
+.action-modal-body {
+  padding: 24px;
+}
+
+.action-modal-body label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #444;
+  font-size: 0.9rem;
+}
+
+.action-modal-body .form-control {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #333;
+  background-color: #fafbfc;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.action-modal-body .form-control:focus {
+  outline: none;
+  border-color: #772432;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(119, 36, 50, 0.12);
+}
+
+.action-modal-body .form-group {
+  margin-bottom: 18px;
+}
+
+.action-modal-body .form-group:last-child {
+  margin-bottom: 0;
+}
+
+.action-modal-footer {
+  padding: 16px 24px 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid #edf2f7;
+  background-color: #fafbfc;
+  border-radius: 0 0 16px 16px;
+}
+
+.action-modal-footer .btn {
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: 8px;
+}
+
+.action-modal-footer .btn-danger,
+.action-modal-footer .btn-cancel {
+  background-color: transparent;
+  color: #555555;
+  border: 1px solid #d1d5db;
+  box-shadow: none;
+  transition: all 0.2s ease;
+}
+
+.action-modal-footer .btn-danger:hover,
+.action-modal-footer .btn-cancel:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+  color: #1f2937;
+}
+
+/* Helper Checkbox styles for form groups within Action Modals */
+.form-group-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  cursor: pointer;
+}
+
+.form-group-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #772432;
+  cursor: pointer;
+}
+
+.form-group-checkbox label {
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
+/* Styling for Register Pathway Modal Options by Type */
+.register-pathway-option {
+  padding: 12px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: all 0.2s ease-in-out;
+  user-select: none;
+}
+
+/* Warning Info Box override inside Register Modal */
+#register-pathway-warning {
+  display: flex !important;
+  margin-bottom: 16px !important;
+}
+
+/* Pathways (Standard) Style */
+.register-pathway-option[data-pathway-type="pathway"] {
+  background-color: #e0f2fe;
+}
+.register-pathway-option[data-pathway-type="pathway"]:hover {
+  background-color: #bae6fd;
+  border-color: #7dd3fc;
+}
+.register-pathway-option.selected[data-pathway-type="pathway"] {
+  background-color: #7dd3fc !important;
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2);
+}
+.register-pathway-option.selected[data-pathway-type="pathway"] .select-indicator {
+  color: #0284c7 !important;
+}
+
+/* Programs (Custom/Advanced) Style */
+.register-pathway-option[data-pathway-type="program"] {
+  background-color: #f3e8ff;
+}
+.register-pathway-option[data-pathway-type="program"]:hover {
+  background-color: #e9d5ff;
+  border-color: #d8b4fe;
+}
+.register-pathway-option.selected[data-pathway-type="program"] {
+  background-color: #d8b4fe !important;
+  border-color: #7c3aed !important;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+}
+.register-pathway-option.selected[data-pathway-type="program"] .select-indicator {
+  color: #7c3aed !important;
+}
+
+/* Traditional Style */
+.register-pathway-option[data-pathway-type="traditional"] {
+  background-color: #fffaf0;
+}
+.register-pathway-option[data-pathway-type="traditional"]:hover {
+  background-color: #feebc8;
+  border-color: #fbd38d;
+}
+.register-pathway-option.selected[data-pathway-type="traditional"] {
+  background-color: #feebc8 !important;
+  border-color: #dd6b20 !important;
+  box-shadow: 0 0 0 3px rgba(221, 107, 32, 0.2);
+}
+.register-pathway-option.selected[data-pathway-type="traditional"] .select-indicator {
+  color: #dd6b20 !important;
+}
+
+/* Others and Presentation Style */
+.register-pathway-option[data-pathway-type="others"],
+.register-pathway-option[data-pathway-type="presentation"] {
+  background-color: #f3f4f6;
+}
+.register-pathway-option[data-pathway-type="others"]:hover,
+.register-pathway-option[data-pathway-type="presentation"]:hover {
+  background-color: #e5e7eb;
+  border-color: #d1d5db;
+}
+.register-pathway-option.selected[data-pathway-type="others"],
+.register-pathway-option.selected[data-pathway-type="presentation"] {
+  background-color: #d1d5db !important;
+  border-color: #4b5563 !important;
+  box-shadow: 0 0 0 3px rgba(75, 85, 99, 0.2);
+}
+.register-pathway-option.selected[data-pathway-type="others"] .select-indicator,
+.register-pathway-option.selected[data-pathway-type="presentation"] .select-indicator {
+  color: #4b5563 !important;
+}
+
+.register-pathway-option .select-indicator {
+  color: #a0aec0;
+  font-size: 1.1rem;
+  transition: all 0.2s ease;
+}

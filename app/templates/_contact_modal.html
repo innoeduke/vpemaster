@@ -1,146 +1,154 @@
-{% from "partials/_button_macros.html" import btn %}
-<div id="contactModal" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2 id="contactModalTitle"></h2>
+{% from "components/action_modal.html" import render_action_modal %}
+
+<!-- Contact/Guest Modal (Redesigned) -->
+{% set contact_footer_buttons %}
+  <button type="button" class="btn btn-cancel btn-danger" onclick="closeContactModal()">{{ _('Cancel') }}</button>
+  <button type="submit" class="btn btn-success">{{ _('Save') }}</button>
+{% endset %}
+
+{% call render_action_modal(
+    id='contactModal',
+    title='Add Guest',
+    form_id='contactForm',
+    modal_max_width='800px',
+    footer_buttons=contact_footer_buttons,
+    method='POST',
+    enctype='multipart/form-data'
+) %}
+  <div class="contact-modal-layout" style="display: flex; gap: 24px;">
+    <!-- Left Column: Avatar Section -->
+    <div class="profile-avatar-section">
+      <div class="profile-avatar-container" onclick="navigateToSpeechLogs()" style="cursor: pointer;">
+        <div id="modal-avatar-placeholder" class="avatar-placeholder">
+          <i class="fas fa-user"></i>
+        </div>
+        <img id="modal-avatar-img" src="" alt="Avatar" class="profile-avatar" style="display: none;"
+          onerror="this.style.display='none'; document.getElementById('modal-avatar-placeholder').style.display='flex';">
+      </div>
+
+      <div class="upload-btn-wrapper" style="margin-top: 15px; text-align: center;">
+        <button type="button" class="btn-upload btn.btn-new-outline" onclick="document.getElementById('avatar-input').click()" style="padding: 6px 12px; font-size: 0.85rem; border-radius: 6px; border: 1px solid #772432; color: #772432; background: transparent; cursor: pointer; font-weight: 600;">{{ _('Change Photo') }}</button>
+        <input type="file" id="avatar-input" name="avatar" accept="image/*" onchange="previewAvatar(this)"
+          style="display: none;" />
+      </div>
     </div>
-    <form id="contactForm" method="POST" enctype="multipart/form-data">
-      <div class="profile-avatar-section">
-        <div class="profile-avatar-container" onclick="navigateToSpeechLogs()">
-          <div id="modal-avatar-placeholder" class="avatar-placeholder">
-            <i class="fas fa-user"></i>
-          </div>
-          <img id="modal-avatar-img" src="" alt="Avatar" class="profile-avatar" style="display: none;"
-            onerror="this.style.display='none'; document.getElementById('modal-avatar-placeholder').style.display='flex';">
-        </div>
 
-        <div class="upload-btn-wrapper">
-          <button type="button" class="btn-upload" onclick="document.getElementById('avatar-input').click()">{{ _('Change Photo') }}</button>
-          <input type="file" id="avatar-input" name="avatar" accept="image/*" onchange="previewAvatar(this)"
-            style="display: none;" />
+    <!-- Right Column: Form Body Wrapper -->
+    <div class="contact-form-body-wrapper" style="flex: 1;">
+      <!-- Tabs Header -->
+      <div class="nav-tabs contact-modal-tabs" style="display: none; margin-bottom: 20px;">
+        <button type="button" class="nav-item active" id="tab-basic-info" onclick="switchContactTab('basic-info')">{{ _('Basic Information') }}</button>
+        <button type="button" class="nav-item" id="tab-education" onclick="switchContactTab('education')">{{ _('Education & Awards') }}</button>
+      </div>
+
+      <!-- Tab 1 Panel: Basic Information -->
+      <div id="panel-basic-info" class="tab-panel">
+        <div class="contact-form-grid">
+          <input type="hidden" id="type" name="type" value="Guest" />
+          <input type="hidden" id="name" name="name" value="" />
+
+          <!-- Row 1: First Name & Last Name -->
+          <div class="contact-form-item first-name-column">
+            <label for="first_name">{{ _('First Name') }}: <span class="required-field">*</span></label>
+            <input type="text" id="first_name" name="first_name" required class="form-control" />
+          </div>
+          <div class="contact-form-item last-name-column">
+            <label for="last_name">{{ _('Last Name') }}:</label>
+            <input type="text" id="last_name" name="last_name" class="form-control" />
+          </div>
+
+          <!-- Row 2: Email & DTM -->
+          <div class="contact-form-item email-column">
+            <label for="email">{{ _('Email') }}:</label>
+            <input type="email" id="email" name="email" class="form-control" />
+          </div>
+
+          <div class="contact-form-item dtm-item">
+            <label for="dtm">{{ _('DTM') }}:</label>
+            <div class="checkbox-box">
+              <input type="checkbox" id="dtm" name="dtm" />
+            </div>
+          </div>
+
+          <!-- Row 3: Phone & Officer -->
+          <div class="contact-form-item phone-column">
+            <label for="phone_number">{{ _('Phone') }}:</label>
+            <input type="text" id="phone_number" name="phone_number" class="form-control" />
+          </div>
+
+          <div class="contact-form-item officer-item">
+            <label for="is_officer">{{ _('Officer') }}:</label>
+            <div class="checkbox-box">
+              <input type="checkbox" id="is_officer" name="is_officer" {% if not is_authorized(Permissions.CLUBADMIN) %}disabled class="disabled-checkbox"{% endif %} />
+            </div>
+          </div>
+
+          <!-- Row 4: Member ID & Mentor -->
+          <div class="contact-form-item" id="member_id_container" style="display: none;">
+            <label for="member_id">{{ _('Member Number') }}:</label>
+            <input type="text" id="member_id" name="member_id" placeholder="{{ _('Optional') }}" class="form-control" />
+          </div>
+          <div class="contact-form-item" id="mentor_id_container" style="display: none;">
+            <label for="mentor_id">{{ _('Mentor') }}:</label>
+            <select id="mentor_id" name="mentor_id" class="form-control">
+              <option value="0">{{ _('None') }}</option>
+              <!-- Populated by JS -->
+            </select>
+          </div>
+
+          <!-- Row 5: Home Club -->
+          <div class="contact-form-item full-width" id="home_club_container" style="display: none;">
+            <label for="home_club_id">{{ _('Home Club') }}:</label>
+            <select id="home_club_id" name="home_club_id" class="form-control">
+              <!-- Populated by JS -->
+            </select>
+          </div>
+
+          <!-- Row 5b: Display Club -->
+          <div class="contact-form-item full-width">
+            <label for="contact_display_club_name">{{ _('Display Club') }}:</label>
+            <input type="text" id="contact_display_club_name" name="contact_display_club_name" maxlength="200"
+              placeholder="{{ _('e.g. Downtown Toastmasters Club #1234') }}" class="form-control" />
+          </div>
+
+          <!-- Row 5: Bio -->
+          <div class="contact-form-item full-width">
+            <label for="bio">{{ _('Bio') }}:</label>
+            <textarea id="bio" name="bio" rows="3" class="form-control"></textarea>
+          </div>
         </div>
       </div>
-      <div class="contact-form-body-wrapper">
-        <!-- Tabs Header -->
-        <div class="nav-tabs contact-modal-tabs" style="display: none; margin-bottom: 20px;">
-          <button type="button" class="nav-item active" id="tab-basic-info" onclick="switchContactTab('basic-info')">{{ _('Basic Information') }}</button>
-          <button type="button" class="nav-item" id="tab-education" onclick="switchContactTab('education')">{{ _('Education & Awards') }}</button>
-        </div>
 
-        <!-- Tab 1 Panel: Basic Information -->
-        <div id="panel-basic-info" class="tab-panel">
-          <div class="contact-form-grid">
-            <input type="hidden" id="type" name="type" value="Guest" />
-            <input type="hidden" id="name" name="name" value="" />
-
-            <!-- Row 1: First Name & Last Name -->
-            <div class="contact-form-item first-name-column">
-              <label for="first_name">{{ _('First Name') }}: <span class="required-field">*</span></label>
-              <input type="text" id="first_name" name="first_name" required />
-            </div>
-            <div class="contact-form-item last-name-column">
-              <label for="last_name">{{ _('Last Name') }}:</label>
-              <input type="text" id="last_name" name="last_name" />
-            </div>
-
-            <!-- Row 2: Email & DTM -->
-            <div class="contact-form-item email-column">
-              <label for="email">{{ _('Email') }}:</label>
-              <input type="email" id="email" name="email" />
-            </div>
-
-            <div class="contact-form-item dtm-item">
-              <label for="dtm">{{ _('DTM') }}:</label>
-              <div class="checkbox-box">
-                <input type="checkbox" id="dtm" name="dtm" />
-              </div>
-            </div>
-
-            <!-- Row 3: Phone & Officer -->
-            <div class="contact-form-item phone-column">
-              <label for="phone_number">{{ _('Phone') }}:</label>
-              <input type="text" id="phone_number" name="phone_number" />
-            </div>
-
-            <div class="contact-form-item officer-item">
-              <label for="is_officer">{{ _('Officer') }}:</label>
-              <div class="checkbox-box">
-                <input type="checkbox" id="is_officer" name="is_officer" {% if not is_authorized(Permissions.CLUBADMIN) %}disabled class="disabled-checkbox"{% endif %} />
-              </div>
-            </div>
-
-            <!-- Row 4: Member ID & Mentor -->
-            <div class="contact-form-item" id="member_id_container" style="display: none;">
-              <label for="member_id">{{ _('Member Number') }}:</label>
-              <input type="text" id="member_id" name="member_id" placeholder="{{ _('Optional') }}" />
-            </div>
-            <div class="contact-form-item" id="mentor_id_container" style="display: none;">
-              <label for="mentor_id">{{ _('Mentor') }}:</label>
-              <select id="mentor_id" name="mentor_id">
-                <option value="0">{{ _('None') }}</option>
-                <!-- Populated by JS -->
-              </select>
-            </div>
-
-            <!-- Row 5: Home Club -->
-            <div class="contact-form-item full-width" id="home_club_container" style="display: none;">
-              <label for="home_club_id">{{ _('Home Club') }}:</label>
-              <select id="home_club_id" name="home_club_id">
-                <!-- Populated by JS -->
-              </select>
-            </div>
-
-            <!-- Row 5b: Display Club (contact-level, always editable) -->
-            <div class="contact-form-item full-width">
-              <label for="contact_display_club_name">{{ _('Display Club') }}:</label>
-              <input type="text" id="contact_display_club_name" name="contact_display_club_name" maxlength="200"
-                placeholder="{{ _('e.g. Downtown Toastmasters Club #1234') }}" />
-            </div>
-
-            <!-- Row 5: Bio (Full Width) -->
-            <div class="contact-form-item full-width">
-              <label for="bio">{{ _('Bio') }}:</label>
-              <textarea id="bio" name="bio" rows="3"></textarea>
-            </div>
+      <!-- Tab 2 Panel: Education & Awards -->
+      <div id="panel-education" class="tab-panel" style="display: none; padding-top: 15px;">
+        <div class="contact-form-grid">
+          <!-- Row 1: Registered Paths & Default Path -->
+          <div class="contact-form-item">
+            <label for="registered_paths">{{ _('Registered Paths') }}:</label>
+            <select id="registered_paths" name="registered_paths" class="form-control" style="font-size: 13px; padding: 10px 8px; background-color: #fff; cursor: pointer;">
+                <option value="">{{ _('No Paths Registered') }}</option>
+            </select>
           </div>
-        </div>
-
-        <!-- Tab 2 Panel: Education & Awards -->
-        <div id="panel-education" class="tab-panel" style="display: none; padding-top: 15px;">
-          <div class="contact-form-grid">
-            <!-- Row 1: Registered Paths & Default Path -->
-            <div class="contact-form-item">
-              <label for="registered_paths">{{ _('Registered Paths') }}:</label>
-              <select id="registered_paths" name="registered_paths" style="font-size: 13px; padding: 10px 8px; background-color: #fff; cursor: pointer;">
-                  <option value="">{{ _('No Paths Registered') }}</option>
-              </select>
-            </div>
-            <div class="contact-form-item">
-              <label for="current_path">{{ _('Default Path') }}:</label>
-              <input type="text" id="current_path" name="current_path" readonly disabled
-                placeholder="{{ _('Calculated from achievements') }}" style="background-color: #f8f9fa; cursor: not-allowed;" />
-            </div>
-
-            <!-- Row 2: Next Project & Credentials -->
-            <div class="contact-form-item">
-              <label for="next_project">{{ _('Next Project') }}:</label>
-              <input type="text" id="next_project" name="next_project" readonly disabled
-                placeholder="{{ _('Calculated from logs') }}" style="background-color: #f8f9fa; cursor: not-allowed;" />
-            </div>
-            <div class="contact-form-item">
-              <label for="credentials">{{ _('Credentials') }}:</label>
-              <input type="text" id="credentials" name="credentials" readonly disabled
-                placeholder="{{ _('Derived from Achievements') }}" style="background-color: #f8f9fa; cursor: not-allowed;" />
-            </div>
+          <div class="contact-form-item">
+            <label for="current_path">{{ _('Default Path') }}:</label>
+            <input type="text" id="current_path" name="current_path" readonly disabled class="form-control"
+              placeholder="{{ _('Calculated from achievements') }}" style="background-color: #f8f9fa; cursor: not-allowed;" />
           </div>
-        </div>
 
-        <div class="form-actions">
-          {% call btn('cancel', attrs={'onclick': 'closeContactModal()'}) %}{{ _('Cancel') }}{% endcall %}
-          {% call btn('save', type='submit') %}{{ _('Save') }}{% endcall %}
+          <!-- Row 2: Next Project & Credentials -->
+          <div class="contact-form-item">
+            <label for="next_project">{{ _('Next Project') }}:</label>
+            <input type="text" id="next_project" name="next_project" readonly disabled class="form-control"
+              placeholder="{{ _('Calculated from logs') }}" style="background-color: #f8f9fa; cursor: not-allowed;" />
+          </div>
+          <div class="contact-form-item">
+            <label for="credentials">{{ _('Credentials') }}:</label>
+            <input type="text" id="credentials" name="credentials" readonly disabled class="form-control"
+              placeholder="{{ _('Derived from Achievements') }}" style="background-color: #f8f9fa; cursor: not-allowed;" />
+          </div>
         </div>
       </div>
-    </form>
+    </div>
   </div>
-</div>
+{% endcall %}
 <script defer src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>

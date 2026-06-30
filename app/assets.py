@@ -11,6 +11,7 @@ css_all = Bundle(
     'css/components/forms-mobile.css',
     'css/components/tables.css',
     'css/components/modals.css',
+    'css/components/action-modal.css',
     'css/components/autocomplete.css',
     'css/components/tabs.css',
     'css/components/pagination.css',

@@ -33,30 +33,45 @@
   width: 100%;
   border-collapse: collapse;
   color: #333;
+  border: none !important;
 }
 
 .planner-table th,
 .planner-table td {
-  padding: 0.75rem 1rem;
+  padding: 1.1rem 1.25rem;
   text-align: left;
-  border-bottom: 1px solid #f0f0f0;
-  vertical-align: middle;
+  border-bottom: 1px solid #f0f0f0 !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  vertical-align: middle !important;
 }
 
 .planner-table td {
   font-size: 0.9rem;
 }
 
-.planner-table td:nth-child(4) {
-  text-align: center;
-}
-
 .planner-table th {
   font-weight: 600;
   text-transform: uppercase;
   font-size: 0.75rem;
-  letter-spacing: 0.5px;
-  color: #888;
+  letter-spacing: 0.8px;
+  color: #64748b;
+  background-color: #fafafa;
+  border-bottom: 2px solid #e2e8f0 !important;
+}
+
+.planner-table tbody tr {
+  transition: background-color 0.15s ease;
+  vertical-align: middle !important;
+}
+
+.planner-table tbody tr:hover {
+  background-color: #fafbfc;
+}
+
+.planner-table tbody tr:last-child td {
+  border-bottom: none !important;
 }
 
 .status-badge {

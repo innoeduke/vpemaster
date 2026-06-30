@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+{% from "partials/_button_macros.html" import btn %}
+{% from "components/action_modal.html" import render_action_modal %}
+
+{# Reusable macro to render an officer card and eliminate code duplication #}
+{% macro render_officer_card(officer, is_assistant) %}
+  {% set contact = officer.contact %}
+  {% set role_lower = (officer.meeting_role.name | lower) %}
+  {% set role_class = 'role-ipp' if role_lower == 'immediate past president' else 'role-' ~ role_lower %}
+  
+  <div class="officer-card {{ role_class }}">
+    
+    <!-- Hover actions overlay -->
+    {% if is_authorized(Permissions.ROSTER_EDIT) %}
+    <div class="officer-card-actions">
+      <button class="tm-action-btn" 
+              onclick="openEditOfficerModal(this)"
+              data-id="{{ officer.id }}"
+              data-role-id="{{ officer.meeting_role_id }}"
+              data-contact-id="{{ officer.contact_id }}"
+              data-contact-name="{{ contact.Name }}"
+              data-assistant="{{ 'true' if is_assistant else 'false' }}"
+              title="{{ _('Edit Officer') }}">
+        <i class="fas fa-edit"></i>
+      </button>
+      <button class="tm-action-btn tm-action-btn--danger" 
+              onclick="openDeleteModal('/settings/excomm/officer/delete/{{ officer.id }}', 'Officer Assignment')" 
+              title="{{ _('Remove Officer') }}">
+        <i class="fas fa-trash-alt"></i>
+      </button>
+    </div>
+    {% endif %}
+
+    <!-- Position Badge -->
+    {% set display_role = "IPP" if officer.meeting_role.name == "Immediate Past President" else officer.meeting_role.name %}
+    {% if is_assistant %}
+      <span class="role-badge assistant-badge">Asst. {{ display_role }}</span>
+    {% else %}
+      <span class="role-badge">{{ display_role }}</span>
+    {% endif %}
+
+    <!-- Avatar -->
+    <div class="avatar-container">
+      <div class="avatar-circle">
+        {% if contact.Avatar_URL %}
+          <img src="{{ url_for('static', filename=(config.AVATAR_ROOT_DIR ~ '/' ~ contact.Avatar_URL if '/' not in contact.Avatar_URL else contact.Avatar_URL)) }}" class="avatar-image" alt="{{ contact.Name }}">
+        {% else %}
+          {% set initials = (contact.first_name[0] if contact.first_name else '') + (contact.last_name[0] if contact.last_name else '') %}
+          {% if not initials and contact.Name %}
+            {% set names = contact.Name.split() %}
+            {% set initials = (names[0][0] if names|length > 0 else '') + (names[-1][0] if names|length > 1 else '') %}
+          {% endif %}
+          <span class="avatar-initials">{{ initials or '?' }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Name & Credentials -->
+    <h3 class="officer-name">
+      {{ contact.Name }}{% if contact.credentials and contact.credentials.upper() != 'DTM' %}<span class="credentials-text"> {{ contact.credentials }}</span>{% endif %}
+      {% if contact.DTM or (contact.credentials and contact.credentials.upper() == 'DTM') %}
+        <span class="dtm-badge" title="Distinguished Toastmaster">DTM</span>
+      {% endif %}
+    </h3>
+
+    <!-- Completed Paths -->
+    <div class="officer-details">
+      {% set completed = contact.Completed_Paths or contact._Completed_Paths %}
+      {% if completed %}
+        <div class="detail-item" title="{{ _('Completed Paths') }}">
+          <i class="fas fa-graduation-cap"></i> {{ completed }}
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Bio -->
+    {% if contact.Bio %}
+      <p class="officer-bio" title="{{ contact.Bio }}">{{ contact.Bio }}</p>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+{% block title %}Excomm History & Officers{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/excomm.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="excomm-page-container">
+  
+  <!-- Left Sidebar Pane: Past Excomm Teams -->
+  <aside class="excomm-sidebar">
+    <div class="sidebar-card">
+      <div class="sidebar-header">
+        <h3>{{ _('Excomm Terms') }}</h3>
+        {% if is_authorized(Permissions.ROSTER_EDIT) %}
+        {% call btn(variant='new', id='add-excomm-btn', class='btn-new-team', attrs={'onclick': 'openExcommModal()'}) %}
+          <i class="fas fa-plus"></i> {{ _('New') }}
+        {% endcall %}
+        {% endif %}
+      </div>
+      
+      <div class="term-list">
+        {% if excomm_list %}
+          {% for term in excomm_list %}
+            <div class="term-item {% if selected_excomm and selected_excomm.id == term.id %}active{% endif %}"
+                 onclick="window.location.href='{{ url_for('about_club_bp.excomm_page', term_id=term.id) }}'">
+              <div class="term-item-header">
+                <!-- Highlighted Name -->
+                <span class="term-code">{{ term.excomm_name or _('Unnamed Team') }}</span>
+                
+                {% if is_authorized(Permissions.ROSTER_EDIT) %}
+                <div class="tm-action-buttons" onclick="event.stopPropagation();">
+                  <button class="tm-action-btn" 
+                          onclick="openEditExcommModal(this)" 
+                          data-id="{{ term.id }}" 
+                          data-term="{{ term.excomm_term }}" 
+                          data-name="{{ term.excomm_name or '' }}" 
+                          data-start="{{ term.start_date.strftime('%Y-%m-%d') if term.start_date else '' }}" 
+                          data-end="{{ term.end_date.strftime('%Y-%m-%d') if term.end_date else '' }}" 
+                          title="{{ _('Edit Term') }}">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="tm-action-btn tm-action-btn--danger" 
+                          onclick="openDeleteModal('/settings/excomm/delete/{{ term.id }}', 'Excomm Team')" 
+                          title="{{ _('Delete Term') }}">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+                {% endif %}
+              </div>
+              
+              <!-- Supplementary Term Info -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                <span class="term-name">{{ term.excomm_term }}</span>
+                {% if club and club.current_excomm_id == term.id %}
+                  <span class="badge bg-success" style="font-size: 0.65rem; padding: 2px 6px;">{{ _('Current') }}</span>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="text-muted text-center py-4">{{ _('No excomm terms set up.') }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </aside>
+
+  <!-- Right Pane: Officers and Assistant Cards Grid -->
+  <main class="excomm-main">
+    {% if selected_excomm %}
+      <!-- Term Header Banner -->
+      <div class="main-header-card">
+        <div class="main-header-info">
+          <h1>{{ selected_excomm.excomm_name or _('Unnamed Excomm Team') }}</h1>
+          {% if selected_excomm.start_date or selected_excomm.end_date %}
+            <p class="term-dates">
+              <i class="far fa-calendar-alt"></i> 
+              {{ selected_excomm.start_date.strftime('%b %d, %Y') if selected_excomm.start_date else '?' }} 
+              {{ _('to') }} 
+              {{ selected_excomm.end_date.strftime('%b %d, %Y') if selected_excomm.end_date else '?' }}
+            </p>
+          {% endif %}
+        </div>
+        <div class="main-header-badge" title="{{ _('Term Code') }}">
+          <i class="far fa-clock"></i> <strong>{{ selected_excomm.excomm_term }}</strong>
+        </div>
+      </div>
+
+      <!-- Officers Section -->
+      <div>
+        <h2 class="cards-grid-title">
+          <i class="fas fa-user-shield"></i> {{ _('Club Officers') }}
+          {% call btn(variant='new-outline', size='sm', disabled=not is_authorized(Permissions.ROSTER_EDIT), class='ms-3', attrs={'onclick': 'openOfficerModal()'}) %}
+            <i class="fas fa-plus"></i> {{ _('New') }}
+          {% endcall %}
+        </h2>
+        {% if primary_officers %}
+          <div class="cards-grid">
+            {% for officer in primary_officers %}
+              {{ render_officer_card(officer, false) }}
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-muted mb-4">{{ _('No primary officers assigned to this team.') }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Assistants Section -->
+      {% if assistant_officers %}
+        <div>
+          <h2 class="cards-grid-title"><i class="fas fa-users-cog"></i> {{ _('Assistant Officers') }}</h2>
+          <div class="cards-grid">
+            {% for officer in assistant_officers %}
+              {{ render_officer_card(officer, true) }}
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+      
+      {% if not primary_officers and not assistant_officers %}
+        <div class="empty-state">
+          <i class="fas fa-user-friends"></i>
+          <h3>{{ _('No officers assigned') }}</h3>
+          <p>{{ _('This Excomm team does not have any officers assigned yet.') }}</p>
+          {% if is_authorized(Permissions.ROSTER_EDIT) %}
+            <button class="btn btn-primary" onclick="openOfficerModal()">
+              <i class="fas fa-plus"></i> {{ _('Assign Officer') }}
+            </button>
+          {% endif %}
+        </div>
+      {% endif %}
+
+    {% else %}
+      <div class="empty-state">
+        <i class="fas fa-sitemap"></i>
+        <h3>{{ _('No Excomm Team setup') }}</h3>
+        <p>{{ _('Please set up an Excomm term and assign officer roles to get started.') }}</p>
+        {% if is_authorized(Permissions.ROSTER_EDIT) %}
+          <button class="btn btn-success" onclick="openExcommModal()">
+            <i class="fas fa-plus"></i> {{ _('Create Excomm Team') }}
+          </button>
+        {% endif %}
+      </div>
+    {% endif %}
+  </main>
+</div>
+
+<!-- 1. Excomm Term Add/Edit Modal (Premium Redesigned with Action Modal) -->
+{% set excomm_footer_buttons %}
+  <button type="button" class="btn btn-cancel btn-danger" onclick="closeExcommModal()">{{ _('Cancel') }}</button>
+  <button type="submit" class="btn btn-success">{{ _('Save') }}</button>
+{% endset %}
+
+{% call render_action_modal(
+    id='excommModal',
+    title='Add Excomm Team',
+    form_id='excomm-form',
+    modal_max_width='480px',
+    footer_buttons=excomm_footer_buttons
+) %}
+  <input type="hidden" id="excomm-id" name="id">
+  
+  <div class="form-group">
+    <label for="excomm-term">{{ _('Term:') }}</label>
+    <input type="text" id="excomm-term" name="term" required class="form-control" placeholder="e.g. 26H1">
+  </div>
+  
+  <div class="form-group">
+    <label for="excomm-name">{{ _('Team Name:') }}</label>
+    <input type="text" id="excomm-name" name="name" class="form-control" placeholder="e.g. The Dream Team">
+  </div>
+  
+  <div class="form-group-row" style="display: flex; gap: 15px;">
+    <div class="form-group" style="flex: 1;">
+      <label for="excomm-start">{{ _('Start Date:') }}</label>
+      <input type="date" id="excomm-start" name="start_date" required class="form-control">
+    </div>
+    <div class="form-group" style="flex: 1;">
+      <label for="excomm-end">{{ _('End Date:') }}</label>
+      <input type="date" id="excomm-end" name="end_date" required class="form-control">
+    </div>
+  </div>
+{% endcall %}
+
+<!-- 2. Add/Edit Officer Modal (Premium Redesigned with Action Modal) -->
+{% set officer_footer_buttons %}
+  <button type="button" class="btn btn-cancel btn-danger" onclick="closeOfficerModal()">{{ _('Cancel') }}</button>
+  <button type="submit" class="btn btn-success">{{ _('Save') }}</button>
+{% endset %}
+
+{% call render_action_modal(
+    id='officerModal',
+    title='Add Officer',
+    form_id='officer-form',
+    modal_max_width='480px',
+    footer_buttons=officer_footer_buttons
+) %}
+  <input type="hidden" id="officer-link-id" name="id">
+  <input type="hidden" id="officer-excomm-id" name="excomm_id" value="{{ selected_excomm.id if selected_excomm else '' }}">
+  
+  <div class="form-group">
+    <label for="officer-role">{{ _('Officer Role:') }}</label>
+    <select id="officer-role" name="role_id" required class="form-control">
+      <option value="">-- {{ _('Select a Role') }} --</option>
+      {% for role in officer_roles %}
+        <option value="{{ role.id }}">{{ _('IPP') if role.name == 'Immediate Past President' else _(role.name) }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  
+  <div class="form-group">
+    <!-- Changed label text to "Name" and converted search field input to search type -->
+    <label for="officer-search">{{ _('Name:') }}</label>
+    <div class="autocomplete-container" style="position: relative;">
+      <input type="search" id="officer-search" required class="form-control" placeholder="{{ _('Search member...') }}">
+      <input type="hidden" id="officer-contact-id" name="contact_id">
+    </div>
+  </div>
+  
+  <div class="form-group form-group-checkbox">
+    <input type="checkbox" id="officer-is-assistant" name="is_assistant">
+    <label for="officer-is-assistant">{{ _('Mark as assistant to the officer') }}</label>
+  </div>
+{% endcall %}
+
+<div id="contacts-data-storage" data-contacts='{{ contacts_list | tojson | safe if contacts_list is defined else "[]" }}' style="display: none;"></div>
+
+<script>
+    var ALL_CONTACTS = [];
+    try {
+        const storage = document.getElementById('contacts-data-storage');
+        if (storage && storage.dataset.contacts) {
+            ALL_CONTACTS = JSON.parse(storage.dataset.contacts);
+        }
+    } catch (e) {
+        console.error("Error parsing contacts data:", e);
+    }
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/autocomplete.js') }}"></script>
+<script src="{{ url_for('static', filename='js/settings_excomm.js') }}"></script>
+{% endblock %}

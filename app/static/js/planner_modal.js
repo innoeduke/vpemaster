@@ -9,7 +9,7 @@
  *              otherwise calls `join_waitlist` (waitlist).
  */
 
-const modal = document.getElementById('planModal');
+const modal = document.getElementById('planModal-overlay');
 const form = document.getElementById('planForm');
 const roleSelect = document.getElementById('meeting_role_id');
 const meetingSelect = document.getElementById('meeting_id');
@@ -417,7 +417,7 @@ function updateProjectVisibility() {
         const isValidForProject = !!roleProjectMapping[selectedRole.name];
 
         if (isValidForProject) {
-            projectChkGroup.style.display = 'block';
+            projectChkGroup.style.display = 'flex';
             projectChk.disabled = false;
             projectChk.parentElement.style.opacity = '1';
             projectChk.parentElement.style.cursor = 'pointer';
@@ -550,11 +550,11 @@ async function openPlanModal(planData = null) {
         if (customMeetingSelect) customMeetingSelect.refresh();
     }
 
-    modal.style.display = 'flex';
+    openActionModal('planModal');
 }
 
 function closeModal() {
-    if (modal) modal.style.display = 'none';
+    closeActionModal('planModal');
 }
 
 // ─── Form submission (Draft Box) ──────────────────────────────────────────────

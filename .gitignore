@@ -1,6 +1,7 @@
 .DS_Store
 .env
 *.swp
+*.lock
 .env_pythonanywhere
 instance/
 venv/
@@ -27,9 +28,11 @@ pyrefly.toml
 
 # EXCEPTION: DO NOT ignore the "0" folder
 !/app/static/club_resources/0/
+
 .worktrees/
 .claude/*.json
-.claude/*.lock
+.claude/worktrees/
+skills-lock.json
 
 # Node toolchain (Stylelint linter)
 node_modules/
