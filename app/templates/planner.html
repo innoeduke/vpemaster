@@ -174,12 +174,9 @@
                     <td data-label="{{ _('Role') }}">{{ _(plan.role.name) if plan.role else _('N/A') }}</td>
                     <td data-label="{{ _('Project') }}">
                         {% if plan.project %}
-                            <span class="project-code-badge">{{ plan.project.get_code(contact.Current_Path if contact else None) }}</span>
+                            <span class="project-code-badge">{{ plan.project.get_code(contact.Current_Path if contact else None) }}</span> {{ plan.project.Project_Name }}
                         {% else %}
                             {{ _('N/A') }}
-                        {% endif %}
-                        {% if plan.title %}
-                            <div class="plan-title-display" style="font-size: 0.85rem; color: #666; margin-top: 4px; font-style: italic;">"{{ plan.title }}"</div>
                         {% endif %}
                     </td>
                     <td data-label="{{ _('Status') }}">
