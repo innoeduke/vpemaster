@@ -44,7 +44,7 @@
   border-top: none !important;
   border-left: none !important;
   border-right: none !important;
-  vertical-align: middle;
+  vertical-align: middle !important;
 }
 
 .planner-table td {
@@ -79,7 +79,7 @@
   font-size: 0.8rem;
   font-weight: 500;
   display: inline-block;
-  vertical-align: middle;
+  vertical-align: middle !important;
 }
 
 .status-draft {
