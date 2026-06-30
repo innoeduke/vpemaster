@@ -489,6 +489,9 @@ a.detail-item:hover {
 .term-select-mobile {
   display: none;
 }
+.mobile-term-info {
+  display: none;
+}
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .excomm-page-container {
@@ -500,6 +503,21 @@ a.detail-item:hover {
   .term-select-mobile {
     display: block;
     margin-bottom: 12px;
+  }
+  .mobile-term-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+    color: #64748b;
+  }
+  .mobile-term-info i {
+    color: #772432;
+    opacity: 0.85;
+  }
+  .main-header-card {
+    display: none !important;
   }
   .term-list {
     display: none;

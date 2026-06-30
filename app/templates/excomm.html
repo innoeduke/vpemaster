@@ -124,6 +124,17 @@
         {% endif %}
       </div>
 
+      {% if selected_excomm %}
+      <div class="mobile-term-info">
+        <i class="far fa-calendar-alt"></i>
+        <span>
+          {{ selected_excomm.start_date.strftime('%b %d, %Y') if selected_excomm.start_date else '?' }}
+          {{ _('to') }}
+          {{ selected_excomm.end_date.strftime('%b %d, %Y') if selected_excomm.end_date else '?' }}
+        </span>
+      </div>
+      {% endif %}
+
       <div class="term-list">
         {% if excomm_list %}
           {% for term in excomm_list %}
