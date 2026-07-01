@@ -165,24 +165,24 @@
                     data-pathway="{{ plan.pathway or '' }}"
                     data-title="{{ plan.title or '' }}"
                     data-status="{{ plan.status }}" data-notes="{{ plan.notes or '' }}">
-                    <td data-label="{{ _('Meeting') }}">
+                    <td class="col-meeting" data-label="{{ _('Meeting') }}">
                         <div style="font-weight: 600;">#{{ plan.meeting_number or _('N/A') }}</div>
                         <div style="font-size: 0.8rem; color: #666; margin-top: 2px; white-space: nowrap;">
                             {{ plan.meeting.Meeting_Date.strftime('%b %d, %Y') if plan.meeting and plan.meeting.Meeting_Date else '' }}
                         </div>
                     </td>
-                    <td data-label="{{ _('Role') }}">{{ _(plan.role.name) if plan.role else _('N/A') }}</td>
-                    <td data-label="{{ _('Project') }}">
+                    <td class="col-role" data-label="{{ _('Role') }}">{{ _(plan.role.name) if plan.role else _('N/A') }}</td>
+                    <td class="col-project" data-label="{{ _('Project') }}">
                         {% if plan.project %}
                             <span class="project-code-badge">{{ plan.project.get_code(contact.Current_Path if contact else None) }}</span> {{ plan.project.Project_Name }}
                         {% else %}
                             {{ _('N/A') }}
                         {% endif %}
                     </td>
-                    <td data-label="{{ _('Status') }}">
+                    <td class="col-status" data-label="{{ _('Status') }}">
                         <span class="status-badge status-{{ plan.status }}">{{ _(plan.status|capitalize) }}</span>
                     </td>
-                    <td data-label="{{ _('Actions') }}">
+                    <td class="col-actions" data-label="{{ _('Actions') }}">
                         <div class="tm-action-buttons">
                             <button type="button" class="tm-action-btn btn-edit" title="{{ _('View') }}" aria-label="{{ _('View') }}">
                                 <i class="fas fa-eye"></i>

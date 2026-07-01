@@ -138,7 +138,7 @@
   }
 
   /* 1. Role (Top Left) */
-  .planner-table td[data-label="Role"] {
+  .planner-table td.col-role {
     grid-area: role;
     font-family: "Montserrat", sans-serif;
     font-size: 1.1rem;
@@ -152,12 +152,12 @@
   }
 
   /* Hide label for Role */
-  .planner-table td[data-label="Role"]::before {
+  .planner-table td.col-role::before {
     display: none;
   }
 
   /* 2. Status (Top Right) */
-  .planner-table td[data-label="Status"] {
+  .planner-table td.col-status {
     grid-area: status;
     padding: 0;
     border: none;
@@ -167,12 +167,12 @@
   }
 
   /* Hide label for Status */
-  .planner-table td[data-label="Status"]::before {
+  .planner-table td.col-status::before {
     display: none;
   }
 
   /* 3. Meeting (Under Role) */
-  .planner-table td[data-label="Meeting"] {
+  .planner-table td.col-meeting {
     grid-area: meeting;
     font-size: 0.85rem;
     color: #777;
@@ -184,9 +184,9 @@
     /* Reduced from 0.5rem */
   }
 
-  /* Custom label for Meeting */
-  .planner-table td[data-label="Meeting"]::before {
-    content: "MEETING";
+  /* Custom label for Meeting (dynamically localized) */
+  .planner-table td.col-meeting::before {
+    content: attr(data-label);
     font-size: 0.75rem;
     color: #adb5bd;
     /* Lighter gray like roster order # */
@@ -195,8 +195,13 @@
     text-transform: uppercase;
   }
 
+  .planner-table td.col-meeting div:last-child {
+    margin-left: auto;
+    margin-top: 0;
+  }
+
   /* 4. Project */
-  .planner-table td[data-label="Project"] {
+  .planner-table td.col-project {
     grid-area: project;
     padding: 0.5rem 0.5rem;
     /* Reduced vertical padding */
@@ -212,7 +217,7 @@
     /* Restrict width to create right margin effect while spanning grid */
   }
 
-  .planner-table td[data-label="Project"]::before {
+  .planner-table td.col-project::before {
     content: "\f02d";
     /* FontAwesome Book Icon */
     font-family: "Font Awesome 5 Free";
@@ -223,7 +228,7 @@
   }
 
   /* 5. Notes */
-  .planner-table td[data-label="Notes"] {
+  .planner-table td.col-notes {
     grid-area: notes;
     padding: 0;
     border: none;
@@ -236,18 +241,18 @@
     text-align: left;
   }
 
-  .planner-table td[data-label="Notes"]:empty {
+  .planner-table td.col-notes:empty {
     display: none;
   }
 
   /* Hide label for Notes */
-  .planner-table td[data-label="Notes"]::before {
+  .planner-table td.col-notes::before {
     display: none;
   }
 
   /* 6. Actions (Bottom) */
   /* 6. Actions (Bottom) */
-  .planner-table td[data-label="Actions"] {
+  .planner-table td.col-actions {
     grid-area: actions;
     padding: 0;
     border: none;
@@ -257,7 +262,7 @@
     align-items: flex-end;
   }
 
-  .planner-table td[data-label="Actions"]::before {
+  .planner-table td.col-actions::before {
     display: none;
   }
 
@@ -274,7 +279,26 @@
   /* Button tweaks within card */
   .tm-action-buttons {
     width: auto;
-    gap: 0;
+    gap: 4px;
+  }
+
+  .tm-action-buttons .tm-action-btn {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    min-height: 30px;
+    padding: 0;
+    border-radius: 50%;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .planner-section-header .btn {
+    width: auto;
+    min-width: unset;
+    flex: none;
   }
 
   .planner-btn {
