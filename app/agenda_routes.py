@@ -4,14 +4,14 @@ from flask import Blueprint, render_template, request, redirect, url_for, jsonif
 from flask_login import current_user
 from .auth.utils import login_required, is_authorized, club_permission_required
 from .auth.permissions import Permissions
-from .models import SessionLog, SessionType, Contact, Meeting, Project, Media, Roster, MeetingRole, Vote, Pathway, PathwayProject, OwnerMeetingRoles, Planner, Waitlist, Club, Ticket, ContactClub, ContactPath
+from .models import SessionLog, SessionType, Contact, Meeting, Project, Media, Roster, MeetingRole, Vote, Pathway, PathwayProject, OwnerMeetingRoles, Planner, Waitlist, Club, Ticket, ContactClub, ContactPath, PermissionAudit
 from .constants import ProjectID, SPEECH_TYPES_WITH_PROJECT, GLOBAL_CLUB_ID
 from .services.export import MeetingExportService
 from .services.export.context import MeetingExportContext
 from .services.meeting_slide_service import MeetingSlideService
 from . import db
 from sqlalchemy import distinct, orm, func
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import io
 import csv
 import os
@@ -2365,21 +2365,56 @@ def update_meeting_status(meeting_id):
         # Check if user has permission to delete meetings
         if not is_authorized(Permissions.MEETING_CREATE):
             return jsonify(success=False, message="You do not have permission to delete meetings."), 403
-            
+
+        if current_user.is_authenticated:
+            club_name = meeting.club.club_name if meeting.club else f"Club {meeting.club_id}"
+            target_label = f"#{meeting.Meeting_Number}"
+            now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+            db.session.add(PermissionAudit(
+                admin_id=current_user.id,
+                action='DELETE_MEETING',
+                target_type='MEETING',
+                target_id=meeting.id,
+                target_name=target_label,
+                changes=(
+                    f'Club "{club_name}" '
+                    f'(by {current_user.username} at {now}): '
+                    f'deleted (was {current_status})'
+                ),
+            ))
+
         try:
             # Full deletion flow using the model method
             success, error_msg = meeting.delete_full()
-            
+
             if success:
                 return jsonify(success=True, deleted=True)
             else:
                 return jsonify(success=False, message=f"Deletion failed: {error_msg}"), 500
-                
+
         except Exception as e:
              # Should be caught inside delete_full, but just in case
             return jsonify(success=False, message=f"Deletion failed: {str(e)}"), 500
 
     meeting.status = new_status
+
+    if current_status != new_status:
+        if current_user.is_authenticated:
+            club_name = meeting.club.club_name if meeting.club else f"Club {meeting.club_id}"
+            target_label = f"#{meeting.Meeting_Number}"
+            now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+            db.session.add(PermissionAudit(
+                admin_id=current_user.id,
+                action='UPDATE_MEETING_STATUS',
+                target_type='MEETING',
+                target_id=meeting.id,
+                target_name=target_label,
+                changes=(
+                    f'Club "{club_name}" '
+                    f'(by {current_user.username} at {now}): '
+                    f'{current_status} => {new_status}'
+                ),
+            ))
 
     try:
         db.session.commit()
