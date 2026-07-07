@@ -29,7 +29,7 @@
     .badge-prio-low { background: #718096; }
     .badge-status-open { background: #3182ce; }
     .badge-status-in_progress { background: #d69e2e; }
-    .badge-status-closed { background: #38a169; }
+    .badge-status-solved { background: #38a169; }
     .badge-status-rejected { background: #718096; }
     .badge-status-cancelled { background: #a0aec0; }
     .issue-description {
@@ -102,11 +102,4 @@
         box-shadow: none !important;
     }
     .issue-detail-page .btn i { font-size: 0.9em; margin-right: 6px; }
-    .btn-close-issue {
-        background-color: #1f883d !important;
-        color: white !important;
-        border: none !important;
-    }
-    .btn-close-issue:hover {
-        background-color: #1a6f30 !important;
-    }
+

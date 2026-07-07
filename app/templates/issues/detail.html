@@ -94,9 +94,12 @@
                 {% call btn('save', type='submit') %}
                     <i class="fas fa-save"></i> {{ _('Save') }}
                 {% endcall %}
-                {% if issue.status != 'closed' %}
-                {% call btn('save', type='submit', class='btn-close-issue', attrs={'name': 'close_issue', 'value': 'true'}) %}
-                    <i class="fas fa-times-circle"></i> {{ _('Close') }}
+                {% if not issue.is_terminal() %}
+                {% call btn('book', type='submit', class='btn-resolve-issue', attrs={'name': 'close_issue', 'value': 'solved'}) %}
+                    <i class="fas fa-check-circle"></i> {{ _('Resolve') }}
+                {% endcall %}
+                {% call btn('cancel', type='submit', class='btn-cancel-issue', attrs={'name': 'close_issue', 'value': 'cancelled'}) %}
+                    <i class="fas fa-ban"></i> {{ _('Cancel') }}
                 {% endcall %}
                 {% endif %}
             </form>

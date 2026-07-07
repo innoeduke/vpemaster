@@ -9,7 +9,7 @@
     .badge-prio-low { background: #718096; }
     .badge-status-open { background: #3182ce; }
     .badge-status-in_progress { background: #d69e2e; }
-    .badge-status-closed { background: #38a169; }
+    .badge-status-solved { background: #38a169; }
     .badge-status-rejected { background: #718096; }
     .badge-status-cancelled { background: #a0aec0; }
     
@@ -108,6 +108,47 @@
     }
     .msg-header .issue-filters .custom-select-trigger .selected-text {
         font-size: inherit !important;
+    }
+
+    .msg-header .issue-filters .search-group {
+        margin-bottom: 0;
+        min-width: 200px;
+        max-width: 320px;
+        flex: 1 1 auto;
+    }
+    .msg-header .issue-filters .issue-search-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .msg-header .issue-filters .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #a0aec0;
+        font-size: 0.85em;
+        pointer-events: none;
+    }
+    .msg-header .issue-filters .search-input {
+        font-family: 'Inter', sans-serif;
+        padding: 4px 10px 4px 32px !important;
+        min-height: 30px !important;
+        height: 30px !important;
+        font-size: 0.82em !important;
+        border-radius: 6px;
+        box-sizing: border-box;
+        border: 1px solid #ddd;
+        outline: none;
+        width: 100%;
+        background: #fff;
+        transition: all 0.3s ease;
+    }
+    .msg-header .issue-filters .search-input:focus {
+        border-color: #772432;
+        box-shadow: 0 4px 12px rgba(119, 36, 50, 0.15);
     }
 
     /* Grid layout for list container */
@@ -280,6 +321,10 @@
             gap: 8px;
         }
         .msg-header .issue-filters .form-group {
+            max-width: none;
+        }
+        .msg-header .issue-filters .search-group {
+            grid-column: span 2;
             max-width: none;
         }
         .msg-header .issue-filters .custom-select-trigger {

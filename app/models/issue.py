@@ -14,7 +14,7 @@ class Issue(db.Model):
 
     STATUS_OPEN = 'open'
     STATUS_IN_PROGRESS = 'in_progress'
-    STATUS_CLOSED = 'closed'
+    STATUS_CLOSED = 'solved'
     STATUS_REJECTED = 'rejected'
     STATUS_CANCELLED = 'cancelled'
     STATUSES = (STATUS_OPEN, STATUS_IN_PROGRESS, STATUS_CLOSED,

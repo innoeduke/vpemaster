@@ -354,28 +354,39 @@ class IssuesRouteTestCase(unittest.TestCase):
         admin, _ = self.create_user("admin", "ClubAdmin", self.club_a)
         self.login("admin", self.club_a)
 
-        # Create an open and a closed issue
+        # Create an open, a solved, and a cancelled issue
         self._make_issue(self.club_a, admin, title="Open Issue", status=Issue.STATUS_OPEN)
-        self._make_issue(self.club_a, admin, title="Closed Issue", status=Issue.STATUS_CLOSED)
+        self._make_issue(self.club_a, admin, title="Solved Issue", status=Issue.STATUS_CLOSED)
+        self._make_issue(self.club_a, admin, title="Cancelled Issue", status=Issue.STATUS_CANCELLED)
 
         # Default view (no status param): the Open tab opens by default,
-        # so Closed is hidden and Open is shown.
+        # so Solved and Cancelled are hidden and Open is shown.
         res = self.client.get('/issues/')
         self.assertEqual(res.status_code, 200)
         self.assertIn("Open Issue", res.get_data(as_text=True))
-        self.assertNotIn("Closed Issue", res.get_data(as_text=True))
+        self.assertNotIn("Solved Issue", res.get_data(as_text=True))
+        self.assertNotIn("Cancelled Issue", res.get_data(as_text=True))
 
-        # Filter status=closed: should show Closed, hide Open
-        res = self.client.get('/issues/?status=closed')
+        # Filter status=solved: should show Solved, hide others
+        res = self.client.get('/issues/?status=solved')
         self.assertEqual(res.status_code, 200)
         self.assertNotIn("Open Issue", res.get_data(as_text=True))
-        self.assertIn("Closed Issue", res.get_data(as_text=True))
+        self.assertIn("Solved Issue", res.get_data(as_text=True))
+        self.assertNotIn("Cancelled Issue", res.get_data(as_text=True))
+
+        # Filter status=cancelled: should show Cancelled, hide others
+        res = self.client.get('/issues/?status=cancelled')
+        self.assertEqual(res.status_code, 200)
+        self.assertNotIn("Open Issue", res.get_data(as_text=True))
+        self.assertNotIn("Solved Issue", res.get_data(as_text=True))
+        self.assertIn("Cancelled Issue", res.get_data(as_text=True))
 
         # Filter status="" (All): should show both
         res = self.client.get('/issues/?status=')
         self.assertEqual(res.status_code, 200)
         self.assertIn("Open Issue", res.get_data(as_text=True))
-        self.assertIn("Closed Issue", res.get_data(as_text=True))
+        self.assertIn("Solved Issue", res.get_data(as_text=True))
+        self.assertIn("Cancelled Issue", res.get_data(as_text=True))
 
     def test_assignee_change_sets_in_progress_and_close_sets_closed(self):
         admin, _ = self.create_user("admin", "ClubAdmin", self.club_a)
@@ -412,6 +423,34 @@ class IssuesRouteTestCase(unittest.TestCase):
         db.session.refresh(issue)
         self.assertEqual(issue.status, Issue.STATUS_CLOSED)
 
+        # Resolve issue via close_issue="solved" -> should set status to closed
+        res = self.client.post(f'/issues/{issue.id}/update', data=dict(
+            status=Issue.STATUS_OPEN,
+            priority=issue.priority,
+            title=issue.title,
+            description=issue.description,
+            assignee_id=str(target.id),
+            close_issue="solved",
+        ), follow_redirects=True)
+        self.assertEqual(res.status_code, 200)
+        
+        db.session.refresh(issue)
+        self.assertEqual(issue.status, Issue.STATUS_CLOSED)
+
+        # Cancel issue via close_issue="cancelled" -> should set status to cancelled
+        res = self.client.post(f'/issues/{issue.id}/update', data=dict(
+            status=Issue.STATUS_OPEN,
+            priority=issue.priority,
+            title=issue.title,
+            description=issue.description,
+            assignee_id=str(target.id),
+            close_issue="cancelled",
+        ), follow_redirects=True)
+        self.assertEqual(res.status_code, 200)
+        
+        db.session.refresh(issue)
+        self.assertEqual(issue.status, Issue.STATUS_CANCELLED)
+
     def test_contributors_saved_via_update(self):
         admin, _ = self.create_user("admin", "ClubAdmin", self.club_a)
         issue = self._make_issue(self.club_a, admin)
@@ -428,6 +467,46 @@ class IssuesRouteTestCase(unittest.TestCase):
         
         db.session.refresh(issue)
         self.assertEqual(issue.contributors, "Alice, Charlie")
+
+    def test_search_issues(self):
+        admin, _ = self.create_user("admin", "ClubAdmin", self.club_a)
+        self._make_issue(self.club_a, admin, title="Database connection issue", description="Unable to connect to the SQL server.")
+        self._make_issue(self.club_a, admin, title="UI layout shift on home page", description="The sidebar moves when screen is resized.")
+        self._make_issue(self.club_a, admin, title="Wrong color scheme", description="The button color is green instead of maroon.")
+        
+        self.login("admin", self.club_a)
+        
+        # Search title
+        res = self.client.get('/issues/?q=database')
+        self.assertEqual(res.status_code, 200)
+        content = res.get_data(as_text=True)
+        self.assertIn("Database connection issue", content)
+        self.assertNotIn("UI layout shift", content)
+        self.assertNotIn("Wrong color scheme", content)
+        
+        # Search description
+        res = self.client.get('/issues/?q=sidebar')
+        self.assertEqual(res.status_code, 200)
+        content = res.get_data(as_text=True)
+        self.assertNotIn("Database connection issue", content)
+        self.assertIn("UI layout shift", content)
+        self.assertNotIn("Wrong color scheme", content)
+        
+        # Case insensitive search
+        res = self.client.get('/issues/?q=CoLoR')
+        self.assertEqual(res.status_code, 200)
+        content = res.get_data(as_text=True)
+        self.assertNotIn("Database connection issue", content)
+        self.assertNotIn("UI layout shift", content)
+        self.assertIn("Wrong color scheme", content)
+        
+        # No results search
+        res = self.client.get('/issues/?q=nonexistent')
+        self.assertEqual(res.status_code, 200)
+        content = res.get_data(as_text=True)
+        self.assertNotIn("Database connection issue", content)
+        self.assertNotIn("UI layout shift", content)
+        self.assertNotIn("Wrong color scheme", content)
 
 
 if __name__ == '__main__':

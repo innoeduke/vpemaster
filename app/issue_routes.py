@@ -85,6 +85,14 @@ def list_issues():
                 query = query.filter(getattr(Issue, field) == value)
     if assignee_id:
         query = query.filter(Issue.assignee_id == assignee_id)
+    q = request.args.get('q', '').strip()
+    if q:
+        query = query.filter(
+            or_(
+                Issue.title.ilike(f'%{q}%'),
+                Issue.description.ilike(f'%{q}%')
+            )
+        )
 
     issues = query.order_by(Issue.id.asc()).all()
 
@@ -97,6 +105,7 @@ def list_issues():
         'issues/list.html',
         issues=issues,
         filters={k: v for k, v in filters.items() if v},
+        q=q,
         assignee_id=assignee_id,
         assignable_users=assignable_users,
         is_sysadmin=is_sysadmin,
@@ -185,9 +194,12 @@ def update_issue(issue_id):
     if new_assignee_id and new_assignee_id != previous_assignee_id:
         new_status = Issue.STATUS_IN_PROGRESS
 
-    # If close button is clicked, set status to closed
-    if request.form.get('close_issue') == 'true':
+    # If close/resolve/cancel button is clicked, set status accordingly
+    close_val = request.form.get('close_issue')
+    if close_val in ('true', 'solved', 'resolved'):
         new_status = Issue.STATUS_CLOSED
+    elif close_val == 'cancelled':
+        new_status = Issue.STATUS_CANCELLED
 
     errors = []
     if new_status not in Issue.STATUSES:

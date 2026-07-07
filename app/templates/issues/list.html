@@ -29,8 +29,11 @@
             <div class="msg-nav-item {% if filters.get('status') == 'in_progress' %}active{% endif %}" onclick="window.location.href='{{ url_for('issue_bp.list_issues', status='in_progress') }}'">
                 <i class="fas fa-spinner"></i> <span>{{ _('In Progress') }}</span>
             </div>
-            <div class="msg-nav-item {% if filters.get('status') == 'closed' %}active{% endif %}" onclick="window.location.href='{{ url_for('issue_bp.list_issues', status='closed') }}'">
-                <i class="fas fa-check-circle"></i> <span>{{ _('Closed') }}</span>
+            <div class="msg-nav-item {% if filters.get('status') == 'solved' %}active{% endif %}" onclick="window.location.href='{{ url_for('issue_bp.list_issues', status='solved') }}'">
+                <i class="fas fa-check-circle"></i> <span>{{ _('Solved') }}</span>
+            </div>
+            <div class="msg-nav-item {% if filters.get('status') == 'cancelled' %}active{% endif %}" onclick="window.location.href='{{ url_for('issue_bp.list_issues', status='cancelled') }}'">
+                <i class="fas fa-ban"></i> <span>{{ _('Cancelled') }}</span>
             </div>
         </div>
     </div>
@@ -43,17 +46,25 @@
                     {{ _('Open Issues') }}
                 {% elif filters.get('status') == 'in_progress' %}
                     {{ _('In Progress Issues') }}
-                {% elif filters.get('status') == 'closed' %}
-                    {{ _('Closed Issues') }}
+                {% elif filters.get('status') == 'solved' %}
+                    {{ _('Solved Issues') }}
+                {% elif filters.get('status') == 'cancelled' %}
+                    {{ _('Cancelled Issues') }}
                 {% else %}
                     {{ _('All Issues') }}
                 {% endif %}
             </h2>
             
-            <!-- Filter Form in Header -->
             <form method="GET" class="issue-filters" id="issue-filter-form">
                 <!-- Preserve status in hidden input so changing other dropdowns maintains current status tab -->
                 <input type="hidden" name="status" value="{{ filters.get('status') or '' }}">
+
+                <div class="form-group search-group">
+                    <div class="issue-search-wrapper">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" name="q" placeholder="{{ _('Search issues...') }}" value="{{ q or '' }}" class="search-input">
+                    </div>
+                </div>
 
 
 
