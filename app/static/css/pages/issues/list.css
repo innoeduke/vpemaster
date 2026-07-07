@@ -4,6 +4,9 @@
     .badge-type-bug { background: #c0392b; }
     .badge-type-feature { background: #2c7a7b; }
     .badge-type-task { background: #4a5568; }
+    .badge-type-how-to { background: #2b6cb0; }
+    .badge-type-account { background: #805ad5; }
+    .badge-type-data { background: #dd6b20; }
     .badge-prio-high { background: #c0392b; }
     .badge-prio-medium { background: #d69e2e; }
     .badge-prio-low { background: #718096; }

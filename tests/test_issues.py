@@ -508,6 +508,24 @@ class IssuesRouteTestCase(unittest.TestCase):
         self.assertNotIn("UI layout shift", content)
         self.assertNotIn("Wrong color scheme", content)
 
+    def test_create_issue_with_new_types(self):
+        member, _ = self.create_user("alice", "Member", self.club_a)
+        self.login("alice", self.club_a)
+
+        for issue_type in (Issue.TYPE_HOW_TO, Issue.TYPE_ACCOUNT, Issue.TYPE_DATA):
+            res = self.client.post('/issues/new', json=dict(
+                title=f"Sample {issue_type} issue",
+                description="Sample description",
+                type=issue_type,
+                priority=Issue.PRIORITY_MEDIUM,
+            ))
+            self.assertEqual(res.status_code, 200)
+            self.assertTrue(res.get_json()['success'])
+            
+            created_issue = Issue.query.filter_by(type=issue_type).first()
+            self.assertIsNotNone(created_issue)
+            self.assertEqual(created_issue.title, f"Sample {issue_type} issue")
+
 
 if __name__ == '__main__':
     unittest.main()

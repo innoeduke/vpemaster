@@ -81,7 +81,7 @@ if (typeof messageEventSource !== 'undefined') {
 Since SSE relies on long-lived open HTTP connections:
 * **Development**: Works out of the box using Flask's default development server (`flask run`), which handles concurrent connections via python threading.
 * **Production**: Gunicorn's default `sync` worker type blocks one entire worker process per active SSE connection. If there are 4 sync workers, 4 active users will completely block the application.
-  * **Solution**: Configure Gunicorn to run with threads (e.g. `--threads` or `gthread` worker-class) in production setups (e.g., in Systemd unit files or Dockerfiles):
+  * **Solution**: Configure Gunicorn to run with the asynchronous `gevent` worker class in production setups (e.g., in Systemd unit files or Dockerfiles):
     ```bash
-    gunicorn -w 2 --threads 50 -b 0.0.0.0:5001 run:app
+    gunicorn -w 2 --worker-class gevent -b 0.0.0.0:5001 run:app
     ```

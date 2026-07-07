@@ -10,7 +10,10 @@ class Issue(db.Model):
     TYPE_BUG = 'bug'
     TYPE_FEATURE = 'feature'
     TYPE_TASK = 'task'
-    TYPES = (TYPE_BUG, TYPE_FEATURE, TYPE_TASK)
+    TYPE_HOW_TO = 'how-to'
+    TYPE_ACCOUNT = 'account'
+    TYPE_DATA = 'data'
+    TYPES = (TYPE_BUG, TYPE_FEATURE, TYPE_TASK, TYPE_HOW_TO, TYPE_ACCOUNT, TYPE_DATA)
 
     STATUS_OPEN = 'open'
     STATUS_IN_PROGRESS = 'in_progress'
