@@ -69,6 +69,7 @@
     <ul style="margin: 0; padding-left: 15px; color: #666; list-style-type: disc;">
         <li>{{ _('<strong>Check-In:</strong> Click the check/circle icon next to a name in the list to check them in or out.') | safe }}</li>
         <li>{{ _('<strong>Ticketing & Registration:</strong> Enter name, contact type, ticket type, quantity, and order number. Click <strong>Register</strong> to add them.') | safe }}</li>
+        <li>{{ _('<strong>Sorting:</strong> Click on the column headers (Ord#, Name, Ticket, Roles) to sort the list. The exported PDF or Image will preserve this exact sorting order within each category.') | safe }}</li>
         <li>{{ _('<strong>Manage:</strong> Click on a contact\'s name to view/edit contact details, or use edit/delete buttons in the Actions column.') | safe }}</li>
     </ul>
     {% endcall %}
@@ -145,7 +146,7 @@
                         <th class="sortable header-order" data-column-index="0" data-sort-dir="asc">{{ _('Ord#') }}</th>
                         <th class="sortable header-name" data-column-index="1">{{ _('Name') }}</th>
                         <th class="sortable header-ticket" data-column-index="2">{{ _('Ticket') }}</th>
-                        <th class="header-roles desktop-only">{{ _('Roles') }}</th>
+                        <th class="sortable header-roles desktop-only" data-column-index="3">{{ _('Roles') }}</th>
                         <th class="header-quantity">{{ _('Qty') }}</th>
                         <th class="header-amount desktop-only">{{ _('Amount') }}</th>
                         {% if is_authorized(Permissions.ROSTER_EDIT) %}

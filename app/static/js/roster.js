@@ -1000,10 +1000,7 @@ function populateExportPages() {
       }
     });
  
-    // Sort groups alphabetically by name (case-insensitive) for exported roster
-    paidRows.sort((a, b) => a._contactName.localeCompare(b._contactName));
-    unpaidRows.sort((a, b) => a._contactName.localeCompare(b._contactName));
-    officerRows.sort((a, b) => a._contactName.localeCompare(b._contactName));
+    // Preserving the active sorting order from the original page table.
  
     // Build region string for page header
     const regionParts = [];
