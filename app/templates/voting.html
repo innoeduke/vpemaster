@@ -164,8 +164,9 @@
                         {% set voting_disabled=True %} 
                         {% endif %}
                     {% endif %}
-                    <button
+                    <div
                         class="accordion-header {{ 'active' if default_open else '' }} {{ 'voted' if category_voted else '' }} {{ 'disabled' if voting_disabled else '' }}"
+                        role="button" tabindex="0"
                         {% if voting_disabled %}disabled title="{{ _('Not enough candidates to vote') }}" {% endif %}>
                         <div class="header-left">
                             {% set question_ns.count = question_ns.count + 1 %}
@@ -187,7 +188,7 @@
                             </div>
                             <i class="fas fa-chevron-down"></i>
                         </div>
-                    </button>
+                    </div>
                     <div class="accordion-content {{ 'force-open' if default_open else '' }}">
                         <table class="booking-table is-{{ status|replace(' ', '-') }}-meeting">
                             <tbody>

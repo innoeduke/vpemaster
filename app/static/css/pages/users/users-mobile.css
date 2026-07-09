@@ -106,12 +106,14 @@
     width: auto;
     min-width: 0;
     white-space: nowrap;
+    text-align: center;
   }
 
   #user-settings-table .col-project {
     width: auto;
     min-width: 0;
     white-space: nowrap;
+    text-align: center;
   }
 
   /* Hide other columns on mobile */

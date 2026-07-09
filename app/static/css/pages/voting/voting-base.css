@@ -124,13 +124,13 @@
   box-shadow: 0 6px 18px rgba(43, 11, 22, 0.06);
 }
 
-.accordion-list .accordion-header {
+.page-container .accordion-list .accordion-header {
   background-color: transparent;
   color: #333;
   font-weight: bold;
   font-family: "Montserrat", sans-serif;
   cursor: pointer;
-  padding: 16px 20px;
+  padding: 16px 22px;
   width: 100%;
   text-align: left;
   outline: none;
@@ -272,7 +272,7 @@
 
 /* --- Unified Voting Section (for NPS and Feedback) --- */
 .page-container .voting-section {
-  padding: 18px 22px 22px !important;
+  padding: 18px 22px 22px;
   border-radius: 12px;
   margin-top: 12px;
   background: linear-gradient(180deg, #ffffff 0%, #fbf8f6 100%);

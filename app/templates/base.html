@@ -91,7 +91,7 @@
                       or is_authorized(Permissions.ROSTER_VIEW)
                       or is_authorized(Permissions.MEETING_VIEW_ALL)
                       or (is_authorized(Permissions.SETTINGS_VIEW) and current_user.primary_role_name != 'Guest') %}
-      {% set has_directory_nav = is_module_enabled('Club Directory') and current_user.is_authenticated %}
+      {% set has_directory_nav = is_module_enabled('Club Directory') %}
       <ul class="nav-links">
         {# === Club Directory === #}
         {% if has_directory_nav %}

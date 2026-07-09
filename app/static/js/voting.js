@@ -84,6 +84,13 @@ document.addEventListener("DOMContentLoaded", function () {
 			}
 			sessionStorage.setItem('accordionState', JSON.stringify(accordionState));
 		});
+
+		header.addEventListener("keydown", (e) => {
+			if (e.key === "Enter" || e.key === " ") {
+				e.preventDefault();
+				header.click();
+			}
+		});
 	});
 
 	// Set the initial UI state for all voting buttons on page load

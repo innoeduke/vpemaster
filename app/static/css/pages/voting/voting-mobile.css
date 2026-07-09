@@ -29,7 +29,7 @@
   }
 
   /* Remove border from accordion container */
-  .accordion-list .accordion-item {
+  .page-container .accordion-list .accordion-item {
     border: none;
     padding: 0;
     margin-top: 12px;
@@ -115,17 +115,18 @@
 
   /* Allow the middle text column to shrink so the right-side candidate
      count pill doesn't get pushed off-screen on narrow viewports. */
-  .accordion-list .accordion-header {
+  .page-container .accordion-list .accordion-header {
     gap: 10px;
     margin: 10px 0;
     padding: 16px 16px;
   }
 
   /* Remove card styling on mobile */
-  .voting-section {
+  .page-container .voting-section {
     background-color: transparent;
     box-shadow: none;
     border-radius: 0;
+    padding: 18px 16px 22px;
   }
 
   /* Voting instruction alert compact */

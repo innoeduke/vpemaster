@@ -9,7 +9,7 @@
   }
 
   :root body .btn,
-  :root body button:not(.tm-action-btn),
+  :root body button:not(.tm-action-btn):not(.avatar-remove-btn),
   :root body select,
   :root body input:not([type="checkbox"]):not([type="radio"]),
   :root body .meeting-status-display,

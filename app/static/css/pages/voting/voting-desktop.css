@@ -6,8 +6,15 @@
 @media (min-width: 1025px) {
 
 	/* Desktop-specific accordion adjustments */
-	.accordion-list .accordion-item,
-	.voting-section {
+	.page-container .accordion-list .accordion-item {
+		padding: 0;
+	}
+
+	.page-container .accordion-list .accordion-header {
+		padding: 16px 25px;
+	}
+
+	.page-container .voting-section {
 		padding: 25px;
 	}
 

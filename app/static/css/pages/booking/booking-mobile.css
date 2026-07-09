@@ -63,6 +63,10 @@
 		overflow: visible !important;
 	}
 
+	.page-container .role-avatar.admin-avatar .avatar-remove-btn {
+		display: flex;
+	}
+
 	/* Container adjustments */
 
 

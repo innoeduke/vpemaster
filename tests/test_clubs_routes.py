@@ -103,6 +103,16 @@ def test_list_clubs_regular_user_access(client, regular_user):
     assert b'Club Directory' in response.data
     assert b'Create New Club' not in response.data
 
+def test_list_clubs_unauthenticated_user_access(client):
+    """Test that unauthenticated users can access /clubs and see the Club Directory navigation link."""
+    response = client.get('/clubs')
+    assert response.status_code == 200
+    assert b'Club Directory' in response.data
+    # Verify that the navbar link is rendered
+    assert b'href="/clubs"' in response.data
+    assert b'View club directory' in response.data
+
+
 def test_create_club(client, sysadmin_user, app):
     """Test creating a new club."""
     with client.session_transaction() as sess:
