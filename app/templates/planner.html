@@ -53,7 +53,7 @@
         <div class="planner-section-header">
             <h3>{{ _('Program Enrollments') }}</h3>
             {% if is_admin %}
-                {% call btn('outline', id='enroll-member-btn', attrs={'onclick': 'openEnrollmentModal()'}) %}<i class="fas fa-plus"></i> {{ _('New') }}{% endcall %}
+                {% call btn('outline', id='enroll-member-btn', class='planner-new-btn', attrs={'onclick': 'openEnrollmentModal()'}) %}<i class="fas fa-plus"></i> {{ _('New') }}{% endcall %}
             {% endif %}
         </div>
         
@@ -141,9 +141,9 @@
     {% endif %}
 
     <!-- Standalone Meeting Plans Section -->
-    <div class="planner-section-header" style="margin-top: 20px;">
+    <div class="planner-section-header">
         <h3>{{ _('Meeting Plans') }}</h3>
-        {% call btn('outline', id='add-plan-btn') %}<i class="fas fa-plus"></i> {{ _('New') }}{% endcall %}
+        {% call btn('outline', id='add-plan-btn', class='planner-new-btn') %}<i class="fas fa-plus"></i> {{ _('New') }}{% endcall %}
     </div>
  
     <div class="planner-table-container">

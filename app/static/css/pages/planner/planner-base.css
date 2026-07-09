@@ -984,6 +984,10 @@ optgroup option {
   white-space: nowrap;
 }
 
+#enrollments-section + .planner-section-header {
+  margin-top: 20px;
+}
+
 @media (max-width: 768px) {
   .planner-header-row {
     flex-direction: column;

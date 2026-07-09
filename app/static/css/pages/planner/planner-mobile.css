@@ -10,8 +10,11 @@
     text-align: center;
   }
 
-  #add-plan-btn {
+  .planner-new-btn {
     white-space: nowrap;
+    width: auto;
+    min-width: unset;
+    flex: none;
   }
 
   h3 {
@@ -295,7 +298,7 @@
     justify-content: center;
   }
 
-  .planner-section-header .btn {
+  .planner-section-header .planner-new-btn {
     width: auto;
     min-width: unset;
     flex: none;
