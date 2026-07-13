@@ -1,0 +1,14 @@
+[Unit]
+Description=Gunicorn instance to serve vpemaster
+After=network.target
+
+[Service]
+User=vpemaster_user
+Group=www-data
+WorkingDirectory=/var/www/vpemaster
+# This ensures the /run/vpemaster directory exists and is owned by the user
+RuntimeDirectory=vpemaster 
+ExecStart=/var/www/vpemaster/venv/bin/gunicorn --workers 5 --worker-class gevent --bind unix:/run/vpemaster/vpemaster.sock run:app
+
+[Install]
+WantedBy=multi-user.target

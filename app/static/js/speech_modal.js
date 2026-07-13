@@ -2249,12 +2249,13 @@ function refreshAgendaOwnerCell(agendaRow, ownersData) {
     const existingMeta = ownerRow.querySelector(".owner-meta");
     if (existingMeta) existingMeta.remove();
 
-    if (owner.credentials === "DTM") {
+    if (owner.dtm) {
       const sup = document.createElement("sup");
       sup.className = "dtm-superscript";
       sup.textContent = "DTM";
       ownerRow.appendChild(sup);
-    } else if (owner.credentials) {
+    }
+    if (owner.credentials && owner.credentials !== "DTM") {
       const meta = document.createElement("span");
       meta.className = "owner-meta";
       meta.textContent = ` - ${owner.credentials}`;

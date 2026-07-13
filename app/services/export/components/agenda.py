@@ -65,18 +65,14 @@ class AgendaComponent(BaseExportComponent):
                 o_str = o.Name
                 if o.DTM:
                     o_str += "ᴰᵀᴹ"
+                
+                # Check for other credentials / guest suffix
+                if o.Type == 'Guest':
+                    o_str += " - Guest"
                 else:
-                    # Fix for Guest credential
-                    # derive_credentials might check legacy fields.
-                    # Test expect: "Jane Smith - Guest"
-                    if o.Type == 'Guest':
-                         o_str += " - Guest"
-                    else:
-                        creds = derive_credentials(o)
-                        # Check if credentials is not None/Empty strings
-                        if creds:
-                            o_str += f" - {creds}"
-                            
+                    creds = derive_credentials(o)
+                    if creds and creds != "DTM":
+                        o_str += f" - {creds}"
                 owner_parts.append(o_str)
             owner = " & ".join(owner_parts)
             

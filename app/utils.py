@@ -384,52 +384,78 @@ def update_next_project(contact):
     Recalculates the Next_Project for a contact based on their Current_Path,
     their current Credentials (which reflect highest Level achievements),
     and completed speech logs.
+    Handles multiple paths in progress.
     """
-    if not contact or not contact.Current_Path:
-        if contact:
-            contact.Next_Project = None
+    if not contact:
         return
 
-    if contact.Current_Path == "Distinguished Toastmasters":
+    # Find pathways to calculate next projects for
+    target_pathways = []
+    
+    # 1. Look for working pathways
+    working_paths = [cp for cp in contact.registered_paths if cp.status == 'working']
+    for cp in working_paths:
+        if cp.pathway and cp.pathway.name != "Distinguished Toastmasters":
+            target_pathways.append(cp.pathway)
+            
+    # 2. Fallback to contact.Current_Path if no working pathways in progress
+    if not target_pathways and contact.Current_Path:
+        if contact.Current_Path != "Distinguished Toastmasters":
+            pathway = Pathway.query.filter_by(name=contact.Current_Path).first()
+            if pathway and pathway.abbr:
+                target_pathways.append(pathway)
+
+    if not target_pathways:
         contact.Next_Project = None
         return
 
-    pathway = Pathway.query.filter_by(name=contact.Current_Path).first()
-    if not pathway or not pathway.abbr:
-        return
-
-    code_suffix = pathway.abbr
-    
-    # 1. Determine start_level based on credentials
-    # Credentials are expected to be in format "AbbrN" e.g. "PM2"
-    start_level = 1
-    if contact.credentials:
-        match = re.match(rf"^{code_suffix}(\d+)$", contact.credentials.strip().upper())
-        if match:
-            level_achieved = int(match.group(1))
-            if level_achieved >= 5:
-                contact.Next_Project = None
-                return
-            start_level = level_achieved + 1
-    
-    # 2. Find the first incomplete project from start_level onwards
-    # Get all completed project IDs for this contact
     completed_project_ids = contact.get_completed_project_ids()
+    next_projects = []
 
-    for level in range(start_level, 6):
-        # Query PathwayProject for this path and level, ordered by code.
-        path_projects = PathwayProject.query.filter(
-            PathwayProject.path_id == pathway.id,
-            PathwayProject.code.like(f"{level}.%")
-        ).order_by(PathwayProject.code.asc()).all()
+    # Get credentials list
+    creds_list = []
+    if contact.credentials:
+        creds_list = [c.strip().upper() for c in contact.credentials.split(',')]
 
-        for pp in path_projects:
-            if pp.project_id not in completed_project_ids:
-                contact.Next_Project = f"{code_suffix}{pp.code}"
-                return
+    for pathway in target_pathways:
+        code_suffix = pathway.abbr
+        if not code_suffix:
+            continue
+            
+        start_level = 1
+        for cred in creds_list:
+            match = re.match(rf"^{code_suffix}(\d+)$", cred)
+            if match:
+                level_achieved = int(match.group(1))
+                if level_achieved >= 5:
+                    start_level = 6
+                else:
+                    start_level = level_achieved + 1
+                break
+        
+        if start_level >= 6:
+            continue
 
-    # If all projects in all levels are done
-    contact.Next_Project = None
+        found_project = False
+        for level in range(start_level, 6):
+            # Query PathwayProject for this path and level, ordered by code.
+            path_projects = PathwayProject.query.filter(
+                PathwayProject.path_id == pathway.id,
+                PathwayProject.code.like(f"{level}.%")
+            ).order_by(PathwayProject.code.asc()).all()
+
+            for pp in path_projects:
+                if pp.project_id not in completed_project_ids:
+                    next_projects.append(f"{code_suffix}{pp.code}")
+                    found_project = True
+                    break
+            if found_project:
+                break
+
+    if next_projects:
+        contact.Next_Project = ", ".join(next_projects)
+    else:
+        contact.Next_Project = None
 
 
 def recalculate_contact_metadata(contact, avatar_url=None, dtm_override=None):
@@ -648,17 +674,17 @@ def sync_contact_metadata(contact_id, commit=True, sync_avatar=False, dtm_overri
 def derive_credentials(contact):
     """
     Derives the credentials string for a given contact.
-    - Returns 'DTM' for DTMs.
     - Returns 'Guest' for Guests.
+    - Returns 'DTM' for DTMs.
     - Returns the synced credentials field for Members/Officers.
     """
     if not contact:
         return ''
 
-    if contact.DTM:
-        return 'DTM'
-    elif contact.Type == 'Guest':
+    if contact.Type == 'Guest':
         return "Guest"
+    elif contact.DTM:
+        return 'DTM'
     else:
         return contact.credentials or ''
 

@@ -141,5 +141,59 @@ class TestAutoCompleteProjects(unittest.TestCase):
         # Since PM1.1 was completed, Next_Project should be recalculated (e.g. to None or the next project in PM level 1 if seeded, but since we didn't seed more projects, it should be None)
         self.assertNotEqual(updated_contact.Next_Project, 'PM1.1')
 
+    def test_multiple_paths_in_progress(self):
+        """Test that when a contact has multiple paths in progress, Next_Project lists both project codes."""
+        # 1. Create second pathway (Dynamic Leadership)
+        pathway_dl = Pathway(name="Dynamic Leadership", abbr="DL", status="active", type="pathway")
+        db.session.add(pathway_dl)
+        db.session.flush()
+
+        # 2. Create PathwayProject for DL level 1
+        project_dl = Project(Project_Name="Ice Breaker DL", Format="Prepared Speech")
+        db.session.add(project_dl)
+        db.session.flush()
+
+        pp_dl = PathwayProject(path_id=pathway_dl.id, project_id=project_dl.id, level=1, code="1.1", type="required")
+        db.session.add(pp_dl)
+        db.session.flush()
+
+        # 3. Associate DL as a second working pathway for the contact
+        from app.models.contact_path import ContactPath
+        # PM is already associated in setup_data
+        cp_dl = ContactPath(contact_id=self.contact.id, path_id=pathway_dl.id, status='working', is_default=False)
+        db.session.add(cp_dl)
+        db.session.commit()
+
+        # 4. Run metadata sync
+        from app.utils import sync_contact_metadata
+        sync_contact_metadata(self.contact.id)
+        db.session.refresh(self.contact)
+
+        # 5. Verify Next_Project contains both codes
+        self.assertIsNotNone(self.contact.Next_Project)
+        self.assertIn('PM1.1', self.contact.Next_Project)
+        self.assertIn('DL1.1', self.contact.Next_Project)
+        self.assertEqual(len([c.strip() for c in self.contact.Next_Project.split(',')]), 2)
+
+        # 6. Test Prepared Speech auto-resolution works for the second path
+        log_dl = SessionLog(
+            meeting_id=self.meeting.id,
+            Type_ID=self.st.id,
+            Project_ID=ProjectID.GENERIC,  # unresolved/generic
+            Status="booked",
+            Session_Title="My DL Speech",
+            pathway="Dynamic Leadership"
+        )
+        db.session.add(log_dl)
+        db.session.commit()
+
+        # Set owner (triggers auto-resolution)
+        SessionLog.set_owners(log_dl, [self.contact.id])
+        db.session.commit()
+
+        db.session.refresh(log_dl)
+        self.assertEqual(log_dl.Project_ID, project_dl.id)
+        self.assertEqual(log_dl.project_code, "DL1.1")
+
 if __name__ == '__main__':
     unittest.main()

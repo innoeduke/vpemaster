@@ -49,10 +49,10 @@ class PowerBIAgendaComponent(BaseExportComponent):
                 o_str = o.Name
                 if o.DTM:
                     o_str += "ᴰᵀᴹ"
-                else:
-                    creds = derive_credentials(o)
-                    if creds:
-                        o_str += f" - {creds}"
+                
+                creds = derive_credentials(o)
+                if creds and creds != "DTM":
+                    o_str += f" - {creds}"
                 owner_parts.append(o_str)
             owner = " & ".join(owner_parts)
                 

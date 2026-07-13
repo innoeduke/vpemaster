@@ -1,0 +1,35 @@
+server {
+    listen 80;
+    listen [::]:80;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    
+    server_name toumaclub.cn www.toumaclub.cn;
+    
+    # SSL证书配置
+    ssl_certificate /etc/nginx/toumaclub.cn_bundle.crt;
+    ssl_certificate_key /etc/nginx/toumaclub.cn.key;
+    ssl_session_timeout 5m;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:HIGH:!aNULL:!MD5:!RC4:!DHE; 
+    ssl_prefer_server_ciphers on;
+    client_max_body_size 50M; # Increase to 50MB or more
+    
+    # 网站根目录
+    root /var/www/vpemaster;
+    index index.html index.htm;
+    
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/run/vpemaster/vpemaster.sock;
+    }
+    # Optional: Serve static files directly via Nginx for better performance
+    location /static {
+        alias /var/www/vpemaster/app/static;
+    }
+    
+    # HTTP重定向到HTTPS
+    if ($scheme != "https") {
+        return 301 https://$host$request_uri;
+    }
+}

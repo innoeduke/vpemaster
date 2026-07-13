@@ -332,8 +332,8 @@ class TestAgendaComponent(unittest.TestCase):
         self.component.render(self.ws, context, 1)
         
         owner_cell = self.ws.cell(row=4, column=3).value
-        # DTM takes precedence - no Guest or credentials
-        self.assertEqual(owner_cell, "John Doeᴰᵀᴹ")
+        # DTM and Guest suffix should both show
+        self.assertEqual(owner_cell, "John Doeᴰᵀᴹ - Guest")
     
     def test_very_long_title_wrapping(self):
         """Test that very long titles trigger text wrapping."""

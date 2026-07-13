@@ -48,8 +48,8 @@ def run_cleanup(apply=False):
             orig_email = contact.Email
             new_email = orig_email
             if not orig_email or not str(orig_email).strip():
-                if contact.user and contact.user.Email:
-                    new_email = contact.user.Email
+                if contact.user and contact.user.email:
+                    new_email = contact.user.email
                     contact.Email = new_email
             
             # Comparison

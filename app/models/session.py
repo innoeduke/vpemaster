@@ -260,6 +260,12 @@ class SessionLog(db.Model):
         # --- Priority 2: Fallback for Speeches/Presentations (Auto-Resolution) ---
         is_speech = self.session_type and self.session_type.Title in ['Prepared Speech', 'Presentation']
         if is_speech and contact and contact.Next_Project:
+            if ',' in contact.Next_Project:
+                next_codes = [c.strip() for c in contact.Next_Project.split(',')]
+                for code in next_codes:
+                    if code.startswith(pathway_suffix):
+                        return code
+                return next_codes[0] if next_codes else None
             # Return full project code (e.g., PM1.2) if available
             return contact.Next_Project
 
@@ -813,19 +819,26 @@ class SessionLog(db.Model):
                 
                 # Auto-Resolution from Next_Project for Speeches ONLY IF still not resolved or generic
                 if primary_owner.Next_Project and is_speech_project and (not log.Project_ID or log.Project_ID == ProjectID.GENERIC):
-                    current_path_name = primary_owner.Current_Path
+                    current_path_name = log.pathway or primary_owner.Current_Path
                     if current_path_name:
                         pathway = Pathway.query.filter_by(name=current_path_name).first()
                         if pathway and pathway.abbr:
-                            if primary_owner.Next_Project.startswith(pathway.abbr):
-                                code_suffix = primary_owner.Next_Project[len(pathway.abbr):]
+                            # Split Next_Project by comma to handle multiple paths
+                            next_codes = [c.strip() for c in primary_owner.Next_Project.split(',')]
+                            matching_code = None
+                            for code in next_codes:
+                                if code.startswith(pathway.abbr):
+                                    matching_code = code
+                                    break
+                            if matching_code:
+                                code_suffix = matching_code[len(pathway.abbr):]
                                 pp = PathwayProject.query.filter_by(
                                     path_id=pathway.id,
                                     code=code_suffix
                                 ).first()
                                 if pp:
                                     log.Project_ID = pp.project_id
-                                    new_path_level = primary_owner.Next_Project
+                                    new_path_level = matching_code
                                     
                 log.project_code = new_path_level
                 

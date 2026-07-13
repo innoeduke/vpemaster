@@ -1657,6 +1657,13 @@ document.addEventListener("DOMContentLoaded", () => {
             ownerRow.appendChild(nameSpan);
           }
 
+          if (ownerInfo.dtm) {
+            const sup = document.createElement('sup');
+            sup.className = 'dtm-superscript';
+            sup.textContent = 'DTM';
+            ownerRow.appendChild(sup);
+          }
+
           if (ownerInfo.credentials && ownerInfo.credentials !== "DTM") {
             const credSpan = document.createElement('span');
             credSpan.className = 'owner-meta';
@@ -2978,12 +2985,12 @@ document.addEventListener("DOMContentLoaded", () => {
           const typeSelect = currentRow.querySelector('[data-field="Type_ID"] select');
           // ... rest of the logic
           if (typeSelect && typeSelect.value == 30 && primaryContact.Next_Project && window.allProjects) {
-            const nextProjCode = primaryContact.Next_Project;
+            const nextProjCodes = primaryContact.Next_Project.split(',').map(s => s.trim());
             let foundProjId = null;
             for (const proj of window.allProjects) {
               if (proj.path_codes) {
                 for (const [abbr, details] of Object.entries(proj.path_codes)) {
-                  if (abbr + details.code === nextProjCode) {
+                  if (nextProjCodes.includes(abbr + details.code)) {
                     foundProjId = proj.id;
                     break;
                   }
@@ -3291,7 +3298,7 @@ document.addEventListener("DOMContentLoaded", () => {
               selectedContact.Next_Project &&
               window.allProjects
             ) {
-              const nextProjCode = selectedContact.Next_Project;
+              const nextProjCodes = selectedContact.Next_Project.split(',').map(s => s.trim());
               let foundProjId = null;
 
               for (const proj of window.allProjects) {
@@ -3299,7 +3306,7 @@ document.addEventListener("DOMContentLoaded", () => {
                   for (const [abbr, details] of Object.entries(
                     proj.path_codes
                   )) {
-                    if (abbr + details.code === nextProjCode) {
+                    if (nextProjCodes.includes(abbr + details.code)) {
                       foundProjId = proj.id;
                       break;
                     }
