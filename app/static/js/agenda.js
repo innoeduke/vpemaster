@@ -1496,6 +1496,7 @@ document.addEventListener("DOMContentLoaded", () => {
       row.dataset.isReadonly = String(log.is_readonly || false).toLowerCase();
       row.dataset.meetingSeq = log.Meeting_Seq;
       row.dataset.startTime = log.Start_Time_str;
+      row.dataset.endTime = log.End_Time_str || '';
       row.dataset.sessionTitle = log.Session_Title !== null ? log.Session_Title : '';
       row.dataset.typeId = log.Type_ID;
       row.dataset.ownerId = log.Owner_ID;
@@ -1545,8 +1546,12 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         // 1. Start Time
         const tdTime = document.createElement('td');
-        tdTime.className = 'non-edit-mode-cell';
-        tdTime.textContent = log.Start_Time_str;
+        tdTime.className = 'non-edit-mode-cell col-start-time';
+        if (typeof SHOW_END_TIME !== 'undefined' && SHOW_END_TIME && log.End_Time_str && log.Start_Time_str) {
+          tdTime.textContent = log.Start_Time_str + ' - ' + log.End_Time_str;
+        } else {
+          tdTime.textContent = log.Start_Time_str;
+        }
         row.appendChild(tdTime);
 
         // 2. Session Title (Complex Logic)
@@ -3569,4 +3574,63 @@ window.closeCreateAgendaModal = function () {
                 pathwaysBox.style.display = 'block';
             }
         });
+
+window.toggleSessionEndTimeRule = function(checkbox) {
+  const isEnabled = checkbox.checked;
+  checkbox.disabled = true;
+
+  fetch("/api/settings/rules/toggle", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      rule_name: "session_end_time",
+      enabled: isEnabled
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    checkbox.disabled = false;
+    if (data.success) {
+      SHOW_END_TIME = isEnabled;
+      const container = document.getElementById("table-container");
+      if (container) {
+        if (isEnabled) {
+          container.classList.add("show-end-time");
+        } else {
+          container.classList.remove("show-end-time");
+        }
+      }
+      const rows = document.querySelectorAll("#logs-table tbody tr");
+      rows.forEach(row => {
+        if (row.classList.contains("section-row")) return;
+        const tdTime = row.querySelector("td.col-start-time");
+        if (tdTime) {
+          const start = row.dataset.startTime || "";
+          const end = row.dataset.endTime || "";
+          if (isEnabled && start && end) {
+            tdTime.textContent = `${start} - ${end}`;
+          } else {
+            tdTime.textContent = start;
+          }
+        }
+      });
+    } else {
+      checkbox.checked = !isEnabled;
+      if (typeof showNotification === "function") {
+        showNotification(data.message || "Failed to toggle rule.", "error");
+      }
+    }
+  })
+  .catch(e => {
+    checkbox.disabled = false;
+    checkbox.checked = !isEnabled;
+    console.error("Toggle rule error:", e);
+    if (typeof showNotification === "function") {
+      showNotification(e.message || "Network error occurred.", "error");
+    }
+  });
+};
+
     

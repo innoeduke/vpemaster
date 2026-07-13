@@ -511,6 +511,38 @@ class TestAgendaComponent(unittest.TestCase):
         # Keynote titles should have quotes stripped, no project code prefix
         self.assertEqual(title_cell, "The Best Keynote Ever")
 
+    def test_agenda_export_with_end_time(self):
+        """Test AgendaComponent render with end_time policy enabled."""
+        from unittest.mock import patch, MagicMock
+        
+        # Mock ClubRule record
+        mock_rule = MagicMock()
+        mock_rule.is_enabled = True
+        
+        log, st = self.create_mock_log(
+            session_type_id=1,
+            session_title="Opening Remarks",
+            start_time=time(19, 0),
+            duration_max=10
+        )
+        
+        context = MagicMock()
+        context.meeting.club_id = 456
+        context.logs = [(log, st)]
+        context.speech_details = {}
+        
+        with patch('app.models.club_rule.ClubRule') as mock_club_rule:
+            mock_club_rule.query.filter_by.return_value.first.return_value = mock_rule
+            self.component.render(self.ws, context, 1)
+            
+        # Verify Headers
+        headers = [self.ws.cell(row=3, column=c).value for c in range(1, 5)]
+        self.assertEqual(headers, ["Start", "Title", "Owner", "Duration"])
+        
+        # Verify Row Data
+        time_val = self.ws.cell(row=4, column=1).value
+        self.assertEqual(time_val, "19:00 - 19:10")
+
 
 class TestSpeechObjectivesComponent(unittest.TestCase):
     """Test cases for SpeechObjectivesComponent formatting."""

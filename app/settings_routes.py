@@ -1866,6 +1866,12 @@ RULE_DEFINITIONS = [
         "display_name": "VPE Approval for Key Roles",
         "description": "Require VPE approval before a member can book Toastmaster, General Evaluator, Topicmaster, Individual Evaluator, or Prepared Speaker. Turn off to allow direct booking.",
     },
+    {
+        "name": "session_end_time",
+        "display_name": "Session End-Time",
+        "description": "Show both session start time and session end time on the agenda.",
+        "default": False,
+    },
 ]
 
 
@@ -1887,12 +1893,14 @@ def get_rules():
 
     rules_list = []
     for definition in RULE_DEFINITIONS:
-        # Default to True (enabled) when no record exists yet
+        if definition["name"] == "session_end_time":
+            continue
+        default_val = definition.get("default", True)
         rules_list.append({
             "name": definition["name"],
             "display_name": definition["display_name"],
             "description": definition["description"],
-            "enabled": states.get(definition["name"], True),
+            "enabled": states.get(definition["name"], default_val),
         })
 
     return jsonify(success=True, rules=rules_list)

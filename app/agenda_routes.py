@@ -787,6 +787,16 @@ def _get_processed_logs_data(meeting_id, show_media=False):
                 return custom_cred
             return derive_credentials(o)
 
+        end_time_str = ''
+        if log.Start_Time:
+            duration_val = int(log.Duration_Max or 0)
+            if duration_val > 0:
+                dummy_dt = datetime.combine(datetime.min.date(), log.Start_Time)
+                end_dt = dummy_dt + timedelta(minutes=duration_val)
+                end_time_str = end_dt.time().strftime('%H:%M')
+            else:
+                end_time_str = log.Start_Time.strftime('%H:%M')
+
         log_dict = {
             # SessionLog fields
             'id': log.id,
@@ -795,6 +805,7 @@ def _get_processed_logs_data(meeting_id, show_media=False):
             'Meeting_Number': log.Meeting_Number,
             'Meeting_Seq': log.Meeting_Seq,
             'Start_Time_str': log.Start_Time.strftime('%H:%M') if log.Start_Time else '',
+            'End_Time_str': end_time_str,
             'Session_Title': session_title_for_dict,
             'Type_ID': log.Type_ID,
             'Owner_ID': log.owner.id if log.owners else None,
@@ -900,6 +911,9 @@ def agenda():
             pass
     
     club_id = get_current_club_id()
+    from app.models.club_rule import ClubRule
+    rule_record = ClubRule.query.filter_by(club_id=club_id, rule_name='session_end_time').first()
+    show_end_time = rule_record.is_enabled if rule_record else False
 
     # --- Determine Selected Meeting ---
     is_guest = current_user.is_guest_of_club(club_id)
@@ -974,7 +988,8 @@ def agenda():
                                        meeting_types={},
                                        next_meeting_num=0,
                                        next_meeting_date='',
-                                       project_speakers=[])
+                                       project_speakers=[],
+                                       show_end_time=show_end_time)
 
         # 2. Published meetings (not started, running, finished): require MEETING_VIEW_PUBLISHED
         if selected_meeting.status in ('not started', 'running', 'finished'):
@@ -996,7 +1011,8 @@ def agenda():
                                        meeting_types={},
                                        next_meeting_num=0,
                                        next_meeting_date='',
-                                       project_speakers=[])
+                                       project_speakers=[],
+                                       show_end_time=show_end_time)
 
 
     # --- Other Data for Template ---
@@ -1172,7 +1188,8 @@ def agenda():
                            awards=awards,
                            club_awards=club_awards,
                            meeting_roles=meeting_roles,
-                           role_candidates=role_candidates)
+                           role_candidates=role_candidates,
+                           show_end_time=show_end_time)
 
 
 # --- API Endpoints for Asynchronous Data Loading ---

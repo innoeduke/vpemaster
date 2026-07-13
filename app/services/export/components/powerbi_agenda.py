@@ -6,6 +6,18 @@ from app.utils import derive_credentials
 class PowerBIAgendaComponent(BaseExportComponent):
     """Renders the Meeting Agenda section for PowerBI."""
     def render(self, ws, context, start_row):
+        from app.models.club_rule import ClubRule
+        from unittest.mock import Mock
+        
+        club_id = context.meeting.club_id
+        show_end_time = False
+        try:
+            if club_id and not isinstance(club_id, Mock):
+                rule_record = ClubRule.query.filter_by(club_id=club_id, rule_name='session_end_time').first()
+                show_end_time = rule_record.is_enabled if rule_record else False
+        except Exception:
+            pass
+
         ws.append([])
         ws.append(["2. MEETING AGENDA"])
         ws.append([])
@@ -43,6 +55,19 @@ class PowerBIAgendaComponent(BaseExportComponent):
                 else:
                     duration = f"[{log.Duration_Max}']"
             
+            start_time = log.Start_Time.strftime('%H:%M') if log.Start_Time else ""
+            time_display = start_time
+            if show_end_time and start_time:
+                duration_val = int(log.Duration_Max or 0)
+                if duration_val > 0:
+                    from datetime import datetime, timedelta
+                    dummy_dt = datetime.combine(datetime.min.date(), log.Start_Time)
+                    end_dt = dummy_dt + timedelta(minutes=duration_val)
+                    end_time_str = end_dt.time().strftime('%H:%M')
+                    time_display = f"{start_time} - {end_time_str}"
+                else:
+                    time_display = start_time
+
             # Owner logic with multiple owners support
             owner_parts = []
             for o in log.owners:
@@ -56,7 +81,7 @@ class PowerBIAgendaComponent(BaseExportComponent):
                 owner_parts.append(o_str)
             owner = " & ".join(owner_parts)
                 
-            ws.append([log.Meeting_Number, log.Start_Time.strftime('%H:%M') if log.Start_Time else "", title, duration, owner])
+            ws.append([log.Meeting_Number, time_display, title, duration, owner])
             if len(title) > 50:
                 ExportFormatter.apply_wrap_text(ws.cell(row=ws.max_row, column=3))
         

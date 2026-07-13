@@ -208,11 +208,21 @@
     </div>
     {% endif %}
 
-    <div class='table-container' id="table-container" data-project-speakers='{{ project_speakers|tojson|safe }}'>
+    <div class='table-container {% if show_end_time %}show-end-time{% endif %}' id="table-container" data-project-speakers='{{ project_speakers|tojson|safe }}'>
         <table id="logs-table">
             <thead>
                 <tr class="non-edit-mode-header">
-                    <th class="col-start-time-header"><i class="fas fa-clock"></i></th>
+                    <th class="col-start-time-header">
+                        <i class="fas fa-clock"></i>
+                        {% if selected_meeting and is_authorized(Permissions.MEETING_MANAGE, meeting=selected_meeting) %}
+                        <div class="time-switch-container">
+                            <label class="time-switch" title="{{ _('Toggle Session End-Time') }}">
+                                <input type="checkbox" id="session-end-time-toggle" {% if show_end_time %}checked{% endif %} onchange="toggleSessionEndTimeRule(this)">
+                                <span class="time-slider"></span>
+                            </label>
+                        </div>
+                        {% endif %}
+                    </th>
                     <th><i class="fas fa-file-alt"></i> {{ _('Session') }}</th>
                     <th><i class="fas fa-user"></i> {{ _('Owner') }}</th>
                     <th class="col-view-duration-header"><i class="fas fa-hourglass-half"></i> {{ _("Min'") }}</th>
@@ -241,7 +251,7 @@
                     data-meeting-date="{{ log_dict.meeting_date_str }}"
                     data-is-section="{{ log_dict.is_section|lower }}" data-is-hidden="{{ log_dict.is_hidden|lower }}"
                     data-is-readonly="{{ log_dict.is_readonly|default(false)|lower }}"
-                    data-meeting-seq="{{ log_dict.Meeting_Seq }}" data-start-time="{{ log_dict.Start_Time_str }}" {# Use
+                    data-meeting-seq="{{ log_dict.Meeting_Seq }}" data-start-time="{{ log_dict.Start_Time_str }}" data-end-time="{{ log_dict.End_Time_str }}" {# Use
                     predefined title if available, otherwise fallback to log title #}
                     data-session-title="{{ log_dict.Session_Title if log_dict.Session_Title is not none else '' }}"
                     data-type-id="{{ log_dict.Type_ID }}" data-owner-id="{{ log_dict.owners_data[0].id if log_dict.owners_data else '' }}"
@@ -264,7 +274,13 @@
                         </div>
                     </td>
                     {% else %}
-                    <td class="non-edit-mode-cell col-start-time">{{ log_dict.Start_Time_str }}</td>
+                    <td class="non-edit-mode-cell col-start-time">
+                        {% if show_end_time and log_dict.End_Time_str %}
+                            {{ log_dict.Start_Time_str }} - {{ log_dict.End_Time_str }}
+                        {% else %}
+                            {{ log_dict.Start_Time_str }}
+                        {% endif %}
+                    </td>
                     <td class="non-edit-mode-cell col-session">
                         <div class="speech-tooltip-wrapper">
                             {% set cleaned_title = log_dict.Session_Title|replace('"', '') if log_dict.Session_Title
@@ -458,6 +474,7 @@
         var pathwayMap = {{ pathway_mapping | tojson | safe }};
         var groupedPathways = {{ pathways | tojson | safe }};
         var ProjectID = {{ ProjectID | tojson | safe }};
+        var SHOW_END_TIME = {{ show_end_time|tojson if show_end_time is defined else false }};
     </script>
     <script defer src="{{ url_for('static', filename='js/speech_modal.js') }}?v={{ 'js/speech_modal.js' | static_version }}"></script>
     <script defer src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>

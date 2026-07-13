@@ -1022,6 +1022,13 @@ td.actions-column .tm-action-buttons {
 	vertical-align: middle;
 }
 
+/* Column width adjustment for session end-time display */
+#agenda-content .show-end-time #logs-table .col-start-time-header,
+#agenda-content .show-end-time #logs-table tbody td.col-start-time {
+	min-width: 110px;
+	white-space: nowrap;
+}
+
 /* Section Row Overrides */
 
 
@@ -2481,3 +2488,58 @@ td.non-edit-mode-cell.col-session a {
 .ap-count { color: #94a3b8; font-weight: 500; }
 
 .st-modal-ok:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Session end-time toggle switch styles in column header */
+.time-switch-container {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    margin-left: 8px;
+}
+.time-switch {
+    position: relative;
+    display: inline-block;
+    width: 32px;
+    height: 18px;
+    margin: 0;
+}
+.time-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.time-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #cbd5e1;
+    transition: .3s;
+    border-radius: 18px;
+}
+.time-slider:before {
+    position: absolute;
+    content: "";
+    height: 12px;
+    width: 12px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.time-switch input:checked + .time-slider {
+    background-color: #10b981;
+}
+.time-switch input:checked + .time-slider:before {
+    transform: translateX(14px);
+}
+.time-switch input:disabled + .time-slider {
+    background-color: #e2e8f0;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
