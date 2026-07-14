@@ -2044,18 +2044,6 @@ div.speech-logs-content.project-view-container {
 	background: #003355;
 }
 
-.speech-log-header .btn-view-control.btn-register-path-header {
-	background: transparent;
-	border: 1.5px solid #772432;
-	color: #772432;
-}
-
-.speech-log-header .btn-view-control.btn-register-path-header:hover {
-	background: #faf0f1;
-	color: #5e1c27;
-	border-color: #5e1c27;
-}
-
 /* =========================================
    Pathway Selector — Editorial pill
    ========================================= */

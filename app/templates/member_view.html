@@ -76,7 +76,7 @@
             <div class="header-profile-action">
                 {% set can_manage_pathways = is_authorized(Permissions.SPEECH_LOGS_MANAGE) %}
                 {% if can_manage_pathways and available_pathways %}
-                <button type="button" class="btn-view-control btn-register-path-header"
+                <button type="button" class="btn-view-control btn-profile-small"
                         onclick="openRegisterPathwayModal();"
                         title="{{ _('Register Path') }}">
                     <i class="fas fa-plus-circle"></i> <span class="btn-label">{{ _('Register Path') }}</span>
