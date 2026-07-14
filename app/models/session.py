@@ -749,6 +749,7 @@ class SessionLog(db.Model):
             
             import re
             from ..utils import is_pathway_role
+            is_speech_project = (target_log.session_type and target_log.session_type.Title in ['Prepared Speech', 'Presentation', 'Keynote Speaker', 'Hot Seat Speaker'])
             for cid in unique_owner_ids:
                 contact = contacts_map.get(cid)
                 credential_snapshot = contact.credentials if contact else None

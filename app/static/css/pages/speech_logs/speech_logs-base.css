@@ -2429,7 +2429,9 @@ div.speech-logs-content.project-view-container {
 
 .journal-list-table th.sortable {
 	cursor: pointer;
+	position: relative;
 	transition: background-color 0.2s ease;
+	padding-right: 32px;
 }
 
 .journal-list-table th.sortable::after {
@@ -2442,9 +2444,13 @@ div.speech-logs-content.project-view-container {
 }
 
 .journal-list-table th .sort-icon {
-	margin-left: 6px;
+	position: absolute;
+	right: 16px;
+	top: 50%;
+	transform: translateY(-50%);
 	font-size: 0.8em;
 	color: #cbd5e1;
+	transition: color 0.2s ease;
 }
 
 .journal-list-table th.sortable:hover .sort-icon {
