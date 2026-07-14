@@ -161,6 +161,51 @@ def get_role_aliases():
     }
 
 
+def is_pathway_role(role_name, is_speech_project=False, project_id=None, role_type=None, club_id=None):
+    """
+    Check if a given meeting role name (or other attributes) counts as a pathway role.
+    
+    Args:
+        role_name (str): The name of the role.
+        is_speech_project (bool, optional): Whether it's a speech project.
+        project_id (int, optional): The associated project ID.
+        role_type (str, optional): The type of the meeting role (e.g. 'functional').
+        club_id (int, optional): The club ID for the role (to detect club-specific roles).
+        
+    Returns:
+        bool: True if it counts towards pathway requirements/levels.
+    """
+    from .constants import ProjectID, GLOBAL_CLUB_ID
+    
+    # Speeches and real projects are pathway roles
+    if is_speech_project or (project_id and project_id != ProjectID.GENERIC):
+        return True
+        
+    if not role_name:
+        return False
+        
+    # Check against LevelRole requirements
+    norm_role = normalize_role_name(role_name)
+    role_aliases = get_role_aliases()
+    norm_targets = [norm_role]
+    if norm_role in role_aliases:
+        norm_targets.append(role_aliases[norm_role])
+        
+    # Lazy import to avoid circular imports during startup
+    from .models import LevelRole
+    all_level_roles = [normalize_role_name(lr.role) for lr in LevelRole.query.all()]
+    
+    # Check if standard LevelRole
+    if any(name in all_level_roles for name in norm_targets):
+        return True
+        
+    # Check if local functional/club-specific role (counts under 'Club Specific*')
+    if role_type == 'functional' and club_id and club_id != GLOBAL_CLUB_ID:
+        return True
+        
+    return False
+
+
 def get_projects_dropdown_data(club_id, user=None):
     """
     Fetch only project details and completed projects metadata for dropdowns.

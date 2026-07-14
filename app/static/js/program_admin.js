@@ -492,7 +492,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Default values for new task
         let id = '';
-        let title = 'New Task';
+        let title = 'New Booking';
         let desc = '';
         let phase = '';
         let type = 'manual';

@@ -744,6 +744,24 @@ class BackupService:
             if not contact or contact.Type == 'Guest':
                 continue
                 
+            # Skip non-pathway roles
+            from app.utils import is_pathway_role
+            is_speech_project = False
+            project_id = None
+            if omr.session_log:
+                is_speech_project = (omr.session_log.session_type and omr.session_log.session_type.Title in ['Prepared Speech', 'Presentation', 'Keynote Speaker', 'Hot Seat Speaker'])
+                project_id = omr.session_log.Project_ID
+                
+            is_path_role = is_pathway_role(
+                role_name=omr.role.name if omr.role else (omr.session_log.session_type.Title if (omr.session_log and omr.session_log.session_type) else None),
+                is_speech_project=is_speech_project,
+                project_id=project_id,
+                role_type=omr.role.type if omr.role else None,
+                club_id=omr.role.club_id if omr.role else None
+            )
+            if not is_path_role:
+                continue
+                
             meeting_date = meeting.Meeting_Date if meeting and meeting.Meeting_Date else date.today()
             
             # 1. Resolve target_pathway

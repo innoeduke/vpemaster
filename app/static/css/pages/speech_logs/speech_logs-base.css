@@ -2337,6 +2337,77 @@ div.speech-logs-content.project-view-container {
 	overflow: hidden;
 }
 
+.list-view-filter-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 16px;
+	border-bottom: 1px solid #ece8e1;
+	background: #faf9f7;
+	font-family: 'Montserrat', sans-serif;
+}
+
+.list-view-filters-left {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.list-view-filters-right {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+}
+
+.list-view-filter-group {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.list-view-filter-group label {
+	font-size: 0.8rem;
+	font-weight: 600;
+	color: #555;
+	white-space: nowrap;
+}
+
+.list-row-filter-select {
+	font-family: 'Montserrat', sans-serif;
+	font-size: 0.8rem;
+	font-weight: 500;
+	padding: 4px 24px 4px 10px;
+	border: 1px solid #ddd;
+	border-radius: 6px;
+	background: #fff;
+	color: #333;
+	cursor: pointer;
+	appearance: none;
+	-webkit-appearance: none;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23888' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 8px center;
+	transition: border-color 0.2s;
+}
+
+.list-row-filter-select:hover {
+	border-color: #772432;
+}
+
+.list-row-filter-select:focus {
+	outline: none;
+	border-color: #772432;
+	box-shadow: 0 0 0 2px rgba(119, 36, 50, 0.12);
+}
+
+.list-view-row-count {
+	font-size: 0.78rem;
+	color: #888;
+	font-weight: 500;
+	white-space: nowrap;
+}
+
 .journal-list-table {
 	width: 100%;
 	border-collapse: collapse;

@@ -748,13 +748,24 @@ class SessionLog(db.Model):
                 primary_owner = sorted_contacts[0]
             
             import re
+            from ..utils import is_pathway_role
             for cid in unique_owner_ids:
                 contact = contacts_map.get(cid)
                 credential_snapshot = contact.credentials if contact else None
                 
                 t_pathway = None
                 t_level = None
-                if contact and contact.Current_Path and contact.Type != 'Guest':
+                
+                # Only set target pathway/level for pathway roles or speeches
+                is_path_role = is_pathway_role(
+                    role_name=role_obj.name if role_obj else None,
+                    is_speech_project=is_speech_project,
+                    project_id=target_log.Project_ID,
+                    role_type=role_obj.type if role_obj else None,
+                    club_id=role_obj.club_id if role_obj else None
+                )
+                
+                if is_path_role and contact and contact.Current_Path and contact.Type != 'Guest':
                     t_pathway = contact.Current_Path
                     if contact.credentials:
                         level_match = re.search(r'\d+', contact.credentials)

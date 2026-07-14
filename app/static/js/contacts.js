@@ -18,6 +18,28 @@ let selectedContactIds = new Set(); // Globally tracked selected IDs
 let initialFirstPageOnly = false;
 
 /**
+ * Returns a query-string fragment (leading '&') with the current date
+ * filter values, or an empty string if no dates are set.
+ */
+function getDateFilterParams() {
+  const startEl = document.getElementById('start_date');
+  const endEl = document.getElementById('end_date');
+  let startDate = startEl ? startEl.value : null;
+  let endDate = endEl ? endEl.value : null;
+
+  if (!startDate || !endDate) {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (!startDate) startDate = urlParams.get('start_date');
+    if (!endDate) endDate = urlParams.get('end_date');
+  }
+
+  if (startDate && endDate) {
+    return `&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`;
+  }
+  return '';
+}
+
+/**
  * Fetches all contacts from the API and caches them
  */
 async function fetchAndCacheContacts() {
@@ -35,22 +57,7 @@ async function fetchAndCacheContacts() {
   }
 
   try {
-    let url = '/api/contacts/all?t=' + new Date().getTime();
-
-    const startDateInput = document.getElementById('start_date');
-    const endDateInput = document.getElementById('end_date');
-    let startDate = startDateInput ? startDateInput.value : null;
-    let endDate = endDateInput ? endDateInput.value : null;
-
-    if (!startDate || !endDate) {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (!startDate) startDate = urlParams.get('start_date');
-      if (!endDate) endDate = urlParams.get('end_date');
-    }
-
-    if (startDate && endDate) {
-      url += `&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`;
-    }
+    let url = '/api/contacts/all?t=' + new Date().getTime() + getDateFilterParams();
 
     const response = await fetch(url);
     if (!response.ok) {
@@ -73,7 +80,7 @@ async function fetchAndCacheContacts() {
  */
 async function fetchRemainingContacts() {
   try {
-    const url = '/api/contacts/all?t=' + new Date().getTime();
+    const url = '/api/contacts/all?t=' + new Date().getTime() + getDateFilterParams();
     const response = await fetch(url);
     if (!response.ok) return;
     const rows = await response.json();
@@ -384,7 +391,7 @@ function changePageSize(newSize) {
   // If the cache only holds the server-rendered first page and the new
   // size differs, fetch a correctly-sized first page from the server.
   if (initialFirstPageOnly && newSizeInt !== oldSize) {
-    fetch(`/api/contacts/all?page=1&per_page=${newSizeInt}`)
+    fetch(`/api/contacts/all?page=1&per_page=${newSizeInt}${getDateFilterParams()}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (data && Array.isArray(data.rows)) {
@@ -570,7 +577,7 @@ document.addEventListener("DOMContentLoaded", function () {
     : 0;
   if (serverRenderedSize > 0 && serverRenderedSize !== pageSize) {
     const correctSize = pageSize;
-    fetch(`/api/contacts/all?page=1&per_page=${correctSize}`)
+    fetch(`/api/contacts/all?page=1&per_page=${correctSize}${getDateFilterParams()}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (data && Array.isArray(data.rows)) {

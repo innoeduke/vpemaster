@@ -1817,11 +1817,11 @@ def show_speech_logs():
             # Target Path resolution:
             #   - Speech / presentation: OMR.target_pathway (path credit) →
             #     log.pathway snapshot → "Non Pathway"
-            #   - Role:                  owner.Current_Path (the path the role
-            #     credit counts toward right now). Legacy OMR.target_pathway
-            #     is ignored for roles because it can be stale (e.g. a Timer
-            #     OMR still says Presentation Mastery after the member
-            #     switched to Dynamic Leadership).
+            #   - Role: OMR.target_pathway (snapshot from role assignment) →
+            #     owner.Current_Path fallback. The OMR value is the source
+            #     of truth because it captures the pathway the member was on
+            #     when the role was assigned (or was explicitly set on the
+            #     agenda page).
             # Target Level resolution:
             #   - Only speech / project logs carry a level. Role rows show '—'.
             if log_type in ('speech', 'presentation'):
@@ -1838,7 +1838,25 @@ def show_speech_logs():
                 if log.project and target_pathway and target_pathway != "Non Pathway":
                     target_level = log.project.get_level(target_pathway)
             else:
-                target_pathway = owner.Current_Path if owner else None
+                # Use OMR target_pathway (historical snapshot) as primary
+                # source, falling back to the member's live Current_Path
+                # only when the OMR record has no stored value and the role is a pathway role.
+                target_pathway = None
+                if target:
+                    target_pathway = target.get('pathway')
+                if not target_pathway:
+                    from app.utils import is_pathway_role
+                    is_path_role = is_pathway_role(
+                        role_name=role_name,
+                        is_speech_project=False,
+                        project_id=log.Project_ID,
+                        role_type=log.session_type.role.type if log.session_type and log.session_type.role else None,
+                        club_id=log.session_type.role.club_id if log.session_type and log.session_type.role else None
+                    )
+                    if is_path_role:
+                        target_pathway = owner.Current_Path if owner else None
+                if not target_pathway:
+                    target_pathway = "Non Pathway"
                 target_level = None
             log.list_target_pathway = target_pathway
             log.list_target_level = target_level

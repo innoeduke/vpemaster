@@ -181,13 +181,7 @@
                     {{ p.name }}
                 </button>
             {% endfor %}
-            
-            <!-- 3. Non Pathway Tab (always last) -->
-            <button type="button" class="pathway-tab {% if selected_pathway_name == 'Non Pathway' %}active{% endif %}"
-                    onclick="submitPathwayTab('Non Pathway')">
-                <span class="pathway-status-dot is-non-pathway"></span>
-                {{ _('Non Pathway') }}
-            </button>
+
         </div>
 
         <!-- Roadmap Legend (desktop/tablet Map view item only) -->
@@ -368,6 +362,40 @@
     <!-- List View Table Container (Desktop Only) -->
     <div class="journal-list-view-item" style="display: none;">
         {% if list_view_logs %}
+            <div class="list-view-filter-bar">
+                <div class="list-view-filters-left">
+                    <div class="list-view-filter-group">
+                        <label for="list-role-filter">{{ _('Role') }}:</label>
+                        <select id="list-role-filter" class="list-row-filter-select">
+                            <option value="all">{{ _('All') }}</option>
+                        </select>
+                    </div>
+                    <div class="list-view-filter-group">
+                        <label for="list-path-filter">{{ _('Path') }}:</label>
+                        <select id="list-path-filter" class="list-row-filter-select">
+                            <option value="all">{{ _('All') }}</option>
+                        </select>
+                    </div>
+                    <div class="list-view-filter-group">
+                        <label for="list-level-filter">{{ _('Level') }}:</label>
+                        <select id="list-level-filter" class="list-row-filter-select">
+                            <option value="all">{{ _('All') }}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="list-view-filters-right">
+                    <div class="list-view-filter-group">
+                        <label for="list-row-filter">{{ _('Rows') }}:</label>
+                        <select id="list-row-filter" class="list-row-filter-select">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="all" selected>{{ _('All') }}</option>
+                        </select>
+                    </div>
+                    <div class="list-view-row-count" id="list-view-row-count"></div>
+                </div>
+            </div>
             <div style="overflow-x: auto;">
                 <table class="journal-list-table" id="journal-list-table">
                     <thead>
@@ -561,6 +589,202 @@ document.addEventListener('DOMContentLoaded', () => {
         const headers = table.querySelectorAll('th.sortable');
         const tbody = table.querySelector('tbody');
 
+        // Role + Path + Level + Row Filter Logic
+        const roleFilter = document.getElementById('list-role-filter');
+        const pathFilter = document.getElementById('list-path-filter');
+        const levelFilter = document.getElementById('list-level-filter');
+        const rowFilter = document.getElementById('list-row-filter');
+        const rowCountEl = document.getElementById('list-view-row-count');
+
+        // Populate filter options dynamically from table data
+        if (tbody) {
+            const allRows = Array.from(tbody.querySelectorAll('tr'));
+            const roleSet = new Set();
+            const pathSet = new Set();
+            const levelSet = new Set();
+
+            allRows.forEach(row => {
+                // Role (cell index 0)
+                const roleCell = row.cells[0];
+                if (roleCell) {
+                    const mainEl = roleCell.querySelector('.role-title-main');
+                    const roleName = (mainEl ? mainEl.textContent : roleCell.textContent).trim();
+                    if (roleName) roleSet.add(roleName);
+                }
+                // Target Path (cell index 3)
+                const pathCell = row.cells[3];
+                if (pathCell) {
+                    const pathName = pathCell.textContent.trim();
+                    if (pathName) pathSet.add(pathName);
+                }
+                // Level (cell index 4)
+                const levelCell = row.cells[4];
+                if (levelCell) {
+                    const levelName = levelCell.textContent.trim();
+                    if (levelName) levelSet.add(levelName);
+                }
+            });
+
+            // Populate Role select options
+            if (roleFilter) {
+                Array.from(roleSet).sort((a, b) => a.localeCompare(b)).forEach(name => {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    roleFilter.appendChild(opt);
+                });
+            }
+
+            // Populate Path select options
+            if (pathFilter) {
+                Array.from(pathSet).sort((a, b) => a.localeCompare(b)).forEach(name => {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    pathFilter.appendChild(opt);
+                });
+            }
+
+            // Populate Level select options (sorted logically, non-numeric like '—' goes to end)
+            if (levelFilter) {
+                const sortedLevels = Array.from(levelSet).sort((a, b) => {
+                    if (a === '—') return 1;
+                    if (b === '—') return -1;
+                    return a.localeCompare(b, undefined, { numeric: true });
+                });
+                sortedLevels.forEach(name => {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    levelFilter.appendChild(opt);
+                });
+            }
+        }
+
+        function applyFilters() {
+            if (!tbody) return;
+            const allRows = Array.from(tbody.querySelectorAll('tr'));
+            const selectedRole = roleFilter ? roleFilter.value : 'all';
+            const selectedPath = pathFilter ? pathFilter.value : 'all';
+            const selectedLevel = levelFilter ? levelFilter.value : 'all';
+            const rowVal = rowFilter ? rowFilter.value : 'all';
+
+            // Step 1: Filter rows by selected criteria
+            let visibleRows = [];
+            allRows.forEach(row => {
+                // Role Match
+                let roleMatch = false;
+                if (selectedRole === 'all') {
+                    roleMatch = true;
+                } else {
+                    const roleCell = row.cells[0];
+                    const mainEl = roleCell ? roleCell.querySelector('.role-title-main') : null;
+                    const roleName = (mainEl ? mainEl.textContent : (roleCell ? roleCell.textContent : '')).trim();
+                    if (roleName === selectedRole) {
+                        roleMatch = true;
+                    }
+                }
+
+                // Path Match
+                let pathMatch = false;
+                if (selectedPath === 'all') {
+                    pathMatch = true;
+                } else {
+                    const pathCell = row.cells[3];
+                    const pathName = pathCell ? pathCell.textContent.trim() : '';
+                    if (pathName === selectedPath) {
+                        pathMatch = true;
+                    }
+                }
+
+                // Level Match
+                let levelMatch = false;
+                if (selectedLevel === 'all') {
+                    levelMatch = true;
+                } else {
+                    const levelCell = row.cells[4];
+                    const levelName = levelCell ? levelCell.textContent.trim() : '';
+                    if (levelName === selectedLevel) {
+                        levelMatch = true;
+                    }
+                }
+
+                if (roleMatch && pathMatch && levelMatch) {
+                    row.dataset.filterHidden = '';
+                    visibleRows.push(row);
+                } else {
+                    row.dataset.filterHidden = '1';
+                }
+            });
+
+            // Step 2: Apply row-count limit on the filtered subset
+            const total = visibleRows.length;
+            const limit = (rowVal === 'all') ? total : parseInt(rowVal, 10);
+
+            allRows.forEach(row => {
+                if (row.dataset.filterHidden === '1') {
+                    row.style.display = 'none';
+                    return;
+                }
+                const idx = visibleRows.indexOf(row);
+                row.style.display = (idx < limit) ? '' : 'none';
+            });
+
+            const shown = Math.min(limit, total);
+            if (rowCountEl) {
+                rowCountEl.textContent = (shown === total)
+                    ? `${total}`
+                    : `${shown} / ${total}`;
+            }
+        }
+
+        // Restore saved preference and bind listeners
+        if (roleFilter) {
+            const savedRole = localStorage.getItem('journal-list-role');
+            if (savedRole) {
+                roleFilter.value = savedRole;
+            }
+            roleFilter.addEventListener('change', () => {
+                localStorage.setItem('journal-list-role', roleFilter.value);
+                applyFilters();
+            });
+        }
+
+        if (pathFilter) {
+            const savedPath = localStorage.getItem('journal-list-path');
+            if (savedPath) {
+                pathFilter.value = savedPath;
+            }
+            pathFilter.addEventListener('change', () => {
+                localStorage.setItem('journal-list-path', pathFilter.value);
+                applyFilters();
+            });
+        }
+
+        if (levelFilter) {
+            const savedLevel = localStorage.getItem('journal-list-level');
+            if (savedLevel) {
+                levelFilter.value = savedLevel;
+            }
+            levelFilter.addEventListener('change', () => {
+                localStorage.setItem('journal-list-level', levelFilter.value);
+                applyFilters();
+            });
+        }
+
+        if (rowFilter) {
+            const saved = localStorage.getItem('journal-list-rows');
+            if (saved) {
+                rowFilter.value = saved;
+            }
+            rowFilter.addEventListener('change', () => {
+                localStorage.setItem('journal-list-rows', rowFilter.value);
+                applyFilters();
+            });
+        }
+
+        applyFilters();
+
         headers.forEach(header => {
             header.addEventListener('click', () => {
                 const column = header.getAttribute('data-column');
@@ -646,6 +870,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Append sorted rows back to tbody
                 rows.forEach(row => tbody.appendChild(row));
+
+                // Re-apply filters after sorting
+                applyFilters();
             });
         });
     }
