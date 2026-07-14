@@ -1776,41 +1776,70 @@ def show_speech_logs():
     # Build list of logs for List View (deduplicated, sorted by meeting number desc)
     list_view_logs = []
     if is_member_view:
+        # The List View intentionally bypasses the pathway filter (which only
+        # applies to the Map View) so the member can browse their full history
+        # regardless of the pathway tab selected. Walk all_logs directly.
         seen_list_keys = set()
         for log in all_logs:
             owner = getattr(log, 'context_owner', None)
             if not owner:
                 owner = log.owner
                 log.context_owner = owner
-            
+
             target = getattr(log, 'context_target', None)
             if not target and owner and hasattr(log, '_cached_owner_targets'):
                 target = log._cached_owner_targets.get(owner.id)
                 log.context_target = target
-                
+
             role_name = (log.session_type.role.name if log.session_type and log.session_type.role else (log.session_type.Title if log.session_type else "Activity")).strip()
             owner_id = owner.id if owner else None
             dedup_key = (log.Meeting_Number, owner_id, role_name)
             if dedup_key in seen_list_keys:
                 continue
             seen_list_keys.add(dedup_key)
-            
-            target_pathway = None
-            target_level = None
-            if target:
-                target_pathway = target.get('pathway')
-                target_level = target.get('level')
-                
-            if not target_pathway:
-                target_pathway = log.pathway
-            if not target_pathway and log.project and log.project.is_prepared_speech and owner:
-                target_pathway = owner.Current_Path
-            if not target_pathway:
-                target_pathway = "Non Pathway"
-                
-            if not target_level and target_pathway != "Non Pathway":
-                if log.project:
+
+            log_type = getattr(log, 'log_type', None)
+            # When _process_logs filtered this log out (e.g. mismatched pathway
+            # filter), log_type is never set. Detect speech/project manually so
+            # the List View still classifies those rows correctly.
+            if not log_type:
+                has_real_project = (
+                    log.Project_ID is not None
+                    and not (log.project and log.project.is_generic)
+                )
+                is_prepared_speech = bool(log.project and log.project.is_prepared_speech)
+                valid_for_project = bool(log.session_type and log.session_type.Valid_for_Project)
+                if has_real_project and (valid_for_project or is_prepared_speech):
+                    log_type = 'speech'
+                else:
+                    log_type = 'role'
+
+            # Target Path resolution:
+            #   - Speech / presentation: OMR.target_pathway (path credit) →
+            #     log.pathway snapshot → "Non Pathway"
+            #   - Role:                  owner.Current_Path (the path the role
+            #     credit counts toward right now). Legacy OMR.target_pathway
+            #     is ignored for roles because it can be stale (e.g. a Timer
+            #     OMR still says Presentation Mastery after the member
+            #     switched to Dynamic Leadership).
+            # Target Level resolution:
+            #   - Only speech / project logs carry a level. Role rows show '—'.
+            if log_type in ('speech', 'presentation'):
+                target_pathway = None
+                target_level = None
+                if target:
+                    target_pathway = target.get('pathway')
+                if not target_pathway:
+                    target_pathway = log.pathway
+                if not target_pathway and log.project and log.project.is_prepared_speech and owner:
+                    target_pathway = owner.Current_Path
+                if not target_pathway:
+                    target_pathway = "Non Pathway"
+                if log.project and target_pathway and target_pathway != "Non Pathway":
                     target_level = log.project.get_level(target_pathway)
+            else:
+                target_pathway = owner.Current_Path if owner else None
+                target_level = None
             log.list_target_pathway = target_pathway
             log.list_target_level = target_level
             log.list_role_name = role_name
@@ -1818,7 +1847,6 @@ def show_speech_logs():
             # Project column: populated for speech/presentation logs that have
             # a real Project linked. Non-project (role) logs leave these None
             # and the template renders an em-dash.
-            log_type = getattr(log, 'log_type', None)
             project_obj = log.project if hasattr(log, 'project') else None
             if log_type in ('speech', 'presentation') and project_obj and not project_obj.is_generic:
                 log.list_project_code = (log.project_code or '').strip() or None
