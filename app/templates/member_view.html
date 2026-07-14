@@ -137,7 +137,7 @@
 {% endblock %}
 
 {% block speech_log_toolbar %}
-    <div class="speech-logs-filter-bar">
+    <div class="speech-logs-filter-bar" style="display: none;">
         <div class="filter-row-premium speech-logs-filter-row" style="justify-content: flex-end;">
             {% set selected_pathway_name = selected_filters.pathway if selected_filters.pathway else (viewed_contact.Current_Path if viewed_contact else '') %}
             <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" id="speech-logs-filter-form" style="display: none;">
@@ -580,11 +580,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const mainContent = document.querySelector('.speech-log-main-content');
 
     function setView(view) {
+        const filterBar = document.querySelector('.speech-logs-filter-bar');
+
         // Skip toggle behavior on mobile screens (viewport width <= 768px)
         if (window.innerWidth <= 768) {
             mapItems.forEach(el => el.style.display = 'block');
             listItems.forEach(el => el.style.display = 'none');
             if (mainContent) mainContent.style.display = '';
+            if (filterBar) filterBar.style.display = 'none';
             return;
         }
 
@@ -594,6 +597,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mapItems.forEach(el => el.style.display = 'none');
             listItems.forEach(el => el.style.display = 'block');
             if (mainContent) mainContent.style.display = 'block';
+            if (filterBar) filterBar.style.display = '';
             localStorage.setItem('journal-view', 'list');
         } else {
             listBtn.classList.remove('active');
@@ -601,6 +605,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mapItems.forEach(el => el.style.display = ''); // restore to default stylesheet styles
             listItems.forEach(el => el.style.display = 'none');
             if (mainContent) mainContent.style.display = '';
+            if (filterBar) filterBar.style.display = 'none';
             localStorage.setItem('journal-view', 'map');
         }
     }
