@@ -2426,6 +2426,18 @@ div.speech-logs-content.project-view-container {
 	margin-top: 2px;
 }
 
+.journal-list-table .project-code-main {
+	font-weight: 700;
+	color: #772432;
+	font-family: 'Montserrat', monospace;
+}
+
+.journal-list-table .project-title-sub {
+	font-size: 0.75rem;
+	color: #64748b;
+	margin-top: 2px;
+}
+
 .journal-list-table .path-tag {
 	display: inline-block;
 	padding: 4px 8px;

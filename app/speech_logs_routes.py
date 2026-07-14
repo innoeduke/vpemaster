@@ -1814,6 +1814,18 @@ def show_speech_logs():
             log.list_target_pathway = target_pathway
             log.list_target_level = target_level
             log.list_role_name = role_name
+
+            # Project column: populated for speech/presentation logs that have
+            # a real Project linked. Non-project (role) logs leave these None
+            # and the template renders an em-dash.
+            log_type = getattr(log, 'log_type', None)
+            project_obj = log.project if hasattr(log, 'project') else None
+            if log_type in ('speech', 'presentation') and project_obj and not project_obj.is_generic:
+                log.list_project_code = (log.project_code or '').strip() or None
+                log.list_project_title = project_obj.Project_Name
+            else:
+                log.list_project_code = None
+                log.list_project_title = None
             list_view_logs.append(log)
             
         list_view_logs.sort(key=lambda x: x.Meeting_Number or 0, reverse=True)

@@ -372,11 +372,12 @@
                 <table class="journal-list-table" id="journal-list-table">
                     <thead>
                         <tr>
-                            <th class="sortable" data-column="role" style="width: 25%;">{{ _('Role') }} <i class="fas fa-sort sort-icon"></i></th>
-                            <th class="sortable" data-column="meeting" style="width: 15%; text-align: center;">{{ _('Meeting') }} <i class="fas fa-sort sort-icon"></i></th>
-                            <th class="sortable" data-column="date" style="width: 20%;">{{ _('Date') }} <i class="fas fa-sort sort-icon"></i></th>
-                            <th class="sortable" data-column="path" style="width: 25%;">{{ _('Target Path') }} <i class="fas fa-sort sort-icon"></i></th>
-                            <th class="sortable" data-column="level" style="width: 15%; text-align: center;">{{ _('Level') }} <i class="fas fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-column="role" style="width: 18%;">{{ _('Role') }} <i class="fas fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-column="meeting" style="width: 10%; text-align: center;">{{ _('Meeting') }} <i class="fas fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-column="date" style="width: 15%;">{{ _('Date') }} <i class="fas fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-column="path" style="width: 17%;">{{ _('Target Path') }} <i class="fas fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-column="level" style="width: 10%; text-align: center;">{{ _('Level') }} <i class="fas fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-column="project" style="width: 30%;">{{ _('Project') }} <i class="fas fa-sort sort-icon"></i></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -412,6 +413,18 @@
                                         <span class="level-badge level-{{ log.list_target_level }}">
                                             {{ _('Level') }} {{ log.list_target_level }}
                                         </span>
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td class="project-cell" data-sort-value="{{ log.list_project_code or '' }}">
+                                    {% if log.list_project_code or log.list_project_title %}
+                                        {% if log.list_project_code %}
+                                            <div class="project-code-main">{{ log.list_project_code }}</div>
+                                        {% endif %}
+                                        {% if log.list_project_title %}
+                                            <div class="project-title-sub">{{ log.list_project_title }}</div>
+                                        {% endif %}
                                     {% else %}
                                         —
                                     {% endif %}
@@ -589,6 +602,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else if (column === 'level') {
                         cellTargetA = rowA.cells[4];
                         cellTargetB = rowB.cells[4];
+                    } else if (column === 'project') {
+                        cellTargetA = rowA.cells[5];
+                        cellTargetB = rowB.cells[5];
                     }
 
                     let valA = '';
