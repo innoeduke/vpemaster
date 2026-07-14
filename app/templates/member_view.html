@@ -156,7 +156,7 @@
     {% set can_manage_pathways = is_authorized(Permissions.SPEECH_LOGS_MANAGE) %}
     {% set can_set_default = can_manage_pathways or current_user.contact_id == viewed_contact.id %}
 
-    <div class="progress-table-header-row">
+    <div class="progress-table-header-row journal-map-view-item">
         <!-- Pathway Tabs -->
         <div class="pathway-tabs">
             <!-- 1. In-Progress Pathways -->
