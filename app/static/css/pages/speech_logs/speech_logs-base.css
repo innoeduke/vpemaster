@@ -2274,3 +2274,213 @@ div.speech-logs-content.project-view-container {
 	background: #5e1c27;
 	transform: translateY(-1px);
 }
+
+/* =========================================
+   Journal View Toggle & List Table Styles
+   ========================================= */
+
+/* View Switcher Styles (Desktop) */
+.journal-view-toggle {
+	display: flex;
+	background-color: #f1f5f9;
+	padding: 4px;
+	border-radius: 9999px;
+	border: 1px solid #cbd5e1;
+	align-items: center;
+	gap: 2px;
+}
+
+.view-toggle-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 9999px;
+	border: none;
+	background: transparent;
+	color: #64748b;
+	cursor: pointer;
+	transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.view-toggle-btn:hover {
+	color: #772432;
+	background-color: rgba(119, 36, 50, 0.05);
+}
+
+.view-toggle-btn.active {
+	background-color: #772432;
+	color: #ffffff;
+	box-shadow: 0 2px 4px rgba(119, 36, 50, 0.2);
+}
+
+/* List View Table Styles */
+.journal-list-view-item {
+	margin-top: 20px;
+	background: #ffffff;
+	border: 1px solid #ece8e1;
+	border-radius: 12px;
+	box-shadow: 0 6px 18px rgba(17, 14, 12, 0.05);
+	overflow: hidden;
+}
+
+.journal-list-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-family: 'Montserrat', sans-serif;
+	text-align: left;
+}
+
+.journal-list-table th {
+	background-color: #faf9f6;
+	color: #4a5568;
+	font-weight: 700;
+	font-size: 0.85rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	padding: 14px 20px;
+	border-bottom: 2px solid #ece8e1;
+	user-select: none;
+}
+
+.journal-list-table th.sortable {
+	cursor: pointer;
+	transition: background-color 0.2s ease;
+}
+
+.journal-list-table th.sortable:hover {
+	background-color: #faf0f1;
+	color: #772432;
+}
+
+.journal-list-table th .sort-icon {
+	margin-left: 6px;
+	font-size: 0.8em;
+	color: #cbd5e1;
+}
+
+.journal-list-table th.sortable:hover .sort-icon {
+	color: #772432;
+}
+
+.journal-list-table th.asc .sort-icon,
+.journal-list-table th.desc .sort-icon {
+	color: #772432;
+}
+
+.journal-list-table td {
+	padding: 14px 20px;
+	border-bottom: 1px solid #f1f5f9;
+	font-size: 0.9rem;
+	color: #334155;
+	vertical-align: middle;
+}
+
+.journal-list-table tr:last-child td {
+	border-bottom: none;
+}
+
+.journal-list-table tr.clickable-row {
+	cursor: pointer;
+	transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.journal-list-table tr.clickable-row:hover {
+	background-color: #faf0f1;
+}
+
+.journal-list-table tr.clickable-row:active {
+	transform: scale(0.99);
+}
+
+.journal-list-table .meeting-cell,
+.journal-list-table .level-cell-value {
+	text-align: center;
+}
+
+.journal-list-table .date-cell {
+	white-space: nowrap;
+}
+
+.journal-list-table .role-title-main {
+	font-weight: 700;
+	color: #1e293b;
+}
+
+.journal-list-table .role-title-sub {
+	font-size: 0.75rem;
+	color: #64748b;
+	margin-top: 2px;
+}
+
+.journal-list-table .path-tag {
+	display: inline-block;
+	padding: 4px 8px;
+	border-radius: 6px;
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+
+/* Specific path colors matching TM colors */
+.journal-list-table .path-tag.dynamic-leadership {
+	background-color: rgba(74, 144, 226, 0.1);
+	color: #4A90E2;
+}
+
+.journal-list-table .path-tag.engaging-humor {
+	background-color: rgba(245, 166, 35, 0.1);
+	color: #F5A623;
+}
+
+.journal-list-table .path-tag.motivational-strategies {
+	background-color: rgba(248, 231, 28, 0.1);
+	color: #D9CB1A;
+}
+
+.journal-list-table .path-tag.persuasive-influence {
+	background-color: rgba(80, 227, 194, 0.1);
+	color: #50E3C2;
+}
+
+.journal-list-table .path-tag.presentation-mastery {
+	background-color: rgba(229, 83, 83, 0.1);
+	color: #E55353;
+}
+
+.journal-list-table .path-tag.visionary-communication {
+	background-color: rgba(144, 19, 254, 0.1);
+	color: #9013FE;
+}
+
+.journal-list-table .path-tag.non-pathway {
+	background-color: rgba(100, 116, 139, 0.1);
+	color: #64748b;
+}
+
+.journal-list-table .level-badge {
+	display: inline-block;
+	font-weight: 700;
+	padding: 2px 8px;
+	border-radius: 4px;
+	font-size: 0.75rem;
+}
+
+.journal-list-table .level-badge.level-1 { background-color: rgba(244, 63, 94, 0.1); color: var(--level-1-color); }
+.journal-list-table .level-badge.level-2 { background-color: rgba(249, 115, 22, 0.1); color: var(--level-2-color); }
+.journal-list-table .level-badge.level-3 { background-color: rgba(234, 179, 8, 0.1); color: var(--level-3-color); }
+.journal-list-table .level-badge.level-4 { background-color: rgba(16, 185, 129, 0.1); color: var(--level-4-color); }
+.journal-list-table .level-badge.level-5 { background-color: rgba(59, 130, 246, 0.1); color: var(--level-5-color); }
+
+/* Mobile View Overrides for View Toggle */
+@media (max-width: 768px) {
+	.journal-view-toggle {
+		display: none !important;
+	}
+	.journal-map-view-item {
+		display: block !important;
+	}
+	.journal-list-view-item {
+		display: none !important;
+	}
+}

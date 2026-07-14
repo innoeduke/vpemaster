@@ -1724,6 +1724,52 @@ def show_speech_logs():
         sorted_levels = sorted(projects_by_level.keys())
         planner_projects = [(level, projects_by_level[level]) for level in sorted_levels]
 
+    # Build list of logs for List View (deduplicated, sorted by meeting number desc)
+    list_view_logs = []
+    if is_member_view:
+        seen_list_keys = set()
+        for log in all_logs:
+            owner = getattr(log, 'context_owner', None)
+            if not owner:
+                owner = log.owner
+                log.context_owner = owner
+            
+            target = getattr(log, 'context_target', None)
+            if not target and owner and hasattr(log, '_cached_owner_targets'):
+                target = log._cached_owner_targets.get(owner.id)
+                log.context_target = target
+                
+            role_name = (log.session_type.role.name if log.session_type and log.session_type.role else (log.session_type.Title if log.session_type else "Activity")).strip()
+            owner_id = owner.id if owner else None
+            dedup_key = (log.Meeting_Number, owner_id, role_name)
+            if dedup_key in seen_list_keys:
+                continue
+            seen_list_keys.add(dedup_key)
+            
+            target_pathway = None
+            target_level = None
+            if target:
+                target_pathway = target.get('pathway')
+                target_level = target.get('level')
+                
+            if not target_pathway:
+                target_pathway = log.pathway
+            if not target_pathway and log.project and log.project.is_prepared_speech and owner:
+                target_pathway = owner.Current_Path
+            if not target_pathway:
+                target_pathway = "Non Pathway"
+                
+            if not target_level and target_pathway != "Non Pathway":
+                if log.project:
+                    target_level = log.project.get_level(target_pathway)
+            
+            log.list_target_pathway = target_pathway
+            log.list_target_level = target_level
+            log.list_role_name = role_name
+            list_view_logs.append(log)
+            
+        list_view_logs.sort(key=lambda x: x.Meeting_Number or 0, reverse=True)
+
     # 12. Render template
     if view_mode == 'search':
         template_name = 'search_view.html'
@@ -1734,6 +1780,7 @@ def show_speech_logs():
         meetings=planner_meetings,            # For Planner Modal
         grouped_projects=planner_projects,    # For Planner Modal
         grouped_logs=sorted_grouped_logs,
+        list_view_logs=list_view_logs,        # For List View
 
         roles=dropdown_data['roles'],
         role_icons=role_icons,
@@ -1949,7 +1996,7 @@ def get_speech_log_details(log_id):
     contact = current_user.get_contact(club_id) if current_user.is_authenticated else None
     current_user_contact_id = contact.id if contact else None
 
-    if not is_authorized(Permissions.SPEECH_LOGS_MANAGE):
+    if not (is_authorized(Permissions.SPEECH_LOGS_MANAGE) or is_authorized(Permissions.MEETING_MANAGE)):
         current_owners = [o.id for o in log.owners]
         if current_user_contact_id not in current_owners:
             return jsonify(success=False, message="Permission denied. You can only view details for your own speech logs."), 403
@@ -2280,7 +2327,7 @@ def update_speech_log(log_id):
     contact = current_user.get_contact(club_id) if current_user.is_authenticated else None
     current_user_contact_id = contact.id if contact else None
     
-    if not is_authorized(Permissions.SPEECH_LOGS_MANAGE):
+    if not (is_authorized(Permissions.SPEECH_LOGS_MANAGE) or is_authorized(Permissions.MEETING_MANAGE)):
         # Check if user is ONE OF the owners
         current_owners = [o.id for o in log.owners]
         is_owner = (current_user_contact_id in current_owners)
@@ -2321,7 +2368,7 @@ def update_speech_log(log_id):
         owner_ids = [oid for oid in owner_ids if oid is not None]
 
     if 'owner_ids' in data or 'owner_id' in data:
-        RoleService.assign_meeting_role(log, owner_ids, is_admin=is_authorized(Permissions.SPEECH_LOGS_MANAGE))
+        RoleService.assign_meeting_role(log, owner_ids, is_admin=(is_authorized(Permissions.SPEECH_LOGS_MANAGE) or is_authorized(Permissions.MEETING_MANAGE)))
         # Flush changes and refresh log to ensure we have the latest owners
         db.session.flush()
         db.session.refresh(log)
