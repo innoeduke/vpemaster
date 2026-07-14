@@ -227,10 +227,10 @@
                     {% for row in progress_data_rows %}
                     <tr>
                         <td class="level-cell {% if row.level|int in completed_levels %}completed{% endif %}">
-                            {% if row.level|int in completed_levels %}
-                            <div class="level-check"><i class="fas fa-check-circle"></i></div>
-                            {% endif %}
                             <div class="level-name-row">
+                                {% if row.level|int in completed_levels %}
+                                    <span class="level-check-inline"><i class="fas fa-check-circle"></i></span>
+                                {% endif %}
                                 {{ _('Level') }} {{ row.level }}
                             </div>
                         </td>

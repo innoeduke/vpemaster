@@ -1499,19 +1499,17 @@ div.speech-logs-content.project-view-container {
 	border-right-color: #c6f6d5;
 }
 
-.level-check {
-	position: absolute;
-	top: 4px;
-	right: 4px;
+.level-check-inline {
 	color: #2f855a;
-	font-size: 0.7em;
+	display: inline-flex;
+	align-items: center;
 }
 
 .level-name-row {
 	display: flex;
-	flex-direction: column;
+	justify-content: center;
 	align-items: center;
-	gap: 2px;
+	gap: 6px;
 }
 
 .achievement-quick-actions {
