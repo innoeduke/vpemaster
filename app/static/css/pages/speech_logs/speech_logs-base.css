@@ -1500,9 +1500,16 @@ div.speech-logs-content.project-view-container {
 }
 
 .level-check-inline {
-	color: #2f855a;
 	display: inline-flex;
 	align-items: center;
+}
+
+.level-check-inline.completed {
+	color: #2f855a;
+}
+
+.level-check-inline.incomplete {
+	color: #cbd5e1;
 }
 
 .level-name-row {
