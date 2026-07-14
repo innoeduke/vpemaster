@@ -1335,3 +1335,75 @@ def sync_club_officer_status(club_id, contact_ids=None):
     # We don't commit here, as this is usually called within a route's transaction
     # But we flush to ensure changes are visible to the current transaction
     db.session.flush()
+
+
+def get_speech_logs_dropdown_metadata(club_id, user):
+    """
+    Lightweight helper to fetch dropdown metadata specifically needed for speech logs page.
+    Saves queries by excluding unused ticket, auth roles, and meeting/speaker lists.
+    """
+    from .models import MeetingRole, Contact, Pathway, PathwayProject, Project
+    
+    # 1. Pathways
+    all_pathways = Pathway.query.filter(Pathway.type != 'dummy').order_by(Pathway.name).all()
+    pathway_mapping = {p.name: p.abbr for p in all_pathways}
+    abbr_to_name = {p.abbr: p.name for p in all_pathways if p.abbr}
+    grouped_pathways = {}
+    for p in all_pathways:
+        ptype = p.type or "Other"
+        if ptype not in grouped_pathways:
+            grouped_pathways[ptype] = []
+        grouped_pathways[ptype].append(p.name)
+        
+    # 2. Roles
+    available_roles = MeetingRole.get_all_for_club(club_id)
+    available_roles = [r for r in available_roles if r.type in ['standard', 'club-specific', 'leading', 'functional']]
+    grouped_roles = {}
+    for r in available_roles:
+        rtype = r.type.replace('-', ' ').title()
+        if rtype not in grouped_roles:
+            grouped_roles[rtype] = []
+        grouped_roles[rtype].append(r.name)
+        
+    # 3. Projects
+    projects = Project.query.order_by(Project.Project_Name).all()
+    all_pp = db.session.query(PathwayProject, Pathway.abbr).join(Pathway).all()
+    project_codes_lookup = {}
+    for pp, path_abbr in all_pp:
+        if pp.project_id not in project_codes_lookup:
+            project_codes_lookup[pp.project_id] = {}
+        project_codes_lookup[pp.project_id][path_abbr] = {
+            'code': pp.code,
+            'level': pp.level
+        }
+        
+    completed_ids = set()
+    if user and user.is_authenticated:
+        contact = user.get_contact(club_id)
+        if contact:
+            completed_ids = contact.get_completed_project_ids()
+            
+    projects_data = [
+        {
+            "id": p.id,
+            "Project_Name": p.Project_Name,
+            "Format": p.Format,
+            "is_completed": p.id in completed_ids,
+            "path_codes": project_codes_lookup.get(p.id, {}),
+            "Duration_Min": p.Duration_Min,
+            "Duration_Max": p.Duration_Max
+        }
+        for p in projects
+    ]
+    
+    # 4. All Contacts
+    all_contacts = Contact.query.order_by(Contact.Name).all()
+    
+    return {
+        'pathways': grouped_pathways,
+        'pathway_mapping': pathway_mapping,
+        'abbr_to_name': abbr_to_name,
+        'roles': grouped_roles,
+        'projects': projects_data,
+        'all_contacts': all_contacts
+    }

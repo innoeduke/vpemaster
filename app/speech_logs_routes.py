@@ -50,7 +50,11 @@ def _attach_owners(logs):
     if not logs:
         return
         
-    log_ids = [l.id for l in logs]
+    logs_to_process = [l for l in logs if not hasattr(l, '_cached_owners')]
+    if not logs_to_process:
+        return
+        
+    log_ids = [l.id for l in logs_to_process]
     
     # 1. Fetch owners for single-owner roles (linked via session_log_id)
     omr_entries = db.session.query(OwnerMeetingRoles, Contact).join(Contact).filter(
@@ -65,7 +69,7 @@ def _attach_owners(logs):
         
     # 2. Fetch owners for shared roles (linked via meeting_id and role_id)
     # Identify shared logs
-    shared_logs = [l for l in logs if l.session_type and l.session_type.role and not l.session_type.role.has_single_owner]
+    shared_logs = [l for l in logs_to_process if l.session_type and l.session_type.role and not l.session_type.role.has_single_owner]
     if shared_logs:
         # Get unique (meeting_id, role_id) pairs
         shared_keys = set()
@@ -100,7 +104,7 @@ def _attach_owners(logs):
                         owners_by_log[l.id] = []
                     # Avoid duplicates if any
                     owners_by_log[l.id].extend(shared_owners_lookup[key])
-
+ 
     # 3. Attach to logs via the new _cached_owners attribute
     # Improved: Also attach historical credentials found in OwnerMeetingRoles
     
@@ -113,7 +117,7 @@ def _attach_owners(logs):
             'pathway': omr.target_pathway,
             'level': omr.target_level
         }
-
+ 
     # Shared roles targets
     if 'omr_shared' in locals():
         for omr, contact in omr_shared:
@@ -128,8 +132,8 @@ def _attach_owners(logs):
                         'pathway': omr.target_pathway,
                         'level': omr.target_level
                     }
-
-    for l in logs:
+ 
+    for l in logs_to_process:
         l._cached_owners = owners_by_log.get(l.id, [])
         l._cached_owner_targets = targets_map.get(l.id, {})
 
@@ -539,10 +543,11 @@ def _fetch_logs_with_filters(filters):
         # This ensures no cross-contamination between users' logs
         try:
             speaker_id_int = int(filters['speaker_id'])
+            _attach_owners(logs)
             filtered_logs = []
             for log in logs:
                 # Check if speaker_id is in the list of owners for this log
-                owner_ids = [o.id for o in (log.owners if hasattr(log, 'owners') else [])]
+                owner_ids = [o.id for o in (log.owners if hasattr(log, '_cached_owners') else [])]
                 if speaker_id_int in owner_ids:
                     filtered_logs.append(log)
             logs = filtered_logs
@@ -1021,16 +1026,7 @@ def _process_band_requirements(level_str, band_reqs, logs_for_level, used_log_id
             summary['elective_completed'] = False
 
 
-def _get_project_groups_for_level(level_int, path_id):
-    """
-    Fetch and group PathwayProjects for a given level.
-    Groups by Major Code (e.g., 1.4) AND Project ID adjacency.
-    """
-    all_path_projects = PathwayProject.query.filter_by(
-        path_id=path_id,
-        level=level_int
-    ).order_by(PathwayProject.code, PathwayProject.project_id).all() if path_id else []
-    
+def _group_pathway_projects(all_path_projects):
     badge_groups = []
     current_group = []
     current_major = None
@@ -1061,6 +1057,19 @@ def _get_project_groups_for_level(level_int, path_id):
         badge_groups.append((current_major, current_group[0].type, current_group))
         
     return badge_groups
+
+
+def _get_project_groups_for_level(level_int, path_id):
+    """
+    Fetch and group PathwayProjects for a given level.
+    Groups by Major Code (e.g., 1.4) AND Project ID adjacency.
+    """
+    all_path_projects = PathwayProject.query.filter_by(
+        path_id=path_id,
+        level=level_int
+    ).order_by(PathwayProject.code, PathwayProject.project_id).all() if path_id else []
+    
+    return _group_pathway_projects(all_path_projects)
 
 def _build_evaluator_map(logs_for_level):
     """Build a map of (meeting_number, speaker_suffix) -> evaluator_name."""
@@ -1308,20 +1317,26 @@ def _calculate_completion_summary(grouped_logs, pp_mapping, selected_pathway_nam
 
         # 0. Fetch Required Speeches for the pathway if provided
         speeches_by_level = {}
+        pathway_projects_by_level = {}
         pathway_obj = None
         if selected_pathway_name and selected_pathway_name != 'all':
             pathway_obj = Pathway.query.filter_by(name=selected_pathway_name).first()
             if pathway_obj:
-                req_speeches = PathwayProject.query.filter_by(
-                    path_id=pathway_obj.id,
-                    type='required'
-                ).order_by(PathwayProject.level, PathwayProject.code).all()
+                # Fetch ALL pathway projects (required & elective) for this pathway to avoid N+1 queries in loop
+                all_pps = PathwayProject.query.filter_by(path_id=pathway_obj.id).order_by(
+                    PathwayProject.code, PathwayProject.project_id
+                ).all()
                 
-                for rs in req_speeches:
-                    lvl = rs.level or 0
-                    if lvl not in speeches_by_level:
-                        speeches_by_level[lvl] = []
-                    speeches_by_level[lvl].append(rs)
+                for pp in all_pps:
+                    lvl = pp.level or 0
+                    if lvl not in pathway_projects_by_level:
+                        pathway_projects_by_level[lvl] = []
+                    pathway_projects_by_level[lvl].append(pp)
+                    
+                    if pp.type == 'required':
+                        if lvl not in speeches_by_level:
+                            speeches_by_level[lvl] = []
+                        speeches_by_level[lvl].append(pp)
 
         # Initialize summary structure
         all_levels = sorted(list(set(lr.level for lr in level_requirements)))
@@ -1361,8 +1376,8 @@ def _calculate_completion_summary(grouped_logs, pp_mapping, selected_pathway_nam
             lvl_int = int(lvl_str)
             path_id = pathway_obj.id if pathway_obj else None
             
-            # 1. Group PathwayProjects into "Badge Groups"
-            badge_groups = _get_project_groups_for_level(lvl_int, path_id)
+            # 1. Group PathwayProjects into "Badge Groups" using pre-fetched list
+            badge_groups = _group_pathway_projects(pathway_projects_by_level.get(lvl_int, []))
 
             # 2. Process each badge group
             logs_for_level = grouped_logs.get(lvl_str, [])
@@ -1632,7 +1647,10 @@ def show_speech_logs():
              pass
     
     # 4. Get dropdown metadata (using utils)
-    dropdown_data = get_dropdown_metadata()
+    from .utils import get_speech_logs_dropdown_metadata
+    from .club_context import get_current_club_id
+    club_id = get_current_club_id()
+    dropdown_data = get_speech_logs_dropdown_metadata(club_id, current_user)
     
     # 5. Fetch logs
     if view_mode == 'search':

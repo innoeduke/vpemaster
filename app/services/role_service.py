@@ -837,25 +837,41 @@ class RoleService:
         
         # 2. Map to SessionLogs
         logs = []
+        
+        # Batch load single-owner session logs to avoid N+1
+        log_ids = [omr.session_log_id for omr, _, _, _ in results if omr.session_log_id]
+        session_logs_map = {}
+        if log_ids:
+            session_logs = SessionLog.query.filter(SessionLog.id.in_(log_ids)).options(
+                db.joinedload(SessionLog.meeting),
+                db.joinedload(SessionLog.session_type).joinedload(SessionType.role),
+                db.joinedload(SessionLog.project)
+            ).all()
+            session_logs_map = {l.id: l for l in session_logs}
+            
+        # Batch load shared role session logs to avoid N+1
+        shared_keys = [(meeting.id, role.id) for omr, meeting, role, _ in results if role and not role.has_single_owner and not omr.session_log_id]
+        shared_logs_map = {}
+        if shared_keys:
+            from sqlalchemy import or_
+            filter_conds = [
+                db.and_(SessionLog.meeting_id == m_id, SessionType.role_id == r_id)
+                for m_id, r_id in shared_keys
+            ]
+            shared_logs = SessionLog.query.join(SessionType).filter(or_(*filter_conds)).options(
+                db.joinedload(SessionLog.meeting),
+                db.joinedload(SessionLog.session_type).joinedload(SessionType.role),
+                db.joinedload(SessionLog.project)
+            ).all()
+            for sl in shared_logs:
+                shared_logs_map[(sl.meeting_id, sl.session_type.role_id)] = sl
+
         for omr, meeting, role, contact in results:
             log = None
             if omr.session_log_id:
-                # Use query to allow eager loading of relationships
-                log = SessionLog.query.filter_by(id=omr.session_log_id).options(
-                    db.joinedload(SessionLog.meeting),
-                    db.joinedload(SessionLog.session_type).joinedload(SessionType.role),
-                    db.joinedload(SessionLog.project)
-                ).first()
+                log = session_logs_map.get(omr.session_log_id)
             elif role and not role.has_single_owner:
-                # Shared role: Find the relevant session log for this meeting/role type
-                log = SessionLog.query.join(SessionType).filter(
-                    SessionLog.meeting_id == meeting.id,
-                    SessionType.role_id == role.id
-                ).options(
-                    db.joinedload(SessionLog.meeting),
-                    db.joinedload(SessionLog.session_type).joinedload(SessionType.role),
-                    db.joinedload(SessionLog.project)
-                ).first()
+                log = shared_logs_map.get((meeting.id, role.id))
                 
             if log:
                 # Ensure the log knows its context-specific owner for display

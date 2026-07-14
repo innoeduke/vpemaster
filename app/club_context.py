@@ -266,12 +266,14 @@ def is_module_enabled(module_name, club_id=None):
         
     # Check cache in request context `g`
     if not hasattr(g, 'module_states'):
+        from app.models.club_module import ClubModule
+        mods = ClubModule.query.filter_by(club_id=club_id).all()
         g.module_states = {}
+        for m in mods:
+            g.module_states[(club_id, m.module_name)] = m.is_enabled
         
     if (club_id, module_name) not in g.module_states:
-        from app.models.club_module import ClubModule
-        mod = ClubModule.query.filter_by(club_id=club_id, module_name=module_name).first()
-        g.module_states[(club_id, module_name)] = mod.is_enabled if mod else True
+        g.module_states[(club_id, module_name)] = True
         
     return g.module_states[(club_id, module_name)]
 
