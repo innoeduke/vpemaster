@@ -1876,6 +1876,32 @@ def show_speech_logs():
             
         list_view_logs.sort(key=lambda x: x.Meeting_Number or 0, reverse=True)
 
+    active_registered_badges = []
+    if viewed_contact:
+        svg_map = {
+            'DL': 'dynamic-leadership-path.svg',
+            'EH': 'engaging-humor-path.svg',
+            'MS': 'motivational-strategies-path.svg',
+            'PI': 'persuasive-influence-path.svg',
+            'PM': 'presentation-mastery-path.svg',
+            'VC': 'visionary-communication-path.svg'
+        }
+        for cp in viewed_contact.registered_paths:
+            pathway = cp.pathway
+            if pathway and pathway.type == 'pathway' and pathway.status == 'active':
+                completed_levels = viewed_contact.get_completed_levels(pathway.name)
+                highest_level = max(completed_levels) if completed_levels else 0
+                is_completed = (5 in completed_levels) or (cp.status == 'completed')
+                active_registered_badges.append({
+                    'name': pathway.name,
+                    'abbr': pathway.abbr,
+                    'highest_level': highest_level,
+                    'is_completed': is_completed,
+                    'status': cp.status,
+                    'svg_filename': svg_map.get(pathway.abbr, '')
+                })
+        active_registered_badges.sort(key=lambda x: x['name'])
+
     # 12. Render template
     if view_mode == 'search':
         template_name = 'search_view.html'
@@ -1904,6 +1930,7 @@ def show_speech_logs():
         pathway_mapping=dropdown_data['pathway_mapping'],
         all_contacts=dropdown_data['all_contacts'],
         viewed_contact=viewed_contact,
+        active_registered_badges=active_registered_badges,
         member_pathways=pathway_info['member_pathways'],
         available_pathways=pathway_info['available_pathways'],
         active_level=active_level,
