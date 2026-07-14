@@ -673,8 +673,8 @@ def _process_logs(all_logs, filters, pathway_cache, view_mode='member'):
             if not context_path or context_path == 'all':
                 context_path = context_target.get('pathway')
 
-        # Filter by target_pathway from owner_meeting_roles
-        if p_filter and p_filter != 'all':
+        # Filter by target_pathway from owner_meeting_roles (skip for search mode)
+        if view_mode != 'search' and p_filter and p_filter != 'all':
             target_pathway = context_target.get('pathway') if context_target else None
             if p_filter == 'Non Pathway':
                 # "Non Pathway" means show only logs where target_pathway is NULL, empty, or "Non Pathway"
