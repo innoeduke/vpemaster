@@ -667,10 +667,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
 
+                    if (column === 'date') {
+                        return newDirection === 'asc'
+                            ? valA.localeCompare(valB)
+                            : valB.localeCompare(valA);
+                    }
+
                     // Handle numeric values
-                    const numA = parseFloat(valA);
-                    const numB = parseFloat(valB);
-                    if (!isNaN(numA) && !isNaN(numB)) {
+                    const isNumA = /^\d+(\.\d+)?$/.test(valA.trim());
+                    const isNumB = /^\d+(\.\d+)?$/.test(valB.trim());
+                    if (isNumA && isNumB) {
+                        const numA = parseFloat(valA);
+                        const numB = parseFloat(valB);
                         return newDirection === 'asc' ? numA - numB : numB - numA;
                     }
 
