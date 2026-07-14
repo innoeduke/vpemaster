@@ -2432,6 +2432,10 @@ div.speech-logs-content.project-view-container {
 	transition: background-color 0.2s ease;
 }
 
+.journal-list-table th.sortable::after {
+	display: none;
+}
+
 .journal-list-table th.sortable:hover {
 	background-color: #faf0f1;
 	color: #772432;
