@@ -1763,6 +1763,15 @@ def show_speech_logs():
                 if log.project:
                     target_level = log.project.get_level(target_pathway)
             
+            p_filter = filters.get('pathway')
+            if p_filter and p_filter != 'all':
+                if p_filter == 'Non Pathway':
+                    if target_pathway != 'Non Pathway':
+                        continue
+                else:
+                    if target_pathway != p_filter:
+                        continue
+            
             log.list_target_pathway = target_pathway
             log.list_target_level = target_level
             log.list_role_name = role_name

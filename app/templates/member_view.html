@@ -98,175 +98,173 @@
 {% endblock %}
 
 {% block speech_log_toolbar %}
-    <div class="journal-map-view-item">
-        <div class="speech-logs-filter-bar">
-            <div class="filter-row-premium speech-logs-filter-row">
-                <div class="filter-group-premium">
-                    <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" id="speech-logs-filter-form">
-                        <input type="hidden" name="view_mode" value="{{ view_mode }}">
-                        {% if request.args.get('speaker_id') %}
-                        <input type="hidden" name="speaker_id" value="{{ request.args.get('speaker_id') }}">
-                        {% endif %}
-    
-                        <div class="form-group pathway-selector-group filter-group-premium" style="display: flex; align-items: center;">
-                            {% set selected_pathway_name = selected_filters.pathway if selected_filters.pathway else (viewed_contact.Current_Path if viewed_contact else '') %}
-                            {% set ns = namespace(selected_p=None, is_non_pathway=False) %}
-                            {% if selected_pathway_name == 'Non Pathway' %}
-                                {% set ns.is_non_pathway = True %}
-                            {% else %}
-                                {% for p in member_pathways %}
-                                    {% if p.name == selected_pathway_name %}
-                                        {% set ns.selected_p = p %}
-                                    {% endif %}
-                                {% endfor %}
-                                {% if not ns.selected_p and member_pathways %}
-                                    {% set ns.selected_p = member_pathways[0] %}
-                                {% endif %}
-                            {% endif %}
-    
-                            {% set can_manage_pathways = is_authorized(Permissions.SPEECH_LOGS_MANAGE) %}
-                            {% set can_set_default = can_manage_pathways or current_user.contact_id == viewed_contact.id %}
-    
-                            <div style="display: flex; align-items: center; width: 100%; gap: 12px; flex-wrap: wrap;">
-                                <div class="custom-dropdown-container" style="position: relative; flex: 1; min-width: 200px;">
-                                <div class="custom-select-trigger pathway-select-trigger {% if ns.is_non_pathway %}is-non-pathway{% elif ns.selected_p and ns.selected_p.status == 'completed' %}is-completed{% elif ns.selected_p %}is-in-progress{% endif %}"
-                                     onclick="document.getElementById('pathway-dropdown-menu').style.display = document.getElementById('pathway-dropdown-menu').style.display === 'none' ? 'block' : 'none'; this.classList.toggle('active'); event.stopPropagation();">
-                                    <div class="pathway-pill">
-                                        <span class="pathway-status-dot"></span>
-                                        {% if ns.is_non_pathway %}
-                                            <span class="pathway-name">{{ _('Non Pathway') }}</span>
-                                        {% elif ns.selected_p %}
-                                            <span class="pathway-name">{{ ns.selected_p.name }}</span>
-                                        {% else %}
-                                            <span class="pathway-name" style="color: #999;">{{ _('No Pathways Registered') }}</span>
-                                        {% endif %}
-                                    </div>
-                                    <i class="fas fa-chevron-down pathway-chevron"></i>
-                                </div>
-    
-                                <div id="pathway-dropdown-menu" class="pathway-dropdown-menu" style="display: none;">
-                                    <div class="dropdown-item" onclick="document.getElementById('hidden-pathway-input').value='Non Pathway'; document.getElementById('speech-logs-filter-form').submit();">
-                                        <span class="pathway-item-status is-non-pathway">Other</span>
-                                        <span class="pathway-item-name">Non Pathway</span>
-                                    </div>
-                                    {% for p in member_pathways %}
-                                        {% set status_class = 'is-completed' if p.status == 'completed' else 'is-in-progress' %}
-                                        {% set status_label = _('Completed') if p.status == 'completed' else _('In Progress') %}
-                                        <div class="dropdown-item" onclick="document.getElementById('hidden-pathway-input').value='{{ p.name }}'; document.getElementById('speech-logs-filter-form').submit();">
-                                            <span class="pathway-item-status {{ status_class }}">{{ status_label }}</span>
-                                            <span class="pathway-item-name">{{ p.name }}</span>
-                                        </div>
-                                    {% endfor %}
-                                    {% if can_manage_pathways and available_pathways %}
-                                    <div class="register-path-row">
-                                        <button type="button" class="register-path-btn"
-                                                onclick="event.stopPropagation(); openRegisterPathwayModal();">
-                                            <i class="fas fa-plus-circle"></i> {{ _('Register Path') }}
-                                        </button>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <input type="hidden" name="pathway" id="hidden-pathway-input" value="{{ selected_pathway_name }}">
-    
-                            </div>
-    
-                            <script>
-                                document.addEventListener('click', function(e) {
-                                    if (!e.target.closest('.custom-dropdown-container')) {
-                                        const menu = document.getElementById('pathway-dropdown-menu');
-                                        if (menu) menu.style.display = 'none';
-                                        const trigger = document.querySelector('.pathway-select-trigger');
-                                        if (trigger) trigger.classList.remove('active');
-                                    }
-                                });
-    
-                                function setDefaultFromFilter(cpId, cpName) {
-                                    fetch(`/api/contacts/{{ viewed_contact.id }}/pathways/${cpId}/set_default`, { method: 'POST' })
-                                    .then(res => res.json())
-                                    .then(data => {
-                                        if (data.success) {
-                                            window.location.reload();
-                                        } else {
-                                            alert("{{ _('Failed to set default pathway') }}: " + data.message);
-                                        }
-                                    })
-                                    .catch(err => {
-                                        console.error("Error setting default pathway:", err);
-                                        alert("{{ _('An error occurred. Please try again.') }}");
-                                    });
-                                }
-    
-                                function openRegisterPicker(event) {
-                                    if (event) { event.stopPropagation(); event.preventDefault(); }
-                                    const picker = document.getElementById('register-picker');
-                                    if (!picker) return;
-                                    picker.style.display = picker.style.display === 'block' ? 'none' : 'block';
-                                }
-    
-                                function registerFromFilter(pathwayId, pathwayName) {
-                                    const picker = document.getElementById('register-picker');
-                                    if (picker) picker.style.display = 'none';
-                                    fetch(`/api/contacts/{{ viewed_contact.id }}/pathways/register`, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ pathway_id: parseInt(pathwayId) })
-                                    })
-                                    .then(res => res.json())
-                                    .then(data => {
-                                        if (data.success) {
-                                            window.location.reload();
-                                        } else {
-                                            alert("{{ _('Failed to register pathway') }}: " + data.message);
-                                        }
-                                    })
-                                    .catch(err => {
-                                        console.error("Error registering pathway:", err);
-                                        alert("{{ _('An error occurred. Please try again.') }}");
-                                    });
-                                }
-                            </script>
-                        </div>
-                    </form>
-                </div>
-    
-                {% set is_default = ns.selected_p and (ns.selected_p.name == viewed_contact.Current_Path) %}
-                {% set has_selected_registered = ns.selected_p and ns.selected_p.path_id %}
-                <div class="pathway-action-buttons" style="display: flex; align-items: center; gap: 4px; margin-left: 6px; flex: 0 0 auto;">
-                    {% if can_set_default %}
-                    <button type="button"
-                            id="btn-set-default-pathway"
-                            class="pathway-action-btn"
-                            {% if has_selected_registered and not is_default %}onclick="setDefaultFromFilter({{ ns.selected_p.path_id }}, '{{ ns.selected_p.name|replace("'", "\\'") }}')"{% endif %}
-                            title="{% if is_default %}{{ _('This is your default pathway') }}{% else %}{{ _('Set as default pathway') }}{% endif %}"
-                            style="color: {% if is_default %}#ffc107{% else %}#cbd5e1{% endif %}; cursor: {% if has_selected_registered and not is_default %}pointer{% else %}default{% endif %}; opacity: {% if has_selected_registered %}1{% else %}0.4{% endif %};">
-                        <i class="fas fa-star" style="font-size: 1.2rem;"></i>
-                    </button>
+    <div class="speech-logs-filter-bar">
+        <div class="filter-row-premium speech-logs-filter-row">
+            <div class="filter-group-premium">
+                <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" id="speech-logs-filter-form">
+                    <input type="hidden" name="view_mode" value="{{ view_mode }}">
+                    {% if request.args.get('speaker_id') %}
+                    <input type="hidden" name="speaker_id" value="{{ request.args.get('speaker_id') }}">
                     {% endif %}
-                </div>
-    
-                {% if can_view_all or is_authorized(Permissions.MEMBERS_SELF) %}
-                <div class="search-container filter-group-premium">
-                    <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" id="global-search-form" style="display: flex; align-items: center; position: relative; width: 100%;">
-                        <input type="hidden" name="view_mode" value="search">
-                        <input type="text" name="q" class="search-box" placeholder="{{ _('Search ...') }}" value="{{ request.args.get('q', '') }}" style="width: 100%; max-width: 100%; padding-left: 35px; border-radius: 999px; border: 1px solid #ddd; height: 36px; box-sizing: border-box; font-family: 'Montserrat', sans-serif;">
-                        <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; pointer-events: none;"></i>
-                        {% if request.args.get('q') %}
-                        <button type="button" class="clear-search-btn" onclick="window.location.href='{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}'" style="right: 12px;">&times;</button>
+
+                    <div class="form-group pathway-selector-group filter-group-premium" style="display: flex; align-items: center;">
+                        {% set selected_pathway_name = selected_filters.pathway if selected_filters.pathway else (viewed_contact.Current_Path if viewed_contact else '') %}
+                        {% set ns = namespace(selected_p=None, is_non_pathway=False) %}
+                        {% if selected_pathway_name == 'Non Pathway' %}
+                            {% set ns.is_non_pathway = True %}
+                        {% else %}
+                            {% for p in member_pathways %}
+                                {% if p.name == selected_pathway_name %}
+                                    {% set ns.selected_p = p %}
+                                {% endif %}
+                            {% endfor %}
+                            {% if not ns.selected_p and member_pathways %}
+                                {% set ns.selected_p = member_pathways[0] %}
+                            {% endif %}
                         {% endif %}
-                    </form>
-                </div>
-                {% endif %}
-    
-                {% if viewed_contact and current_user.contact_id == viewed_contact.id %}
-                <div class="toolbar-extras" style="display: flex; align-items: center; gap: 8px; flex: 0 0 auto;">
-                    {% call btn('new', id='add-plan-btn') %}
-                        <i class="fas fa-plus"></i> <span class="btn-text">{{ _('New') }}</span>
-                    {% endcall %}
-                </div>
-                {% endif %}
-    
+
+                        {% set can_manage_pathways = is_authorized(Permissions.SPEECH_LOGS_MANAGE) %}
+                        {% set can_set_default = can_manage_pathways or current_user.contact_id == viewed_contact.id %}
+
+                        <div style="display: flex; align-items: center; width: 100%; gap: 12px; flex-wrap: wrap;">
+                            <div class="custom-dropdown-container" style="position: relative; flex: 1; min-width: 200px;">
+                            <div class="custom-select-trigger pathway-select-trigger {% if ns.is_non_pathway %}is-non-pathway{% elif ns.selected_p and ns.selected_p.status == 'completed' %}is-completed{% elif ns.selected_p %}is-in-progress{% endif %}"
+                                 onclick="document.getElementById('pathway-dropdown-menu').style.display = document.getElementById('pathway-dropdown-menu').style.display === 'none' ? 'block' : 'none'; this.classList.toggle('active'); event.stopPropagation();">
+                                <div class="pathway-pill">
+                                    <span class="pathway-status-dot"></span>
+                                    {% if ns.is_non_pathway %}
+                                        <span class="pathway-name">{{ _('Non Pathway') }}</span>
+                                    {% elif ns.selected_p %}
+                                        <span class="pathway-name">{{ ns.selected_p.name }}</span>
+                                    {% else %}
+                                        <span class="pathway-name" style="color: #999;">{{ _('No Pathways Registered') }}</span>
+                                    {% endif %}
+                                </div>
+                                <i class="fas fa-chevron-down pathway-chevron"></i>
+                            </div>
+
+                            <div id="pathway-dropdown-menu" class="pathway-dropdown-menu" style="display: none;">
+                                <div class="dropdown-item" onclick="document.getElementById('hidden-pathway-input').value='Non Pathway'; document.getElementById('speech-logs-filter-form').submit();">
+                                    <span class="pathway-item-status is-non-pathway">Other</span>
+                                    <span class="pathway-item-name">Non Pathway</span>
+                                </div>
+                                {% for p in member_pathways %}
+                                    {% set status_class = 'is-completed' if p.status == 'completed' else 'is-in-progress' %}
+                                    {% set status_label = _('Completed') if p.status == 'completed' else _('In Progress') %}
+                                    <div class="dropdown-item" onclick="document.getElementById('hidden-pathway-input').value='{{ p.name }}'; document.getElementById('speech-logs-filter-form').submit();">
+                                        <span class="pathway-item-status {{ status_class }}">{{ status_label }}</span>
+                                        <span class="pathway-item-name">{{ p.name }}</span>
+                                    </div>
+                                {% endfor %}
+                                {% if can_manage_pathways and available_pathways %}
+                                <div class="register-path-row">
+                                    <button type="button" class="register-path-btn"
+                                            onclick="event.stopPropagation(); openRegisterPathwayModal();">
+                                        <i class="fas fa-plus-circle"></i> {{ _('Register Path') }}
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <input type="hidden" name="pathway" id="hidden-pathway-input" value="{{ selected_pathway_name }}">
+
+                        </div>
+
+                        <script>
+                            document.addEventListener('click', function(e) {
+                                if (!e.target.closest('.custom-dropdown-container')) {
+                                    const menu = document.getElementById('pathway-dropdown-menu');
+                                    if (menu) menu.style.display = 'none';
+                                    const trigger = document.querySelector('.pathway-select-trigger');
+                                    if (trigger) trigger.classList.remove('active');
+                                }
+                            });
+
+                            function setDefaultFromFilter(cpId, cpName) {
+                                fetch(`/api/contacts/{{ viewed_contact.id }}/pathways/${cpId}/set_default`, { method: 'POST' })
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        window.location.reload();
+                                    } else {
+                                        alert("{{ _('Failed to set default pathway') }}: " + data.message);
+                                    }
+                                })
+                                .catch(err => {
+                                    console.error("Error setting default pathway:", err);
+                                    alert("{{ _('An error occurred. Please try again.') }}");
+                                });
+                            }
+
+                            function openRegisterPicker(event) {
+                                if (event) { event.stopPropagation(); event.preventDefault(); }
+                                const picker = document.getElementById('register-picker');
+                                if (!picker) return;
+                                picker.style.display = picker.style.display === 'block' ? 'none' : 'block';
+                            }
+
+                            function registerFromFilter(pathwayId, pathwayName) {
+                                const picker = document.getElementById('register-picker');
+                                if (picker) picker.style.display = 'none';
+                                fetch(`/api/contacts/{{ viewed_contact.id }}/pathways/register`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ pathway_id: parseInt(pathwayId) })
+                                })
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        window.location.reload();
+                                    } else {
+                                        alert("{{ _('Failed to register pathway') }}: " + data.message);
+                                    }
+                                })
+                                .catch(err => {
+                                    console.error("Error registering pathway:", err);
+                                    alert("{{ _('An error occurred. Please try again.') }}");
+                                });
+                            }
+                        </script>
+                    </div>
+                </form>
             </div>
+
+            {% set is_default = ns.selected_p and (ns.selected_p.name == viewed_contact.Current_Path) %}
+            {% set has_selected_registered = ns.selected_p and ns.selected_p.path_id %}
+            <div class="pathway-action-buttons" style="display: flex; align-items: center; gap: 4px; margin-left: 6px; flex: 0 0 auto;">
+                {% if can_set_default %}
+                <button type="button"
+                        id="btn-set-default-pathway"
+                        class="pathway-action-btn"
+                        {% if has_selected_registered and not is_default %}onclick="setDefaultFromFilter({{ ns.selected_p.path_id }}, '{{ ns.selected_p.name|replace("'", "\\'") }}')"{% endif %}
+                        title="{% if is_default %}{{ _('This is your default pathway') }}{% else %}{{ _('Set as default pathway') }}{% endif %}"
+                        style="color: {% if is_default %}#ffc107{% else %}#cbd5e1{% endif %}; cursor: {% if has_selected_registered and not is_default %}pointer{% else %}default{% endif %}; opacity: {% if has_selected_registered %}1{% else %}0.4{% endif %};">
+                    <i class="fas fa-star" style="font-size: 1.2rem;"></i>
+                </button>
+                {% endif %}
+            </div>
+
+            {% if can_view_all or is_authorized(Permissions.MEMBERS_SELF) %}
+            <div class="search-container filter-group-premium">
+                <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" id="global-search-form" style="display: flex; align-items: center; position: relative; width: 100%;">
+                    <input type="hidden" name="view_mode" value="search">
+                    <input type="text" name="q" class="search-box" placeholder="{{ _('Search ...') }}" value="{{ request.args.get('q', '') }}" style="width: 100%; max-width: 100%; padding-left: 35px; border-radius: 999px; border: 1px solid #ddd; height: 36px; box-sizing: border-box; font-family: 'Montserrat', sans-serif;">
+                    <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; pointer-events: none;"></i>
+                    {% if request.args.get('q') %}
+                    <button type="button" class="clear-search-btn" onclick="window.location.href='{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}'" style="right: 12px;">&times;</button>
+                    {% endif %}
+                </form>
+            </div>
+            {% endif %}
+
+            {% if viewed_contact and current_user.contact_id == viewed_contact.id %}
+            <div class="toolbar-extras" style="display: flex; align-items: center; gap: 8px; flex: 0 0 auto;">
+                {% call btn('new', id='add-plan-btn') %}
+                    <i class="fas fa-plus"></i> <span class="btn-text">{{ _('New') }}</span>
+                {% endcall %}
+            </div>
+            {% endif %}
+
         </div>
     </div>
 
