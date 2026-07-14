@@ -102,8 +102,14 @@ def _attach_owners(logs):
                 if key in shared_owners_lookup:
                     if l.id not in owners_by_log:
                         owners_by_log[l.id] = []
-                    # Avoid duplicates if any
-                    owners_by_log[l.id].extend(shared_owners_lookup[key])
+                    # Dedupe by contact id: a contact may appear under both
+                    # the session_log_id-link (single-owner path) and the
+                    # session_log_id-IS-NULL (shared path) for the same role.
+                    seen_ids = {c.id for c in owners_by_log[l.id]}
+                    for contact in shared_owners_lookup[key]:
+                        if contact.id not in seen_ids:
+                            owners_by_log[l.id].append(contact)
+                            seen_ids.add(contact.id)
  
     # 3. Attach to logs via the new _cached_owners attribute
     # Improved: Also attach historical credentials found in OwnerMeetingRoles
@@ -122,7 +128,8 @@ def _attach_owners(logs):
     if 'omr_shared' in locals():
         for omr, contact in omr_shared:
             # For shared roles, we can't key by log ID easily until we map back
-            # But we can update the map for each log that matches
+            # But we can update the map for each log that matches. The dict-keyed
+            # update naturally dedupes per contact.
             key = (omr.meeting_id, omr.role_id)
             for l in shared_logs:
                 if (l.meeting.id, l.session_type.role_id) == key:
@@ -733,13 +740,13 @@ def _process_logs(all_logs, filters, pathway_cache, view_mode='member'):
                        log.presentation_code = best_pp.code
                        log.log_type = 'presentation'
         
-        # Deduplicate roles
-        if log_type == 'role' and not log.Project_ID:
+        # Deduplicate roles (skip for search mode — each match is a distinct result)
+        if view_mode != 'search' and log_type == 'role' and not log.Project_ID:
             owner_id = log.context_owner.id if log.context_owner else (log.owner.id if log.owners else None)
-            
+
             role_name = log.session_type.role.name if log.session_type and log.session_type.role else log.session_type.Title
             dedup_key = (log.Meeting_Number, owner_id, role_name)
-            
+
             if dedup_key in processed_roles:
                 continue
             processed_roles.add(dedup_key)
@@ -797,17 +804,22 @@ def _process_logs(all_logs, filters, pathway_cache, view_mode='member'):
     return grouped_logs
 
 
-def _sort_and_consolidate(grouped_logs):
+def _sort_and_consolidate(grouped_logs, view_mode='member'):
     """
     Sort logs within groups and consolidate role entries.
-    Returns: sorted grouped logs dict
+    Returns: sorted grouped logs dict.
+
+    For search mode, each match stays a distinct row (no consolidation) so the
+    search-results table can render one row per SessionLog with its own meeting,
+    title, and owners. Member/Admin views still collapse role entries per
+    (owner, role) for compact display.
     """
     def get_activity_sort_key(log):
         if not hasattr(log, 'log_type'):
             return (99, -log.Meeting_Number)
         priority = 1 if log.log_type == 'speech' else 3
         return (priority, -log.Meeting_Number)
-    
+
     def get_group_sort_key(group_key):
         # Priority for categories in Meeting View
         category_priority = {
@@ -817,29 +829,33 @@ def _sort_and_consolidate(grouped_logs):
             'role-taker': 4,
             'Other': 99
         }
-        
+
         if group_key in category_priority:
             return (category_priority.get(group_key, 99), group_key)
-            
+
         # Fallback to Level sorting for Member View
         try:
             return (0, -int(group_key))
         except (ValueError, TypeError):
             return (1, group_key)
-    
+
     for group_key in grouped_logs:
         grouped_logs[group_key].sort(key=get_activity_sort_key)
-        
+
+        # Search mode: skip role consolidation — each matching log is a distinct row.
+        if view_mode == 'search':
+            continue
+
         # Consolidate role logs
         consolidated_group = []
         role_group_map = {}
-        
+
         for item in grouped_logs[group_key]:
             if item.log_type == 'role' and not item.Project_ID:
                 role_name = item.session_type.role.name if item.session_type and item.session_type.role else item.session_type.Title
                 owner_id = item.context_owner.id if item.context_owner else (item.owner.id if item.owners else None)
                 key = (owner_id, role_name)
-                
+
                 if key in role_group_map:
                     role_group_map[key]['logs'].append(item)
                 else:
@@ -856,7 +872,7 @@ def _sort_and_consolidate(grouped_logs):
                     consolidated_group.append(new_group)
             else:
                 consolidated_group.append(item)
-        
+
         # Unwrap single-item groups
         final_list = []
         for item in consolidated_group:
@@ -864,14 +880,14 @@ def _sort_and_consolidate(grouped_logs):
                 final_list.append(item['logs'][0])
             else:
                 final_list.append(item)
-        
+
         grouped_logs[group_key] = final_list
-    
+
     # Sort groups
     sorted_grouped_logs = dict(
         sorted(grouped_logs.items(), key=lambda item: get_group_sort_key(item[0]))
     )
-    
+
     return sorted_grouped_logs
 
 
@@ -1596,8 +1612,8 @@ def _get_level_progress_html(user_id, level, pathway_id=None):
     project_ids = [log.Project_ID for log in all_logs if log.Project_ID]
     pathway_cache = build_pathway_project_cache(project_ids=project_ids)
     
-    grouped_logs = _process_logs(all_logs, filters, pathway_cache)
-    sorted_grouped_logs = _sort_and_consolidate(grouped_logs)
+    grouped_logs = _process_logs(all_logs, filters, pathway_cache, view_mode='member')
+    sorted_grouped_logs = _sort_and_consolidate(grouped_logs, view_mode='member')
     
     speaker_user = contact.user
     pp_mapping = _get_pathway_project_mapping(speaker_user)
@@ -1688,7 +1704,7 @@ def show_speech_logs():
     
     # 7. Process logs
     grouped_logs = _process_logs(all_logs, filters, pathway_cache, view_mode=view_mode)
-    sorted_grouped_logs = _sort_and_consolidate(grouped_logs)
+    sorted_grouped_logs = _sort_and_consolidate(grouped_logs, view_mode=view_mode)
     
     # 7.1 Filter for display in Member View: Only show logs linked to non-generic projects
     if is_member_view and view_mode != 'search':
