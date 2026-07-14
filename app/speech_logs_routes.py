@@ -217,10 +217,17 @@ def _search_logs(query_str, can_view_all, current_club_id, contact_id=None):
         
         query = query.filter(or_(*conds))
         
-    # Use distinct to prevent duplicate rows from the outer join when a log has multiple owners
-    results = query.distinct().order_by(Meeting.Meeting_Number.desc()).all()
+    # Order by meeting number desc; deduplicate in Python to avoid MySQL
+    # ONLY_FULL_GROUP_BY error (ORDER BY column not in DISTINCT SELECT list)
+    results = query.order_by(Meeting.Meeting_Number.desc()).all()
+    seen = set()
+    unique = []
+    for log in results:
+        if log.id not in seen:
+            seen.add(log.id)
+            unique.append(log)
     
-    return results
+    return unique
 
 
 def _get_view_settings():
