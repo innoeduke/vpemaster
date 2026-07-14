@@ -1658,8 +1658,10 @@ def show_speech_logs():
         club_id = get_current_club_id()
         all_logs = _search_logs(request.args.get('q', ''), can_view_all, club_id)
         _attach_owners(all_logs)
-        # For MEMBERS_SELF users without SPEECH_LOGS_MANAGE, only show their own logs
-        if not can_view_all:
+        # Limit the search to all sessions owned by the selected contact only
+        if viewed_contact:
+            all_logs = [log for log in all_logs if viewed_contact.id in [o.id for o in log.owners]]
+        elif not can_view_all:
             contact = current_user.get_contact(club_id) if current_user.is_authenticated else None
             if contact:
                 all_logs = [log for log in all_logs if contact.id in [o.id for o in log.owners]]

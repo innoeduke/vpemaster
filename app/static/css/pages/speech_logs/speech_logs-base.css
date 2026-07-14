@@ -2260,6 +2260,13 @@ div.speech-logs-content.project-view-container {
 	transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+.speech-logs-filter-bar .search-container .search-box {
+	border: none !important;
+	outline: none !important;
+	box-shadow: none !important;
+	background: transparent !important;
+}
+
 .speech-logs-filter-bar .search-container:focus-within {
 	border-color: #772432;
 	box-shadow: 0 0 0 3px rgba(119, 36, 50, 0.1);
