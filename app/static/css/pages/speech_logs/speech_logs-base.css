@@ -1434,7 +1434,7 @@ div.speech-logs-content.project-view-container {
 
 /* Path Progress Matrix Styles */
 .path-progress-container {
-	padding: 20px 0;
+	padding: 0 0 20px 0;
 	width: 100%;
 	overflow-x: auto;
 }
@@ -2476,25 +2476,31 @@ div.speech-logs-content.project-view-container {
 .progress-table-header-row {
 	display: flex;
 	justify-content: space-between;
-	align-items: center;
-	margin-top: 15px;
-	margin-bottom: 15px;
+	align-items: flex-end;
+	margin-top: 20px;
+	margin-bottom: 0px;
 	flex-wrap: wrap;
 	gap: 16px;
+	border-bottom: 1px solid #cbd5e1;
 }
 
 .pathway-tabs {
 	display: flex;
-	gap: 8px;
-	flex-wrap: wrap;
+	gap: 4px;
+	margin-bottom: 0;
+	align-items: flex-end;
 }
 
 .pathway-tab {
 	background: #f8fafc;
-	border: 1px solid #e2e8f0;
+	border: 1px solid #cbd5e1;
+	border-bottom: none;
 	color: #64748b;
-	padding: 8px 16px;
-	border-radius: 20px;
+	padding: 6px 16px;
+	border-top-left-radius: 6px;
+	border-top-right-radius: 6px;
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
 	font-size: 0.85rem;
 	font-weight: 600;
 	font-family: 'Montserrat', sans-serif;
@@ -2503,39 +2509,47 @@ div.speech-logs-content.project-view-container {
 	align-items: center;
 	gap: 8px;
 	transition: all 0.2s ease;
+	position: relative;
+	z-index: 1;
+	height: 36px;
+	margin-bottom: -1px;
 }
 
 .pathway-tab:hover {
 	background: #f1f5f9;
 	color: #334155;
 	border-color: #cbd5e1;
+	border-bottom: none;
 }
 
 .pathway-tab.active {
-	background: #772432;
-	color: #ffffff;
-	border-color: #772432;
+	background: #ffffff;
+	color: #772432;
+	border-color: #cbd5e1;
+	border-bottom: 1px solid #ffffff;
+	z-index: 2;
+	height: 38px;
+	border-top: 3px solid #772432;
+	padding-top: 4px;
 }
 
-.tab-default-star {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	color: #cbd5e1;
-	transition: color 0.2s ease, transform 0.2s ease;
+.pathway-status-dot {
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
 }
 
-.pathway-tab.active .tab-default-star {
-	color: rgba(255, 255, 255, 0.4);
+.pathway-status-dot.is-completed {
+	background-color: #22c55e;
 }
 
-.tab-default-star.is-default {
-	color: #fbbf24 !important;
+.pathway-status-dot.is-in-progress {
+	background-color: #3b82f6;
 }
 
-.tab-default-star:not(.is-default):hover {
-	color: #fbbf24 !important;
-	transform: scale(1.15);
+.pathway-status-dot.is-non-pathway {
+	background-color: #94a3b8;
 }
 
 /* Mobile View Overrides for View Toggle */

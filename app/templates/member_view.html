@@ -159,30 +159,32 @@
     <div class="progress-table-header-row">
         <!-- Pathway Tabs -->
         <div class="pathway-tabs">
-            <!-- Non Pathway Tab -->
-            <button type="button" class="pathway-tab {% if selected_pathway_name == 'Non Pathway' %}active{% endif %}"
-                    onclick="submitPathwayTab('Non Pathway')">
-                {{ _('Non Pathway') }}
-            </button>
-            
-            <!-- Member Pathways Tabs -->
-            {% for p in member_pathways %}
+            <!-- 1. In-Progress Pathways -->
+            {% for p in member_pathways if p.status != 'completed' %}
                 {% set is_active = (selected_pathway_name == p.name) %}
-                {% set is_default = (p.name == viewed_contact.Current_Path) %}
-                {% set has_path_id = p.path_id is not none %}
-                
                 <button type="button" class="pathway-tab {% if is_active %}active{% endif %}"
                         onclick="submitPathwayTab('{{ p.name|replace("'", "\\'") }}')">
+                    <span class="pathway-status-dot is-in-progress"></span>
                     {{ p.name }}
-                    {% if can_set_default and has_path_id %}
-                        <span class="tab-default-star {% if is_default %}is-default{% endif %}"
-                              {% if not is_default %}onclick="event.stopPropagation(); setDefaultFromFilter({{ p.path_id }}, '{{ p.name|replace("'", "\\'") }}')"{% endif %}
-                              title="{% if is_default %}{{ _('Default Pathway') }}{% else %}{{ _('Set as default pathway') }}{% endif %}">
-                            <i class="{% if is_default %}fas{% else %}far{% endif %} fa-star"></i>
-                        </span>
-                    {% endif %}
                 </button>
             {% endfor %}
+
+            <!-- 2. Completed Pathways -->
+            {% for p in member_pathways if p.status == 'completed' %}
+                {% set is_active = (selected_pathway_name == p.name) %}
+                <button type="button" class="pathway-tab {% if is_active %}active{% endif %}"
+                        onclick="submitPathwayTab('{{ p.name|replace("'", "\\'") }}')">
+                    <span class="pathway-status-dot is-completed"></span>
+                    {{ p.name }}
+                </button>
+            {% endfor %}
+            
+            <!-- 3. Non Pathway Tab (always last) -->
+            <button type="button" class="pathway-tab {% if selected_pathway_name == 'Non Pathway' %}active{% endif %}"
+                    onclick="submitPathwayTab('Non Pathway')">
+                <span class="pathway-status-dot is-non-pathway"></span>
+                {{ _('Non Pathway') }}
+            </button>
         </div>
 
         <!-- Roadmap Legend (desktop/tablet Map view item only) -->
