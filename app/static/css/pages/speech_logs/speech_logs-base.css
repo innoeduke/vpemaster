@@ -2472,6 +2472,72 @@ div.speech-logs-content.project-view-container {
 .journal-list-table .level-badge.level-4 { background-color: rgba(16, 185, 129, 0.1); color: var(--level-4-color); }
 .journal-list-table .level-badge.level-5 { background-color: rgba(59, 130, 246, 0.1); color: var(--level-5-color); }
 
+/* Pathway Tabs Layout and Styling */
+.progress-table-header-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-top: 15px;
+	margin-bottom: 15px;
+	flex-wrap: wrap;
+	gap: 16px;
+}
+
+.pathway-tabs {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.pathway-tab {
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	color: #64748b;
+	padding: 8px 16px;
+	border-radius: 20px;
+	font-size: 0.85rem;
+	font-weight: 600;
+	font-family: 'Montserrat', sans-serif;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	transition: all 0.2s ease;
+}
+
+.pathway-tab:hover {
+	background: #f1f5f9;
+	color: #334155;
+	border-color: #cbd5e1;
+}
+
+.pathway-tab.active {
+	background: #772432;
+	color: #ffffff;
+	border-color: #772432;
+}
+
+.tab-default-star {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: #cbd5e1;
+	transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.pathway-tab.active .tab-default-star {
+	color: rgba(255, 255, 255, 0.4);
+}
+
+.tab-default-star.is-default {
+	color: #fbbf24 !important;
+}
+
+.tab-default-star:not(.is-default):hover {
+	color: #fbbf24 !important;
+	transform: scale(1.15);
+}
+
 /* Mobile View Overrides for View Toggle */
 @media (max-width: 768px) {
 	.journal-view-toggle {
