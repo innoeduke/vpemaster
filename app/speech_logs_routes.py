@@ -138,10 +138,13 @@ def _attach_owners(logs):
         l._cached_owner_targets = targets_map.get(l.id, {})
 
 
-def _search_logs(query_str, can_view_all, current_club_id):
+def _search_logs(query_str, can_view_all, current_club_id, contact_id=None):
     """
     Search session logs matching the given query string.
     Supports multiple keywords (AND combination of OR clauses for each keyword).
+    
+    Args:
+        contact_id: If provided, restrict results to logs owned by this contact.
     """
     if not query_str:
         return []
@@ -163,21 +166,25 @@ def _search_logs(query_str, can_view_all, current_club_id):
         Meeting.club_id == current_club_id
     )
     
-    # Outer join to retrieve owners
-    query = query.outerjoin(
-        OwnerMeetingRoles,
-        or_(
-            SessionLog.id == OwnerMeetingRoles.session_log_id,
-            db.and_(
-                OwnerMeetingRoles.session_log_id.is_(None),
-                SessionLog.meeting_id == OwnerMeetingRoles.meeting_id,
-                SessionType.role_id == OwnerMeetingRoles.role_id
-            )
+    # Join OwnerMeetingRoles and Contact for keyword matching and optional contact filtering
+    # Use inner join when contact_id is specified (must have an owner), outer join otherwise
+    omr_join_cond = or_(
+        SessionLog.id == OwnerMeetingRoles.session_log_id,
+        db.and_(
+            OwnerMeetingRoles.session_log_id.is_(None),
+            SessionLog.meeting_id == OwnerMeetingRoles.meeting_id,
+            SessionType.role_id == OwnerMeetingRoles.role_id
         )
-    ).outerjoin(
-        Contact,
-        OwnerMeetingRoles.contact_id == Contact.id
     )
+    if contact_id:
+        # Inner join so only logs owned by the given contact are returned
+        query = query.join(OwnerMeetingRoles, omr_join_cond).join(
+            Contact, OwnerMeetingRoles.contact_id == Contact.id
+        ).filter(OwnerMeetingRoles.contact_id == contact_id)
+    else:
+        query = query.outerjoin(OwnerMeetingRoles, omr_join_cond).outerjoin(
+            Contact, OwnerMeetingRoles.contact_id == Contact.id
+        )
     
     # Outer join to retrieve Pathway and PathwayProject for dynamically constructed project codes
     query = query.outerjoin(PathwayProject, SessionLog.Project_ID == PathwayProject.project_id) \
@@ -210,8 +217,8 @@ def _search_logs(query_str, can_view_all, current_club_id):
         
         query = query.filter(or_(*conds))
         
-    # Retrieve all matched logs, order by meeting number desc
-    results = query.order_by(Meeting.Meeting_Number.desc()).all()
+    # Use distinct to prevent duplicate rows from the outer join when a log has multiple owners
+    results = query.distinct().order_by(Meeting.Meeting_Number.desc()).all()
     
     return results
 
@@ -1654,17 +1661,16 @@ def show_speech_logs():
     
     # 5. Fetch logs
     if view_mode == 'search':
-        from .club_context import get_current_club_id
-        club_id = get_current_club_id()
-        all_logs = _search_logs(request.args.get('q', ''), can_view_all, club_id)
-        _attach_owners(all_logs)
-        # Limit the search to all sessions owned by the selected contact only
+        # Determine the contact_id to filter by (push filter into SQL rather than post-fetching)
+        search_contact_id = None
         if viewed_contact:
-            all_logs = [log for log in all_logs if viewed_contact.id in [o.id for o in log.owners]]
+            search_contact_id = viewed_contact.id
         elif not can_view_all:
-            contact = current_user.get_contact(club_id) if current_user.is_authenticated else None
-            if contact:
-                all_logs = [log for log in all_logs if contact.id in [o.id for o in log.owners]]
+            self_contact = current_user.get_contact(club_id) if current_user.is_authenticated else None
+            if self_contact:
+                search_contact_id = self_contact.id
+        all_logs = _search_logs(request.args.get('q', ''), can_view_all, club_id, contact_id=search_contact_id)
+        _attach_owners(all_logs)
     else:
         all_logs = _fetch_logs_with_filters(filters)
         _attach_owners(all_logs)
