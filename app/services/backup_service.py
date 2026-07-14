@@ -726,6 +726,39 @@ class BackupService:
         from datetime import date
         from app import db
         from app.models import OwnerMeetingRoles
+        from app.utils import is_pathway_role
+
+        # 1. Clean up existing incorrect target pathways for non-pathway roles
+        all_omrs = OwnerMeetingRoles.query.filter(
+            db.or_(
+                OwnerMeetingRoles.target_pathway.isnot(None),
+                OwnerMeetingRoles.target_level.isnot(None)
+            )
+        ).all()
+        
+        cleanup_count = 0
+        for omr in all_omrs:
+            is_speech_project = False
+            project_id = None
+            if omr.session_log:
+                is_speech_project = (omr.session_log.session_type and omr.session_log.session_type.Title in ['Prepared Speech', 'Presentation', 'Keynote Speaker', 'Hot Seat Speaker'])
+                project_id = omr.session_log.Project_ID
+                
+            is_path_role = is_pathway_role(
+                role_name=omr.role.name if omr.role else (omr.session_log.session_type.Title if (omr.session_log and omr.session_log.session_type) else None),
+                is_speech_project=is_speech_project,
+                project_id=project_id,
+                role_type=omr.role.type if omr.role else None,
+                club_id=omr.role.club_id if omr.role else None
+            )
+            if not is_path_role:
+                omr.target_pathway = None
+                omr.target_level = None
+                cleanup_count += 1
+                
+        if cleanup_count > 0:
+            db.session.commit()
+            print(f"Cleaned up {cleanup_count} non-pathway owner_meeting_roles records.")
 
         omrs = OwnerMeetingRoles.query.filter(
             db.or_(
@@ -744,23 +777,24 @@ class BackupService:
             if not contact or contact.Type == 'Guest':
                 continue
                 
-            # Skip non-pathway roles
-            from app.utils import is_pathway_role
-            is_speech_project = False
-            project_id = None
-            if omr.session_log:
-                is_speech_project = (omr.session_log.session_type and omr.session_log.session_type.Title in ['Prepared Speech', 'Presentation', 'Keynote Speaker', 'Hot Seat Speaker'])
-                project_id = omr.session_log.Project_ID
-                
-            is_path_role = is_pathway_role(
-                role_name=omr.role.name if omr.role else (omr.session_log.session_type.Title if (omr.session_log and omr.session_log.session_type) else None),
-                is_speech_project=is_speech_project,
-                project_id=project_id,
-                role_type=omr.role.type if omr.role else None,
-                club_id=omr.role.club_id if omr.role else None
-            )
-            if not is_path_role:
-                continue
+            # Skip non-pathway roles (if a role or session_log is present)
+            if omr.role or omr.session_log:
+                from app.utils import is_pathway_role
+                is_speech_project = False
+                project_id = None
+                if omr.session_log:
+                    is_speech_project = (omr.session_log.session_type and omr.session_log.session_type.Title in ['Prepared Speech', 'Presentation', 'Keynote Speaker', 'Hot Seat Speaker'])
+                    project_id = omr.session_log.Project_ID
+                    
+                is_path_role = is_pathway_role(
+                    role_name=omr.role.name if omr.role else (omr.session_log.session_type.Title if (omr.session_log and omr.session_log.session_type) else None),
+                    is_speech_project=is_speech_project,
+                    project_id=project_id,
+                    role_type=omr.role.type if omr.role else None,
+                    club_id=omr.role.club_id if omr.role else None
+                )
+                if not is_path_role:
+                    continue
                 
             meeting_date = meeting.Meeting_Date if meeting and meeting.Meeting_Date else date.today()
             

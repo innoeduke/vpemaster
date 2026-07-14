@@ -111,16 +111,11 @@
                         <img src="{{ url_for('static', filename='images/badges/' ~ badge.svg_filename) }}" 
                              alt="{{ badge.name }}" 
                              class="path-badge-img {% if badge.is_completed %}is-completed{% endif %}">
-                        {% if badge.is_completed %}
-                            <span class="badge-completion-crown" title="{{ _('Path Completed!') }}">
-                                <i class="fas fa-crown"></i>
-                            </span>
-                        {% endif %}
                     </div>
                     
                     <div class="badge-level-indicator">
                         {% if badge.is_completed %}
-                            <span class="path-completed-text"><i class="fas fa-check-circle"></i> {{ _('Done') }}</span>
+                            <span class="path-completed-text"><i class="fas fa-check-circle"></i></span>
                         {% else %}
                             {% for i in range(1, 6) %}
                                 <span class="level-dot {% if i <= badge.highest_level %}filled{% endif %}" data-abbr="{{ badge.abbr|lower }}" title="{{ _('Level') }} {{ i }}"></span>
@@ -163,7 +158,8 @@
                 <button type="button" class="pathway-tab {% if is_active %}active{% endif %}"
                         onclick="submitPathwayTab('{{ p.name|replace("'", "\\'") }}')">
                     <span class="pathway-status-dot is-in-progress"></span>
-                    {{ p.name }}
+                    <span class="pathway-tab-text-full">{{ p.name }}</span>
+                    <span class="pathway-tab-text-abbr">{{ p.abbr or p.name }}</span>
                 </button>
             {% endfor %}
 
@@ -173,7 +169,8 @@
                 <button type="button" class="pathway-tab {% if is_active %}active{% endif %}"
                         onclick="submitPathwayTab('{{ p.name|replace("'", "\\'") }}')">
                     <span class="pathway-status-dot is-completed"></span>
-                    {{ p.name }}
+                    <span class="pathway-tab-text-full">{{ p.name }}</span>
+                    <span class="pathway-tab-text-abbr">{{ p.abbr or p.name }}</span>
                 </button>
             {% endfor %}
 
@@ -356,6 +353,15 @@
 
     <!-- List View Table Container (Desktop Only) -->
     <div class="journal-list-view-item" style="display: none;">
+        {% if not list_view_logs and viewed_contact and current_user.contact_id == viewed_contact.id %}
+            <div class="list-view-filter-bar" style="border-bottom: none; margin-bottom: 0; justify-content: flex-end;">
+                <div class="toolbar-extras" style="display: flex; align-items: center; flex: 0 0 auto;">
+                    {% call btn('new', id='add-plan-btn', attrs={'style': 'padding: 4px 10px; font-size: 0.8rem; height: 32px; display: inline-flex; align-items: center; gap: 4px;'}) %}
+                        <i class="fas fa-plus"></i> <span class="btn-text">{{ _('New') }}</span>
+                    {% endcall %}
+                </div>
+            </div>
+        {% endif %}
         {% if list_view_logs %}
             <div class="list-view-filter-bar">
                 <div class="list-view-filters-left">
@@ -408,7 +414,7 @@
 
                     {% if viewed_contact and current_user.contact_id == viewed_contact.id %}
                     <div class="toolbar-extras" style="display: flex; align-items: center; flex: 0 0 auto;">
-                        {% call btn('new', id='add-plan-btn', style='padding: 4px 10px; font-size: 0.8rem; height: 32px; display: inline-flex; align-items: center; gap: 4px;') %}
+                        {% call btn('new', id='add-plan-btn', attrs={'style': 'padding: 4px 10px; font-size: 0.8rem; height: 32px; display: inline-flex; align-items: center; gap: 4px;'}) %}
                             <i class="fas fa-plus"></i> <span class="btn-text">{{ _('New') }}</span>
                         {% endcall %}
                     </div>

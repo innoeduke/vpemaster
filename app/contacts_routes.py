@@ -758,9 +758,11 @@ def _build_contacts_data(per_page=None, offset=0):
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
 
-    # Default to current term when no explicit dates are provided
+    terms_list = request.args.getlist('term')
+
+    # Default to current term when no explicit dates or terms are provided
     # (matches the default applied by show_contacts for the template).
-    if not start_date and not end_date:
+    if not start_date and not end_date and not terms_list:
         current_term = get_active_term(get_terms())
         if current_term:
             start_date = current_term['start']
@@ -773,7 +775,6 @@ def _build_contacts_data(per_page=None, offset=0):
         should_filter = True
         date_ranges = [(start_date, end_date)]
 
-    terms_list = request.args.getlist('term')
     if terms_list:
         should_filter = True
         all_terms = get_terms()

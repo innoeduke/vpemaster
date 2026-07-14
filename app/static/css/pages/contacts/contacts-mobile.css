@@ -169,6 +169,7 @@
 
   #contactsTable {
     width: 100%;
+    min-width: unset !important;
     margin: 0;
     font-size: 0.9em;
     table-layout: auto !important;

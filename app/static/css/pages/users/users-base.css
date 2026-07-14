@@ -9,7 +9,9 @@
    ======================================== */
 
 #user-settings-table {
-  table-layout: auto;
+  table-layout: fixed;
+  width: 100%;
+  min-width: 1200px;
 }
 
 /* Body text 1pt smaller than the header */
@@ -162,6 +164,7 @@
 .member-table-container {
   display: block;
   width: 100%;
+  overflow-x: auto;
 }
 
 /* --- Name cell: avatar to the left, name+username stacked to the right --- */

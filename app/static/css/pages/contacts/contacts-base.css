@@ -85,8 +85,9 @@
 /* When compact-actions is applied by JS, hide desktop buttons and show ellipsis */
 
 .contact-table-container {
-  display: flex;
-  justify-content: center;
+  display: block;
+  width: 100%;
+  overflow-x: auto;
 }
 
 #contactsTable {
@@ -285,6 +286,7 @@
 #contactsTable {
   table-layout: fixed;
   width: 100%;
+  min-width: 1130px;
 }
 
 #contactsTable .col-checkbox,
