@@ -2477,12 +2477,19 @@ div.speech-logs-content.project-view-container {
 	transform: scale(0.99);
 }
 
-.journal-list-table .meeting-cell,
 .journal-list-table .level-cell-value {
 	text-align: center;
 }
 
-.journal-list-table .date-cell {
+.journal-list-table .meeting-num-main {
+	font-weight: 700;
+	color: #1e293b;
+}
+
+.journal-list-table .meeting-date-sub {
+	font-size: 0.75rem;
+	color: #64748b;
+	margin-top: 2px;
 	white-space: nowrap;
 }
 
