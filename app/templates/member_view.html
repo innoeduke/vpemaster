@@ -137,49 +137,14 @@
 {% endblock %}
 
 {% block speech_log_toolbar %}
-    <div class="speech-logs-filter-bar" style="display: none;">
-        <div class="filter-row-premium speech-logs-filter-row" style="justify-content: flex-end;">
-            {% set selected_pathway_name = selected_filters.pathway if selected_filters.pathway else (viewed_contact.Current_Path if viewed_contact else '') %}
-            <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" id="speech-logs-filter-form" style="display: none;">
-                <input type="hidden" name="view_mode" value="{{ view_mode }}">
-                {% if request.args.get('speaker_id') %}
-                <input type="hidden" name="speaker_id" value="{{ request.args.get('speaker_id') }}">
-                {% endif %}
-                <input type="hidden" name="pathway" id="hidden-pathway-input" value="{{ selected_pathway_name }}">
-            </form>
-
-            {% if can_view_all or is_authorized(Permissions.MEMBERS_SELF) %}
-            <div class="search-container filter-group-premium" style="margin-left: 0;">
-                <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" id="global-search-form" style="display: flex; align-items: center; position: relative; width: 100%;">
-                    <input type="hidden" name="view_mode" value="search">
-                    {% if request.args.get('speaker_id') %}
-                    <input type="hidden" name="speaker_id" value="{{ request.args.get('speaker_id') }}">
-                    {% endif %}
-                    <input type="text" name="q" class="search-box" placeholder="{{ _('Search ...') }}" value="{{ request.args.get('q', '') }}" style="width: 100%; max-width: 100%; padding-left: 35px; border: none; outline: none; background: transparent; box-shadow: none; height: 36px; box-sizing: border-box; font-family: 'Montserrat', sans-serif;">
-                    <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; pointer-events: none;"></i>
-                    {% if request.args.get('q') %}
-                    <button type="button" class="clear-search-btn" onclick="window.location.href='{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member', speaker_id=request.args.get('speaker_id')) if request.args.get('speaker_id') else url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}'" style="right: 12px;">&times;</button>
-                    {% endif %}
-                </form>
-            </div>
-            {% endif %}
-
-            {% if viewed_contact and current_user.contact_id == viewed_contact.id %}
-            <div class="toolbar-extras" style="display: flex; align-items: center; gap: 8px; flex: 0 0 auto; margin-left: 12px;">
-                {% call btn('new', id='add-plan-btn') %}
-                    <i class="fas fa-plus"></i> <span class="btn-text">{{ _('New') }}</span>
-                {% endcall %}
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-    {% if is_member_view %}
-        {% include 'partials/_planner_modal.html' %}
-        {% if is_authorized(Permissions.SPEECH_LOGS_MANAGE) %}
-            {% include 'partials/_achievement_modal.html' %}
+    {% set selected_pathway_name = selected_filters.pathway if selected_filters.pathway else (viewed_contact.Current_Path if viewed_contact else '') %}
+    <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" id="speech-logs-filter-form" style="display: none;">
+        <input type="hidden" name="view_mode" value="{{ view_mode }}">
+        {% if request.args.get('speaker_id') %}
+        <input type="hidden" name="speaker_id" value="{{ request.args.get('speaker_id') }}">
         {% endif %}
-    {% endif %}
+        <input type="hidden" name="pathway" id="hidden-pathway-input" value="{{ selected_pathway_name }}">
+    </form>
 {% endblock %}
 
 
@@ -414,6 +379,22 @@
                     </div>
                 </div>
                 <div class="list-view-filters-right">
+                    {% if can_view_all or is_authorized(Permissions.MEMBERS_SELF) %}
+                    <div class="search-container filter-group-premium" style="margin-left: 0; background: #fff; border: 1px solid #ddd; border-radius: 6px; height: 32px; width: 220px; display: flex; align-items: center; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); padding-right: 8px;">
+                        <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" id="global-search-form" style="display: flex; align-items: center; position: relative; width: 100%; height: 100%;">
+                            <input type="hidden" name="view_mode" value="search">
+                            {% if request.args.get('speaker_id') %}
+                            <input type="hidden" name="speaker_id" value="{{ request.args.get('speaker_id') }}">
+                            {% endif %}
+                            <input type="text" name="q" class="search-box" placeholder="{{ _('Search ...') }}" value="{{ request.args.get('q', '') }}" style="width: 100%; max-width: 100%; padding-left: 35px; border: none; outline: none; background: transparent; box-shadow: none; height: 100%; box-sizing: border-box; font-family: 'Montserrat', sans-serif; font-size: 0.8rem; color: #333;">
+                            <i class="fas fa-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #888; pointer-events: none; font-size: 0.85em;"></i>
+                            {% if request.args.get('q') %}
+                            <button type="button" class="clear-search-btn" onclick="window.location.href='{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member', speaker_id=request.args.get('speaker_id')) if request.args.get('speaker_id') else url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}'" style="right: 8px; font-size: 16px; background: none; border: none; cursor: pointer; color: #999; display: flex; align-items: center; justify-content: center; height: 100%;">&times;</button>
+                            {% endif %}
+                        </form>
+                    </div>
+                    {% endif %}
+
                     <div class="list-view-filter-group">
                         <label for="list-row-filter">{{ _('Rows') }}:</label>
                         <select id="list-row-filter" class="list-row-filter-select">
@@ -424,6 +405,14 @@
                         </select>
                     </div>
                     <div class="list-view-row-count" id="list-view-row-count"></div>
+
+                    {% if viewed_contact and current_user.contact_id == viewed_contact.id %}
+                    <div class="toolbar-extras" style="display: flex; align-items: center; flex: 0 0 auto;">
+                        {% call btn('new', id='add-plan-btn', style='padding: 4px 10px; font-size: 0.8rem; height: 32px; display: inline-flex; align-items: center; gap: 4px;') %}
+                            <i class="fas fa-plus"></i> <span class="btn-text">{{ _('New') }}</span>
+                        {% endcall %}
+                    </div>
+                    {% endif %}
                 </div>
             </div>
             <div style="overflow-x: auto;">
@@ -505,6 +494,12 @@
 
 {% block speech_log_modals %}
 {{ super() }}
+{% if is_member_view %}
+    {% include 'partials/_planner_modal.html' %}
+    {% if is_authorized(Permissions.SPEECH_LOGS_MANAGE) %}
+        {% include 'partials/_achievement_modal.html' %}
+    {% endif %}
+{% endif %}
 <!-- Register Pathway Modal -->
 {% set register_pathway_footer_buttons %}
     <button type="button" onclick="closeRegisterPathwayModal()" class="btn btn-cancel btn-danger">{{ _('Cancel') }}</button>
@@ -580,14 +575,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const mainContent = document.querySelector('.speech-log-main-content');
 
     function setView(view) {
-        const filterBar = document.querySelector('.speech-logs-filter-bar');
-
         // Skip toggle behavior on mobile screens (viewport width <= 768px)
         if (window.innerWidth <= 768) {
             mapItems.forEach(el => el.style.display = 'block');
             listItems.forEach(el => el.style.display = 'none');
             if (mainContent) mainContent.style.display = '';
-            if (filterBar) filterBar.style.display = 'none';
             return;
         }
 
@@ -597,7 +589,6 @@ document.addEventListener('DOMContentLoaded', () => {
             mapItems.forEach(el => el.style.display = 'none');
             listItems.forEach(el => el.style.display = 'block');
             if (mainContent) mainContent.style.display = 'block';
-            if (filterBar) filterBar.style.display = '';
             localStorage.setItem('journal-view', 'list');
         } else {
             listBtn.classList.remove('active');
@@ -605,7 +596,6 @@ document.addEventListener('DOMContentLoaded', () => {
             mapItems.forEach(el => el.style.display = ''); // restore to default stylesheet styles
             listItems.forEach(el => el.style.display = 'none');
             if (mainContent) mainContent.style.display = '';
-            if (filterBar) filterBar.style.display = 'none';
             localStorage.setItem('journal-view', 'map');
         }
     }
