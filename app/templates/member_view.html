@@ -74,6 +74,15 @@
             {% endif %}
 
             <div class="header-profile-action">
+                {% set can_manage_pathways = is_authorized(Permissions.SPEECH_LOGS_MANAGE) %}
+                {% if can_manage_pathways and available_pathways %}
+                <button type="button" class="btn-view-control btn-register-path-header"
+                        onclick="openRegisterPathwayModal();"
+                        title="{{ _('Register Path') }}">
+                    <i class="fas fa-plus-circle"></i> <span class="btn-label">{{ _('Register Path') }}</span>
+                </button>
+                {% endif %}
+
                 {% if is_authorized(Permissions.ROSTER_VIEW) %}
                 <a href="{{ url_for('auth_bp.profile', contact_id=viewed_contact.id) }}" class="btn-view-control btn-profile-small"
                     title="{{ _('View Profile') }}">
@@ -156,14 +165,6 @@
                                         <span class="pathway-item-name">{{ p.name }}</span>
                                     </div>
                                 {% endfor %}
-                                {% if can_manage_pathways and available_pathways %}
-                                <div class="register-path-row">
-                                    <button type="button" class="register-path-btn"
-                                            onclick="event.stopPropagation(); openRegisterPathwayModal();">
-                                        <i class="fas fa-plus-circle"></i> {{ _('Register Path') }}
-                                    </button>
-                                </div>
-                                {% endif %}
                             </div>
                         </div>
                         <input type="hidden" name="pathway" id="hidden-pathway-input" value="{{ selected_pathway_name }}">
