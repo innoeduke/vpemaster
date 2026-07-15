@@ -785,12 +785,14 @@ def _build_contacts_data(per_page=None, offset=0):
 
     from sqlalchemy import or_,  and_, false
     def apply_date_filter(query, date_column):
+        # Only count meetings that have been finished.
+        query = query.filter(Meeting.status == 'finished')
+
         if not date_ranges:
             if should_filter:
                  # User wanted to filter, but ranges are empty -> Match Nothing
                  return query.filter(false())
             else:
-                 # No filter applied
                  return query
 
         conditions = [date_column.between(start, end) for start, end in date_ranges]

@@ -269,7 +269,9 @@ def _parse_filters(is_member_view, can_view_all):
         'level': request.args.get('level'),
         'speaker_id': request.args.get('speaker_id'),
         'status': request.args.get('status'),
-        'role': request.args.get('role')
+        'role': request.args.get('role'),
+        'start_date': request.args.get('start_date'),
+        'end_date': request.args.get('end_date')
     }
 
     # Handle speaker_id for member view
@@ -580,7 +582,14 @@ def _fetch_logs_with_filters(filters):
             logs = [l for l in logs if str(l.meeting_id) == str(filters['meeting_id'])]
         if filters['role']:
             logs = [l for l in logs if l.session_type and l.session_type.role and l.session_type.role.name == filters['role'] or l.session_type and l.session_type.Title == filters['role']]
-            
+
+        # Apply date range filter
+        f_start = filters.get('start_date')
+        f_end = filters.get('end_date')
+        if f_start and f_end:
+            logs = [l for l in logs if l.meeting and l.meeting.Meeting_Date
+                    and f_start <= l.meeting.Meeting_Date.isoformat() <= f_end]
+
         # Restriction for Guest: cannot view finished meetings (though usually guests won't have duties)
         try:
             if current_user.is_guest_of_club(current_club_id):
@@ -614,6 +623,12 @@ def _fetch_logs_with_filters(filters):
         base_query = base_query.filter(SessionLog.meeting_id == filters['meeting_id'])
     if filters['role']:
         base_query = base_query.filter(or_(MeetingRole.name == filters['role'], SessionType.Title == filters['role']))
+
+    # Apply date range filter
+    f_start = filters.get('start_date')
+    f_end = filters.get('end_date')
+    if f_start and f_end:
+        base_query = base_query.filter(Meeting.Meeting_Date.between(f_start, f_end))
     
     results = base_query.order_by(Meeting.Meeting_Number.desc()).all()
     return results
@@ -1642,6 +1657,19 @@ def show_speech_logs():
     can_view_all, view_mode, is_member_view = _get_view_settings()
     filters = _parse_filters(is_member_view, can_view_all)
     
+    # 1a. Default date filters to current term when not explicitly provided
+    from .utils import get_terms, get_active_term
+    terms = get_terms()
+    current_term = get_active_term(terms)
+    start_date = filters.get('start_date')
+    end_date = filters.get('end_date')
+    if not start_date and not end_date:
+        if current_term:
+            start_date = current_term['start']
+            end_date = current_term['end']
+    filters['start_date'] = start_date
+    filters['end_date'] = end_date
+
     # 2. Get viewed contact
     viewed_contact = _get_viewed_contact(filters['speaker_id'])
 
@@ -1938,7 +1966,10 @@ def show_speech_logs():
         upcoming_meetings=upcoming_meetings,
         selected_meeting_id=selected_meeting_id,
         selected_meeting_number=selected_meeting_number,
-        progress_data_rows=progress_data_rows
+        progress_data_rows=progress_data_rows,
+        start_date=start_date,
+        end_date=end_date,
+        current_term=current_term
     )
 
 

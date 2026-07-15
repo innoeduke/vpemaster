@@ -216,6 +216,10 @@ function createContactRow(contact) {
   const sortValue = `${String(contact.attendance_count).padStart(3, '0')}_${String(contact.role_count).padStart(3, '0')}_${contact.is_qualified ? '1' : '0'}_${String(contact.tt_count).padStart(3, '0')}_${String(contact.award_count).padStart(3, '0')}`;
 
   let html = '';
+
+  // Build date query string to carry date filters to speech logs
+  const dateQs = getDateFilterParams();
+
   if (hasEditPermission) {
     const isChecked = selectedContactIds.has(contact.id) ? 'checked' : '';
     html += `<td class="col-checkbox" style="text-align: center;"><input type="checkbox" class="contact-select-checkbox" data-id="${contact.id}" ${isChecked} onchange="handleCheckboxChange(this)"></td>`;
@@ -224,7 +228,7 @@ function createContactRow(contact) {
   html += `
     <td class="col-name">
       <div class="contact-name-cell ${canViewMembers && contact.Member_ID && contact.Type !== 'Guest' ? 'clickable-cell' : ''}"
-           ${canViewMembers && contact.Member_ID && contact.Type !== 'Guest' ? `onclick="window.location.href='/speech_logs?speaker_id=${contact.id}&view_mode=member'" title="View ${contact.Name}'s member page"` : ''}>
+           ${canViewMembers && contact.Member_ID && contact.Type !== 'Guest' ? `onclick="window.location.href='/speech_logs?speaker_id=${contact.id}&view_mode=member${dateQs}'" title="View ${contact.Name}'s member page"` : ''}>
         ${(() => {
       if (!contact.Avatar_URL) {
         return `<div class="contact-avatar-placeholder-small">
@@ -267,16 +271,16 @@ function createContactRow(contact) {
       <div class="participation-container">
         ${contact.is_qualified ? '<i class="fas fa-star" title="Qualified Guest" style="color: #ffc107; font-size: 1.1em;"></i>' : ''}
         ${canViewMembers ? `
-          <a href="/speech_logs?speaker_id=${contact.id}" title="Attendance" class="participation-badge badge-attendance">
+          <a href="/speech_logs?speaker_id=${contact.id}${dateQs}" title="Attendance" class="participation-badge badge-attendance">
             <i class="fas fa-calendar-check"></i> ${contact.attendance_count}
           </a>
-          <a href="/speech_logs?speaker_id=${contact.id}" title="Roles Taken" class="participation-badge badge-roles">
+          <a href="/speech_logs?speaker_id=${contact.id}${dateQs}" title="Roles Taken" class="participation-badge badge-roles">
             <i class="fas fa-user-tag"></i> ${contact.role_count}
           </a>
-          <a href="/speech_logs?speaker_id=${contact.id}" title="Topic Speeches" class="participation-badge badge-tt">
+          <a href="/speech_logs?speaker_id=${contact.id}${dateQs}" title="Topic Speeches" class="participation-badge badge-tt">
             <i class="fas fa-comment"></i> ${contact.tt_count}
           </a>
-          <a href="/speech_logs?speaker_id=${contact.id}" title="Awards Won" class="participation-badge badge-awards">
+          <a href="/speech_logs?speaker_id=${contact.id}${dateQs}" title="Awards Won" class="participation-badge badge-awards">
             <i class="fas fa-trophy"></i> ${contact.award_count}
           </a>
         ` : `

@@ -221,7 +221,7 @@
   }
 
   /* Contact Modal Tabs Mobile Refinements */
-  #contactModal .contact-modal-tabs {
+  #contactModal-overlay .contact-modal-tabs {
     display: flex !important;
     align-items: stretch !important;
     background: #f1f5f9;
@@ -232,7 +232,7 @@
     margin-bottom: 20px;
   }
 
-  #contactModal .contact-modal-tabs .nav-item {
+  #contactModal-overlay .contact-modal-tabs .nav-item {
     flex: 1;
     height: auto !important;
     min-height: 42px !important;
@@ -252,7 +252,7 @@
     margin-bottom: 0 !important;
   }
 
-  #contactModal .contact-modal-tabs .nav-item.active {
+  #contactModal-overlay .contact-modal-tabs .nav-item.active {
     background: #fff !important;
     color: #772432 !important;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
@@ -260,7 +260,7 @@
   }
 
   /* Contact Modal Custom Select Mobile Refinements */
-  #contactModal .custom-select-trigger {
+  #contactModal-overlay .custom-select-trigger {
     height: 36px !important;
     min-height: 36px !important;
     padding: 0 12px !important;

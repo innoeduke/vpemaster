@@ -569,17 +569,17 @@
   opacity: 1;
 }
 /* --- Contact Modal Refinements --- */
-#contactModal {
+#contactModal-overlay {
   align-items: flex-start;
   scrollbar-gutter: stable;
 }
 
 /* Custom Select styling inside Contact Modal */
-#contactModal .custom-select-container {
+#contactModal-overlay .custom-select-container {
   width: 100%;
 }
 
-#contactModal .custom-select-trigger {
+#contactModal-overlay .custom-select-trigger {
   height: 42px;
   box-sizing: border-box;
   border: 1.5px solid #e9ecef;
@@ -597,7 +597,7 @@
   transition: all 0.2s ease;
 }
 
-#contactModal .custom-select-trigger:after {
+#contactModal-overlay .custom-select-trigger:after {
   content: "\f078";
   font-family: "Font Awesome 5 Free";
   font-weight: 900;
@@ -605,39 +605,39 @@
   color: #888;
 }
 
-#contactModal .custom-select-container.open .custom-select-trigger {
+#contactModal-overlay .custom-select-container.open .custom-select-trigger {
   border-color: #772432;
   box-shadow: 0 0 0 3px rgba(119, 36, 50, 0.1);
 }
 
-#contactModal .custom-select-container.open .custom-select-trigger:after {
+#contactModal-overlay .custom-select-container.open .custom-select-trigger:after {
   content: "\f077";
 }
 
-#contactModal .custom-select-options {
+#contactModal-overlay .custom-select-options {
   z-index: var(--z-popover-mid);
 }
 
-#contactModal .modal-content {
+#contactModal-overlay .modal-content {
   margin: 50px auto auto;
   padding: 30px;
   max-width: 500px;
   border-radius: 20px;
 }
 
-#contactModal .modal-header {
+#contactModal-overlay .modal-header {
   text-align: center;
   margin-bottom: 20px;
 }
 
-#contactModal .modal-header h2 {
+#contactModal-overlay .modal-header h2 {
   font-size: 1.8rem;
   font-weight: 800;
   margin: 0;
   color: #000;
 }
 
-#contactModal .profile-avatar-section {
+#contactModal-overlay .profile-avatar-section {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -645,7 +645,7 @@
   gap: 8px;
 }
 
-#contactModal .profile-avatar-container {
+#contactModal-overlay .profile-avatar-container {
   width: 120px;
   height: 120px;
   border-radius: 50%;
@@ -660,24 +660,24 @@
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-#contactModal .profile-avatar-container[data-contact-id]:hover {
+#contactModal-overlay .profile-avatar-container[data-contact-id]:hover {
   transform: scale(1.06);
   box-shadow: 0 8px 20px rgba(119, 36, 50, 0.35);
   border-color: #5e1c27;
 }
 
-#contactModal .profile-avatar-container .avatar-placeholder {
+#contactModal-overlay .profile-avatar-container .avatar-placeholder {
   font-size: 60px;
   color: #ced4da;
 }
 
-#contactModal .profile-avatar-container .profile-avatar {
+#contactModal-overlay .profile-avatar-container .profile-avatar {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-#contactModal .btn-upload {
+#contactModal-overlay .btn-upload {
   background-color: #fff;
   color: #772432;
   border: 1.5px solid #772432;
@@ -861,7 +861,7 @@
 
 /* Landscape contact modal for tablets and desktops */
 @media (min-width: 769px) {
-  #contactModal .modal-content {
+  #contactModal-overlay .modal-content {
     max-width: 800px;
     width: 90%;
   }
@@ -870,7 +870,7 @@
     display: block;
   }
 
-  #contactModal .profile-avatar-section {
+  #contactModal-overlay .profile-avatar-section {
     flex: 0 0 170px;
     margin-bottom: 0;
     margin-top: 15px;
@@ -878,7 +878,7 @@
     border-right: 1px solid #e9ecef;
   }
 
-  #contactModal .btn-upload {
+  #contactModal-overlay .btn-upload {
     white-space: nowrap;
   }
 

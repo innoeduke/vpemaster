@@ -1004,6 +1004,7 @@ function openActionModal(id, title = null) {
   if (overlay) {
     overlay.style.display = 'flex';
     setTimeout(() => overlay.classList.add('active'), 10);
+    document.body.classList.add('modal-open');
   }
 }
 
@@ -1017,6 +1018,10 @@ function closeActionModal(id) {
     overlay.classList.remove('active');
     setTimeout(() => {
       overlay.style.display = 'none';
+      // Only remove if there are no other active action modals
+      if (!document.querySelector('.action-modal-overlay.active')) {
+        document.body.classList.remove('modal-open');
+      }
     }, 300);
   }
 }

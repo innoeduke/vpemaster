@@ -366,6 +366,18 @@
             <div class="list-view-filter-bar">
                 <div class="list-view-filters-left">
                     <div class="list-view-filter-group">
+                        <label for="list-start-date">{{ _('Start') }}:</label>
+                        <input type="date" id="list-start-date" class="list-row-filter-select"
+                               value="{{ start_date or (current_term['start'] if current_term else '') }}"
+                               onchange="applyDateFilter()">
+                    </div>
+                    <div class="list-view-filter-group">
+                        <label for="list-end-date">{{ _('End') }}:</label>
+                        <input type="date" id="list-end-date" class="list-row-filter-select"
+                               value="{{ end_date or (current_term['end'] if current_term else '') }}"
+                               onchange="applyDateFilter()">
+                    </div>
+                    <div class="list-view-filter-group">
                         <label for="list-role-filter">{{ _('Role') }}:</label>
                         <select id="list-role-filter" class="list-row-filter-select">
                             <option value="all">{{ _('All') }}</option>
@@ -553,6 +565,17 @@ window.submitPathwayTab = function(pathwayName) {
         input.value = pathwayName;
         form.submit();
     }
+};
+
+window.applyDateFilter = function() {
+    const startDate = document.getElementById('list-start-date')?.value;
+    const endDate = document.getElementById('list-end-date')?.value;
+    if (!startDate || !endDate) return;
+
+    const params = new URLSearchParams(window.location.search);
+    params.set('start_date', startDate);
+    params.set('end_date', endDate);
+    window.location.href = window.location.pathname + '?' + params.toString();
 };
 
 window.setDefaultFromFilter = function(cpId, cpName) {
