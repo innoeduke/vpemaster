@@ -91,7 +91,7 @@
                 </a>
                 {% if viewed_contact.user_id and viewed_contact.id != current_user.contact_id %}
                 <a href="{{ url_for('messages.messages', recipient_id=viewed_contact.user_id, recipient_name=viewed_contact.Name, mode='new') }}"
-                   class="btn-view-control btn-message-small" title="{{ _('Send Message') }}">
+                   class="btn-view-control btn-profile-small" title="{{ _('Send Message') }}">
                      <i class="fas fa-envelope"></i> <span class="btn-label">{{ _('Message') }}</span>
                 </a>
                 {% endif %}
