@@ -354,7 +354,18 @@
     <div class="journal-list-view-item" style="display: none;">
         <div class="list-view-filter-bar">
             <div class="list-view-filters-left">
-                {{ date_filter(start_date, end_date, current_term, onchange="applyDateFilter()", start_id="list-start-date", end_id="list-end-date", start_label=_('Start'), end_label=_('End'), input_class="list-row-filter-select") }}
+                <div class="list-view-filter-group">
+                    <label for="list-start-date">{{ _('Start') }}:</label>
+                    <input type="date" id="list-start-date" name="list-start-date" class="list-row-filter-select"
+                        value="{{ start_date or (current_term['start'] if current_term else '') }}"
+                        onchange="applyDateFilter()">
+                </div>
+                <div class="list-view-filter-group">
+                    <label for="list-end-date">{{ _('End') }}:</label>
+                    <input type="date" id="list-end-date" name="list-end-date" class="list-row-filter-select"
+                        value="{{ end_date or (current_term['end'] if current_term else '') }}"
+                        onchange="applyDateFilter()">
+                </div>
                 <div class="list-view-filter-group">
                     <label for="list-role-filter">{{ _('Role') }}:</label>
                     <select id="list-role-filter" class="list-row-filter-select">
@@ -530,6 +541,7 @@
 {% block speech_log_scripts %}
 {{ super() }}
 <script>
+    var viewedContactId = {{ viewed_contact.id if viewed_contact else 'null' }};
     var workingPath = "{{ viewed_contact.Current_Path or '' }}";
 </script>
 <script src="{{ url_for('static', filename='js/achievements.js') }}"></script>
@@ -543,6 +555,33 @@ window.submitPathwayTab = function(pathwayName) {
     const form = document.getElementById('speech-logs-filter-form');
     if (input && form) {
         input.value = pathwayName;
+        
+        // Preserve start_date and end_date in the form submission if they exist in the URL
+        const params = new URLSearchParams(window.location.search);
+        const startDate = params.get('start_date');
+        const endDate = params.get('end_date');
+        
+        if (startDate) {
+            let startInput = form.querySelector('input[name="start_date"]');
+            if (!startInput) {
+                startInput = document.createElement('input');
+                startInput.type = 'hidden';
+                startInput.name = 'start_date';
+                form.appendChild(startInput);
+            }
+            startInput.value = startDate;
+        }
+        if (endDate) {
+            let endInput = form.querySelector('input[name="end_date"]');
+            if (!endInput) {
+                endInput = document.createElement('input');
+                endInput.type = 'hidden';
+                endInput.name = 'end_date';
+                form.appendChild(endInput);
+            }
+            endInput.value = endDate;
+        }
+        
         form.submit();
     }
 };

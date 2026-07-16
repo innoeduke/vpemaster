@@ -2453,6 +2453,8 @@ input[type="date"].list-row-filter-select {
 	background-image: none;
 	padding: 4px 10px;
 	width: 130px;
+	height: 32px;
+	box-sizing: border-box;
 	cursor: default;
 }
 

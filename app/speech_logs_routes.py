@@ -1744,56 +1744,69 @@ def show_speech_logs():
         _attach_owners(search_logs)
         map_logs = search_logs
         list_logs = search_logs
+        
+        # Build pathway cache
+        project_ids = [log.Project_ID for log in map_logs if log.Project_ID]
+        pathway_cache = build_pathway_project_cache(project_ids=project_ids)
+        
+        grouped_logs = _process_logs(map_logs, filters, pathway_cache, view_mode=view_mode)
+        sorted_grouped_logs = _sort_and_consolidate(grouped_logs, view_mode=view_mode)
+        
+        # Calculate completion summary
+        speaker_user = _get_speaker_user(viewed_contact, is_member_view)
+        pp_mapping = _get_pathway_project_mapping(speaker_user, filters['pathway'])
+        completion_summary = _calculate_completion_summary(grouped_logs, pp_mapping, selected_pathway_name=filters['pathway'])
     else:
         # Member/admin view: split dataset so list-view date filter never leaks
         # into the map view.
-        map_filters = dict(filters)
-        map_filters['start_date'] = None  # map view: no date restriction
-        map_filters['end_date'] = None
+        map_filters = {
+            'speaker_id': filters['speaker_id'],
+            'pathway': filters['pathway'],
+            'meeting_id': None,
+            'role': None,
+            'start_date': None,
+            'end_date': None,
+            'status': None,
+            'level': None
+        }
         map_logs = _fetch_logs_with_filters(map_filters)
         _attach_owners(map_logs)
 
-        if user_supplied_dates:
-            list_logs = _fetch_logs_with_filters(filters)
-            _attach_owners(list_logs)
-        else:
-            list_logs = map_logs
+        # Unconditionally fetch list_logs with the date filters!
+        list_logs = _fetch_logs_with_filters(filters)
+        _attach_owners(list_logs)
 
-    # Backward-compat alias used by the rest of the function — the map view's
-    # dataset is the canonical "all logs" for pathway cache, processing, etc.
-    all_logs = map_logs
-    
-    # 6. Build pathway cache for performance
-    project_ids = [log.Project_ID for log in all_logs if log.Project_ID]
-    pathway_cache = build_pathway_project_cache(project_ids=project_ids)
-    
-    # 7. Process logs
-    grouped_logs = _process_logs(all_logs, filters, pathway_cache, view_mode=view_mode)
-    sorted_grouped_logs = _sort_and_consolidate(grouped_logs, view_mode=view_mode)
-    
-    # 7.1 Filter for display in Member View: Only show logs linked to non-generic projects
-    if is_member_view and view_mode != 'search':
-        filtered_logs = {}
-        for group, logs in sorted_grouped_logs.items():
-            group_filtered = []
-            for log in logs:
-                # Get Project_ID from SessionLog object or dictionary
-                pid = getattr(log, 'Project_ID', None)
-                if pid is None and isinstance(log, dict):
-                    pid = log.get('Project_ID')
+        # Build pathway cache
+        project_ids = [log.Project_ID for log in map_logs if log.Project_ID]
+        pathway_cache = build_pathway_project_cache(project_ids=project_ids)
+        
+        # Process logs for map view using map_filters
+        map_grouped_logs = _process_logs(map_logs, map_filters, pathway_cache, view_mode=view_mode)
+        sorted_grouped_logs = _sort_and_consolidate(map_grouped_logs, view_mode=view_mode)
+
+        # Filter for display in Member View: Only show logs linked to non-generic projects
+        if is_member_view and view_mode != 'search':
+            filtered_logs = {}
+            for group, logs in sorted_grouped_logs.items():
+                group_filtered = []
+                for log in logs:
+                    # Get Project_ID from SessionLog object or dictionary
+                    pid = getattr(log, 'Project_ID', None)
+                    if pid is None and isinstance(log, dict):
+                        pid = log.get('Project_ID')
+                    
+                    # Only include if it has a real project linked
+                    if pid and pid != ProjectID.GENERIC:
+                        group_filtered.append(log)
                 
-                # Only include if it has a real project linked
-                if pid and pid != ProjectID.GENERIC:
-                    group_filtered.append(log)
-            
-            if group_filtered:
-                filtered_logs[group] = group_filtered
-        sorted_grouped_logs = filtered_logs
-    
-    # 8. Calculate completion summary
-    speaker_user = _get_speaker_user(viewed_contact, is_member_view)
-    pp_mapping = _get_pathway_project_mapping(speaker_user, filters['pathway'])
-    completion_summary = _calculate_completion_summary(grouped_logs, pp_mapping, selected_pathway_name=filters['pathway'])
+                if group_filtered:
+                    filtered_logs[group] = group_filtered
+            sorted_grouped_logs = filtered_logs
+
+        # Calculate completion summary for map view using map_filters
+        speaker_user = _get_speaker_user(viewed_contact, is_member_view)
+        pp_mapping = _get_pathway_project_mapping(speaker_user, filters['pathway'])
+        completion_summary = _calculate_completion_summary(map_grouped_logs, pp_mapping, selected_pathway_name=filters['pathway'])
     
     # 9. Get achievement status
     completed_levels, active_level, achievement_dates = _get_achievement_status(
