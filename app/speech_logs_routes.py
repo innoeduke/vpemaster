@@ -372,7 +372,7 @@ def _get_pathway_info(viewed_contact, raw_pathway, filters):
                     'pathway_status': p_status or 'active',
                     'is_default': (selected_pathway == (viewed_contact.Current_Path if viewed_contact else None))
                 })
-                member_pathways.sort(key=lambda x: x['name'])
+                member_pathways.sort(key=lambda x: (not x.get('is_default', False), x['name']))
 
         # Available (unregistered) pathways — only populated when the current
         # user has SPEECH_LOGS_MANAGE, because the Register popover in the

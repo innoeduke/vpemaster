@@ -203,7 +203,7 @@ class Contact(db.Model):
                     'pathway_status': cp.pathway.status.name if hasattr(cp.pathway.status, 'name') else str(cp.pathway.status),
                     'is_default': cp.is_default
                 })
-        return sorted(pathways, key=lambda x: x['name'])
+        return sorted(pathways, key=lambda x: (not x.get('is_default', False), x['name']))
 
 
     def get_completed_levels(self, pathway_name):
