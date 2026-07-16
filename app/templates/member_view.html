@@ -154,7 +154,7 @@
         <!-- Pathway Tabs -->
         <div class="pathway-tabs">
             <!-- 1. In-Progress Pathways -->
-            {% for p in member_pathways if p.status != 'completed' %}
+            {% for p in member_pathways if p.status != 'completed' and p.type == 'pathway' and p.pathway_status == 'active' %}
                 {% set is_active = (selected_pathway_name == p.name) %}
                 <button type="button" class="pathway-tab {% if is_active %}active{% endif %}"
                         onclick="submitPathwayTab('{{ p.name|replace("'", "\\'") }}')">
@@ -165,7 +165,7 @@
             {% endfor %}
 
             <!-- 2. Completed Pathways -->
-            {% for p in member_pathways if p.status == 'completed' %}
+            {% for p in member_pathways if p.status == 'completed' and p.type == 'pathway' and p.pathway_status == 'active' %}
                 {% set is_active = (selected_pathway_name == p.name) %}
                 <button type="button" class="pathway-tab {% if is_active %}active{% endif %}"
                         onclick="submitPathwayTab('{{ p.name|replace("'", "\\'") }}')">

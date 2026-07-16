@@ -360,7 +360,17 @@ def _get_pathway_info(viewed_contact, raw_pathway, filters):
         # Ensure selected pathway is in list
         if selected_pathway and selected_pathway not in ('all', 'Non Pathway'):
             if not any(p['name'] == selected_pathway for p in member_pathways):
-                member_pathways.append({'name': selected_pathway, 'status': 'unknown', 'abbr': '', 'path_id': None})
+                db_path = Pathway.query.filter_by(name=selected_pathway).first()
+                p_type = db_path.type if db_path else 'pathway'
+                p_status = db_path.status.name if db_path and hasattr(db_path.status, 'name') else (str(db_path.status) if db_path else 'active')
+                member_pathways.append({
+                    'name': selected_pathway,
+                    'status': 'unknown',
+                    'abbr': db_path.abbr if db_path else '',
+                    'path_id': db_path.id if db_path else None,
+                    'type': p_type or 'pathway',
+                    'pathway_status': p_status or 'active'
+                })
                 member_pathways.sort(key=lambda x: x['name'])
 
         # Available (unregistered) pathways — only populated when the current

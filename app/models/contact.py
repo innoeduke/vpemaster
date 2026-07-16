@@ -199,7 +199,8 @@ class Contact(db.Model):
                     'status': cp.status,
                     'abbr': cp.pathway.abbr,
                     'path_id': cp.pathway.id,
-                    'type': cp.pathway.type or 'pathway'
+                    'type': cp.pathway.type or 'pathway',
+                    'pathway_status': cp.pathway.status.name if hasattr(cp.pathway.status, 'name') else str(cp.pathway.status)
                 })
         return sorted(pathways, key=lambda x: x['name'])
 
