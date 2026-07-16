@@ -158,7 +158,11 @@
                 {% set is_active = (selected_pathway_name == p.name) %}
                 <button type="button" class="pathway-tab {% if is_active %}active{% endif %}"
                         onclick="submitPathwayTab('{{ p.name|replace("'", "\\'") }}')">
-                    <span class="pathway-status-dot is-in-progress"></span>
+                    {% if p.is_default %}
+                        <i class="fas fa-star" style="color: #f1c40f; font-size: 0.85rem;" title="{{ _('Default Pathway') }}"></i>
+                    {% else %}
+                        <span class="pathway-status-dot is-in-progress"></span>
+                    {% endif %}
                     <span class="pathway-tab-text-full">{{ p.name }}</span>
                     <span class="pathway-tab-text-abbr">{{ p.abbr or p.name }}</span>
                 </button>
@@ -169,7 +173,11 @@
                 {% set is_active = (selected_pathway_name == p.name) %}
                 <button type="button" class="pathway-tab {% if is_active %}active{% endif %}"
                         onclick="submitPathwayTab('{{ p.name|replace("'", "\\'") }}')">
-                    <span class="pathway-status-dot is-completed"></span>
+                    {% if p.is_default %}
+                        <i class="fas fa-star" style="color: #f1c40f; font-size: 0.85rem;" title="{{ _('Default Pathway') }}"></i>
+                    {% else %}
+                        <span class="pathway-status-dot is-completed"></span>
+                    {% endif %}
                     <span class="pathway-tab-text-full">{{ p.name }}</span>
                     <span class="pathway-tab-text-abbr">{{ p.abbr or p.name }}</span>
                 </button>
