@@ -367,6 +367,7 @@ def _get_pathway_info(viewed_contact, raw_pathway, filters):
         # user has SPEECH_LOGS_MANAGE, because the Register popover in the
         # filter-control is gated to that permission. Mirrors the exclusion
         # logic in pathways_routes.get_contact_pathways.
+        manage_pathways = []
         if is_authorized(Permissions.SPEECH_LOGS_MANAGE):
             registered_pathway_ids = {
                 cp.pathway.id for cp in viewed_contact.registered_paths if cp.pathway
@@ -379,10 +380,59 @@ def _get_pathway_info(viewed_contact, raw_pathway, filters):
                 {'pathway_id': p.id, 'name': p.name, 'abbr': p.abbr, 'type': p.type}
                 for p in all_active if p.id not in registered_pathway_ids
             ]
+
+            # Build comprehensive list of pathways/programs for Manage Paths modal
+            registered_by_id = {}
+            for cp in viewed_contact.registered_paths:
+                if cp.pathway:
+                    registered_by_id[cp.pathway.id] = cp
+
+            # Query all paths and programs from DB (excluding Non Pathway)
+            all_db_pathways = Pathway.query.filter(
+                Pathway.type.in_(['pathway', 'traditional', 'program'])
+            ).all()
+
+            for p in all_db_pathways:
+                is_registered = p.id in registered_by_id
+                is_default = False
+                status = 'active'
+                if is_registered:
+                    cp = registered_by_id[p.id]
+                    is_default = cp.is_default or (p.name == viewed_contact.Current_Path)
+                    status = cp.status
+                
+                # Determine Sort Group
+                if is_registered and is_default:
+                    group = 1
+                elif is_registered:
+                    group = 2
+                elif not is_registered and p.type == 'pathway' and p.status == 'active':
+                    group = 3
+                elif not is_registered and (p.type == 'traditional' or (p.type == 'pathway' and p.status in ('inactive', 'obsolete'))):
+                    group = 4
+                elif not is_registered and p.type == 'program':
+                    group = 5
+                else:
+                    group = 5
+
+                manage_pathways.append({
+                    'pathway_id': p.id,
+                    'name': p.name,
+                    'abbr': p.abbr,
+                    'type': p.type,
+                    'is_registered': is_registered,
+                    'is_default': is_default,
+                    'status': status,
+                    'group': group
+                })
+            
+            manage_pathways.sort(key=lambda x: (x['group'], x['name']))
+
     return {
         'selected_pathway': selected_pathway,
         'member_pathways': member_pathways,
         'available_pathways': available_pathways,
+        'manage_pathways': manage_pathways,
         'impersonated_user_name': viewed_contact.Name if viewed_contact else None
     }
 
@@ -2018,6 +2068,7 @@ def show_speech_logs():
         active_registered_badges=active_registered_badges,
         member_pathways=pathway_info['member_pathways'],
         available_pathways=pathway_info['available_pathways'],
+        manage_pathways=pathway_info.get('manage_pathways', []),
         active_level=active_level,
         ProjectID=ProjectID,
         upcoming_meetings=upcoming_meetings,

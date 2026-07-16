@@ -76,11 +76,11 @@
 
             <div class="header-profile-action">
                 {% set can_manage_pathways = is_authorized(Permissions.SPEECH_LOGS_MANAGE) %}
-                {% if can_manage_pathways and available_pathways %}
+                {% if can_manage_pathways and (available_pathways or member_pathways) %}
                 <button type="button" class="btn-view-control btn-profile-small"
                         onclick="openRegisterPathwayModal();"
-                        title="{{ _('Register Path') }}">
-                    <i class="fas fa-plus-circle"></i> <span class="btn-label">{{ _('Register Path') }}</span>
+                        title="{{ _('Manage Paths') }}">
+                    <i class="fas fa-tasks"></i> <span class="btn-label">{{ _('Manage Paths') }}</span>
                 </button>
                 {% endif %}
 
@@ -509,15 +509,16 @@
         {% include 'partials/_achievement_modal.html' %}
     {% endif %}
 {% endif %}
-<!-- Register Pathway Modal -->
+<!-- Manage Pathways Modal -->
 {% set register_pathway_footer_buttons %}
     <button type="button" onclick="closeRegisterPathwayModal()" class="btn btn-cancel btn-danger">{{ _('Cancel') }}</button>
+    <button type="button" id="btn-confirm-set-default-pathway" disabled onclick="confirmSetDefaultPathway()" class="btn btn-primary" style="opacity: 0.5;">{{ _('Set Default') }}</button>
     <button type="button" id="btn-confirm-register-pathway" disabled onclick="confirmRegisterPathway()" class="btn btn-success" style="opacity: 0.5;">{{ _('Register') }}</button>
 {% endset %}
 
 {% call render_action_modal(
     id='registerPathwayModal',
-    title='Register New Path',
+    title='Manage Paths',
     form_id='registerPathwayForm',
     modal_max_width='440px',
     footer_buttons=register_pathway_footer_buttons
@@ -527,12 +528,46 @@
     {% endcall %}
 
     <div style="max-height: 220px; overflow-y: auto; margin-bottom: 16px; padding: 4px;">
-        {% for p in available_pathways %}
-        <div class="register-pathway-option" data-pathway-id="{{ p.pathway_id }}" data-pathway-name="{{ p.name }}" data-pathway-type="{{ p.type or 'pathway' }}" onclick="selectRegisterPathway(this, {{ p.pathway_id }}, '{{ p.name|replace("'", "\\'") }}')">
-            <i class="far fa-circle select-indicator"></i>
-            <span style="font-size: 13px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #333; flex: 1;">{{ p.name }}</span>
-            {% if p.abbr %}<span style="font-size: 11px; color: #888;">({{ p.abbr }})</span>{% endif %}
-        </div>
+        {% for p in manage_pathways %}
+            {% set is_registered = p.is_registered %}
+            {% set is_default = p.is_default %}
+            {% set path_type = p.type %}
+            <div class="register-pathway-option {% if is_registered %}registered-pathway{% else %}unregistered-pathway{% endif %}" 
+                 data-pathway-id="{{ p.pathway_id }}" 
+                 data-pathway-name="{{ p.name }}" 
+                 data-pathway-type="{{ p.type or 'pathway' }}" 
+                 data-registered="{{ 'true' if is_registered else 'false' }}" 
+                 data-is-default="{{ 'true' if is_default else 'false' }}" 
+                 onclick="selectRegisterPathway(this, {{ p.pathway_id }}, '{{ p.name|replace("'", "\\'") }}')">
+                
+                <!-- Status/Select indicator -->
+                {% if is_registered %}
+                    <i class="{% if is_default %}fas fa-star{% else %}far fa-check-circle{% endif %} select-indicator" style="color: {% if is_default %}#ffc107{% else %}#28a745{% endif %};"></i>
+                {% else %}
+                    <i class="far fa-circle select-indicator" style="color: #ccc;"></i>
+                {% endif %}
+                
+                <!-- Type Icon (path vs program) -->
+                {% if path_type == 'program' %}
+                    <i class="fas fa-graduation-cap" style="color: #4a5568; margin-right: 6px; font-size: 1.1rem;" title="{{ _('Program') }}"></i>
+                {% else %}
+                    <i class="fas fa-route" style="color: #4a5568; margin-right: 6px; font-size: 1.1rem;" title="{{ _('Pathway') }}"></i>
+                {% endif %}
+                
+                <span style="font-size: 13px; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #333; flex: 1;">
+                    {{ p.name }}
+                    {% if is_registered %}
+                        <span style="font-weight: 400; font-size: 0.85em; color: #666; margin-left: 6px;">
+                            ({% if is_default %}{{ _('Default') }}{% else %}{{ _('Registered') }}{% endif %})
+                        </span>
+                    {% elif p.group == 4 %}
+                        <span style="font-weight: 400; font-size: 0.85em; color: #888; margin-left: 6px;">
+                            ({{ _('Legacy') }})
+                        </span>
+                    {% endif %}
+                </span>
+                {% if p.abbr %}<span style="font-size: 11px; color: #888;">({{ p.abbr }})</span>{% endif %}
+            </div>
         {% endfor %}
     </div>
 {% endcall %}

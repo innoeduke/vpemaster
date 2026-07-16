@@ -198,7 +198,8 @@ class Contact(db.Model):
                     'name': cp.pathway.name,
                     'status': cp.status,
                     'abbr': cp.pathway.abbr,
-                    'path_id': cp.pathway.id
+                    'path_id': cp.pathway.id,
+                    'type': cp.pathway.type or 'pathway'
                 })
         return sorted(pathways, key=lambda x: x['name'])
 
