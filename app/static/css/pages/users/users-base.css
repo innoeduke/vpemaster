@@ -180,6 +180,30 @@
   cursor: pointer;
 }
 
+#user-settings-table .contact-avatar-small {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #772432;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+#user-settings-table .contact-avatar-placeholder-small {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a0aec0;
+  font-size: 0.8em;
+  border: 1px solid #772432;
+  flex-shrink: 0;
+}
+
 /* Locked username field in the edit-user modal */
 #userModal input.readonly-field {
   background-color: #f3f4f6;

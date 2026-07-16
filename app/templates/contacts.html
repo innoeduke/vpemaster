@@ -1,4 +1,4 @@
-{% extends "base.html" %} {% from "partials/_button_macros.html" import btn %} {% block title %}{{ _('Contacts') }}{% endblock %}
+{% extends "base.html" %} {% from "partials/_button_macros.html" import btn %} {% from "partials/_date_filter.html" import date_filter %} {% block title %}{{ _('Contacts') }}{% endblock %}
 {% block head_extra %}
   {% assets "css_contacts" %}
   <link rel="stylesheet" href="{{ ASSET_URL }}?v=1.0.4">
@@ -26,16 +26,7 @@
     <!-- Date Filter for Metrics -->
     <form method="GET" action="{{ url_for('contacts_bp.show_contacts') }}" id="contacts-term-filter-form"
       class="date-filter-form">
-      <div class="date-filter-group">
-        <div class="date-input-wrapper">
-          <label class="filter-label" for="start_date">{{ _('Start Date') }}:</label>
-          <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date or (current_term['start'] if current_term else '') }}" onchange="updateDateSelection()">
-        </div>
-        <div class="date-input-wrapper">
-          <label class="filter-label" for="end_date">{{ _('End Date') }}:</label>
-          <input type="date" id="end_date" name="end_date" class="form-control" value="{{ end_date or (current_term['end'] if current_term else '') }}" onchange="updateDateSelection()">
-        </div>
-      </div>
+      {{ date_filter(start_date, end_date, current_term, onchange="updateDateSelection()") }}
     </form>
  
     <div class="search-and-buttons">

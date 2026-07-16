@@ -161,6 +161,52 @@
 	flex-wrap: wrap;
 }
 
+/* --- Date Filter Form (Speech Logs / Projects Page) --- */
+.date-filter-form {
+	flex: none;
+}
+
+.date-filter-group {
+	display: flex;
+	gap: 15px;
+	align-items: flex-end;
+}
+
+.date-input-wrapper {
+	display: flex;
+	flex-direction: column;
+}
+
+.date-input-wrapper input[type="date"] {
+	position: relative;
+	width: 140px;
+	height: 38px;
+	padding: 8px 32px 8px 12px;
+	box-sizing: border-box;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	background-color: #f8fafc;
+	color: #334155;
+	font-family: "Montserrat", "Inter", sans-serif;
+	font-size: 0.9rem;
+}
+
+.date-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+	position: absolute;
+	right: 12px;
+	top: 50%;
+	transform: translateY(-50%);
+	cursor: pointer;
+	opacity: 0.6;
+	transition: opacity 0.2s;
+	margin: 0;
+	padding: 0;
+}
+
+.date-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator:hover {
+	opacity: 1;
+}
+
 .flex-center-gap {
 	display: flex;
 	align-items: center;
@@ -2631,7 +2677,7 @@ input[type="date"].list-row-filter-select {
 	gap: 8px;
 	transition: all 0.2s ease;
 	position: relative;
-	z-index: 1;
+	z-index: var(--z-inline);
 	height: 36px;
 	margin-bottom: -1px;
 }
@@ -2656,7 +2702,7 @@ input[type="date"].list-row-filter-select {
 	color: #772432;
 	border-color: #cbd5e1;
 	border-bottom: 1px solid #ffffff;
-	z-index: 2;
+	z-index: var(--z-inline-high);
 	height: 38px;
 	border-top: 3px solid #772432;
 	padding-top: 4px;

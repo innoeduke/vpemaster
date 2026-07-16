@@ -1,0 +1,18 @@
+{# Shared Date Filter Macro #}
+
+{% macro date_filter(start_date=none, end_date=none, current_term=none, onchange='this.form.submit()', start_id='start_date', end_id='end_date', start_label=none, end_label=none, input_class='form-control') %}
+<div class="date-filter-group">
+    <div class="date-input-wrapper">
+        <label class="filter-label" for="{{ start_id }}">{{ start_label or _('Start Date') }}:</label>
+        <input type="date" id="{{ start_id }}" name="{{ start_id }}" class="{{ input_class }}"
+            value="{{ start_date or (current_term['start'] if current_term else '') }}"
+            onchange="{{ onchange }}">
+    </div>
+    <div class="date-input-wrapper">
+        <label class="filter-label" for="{{ end_id }}">{{ end_label or _('End Date') }}:</label>
+        <input type="date" id="{{ end_id }}" name="{{ end_id }}" class="{{ input_class }}"
+            value="{{ end_date or (current_term['end'] if current_term else '') }}"
+            onchange="{{ onchange }}">
+    </div>
+</div>
+{% endmacro %}

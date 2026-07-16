@@ -54,6 +54,55 @@
     gap: 5px;
   }
 
+  .date-filter-form {
+    max-width: none;
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  .date-filter-group {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .date-input-wrapper {
+    flex: 1 1 0 !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .date-input-wrapper input[type="date"],
+  .date-input-wrapper input[type="date"].form-control {
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    min-width: 0 !important;
+    font-size: 0.85rem;
+    padding: 6px 32px 6px 12px !important;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background-color: #f8fafc;
+    color: #334155;
+    font-family: "Montserrat", "Inter", sans-serif;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .date-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+    position: absolute !important;
+    right: 12px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
   /* Ensure the form and its stacked groups take full width */
   #speech-logs-filter-form {
     width: 100%;

@@ -1,4 +1,5 @@
 {% extends "speech_logs.html" %}
+{% from "partials/_date_filter.html" import date_filter %}
 
 {% block speech_view_title %}{{ _('Projects') }}{% endblock %}
 
@@ -12,20 +13,7 @@
 		<div class="filter-row-premium">
 			<div class="filters-set">
 				<div class="form-group filter-group-premium date-filter-form">
-					<div class="date-filter-group">
-						<div class="date-input-wrapper">
-							<label class="filter-label" for="start_date">{{ _('Start Date') }}:</label>
-							<input type="date" id="start_date" name="start_date" class="form-control"
-								value="{{ start_date or (current_term['start'] if current_term else '') }}"
-								onchange="this.form.submit()">
-						</div>
-						<div class="date-input-wrapper">
-							<label class="filter-label" for="end_date">{{ _('End Date') }}:</label>
-							<input type="date" id="end_date" name="end_date" class="form-control"
-								value="{{ end_date or (current_term['end'] if current_term else '') }}"
-								onchange="this.form.submit()">
-						</div>
-					</div>
+					{{ date_filter(start_date, end_date, current_term, onchange="this.form.submit()") }}
 				</div>
 				<div class="form-group filter-group-premium flex-1">
 					<div style="display: flex; flex-direction: column; flex: 1; min-width: 200px;">
@@ -51,7 +39,7 @@
 				</div>
 			</div>
             {% if can_view_all %}
-            <div class="search-container filter-group-premium" style="margin-left: auto; margin-right: 15px;">
+            <div class="search-container filter-group-premium" style="margin-left: auto; margin-right: 15px; flex-shrink: 0;">
                 <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" id="global-search-form" style="display: flex; align-items: center; position: relative;">
                     <input type="hidden" name="view_mode" value="search">
                     <input type="text" name="q" class="search-box" placeholder="{{ _('Search sessions (e.g. name, role)...') }}" value="{{ request.args.get('q', '') }}" style="width: 340px; padding-left: 35px; border-radius: 6px; border: 1px solid #ddd; height: 36px; box-sizing: border-box; font-family: 'Montserrat', sans-serif;">
