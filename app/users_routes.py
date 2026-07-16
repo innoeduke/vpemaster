@@ -754,6 +754,9 @@ def member_cards():
         flash("You don't have permission to view this page.", 'error')
         return redirect(url_for('agenda_bp.agenda'))
 
+    can_manage_speech_logs = is_authorized(Permissions.SPEECH_LOGS_MANAGE)
+
     return render_template('member_cards.html',
-                           can_view_members=can_view_members)
+                           can_view_members=can_view_members,
+                           can_manage_speech_logs=can_manage_speech_logs)
 

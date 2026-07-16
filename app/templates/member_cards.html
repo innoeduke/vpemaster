@@ -93,15 +93,16 @@
     }
 
     const canViewMembers = JSON.parse('{{ can_view_members|tojson }}');
+    const canManageSpeechLogs = JSON.parse('{{ can_manage_speech_logs|tojson }}');
 
     function renderCards(members) {
         const grid = document.getElementById('memberCardsGrid');
         grid.innerHTML = '';
         
         members.forEach(member => {
-            const tagName = canViewMembers ? 'a' : 'div';
+            const tagName = canManageSpeechLogs ? 'a' : 'div';
             const card = document.createElement(tagName);
-            if (canViewMembers) {
+            if (canManageSpeechLogs) {
                 card.href = `/speech_logs?speaker_id=${member.id}&view_mode=member`;
             }
             card.className = 'member-card';

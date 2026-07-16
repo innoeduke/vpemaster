@@ -599,8 +599,8 @@ async function loadUsersAsync() {
           avatarHtml = `<div class="contact-avatar-placeholder-small"><i class="fas fa-user"></i></div>`;
         }
 
-        const nameClickable = user.contact_id ? 'clickable-cell' : '';
-        const nameOnclick = user.contact_id
+        const nameClickable = (user.contact_id && typeof CAN_MANAGE_SPEECH_LOGS !== 'undefined' && CAN_MANAGE_SPEECH_LOGS) ? 'clickable-cell' : '';
+        const nameOnclick = (user.contact_id && typeof CAN_MANAGE_SPEECH_LOGS !== 'undefined' && CAN_MANAGE_SPEECH_LOGS)
           ? `onclick="window.location.href='/speech_logs?speaker_id=${user.contact_id}&view_mode=member'" title="${isChinese ? '查看成员页面' : 'View member page'}"`
           : '';
 
@@ -722,8 +722,8 @@ async function fetchRemainingUsers() {
         avatarHtml = `<div class="contact-avatar-placeholder-small"><i class="fas fa-user"></i></div>`;
       }
 
-      const nameClickable = user.contact_id ? 'clickable-cell' : '';
-      const nameOnclick = user.contact_id
+      const nameClickable = (user.contact_id && typeof CAN_MANAGE_SPEECH_LOGS !== 'undefined' && CAN_MANAGE_SPEECH_LOGS) ? 'clickable-cell' : '';
+      const nameOnclick = (user.contact_id && typeof CAN_MANAGE_SPEECH_LOGS !== 'undefined' && CAN_MANAGE_SPEECH_LOGS)
         ? `onclick="window.location.href='/speech_logs?speaker_id=${user.contact_id}&view_mode=member'" title="${isChinese ? '查看成员页面' : 'View member page'}"`
         : '';
       const escapedName = (user.contact_name || user.username).replace(/'/g, "\\'").replace(/"/g, '&quot;');
