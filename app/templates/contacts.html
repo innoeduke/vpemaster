@@ -1,7 +1,10 @@
-{% extends "base.html" %} {% from "partials/_button_macros.html" import btn %} {% block title %}{{ _('Contacts') }}{% endblock %} {% block
-head_extra %}
- 
-{% endblock %} {% block content %}
+{% extends "base.html" %} {% from "partials/_button_macros.html" import btn %} {% block title %}{{ _('Contacts') }}{% endblock %}
+{% block head_extra %}
+  {% assets "css_contacts" %}
+  <link rel="stylesheet" href="{{ ASSET_URL }}?v=1.0.4">
+  {% endassets %}
+{% endblock %}
+{% block content %}
 <div class="contacts-container">
 <h1><i class="fas fa-address-book"></i> {{ _('Contacts') }}</h1>
  
@@ -251,7 +254,9 @@ head_extra %}
 
 </div>
 
+{% if is_authorized(Permissions.ROSTER_EDIT) %}
 {% include '_contact_modal.html' %} {% include '_duplicate_modal.html' %} {% include '_merge_modal.html' %}
+{% endif %}
 
 <script id="contacts-data" type="application/json">
   {{ initial_contacts|tojson }}

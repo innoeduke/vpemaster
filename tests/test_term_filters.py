@@ -105,8 +105,8 @@ def test_contacts_term_filter_integration(auth_client, app):
         d1 = datetime.strptime(t1['start'], '%Y-%m-%d').date()
         d2 = datetime.strptime(t2['start'], '%Y-%m-%d').date()
         
-        m1 = Meeting(Meeting_Date=d1, Meeting_Number=9001, club_id=club_id)
-        m2 = Meeting(Meeting_Date=d2, Meeting_Number=9002, club_id=club_id)
+        m1 = Meeting(Meeting_Date=d1, Meeting_Number=9001, club_id=club_id, status='finished')
+        m2 = Meeting(Meeting_Date=d2, Meeting_Number=9002, club_id=club_id, status='finished')
         db.session.add(m1)
         db.session.add(m2)
         

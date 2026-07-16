@@ -123,6 +123,7 @@ class UserClub(db.Model):
         db.UniqueConstraint('user_id', 'club_id', name='uq_user_club'),
         db.Index('ix_user_clubs_user', 'user_id'),
         db.Index('ix_user_clubs_club', 'club_id'),
+        db.Index('ix_user_clubs_contact', 'contact_id'),
     )
     
     def __repr__(self):

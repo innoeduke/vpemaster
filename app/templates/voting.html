@@ -3,6 +3,12 @@
 
 {% block title %}{{ _('Voting') }}{% endblock %}
 
+{% block head_extra %}
+    {% assets "css_voting" %}
+    <link rel="stylesheet" href="{{ ASSET_URL }}?v=1.0.4">
+    {% endassets %}
+{% endblock %}
+
 {% block header_title %}{{ _('Voting Form') }}{% endblock %}
 
 {% block content %}

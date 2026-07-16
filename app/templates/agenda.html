@@ -4,6 +4,12 @@
 
 {% block title %}{{ _('Meeting Agenda') }}{% endblock %}
 
+{% block head_extra %}
+    {% assets "css_agenda" %}
+    <link rel="stylesheet" href="{{ ASSET_URL }}?v=1.0.4">
+    {% endassets %}
+{% endblock %}
+
 
 
 
@@ -462,6 +468,7 @@
         </div>
     </div>
 
+    {% if current_user.is_authenticated %}
     {% include '_speech_edit_modal.html' %}
     {% include '_contact_modal.html' %}
     {% include '_duplicate_modal.html' %}
@@ -479,6 +486,7 @@
     <script defer src="{{ url_for('static', filename='js/speech_modal.js') }}?v={{ 'js/speech_modal.js' | static_version }}"></script>
     <script defer src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/components/custom_modal.js') }}"></script>
+    {% endif %}
     <script defer src="{{ url_for('static', filename='vendor/js/html2canvas.min.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/agenda.js') }}?v={{ 'js/agenda.js' | static_version }}"></script>
     {% include 'components/custom_modal.html' %}

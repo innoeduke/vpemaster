@@ -208,7 +208,11 @@ def _get_agenda_logs(meeting_id):
     # before re-querying.
     if meeting_id and logs:
         omrs = db.session.query(OwnerMeetingRoles)\
-            .options(orm.joinedload(OwnerMeetingRoles.contact))\
+            .options(
+                orm.joinedload(OwnerMeetingRoles.contact)
+                .selectinload(Contact.registered_paths)
+                .joinedload(ContactPath.pathway)
+            )\
             .filter(OwnerMeetingRoles.meeting_id == meeting_id)\
             .all()
         omr_index = {}

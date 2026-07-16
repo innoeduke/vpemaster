@@ -71,7 +71,11 @@ def short_circuit_cached_voting():
         club_id = get_current_club_id()
 
     cache_key = f"voting_html_guest_{club_id}_{meeting_id or 'default'}"
-    cached_html = cache.get(cache_key)
+    try:
+        cached_html = cache.get(cache_key)
+    except Exception:
+        cached_html = None
+        
     if cached_html is None:
         return None
 
@@ -775,7 +779,10 @@ def voting(meeting_id):
     if is_cacheable:
         club_id = get_current_club_id()
         cache_key = f"voting_html_guest_{club_id}_{meeting_id or 'default'}"
-        cached_html = cache.get(cache_key)
+        try:
+            cached_html = cache.get(cache_key)
+        except Exception:
+            cached_html = None
         if cached_html is not None:
             from flask import make_response
             resp = make_response(cached_html)
@@ -785,8 +792,11 @@ def voting(meeting_id):
     context = _get_voting_page_context(meeting_id)
     rendered = render_template('voting.html', **context)
 
-    if is_cacheable:
-        cache.set(cache_key, rendered, timeout=30)
+    if is_cacheable and cache_key:
+        try:
+            cache.set(cache_key, rendered, timeout=30)
+        except Exception:
+            pass
 
     from flask import make_response
     resp = make_response(rendered)

@@ -19,33 +19,17 @@ css_all = Bundle(
     'css/components/date_range_picker.css',
     'css/components/trend_btn.css',
     'css/components/tm-action-btn.css',
-    # Agenda CSS (modular structure)
-    'css/pages/agenda/agenda-base.css',
-    'css/pages/agenda/agenda-desktop.css',
-    'css/pages/agenda/agenda-ipad.css',
-    'css/pages/agenda/agenda-mobile.css',
     # Booking CSS (modular structure)
     'css/pages/booking/booking-base.css',
     'css/pages/booking/booking-desktop.css',
     'css/pages/booking/booking-ipad.css',
     'css/pages/booking/booking-mobile.css',
-    # Voting CSS (modular structure)
-    'css/pages/voting/voting-base.css',
-    'css/pages/voting/voting-desktop.css',
-    'css/pages/voting/voting-ipad.css',
-    'css/pages/voting/voting-mobile.css',
     # Clubs CSS (modular structure)
     'css/pages/clubs/clubs-base.css',
     'css/pages/clubs/clubs-desktop.css',
     'css/pages/clubs/clubs-ipad.css',
     'css/pages/clubs/clubs-mobile.css',
     'css/pages/clubs/clubs-page.css',
-    # Contacts CSS (modular structure)
-    'css/pages/contacts/contacts-base.css',
-    'css/pages/contacts/contacts-desktop.css',
-    'css/pages/contacts/contacts-ipad.css',
-    'css/pages/contacts/contacts-mobile.css',
-    'css/pages/contacts/member-cards.css',
     # Users (Members) CSS (modular structure)
     'css/pages/users/users-base.css',
     'css/pages/users/users-mobile.css',
@@ -87,9 +71,6 @@ css_all = Bundle(
     'css/pages/profile/profile-page.css',
     # Modals CSS
     'css/pages/modals/waitlist_detail_modal.css',
-    'css/pages/modals/merge_modal.css',
-    'css/pages/modals/speech_edit_modal.css',
-    'css/pages/modals/meeting_details_modal.css',
     'css/pages/modals/compose_message_modal.css',
     # Page-specific CSS
     'css/pages/about_club.css',
@@ -99,8 +80,6 @@ css_all = Bundle(
     'css/pages/issues/list.css',
     'css/pages/issues/detail.css',
     'css/pages/issues/new_issue_modal.css',
-    # Voting page CSS
-    'css/pages/voting/voting-page.css',
     # Settings page CSS
     'css/pages/settings/settings-page.css',
     # Uploads page CSS
@@ -115,4 +94,39 @@ css_all = Bundle(
     output='css/packed.css'
 )
 
+css_agenda = Bundle(
+    'css/pages/agenda/agenda-base.css',
+    'css/pages/agenda/agenda-desktop.css',
+    'css/pages/agenda/agenda-ipad.css',
+    'css/pages/agenda/agenda-mobile.css',
+    'css/pages/modals/speech_edit_modal.css',
+    'css/pages/modals/meeting_details_modal.css',
+    filters='cssmin',
+    output='css/agenda_packed.css'
+)
+
+css_voting = Bundle(
+    'css/pages/voting/voting-base.css',
+    'css/pages/voting/voting-desktop.css',
+    'css/pages/voting/voting-ipad.css',
+    'css/pages/voting/voting-mobile.css',
+    'css/pages/voting/voting-page.css',
+    filters='cssmin',
+    output='css/voting_packed.css'
+)
+
+css_contacts = Bundle(
+    'css/pages/contacts/contacts-base.css',
+    'css/pages/contacts/contacts-desktop.css',
+    'css/pages/contacts/contacts-ipad.css',
+    'css/pages/contacts/contacts-mobile.css',
+    'css/pages/contacts/member-cards.css',
+    'css/pages/modals/merge_modal.css',
+    filters='cssmin',
+    output='css/contacts_packed.css'
+)
+
 assets.register('css_all', css_all)
+assets.register('css_agenda', css_agenda)
+assets.register('css_voting', css_voting)
+assets.register('css_contacts', css_contacts)

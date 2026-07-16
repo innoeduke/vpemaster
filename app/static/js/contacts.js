@@ -48,11 +48,32 @@ async function fetchAndCacheContacts() {
     allContactsCache = INITIAL_CONTACTS;
     initialFirstPageOnly = true;
     INITIAL_CONTACTS = null; // Consume once so subsequent refreshes fetch from API
-    // Kick off the background load for the rest of the rows (page 2+)
-    // so pagination works without waiting for the user to navigate.
-    fetchRemainingContacts().then(() => {
-      applyFiltersAndPaginate();
-    });
+
+    // Defer remaining contacts load if on mobile to save bandwidth/CPU
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+      const triggerLazyLoad = () => {
+        lazyFetchRemainingContacts();
+        document.removeEventListener('click', triggerLazyLoad);
+        document.removeEventListener('keydown', triggerLazyLoad);
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+          searchInput.removeEventListener('focus', triggerLazyLoad);
+        }
+      };
+      document.addEventListener('click', triggerLazyLoad);
+      document.addEventListener('keydown', triggerLazyLoad);
+      setTimeout(() => {
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+          searchInput.addEventListener('focus', triggerLazyLoad);
+        }
+      }, 100);
+    } else {
+      fetchRemainingContacts().then(() => {
+        applyFiltersAndPaginate();
+      });
+    }
     return allContactsCache;
   }
 
@@ -93,6 +114,20 @@ async function fetchRemainingContacts() {
   } catch (error) {
     console.error('Error fetching remaining contacts:', error);
   }
+}
+
+let remainingContactsFetched = false;
+let remainingContactsPromise = null;
+
+function lazyFetchRemainingContacts() {
+  if (remainingContactsFetched) return Promise.resolve();
+  if (remainingContactsPromise) return remainingContactsPromise;
+
+  remainingContactsPromise = fetchRemainingContacts().then(() => {
+    remainingContactsFetched = true;
+    applyFiltersAndPaginate();
+  });
+  return remainingContactsPromise;
 }
 
 /**
@@ -589,8 +624,22 @@ document.addEventListener("DOMContentLoaded", function () {
           allContactsCache = data.rows;
           initialFirstPageOnly = true;
           applyFiltersAndPaginate();
-          // Continue loading the rest in the background.
-          fetchRemainingContacts().then(() => applyFiltersAndPaginate());
+          // Continue loading the rest in the background, or lazy-load if on mobile.
+          if (window.innerWidth <= 768) {
+            const triggerLazyLoad = () => {
+              lazyFetchRemainingContacts();
+              document.removeEventListener('click', triggerLazyLoad);
+              document.removeEventListener('keydown', triggerLazyLoad);
+              const searchInput = document.getElementById('searchInput');
+              if (searchInput) {
+                searchInput.removeEventListener('focus', triggerLazyLoad);
+              }
+            };
+            document.addEventListener('click', triggerLazyLoad);
+            document.addEventListener('keydown', triggerLazyLoad);
+          } else {
+            fetchRemainingContacts().then(() => applyFiltersAndPaginate());
+          }
         }
       })
       .catch(() => { /* fall back to whatever was server-rendered */ });

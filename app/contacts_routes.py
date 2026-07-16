@@ -940,6 +940,9 @@ def _build_contacts_data(per_page=None, offset=0):
     from .models.excomm_officer import ExcommOfficer
     current_excomm = (
         ExComm.query
+        .options(
+            db.selectinload(ExComm.officers).joinedload(ExcommOfficer.meeting_role)
+        )
         .filter(ExComm.club_id == club_id)
         .filter((ExComm.start_date.is_(None)) | (ExComm.start_date <= _date.today()))
         .filter((ExComm.end_date.is_(None)) | (ExComm.end_date >= _date.today()))
