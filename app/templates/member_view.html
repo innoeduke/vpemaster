@@ -159,7 +159,7 @@
                 <button type="button" class="pathway-tab {% if is_active %}active{% endif %}"
                         onclick="submitPathwayTab('{{ p.name|replace("'", "\\'") }}')">
                     {% if p.is_default %}
-                        <i class="fas fa-star" style="color: #f1c40f; font-size: 0.85rem;" title="{{ _('Default Pathway') }}"></i>
+                        <i class="fas fa-star" style="color: #f1c40f; font-size: 0.85rem;" title="{{ _('Default Pathway (In-Progress)') }}"></i>
                     {% else %}
                         <span class="pathway-status-dot is-in-progress"></span>
                     {% endif %}
@@ -174,7 +174,7 @@
                 <button type="button" class="pathway-tab {% if is_active %}active{% endif %}"
                         onclick="submitPathwayTab('{{ p.name|replace("'", "\\'") }}')">
                     {% if p.is_default %}
-                        <i class="fas fa-star" style="color: #f1c40f; font-size: 0.85rem;" title="{{ _('Default Pathway') }}"></i>
+                        <i class="fas fa-star" style="color: #22c55e; font-size: 0.85rem;" title="{{ _('Default Pathway (Completed)') }}"></i>
                     {% else %}
                         <span class="pathway-status-dot is-completed"></span>
                     {% endif %}
