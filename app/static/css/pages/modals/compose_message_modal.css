@@ -377,11 +377,15 @@
         margin-top: 6px;
         font-family: 'Inter', sans-serif;
         font-size: 0.8125rem;
-        color: var(--warn);
+        color: var(--mute);
     }
 
     .compose-recipient-error i {
         font-size: 0.875rem;
+    }
+
+    .compose-recipient-error[hidden] {
+        display: none !important;
     }
 
     .compose-recipient-field.has-error {

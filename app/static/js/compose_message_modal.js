@@ -8,16 +8,16 @@
 
         // Reset selection
         selectedRecipients.length = 0;
-        renderRecipientChips();
         hideRecipientError();
 
         if (recipientId && recipientName) {
             selectedRecipients.push({ id: recipientId, name: recipientName, home_club: '' });
-            renderRecipientChips();
             modalTitle.textContent = (mode === 'new') ? 'New Message' : 'Reply';
         } else {
             modalTitle.textContent = 'New Message';
         }
+
+        renderRecipientChips();
 
         if (subject) {
             document.getElementById('subject').value = subject;
@@ -45,8 +45,8 @@
         setTimeout(() => {
             document.getElementById('composeForm').reset();
             selectedRecipients.length = 0;
-            renderRecipientChips();
             hideRecipientError();
+            renderRecipientChips();
             document.getElementById('recipient_results').style.display = 'none';
             document.getElementById('char_count').textContent = '0';
             modal.querySelector('.compose-title').textContent = 'New Message';
@@ -76,7 +76,12 @@
         search.placeholder = selectedRecipients.length === 0
             ? 'Search for a recipient…'
             : (selectedRecipients.length === 1 ? 'Add another recipient…' : 'Add more…');
-        if (selectedRecipients.length > 0) hideRecipientError();
+        
+        // Show the hint if no recipients are selected, hide it otherwise
+        const err = document.getElementById('recipient_error');
+        if (err) {
+            err.hidden = selectedRecipients.length > 0;
+        }
     }
 
     function showRecipientError() {
