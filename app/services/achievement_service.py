@@ -70,9 +70,15 @@ class AchievementService:
                         notes="Auto-added based on Level 5 completion",
                         member_id=member_no
                     ))
-
         db.session.commit()
+
+        # Sync contact metadata
+        if user and user.contact_id:
+            from ..utils import sync_contact_metadata
+            sync_contact_metadata(user.contact_id)
+
         return achievement
+
 
     @staticmethod
     def revoke_achievement(achievement_id, requestor_id):
@@ -138,5 +144,12 @@ class AchievementService:
 
         db.session.delete(achievement)
         db.session.commit()
+
+        # Sync contact metadata
+        if user_id:
+            user = db.session.get(User, user_id)
+            if user and user.contact_id:
+                from ..utils import sync_contact_metadata
+                sync_contact_metadata(user.contact_id)
 
         return True

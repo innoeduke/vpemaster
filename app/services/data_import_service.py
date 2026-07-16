@@ -907,6 +907,7 @@ class DataImportService:
     def import_achievements(self, achievements_data):
         print(f"Importing achievements...")
         count = 0 
+        contacts_to_sync = set()
         for row in achievements_data:
             # Schema: id, contact_id, member_id, date, type, path_name, level, notes
             source_contact_id = row[1]
@@ -943,9 +944,18 @@ class DataImportService:
                     notes=row[7]
                 )
                 db.session.add(new_ach)
+                contacts_to_sync.add(target_contact_id)
                 count += 1
         
         db.session.commit()
+        
+        # Sync metadata for all touched contacts
+        if contacts_to_sync:
+            from app.utils import sync_contact_metadata
+            for cid in contacts_to_sync:
+                sync_contact_metadata(cid, commit=False)
+            db.session.commit()
+            
         print(f"Imported {count} achievements.")
 
     def import_votes(self, votes_data):
