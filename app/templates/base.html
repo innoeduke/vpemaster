@@ -193,19 +193,19 @@
 
         {# === Club group === #}
         {% if has_tools_nav and has_club_nav %}<li class="nav-divider"></li>{% endif %}
-        {% if is_authorized(Permissions.MEMBERS_MANAGE) or is_authorized(Permissions.CLUB_VIEW) %}
-        <li class="{% if request.endpoint and request.endpoint.startswith('users_bp') %}active{% endif %}">
-          <a href="{{ url_for('users_bp.show_users') }}" title="{{ _('Manage club members and users') }}">
-            <i class="fas fa-users-cog nav-icon"></i>
-            <span>{{ _('Members') }}</span>
-          </a>
-        </li>
-        {% endif %}
         {% if is_authorized(Permissions.CLUB_VIEW) %}
         <li class="{% if request.endpoint and request.endpoint == 'about_club_bp.excomm_page' %}active{% endif %}">
           <a href="{{ url_for('about_club_bp.excomm_page') }}" title="{{ _('View club excomm history and teams') }}">
             <i class="fas fa-sitemap nav-icon"></i>
             <span>{{ _('Excomm') }}</span>
+          </a>
+        </li>
+        {% endif %}
+        {% if is_authorized(Permissions.MEMBERS_MANAGE) or is_authorized(Permissions.CLUB_VIEW) %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('users_bp') %}active{% endif %}">
+          <a href="{{ url_for('users_bp.show_users') }}" title="{{ _('Manage club members and users') }}">
+            <i class="fas fa-users-cog nav-icon"></i>
+            <span>{{ _('Members') }}</span>
           </a>
         </li>
         {% endif %}
@@ -467,6 +467,13 @@
               <i class="fas fa-caret-down dropdown-arrow"></i>
             </a>
             <ul class="nav-submenu">
+              {% if is_authorized(Permissions.CLUB_VIEW) %}
+              <li class="{% if request.endpoint and request.endpoint == 'about_club_bp.excomm_page' %}submenu-active{% endif %}">
+                <a href="{{ url_for('about_club_bp.excomm_page') }}">
+                  <i class="fas fa-sitemap"></i> {{ _('Excomm') }}
+                </a>
+              </li>
+              {% endif %}
               {% if is_authorized(Permissions.MEMBERS_MANAGE) or is_authorized(Permissions.CLUB_VIEW) %}
               <li class="{% if request.endpoint and request.endpoint.startswith('users_bp') %}submenu-active{% endif %}">
                 <a href="{{ url_for('users_bp.show_users') }}">
@@ -492,13 +499,6 @@
               <li class="{% if request.endpoint and request.endpoint.startswith('program_bp') %}submenu-active{% endif %}">
                 <a href="{{ url_for('program_bp.programs_admin') }}">
                   <i class="fas fa-graduation-cap"></i> {{ _('Programs') }}
-                </a>
-              </li>
-              {% endif %}
-              {% if is_authorized(Permissions.CLUB_VIEW) %}
-              <li class="{% if request.endpoint and request.endpoint == 'about_club_bp.excomm_page' %}submenu-active{% endif %}">
-                <a href="{{ url_for('about_club_bp.excomm_page') }}">
-                  <i class="fas fa-sitemap"></i> {{ _('Excomm') }}
                 </a>
               </li>
               {% endif %}
