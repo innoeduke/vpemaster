@@ -99,6 +99,22 @@
   --tm-action-shadow-active: inset 0 2px 4px rgba(40, 6, 2, 0.35);
 }
 
+/* Success variant — forest green, layered shadow tuned to the warm fill */
+.tm-action-btn--success {
+  --tm-action-bg: #2f9e44;
+  --tm-action-bg-hover: #257a35;
+  --tm-action-bg-active: #1c5c28;
+  --tm-action-border: #247034;
+  --tm-action-border-hover: #1a5327;
+  --tm-action-fg: #f3fbf6;
+  --tm-action-fg-hover: #ffffff;
+  --tm-action-shadow: 0 1px 0 rgba(8, 56, 24, 0.22),
+                      inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  --tm-action-shadow-hover: 0 2px 4px rgba(8, 56, 24, 0.28),
+                            inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  --tm-action-shadow-active: inset 0 2px 4px rgba(4, 28, 12, 0.32);
+}
+
 /* Disabled state (for when validation rules block an action) */
 .tm-action-btn[disabled],
 .tm-action-btn[aria-disabled="true"] {

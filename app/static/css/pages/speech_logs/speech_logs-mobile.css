@@ -348,45 +348,52 @@
     border-width: 2px !important;
   }
 
-  /* Record / Revoke buttons keep their full label visible on mobile.
-     They sit in `.level-heading .achievement-actions` (next to chevron) and
-     in `.progress-table .actions-cell` — both need readable text, not an icon.
-     Sized to match `.btn-profile-small` for visual consistency. */
-  .btn-achievement-record,
-  .btn-achievement-revoke {
-    min-width: 0 !important;
-    width: auto !important;
-    height: 32px !important;
-    padding: 0 12px !important;
-    border-radius: 6px !important;
-    border-width: 1px !important;
-    color: #fff !important;
-    font-weight: 700 !important;
-    font-size: 12.5px !important;
-    text-align: center !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
-    justify-content: center;
-    align-items: center;
+  /* Level-heading Record / Revoke buttons render as compact .tm-action-btn
+     icon buttons on mobile — 30×30 circular, just the icon, brand-tinted
+     via .tm-action-btn--success (record) / .tm-action-btn--danger (revoke).
+     The pill text style from .member_view.css is overridden on mobile so
+     the level-heading row stays visually quiet (icon next to the level
+     number, not a pill competing for attention).
+
+     Higher specificity (`.level-heading .btn-...`) is required because
+     .member_view.css ships unconditional `!important` rules with lower
+     specificity that would otherwise win on mobile.
+
+     The progress-table buttons (`.btn-roadmap-action`) are hidden on
+     mobile via `.path-progress-container { display: none }`, so this
+     rule only reaches the level-heading instances. */
+  .level-heading .btn-achievement-record,
+  .level-heading .btn-achievement-revoke {
+    /* Wipe the pill geometry — let .tm-action-btn supply size + shape */
     display: inline-flex !important;
-  }
-
-  .btn-achievement-record .btn-label-text,
-  .btn-achievement-revoke .btn-label-text {
-    display: inline !important;
-    color: #fff !important;
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.3px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    width: 30px !important;
+    height: 30px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    border-width: 1px !important;
+    font-size: 0 !important;
     line-height: 1 !important;
+    box-sizing: border-box !important;
   }
 
-  .btn-achievement-record:hover,
-  .btn-achievement-revoke:hover,
-  .btn-achievement-record:focus,
-  .btn-achievement-revoke:focus {
-    color: #fff !important;
+  /* Hide the text label inside level-heading buttons on mobile —
+     only the icon is meaningful at this size. */
+  .level-heading .achievement-actions .btn-label-text {
+    display: none !important;
+  }
+
+  /* Slightly enlarge the icon inside the 30px circle for crisp rendering */
+  .level-heading .achievement-actions .btn-achievement-record i,
+  .level-heading .achievement-actions .btn-achievement-revoke i {
+    font-size: 13px !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
   }
 
   /* Record/Complete - Premium Green (outline style for icon-only roadmap actions) */

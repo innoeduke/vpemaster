@@ -313,18 +313,16 @@
                 <div class="achievement-actions">
                     {% set pathway_name = selected_filters.pathway if selected_filters.pathway and selected_filters.pathway != 'all' else viewed_contact.Current_Path %}
                     {% if level|int in completed_levels %}
-                    <button class="btn btn-achievement-revoke"
-                            onclick="event.stopPropagation(); openAchievementModal('revoke', '{{ viewed_contact.user_id }}', '{{ viewed_contact.Name }}', '{{ viewed_contact.Member_ID or '' }}', 'level-completion', '{{ pathway_name }}', '{{ level }}', '{{ achievement_dates.get(level|int, '') }}')"
-                            title="{{ _('Revoke Level Achievement') }}">
-                        <span class="btn-label-text">{{ _('Revoke') }}</span>
-                    </button>
-                    {% else %}
-                    <button class="btn btn-achievement-record"
-                            onclick="event.stopPropagation(); openAchievementModal('record', '{{ viewed_contact.user_id }}', '{{ viewed_contact.Name }}', '{{ viewed_contact.Member_ID or '' }}', 'level-completion', '{{ pathway_name }}', '{{ level }}')"
-                            title="{{ _('Record Level Achievement') }}">
-                        <span class="btn-label-text">{{ _('Record') }}</span>
-                    </button>
-                    {% endif %}
+                     <button class="btn btn-achievement-revoke tm-action-btn tm-action-btn--danger"
+                             onclick="event.stopPropagation(); openAchievementModal('revoke', '{{ viewed_contact.user_id }}', '{{ viewed_contact.Name }}', '{{ viewed_contact.Member_ID or '' }}', 'level-completion', '{{ pathway_name }}', '{{ level }}', '{{ achievement_dates.get(level|int, '') }}')"
+                             title="{{ _('Revoke Level Achievement') }}"
+                             aria-label="{{ _('Revoke Level Achievement') }}"><i class="fas fa-undo" aria-hidden="true"></i><span class="btn-label-text">{{ _('Revoke') }}</span></button>
+                     {% else %}
+                     <button class="btn btn-achievement-record tm-action-btn tm-action-btn--success"
+                             onclick="event.stopPropagation(); openAchievementModal('record', '{{ viewed_contact.user_id }}', '{{ viewed_contact.Name }}', '{{ viewed_contact.Member_ID or '' }}', 'level-completion', '{{ pathway_name }}', '{{ level }}')"
+                             title="{{ _('Record Level Achievement') }}"
+                             aria-label="{{ _('Record Level Achievement') }}"><i class="fas fa-check" aria-hidden="true"></i><span class="btn-label-text">{{ _('Record') }}</span></button>
+                     {% endif %}
                 </div>
                 {% endif %}
                 {% set is_completed = (level|int in completed_levels) %}
@@ -549,6 +547,9 @@ window.submitPathwayTab = function(pathwayName) {
     }
 };
 
+// Date filter is applied server-side (see speech_logs_routes.py). The map view
+// intentionally ignores the start_date/end_date URL params and uses the
+// default date range (current term) — only the list view is filtered by them.
 window.applyDateFilter = function() {
     const startDate = document.getElementById('list-start-date')?.value;
     const endDate = document.getElementById('list-end-date')?.value;

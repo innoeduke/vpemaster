@@ -1657,16 +1657,27 @@ def show_speech_logs():
     can_view_all, view_mode, is_member_view = _get_view_settings()
     filters = _parse_filters(is_member_view, can_view_all)
     
-    # 1a. Default date filters to current term when not explicitly provided
+    # 1a. Date filter handling.
+    # The list view's date filter is applied server-side (for performance) but
+    # is intentionally scoped to the LIST view only. The MAP view never
+    # applies any date filter — it always shows data for all registered paths
+    # across all time, regardless of any URL start_date / end_date params.
+    # Changing the date filter in the list view therefore never affects what
+    # the map view renders.
     from .utils import get_terms, get_active_term
     terms = get_terms()
     current_term = get_active_term(terms)
-    start_date = filters.get('start_date')
-    end_date = filters.get('end_date')
-    if not start_date and not end_date:
-        if current_term:
-            start_date = current_term['start']
-            end_date = current_term['end']
+
+    url_start_date = filters.get('start_date')
+    url_end_date = filters.get('end_date')
+    user_supplied_dates = bool(url_start_date and url_end_date)
+
+    default_start_date = current_term['start'] if current_term else None
+    default_end_date = current_term['end'] if current_term else None
+
+    # List-view effective dates: user-chosen (URL) wins, else fall back to default.
+    start_date = url_start_date or default_start_date
+    end_date = url_end_date or default_end_date
     filters['start_date'] = start_date
     filters['end_date'] = end_date
 
@@ -1711,8 +1722,17 @@ def show_speech_logs():
     dropdown_data = get_speech_logs_dropdown_metadata(club_id, current_user)
     
     # 5. Fetch logs
+    #   - Map view: never date-filtered — always shows data across all time
+    #     (so the member sees progress for every registered path regardless
+    #     of which term or date range they're looking at).
+    #   - List view: uses the user-selected dates from the URL, falling back
+    #     to the default when the user hasn't picked a range.
+    #   - When the user hasn't supplied dates, both views share one dataset
+    #     (no second query needed).
     if view_mode == 'search':
-        # Determine the contact_id to filter by (push filter into SQL rather than post-fetching)
+        # Search view has no map/list split; both share the same dataset.
+        # Determine the contact_id to filter by (push filter into SQL rather
+        # than post-fetching).
         search_contact_id = None
         if viewed_contact:
             search_contact_id = viewed_contact.id
@@ -1720,11 +1740,28 @@ def show_speech_logs():
             self_contact = current_user.get_contact(club_id) if current_user.is_authenticated else None
             if self_contact:
                 search_contact_id = self_contact.id
-        all_logs = _search_logs(request.args.get('q', ''), can_view_all, club_id, contact_id=search_contact_id)
-        _attach_owners(all_logs)
+        search_logs = _search_logs(request.args.get('q', ''), can_view_all, club_id, contact_id=search_contact_id)
+        _attach_owners(search_logs)
+        map_logs = search_logs
+        list_logs = search_logs
     else:
-        all_logs = _fetch_logs_with_filters(filters)
-        _attach_owners(all_logs)
+        # Member/admin view: split dataset so list-view date filter never leaks
+        # into the map view.
+        map_filters = dict(filters)
+        map_filters['start_date'] = None  # map view: no date restriction
+        map_filters['end_date'] = None
+        map_logs = _fetch_logs_with_filters(map_filters)
+        _attach_owners(map_logs)
+
+        if user_supplied_dates:
+            list_logs = _fetch_logs_with_filters(filters)
+            _attach_owners(list_logs)
+        else:
+            list_logs = map_logs
+
+    # Backward-compat alias used by the rest of the function — the map view's
+    # dataset is the canonical "all logs" for pathway cache, processing, etc.
+    all_logs = map_logs
     
     # 6. Build pathway cache for performance
     project_ids = [log.Project_ID for log in all_logs if log.Project_ID]
@@ -1806,9 +1843,10 @@ def show_speech_logs():
     if is_member_view:
         # The List View intentionally bypasses the pathway filter (which only
         # applies to the Map View) so the member can browse their full history
-        # regardless of the pathway tab selected. Walk all_logs directly.
+        # regardless of the pathway tab selected. It also uses its own dataset
+        # (list_logs) so the list-view date filter never affects the map view.
         seen_list_keys = set()
-        for log in all_logs:
+        for log in list_logs:
             owner = getattr(log, 'context_owner', None)
             if not owner:
                 owner = log.owner
@@ -1917,9 +1955,15 @@ def show_speech_logs():
         for cp in viewed_contact.registered_paths:
             pathway = cp.pathway
             if pathway and pathway.type == 'pathway' and pathway.status == 'active':
-                completed_levels = viewed_contact.get_completed_levels(pathway.name)
-                highest_level = max(completed_levels) if completed_levels else 0
-                is_completed = (5 in completed_levels) or (cp.status == 'completed')
+                # Use a distinct local name — shadowing the outer
+                # `completed_levels` (from _get_achievement_status) here caused
+                # the template to render the wrong level-completion state when
+                # the selected pathway wasn't the alphabetically-last
+                # registered pathway (e.g. viewing MS while Kyle had
+                # achievements for PM).
+                pathway_completed_levels = viewed_contact.get_completed_levels(pathway.name)
+                highest_level = max(pathway_completed_levels) if pathway_completed_levels else 0
+                is_completed = (5 in pathway_completed_levels) or (cp.status == 'completed')
                 active_registered_badges.append({
                     'name': pathway.name,
                     'abbr': pathway.abbr,

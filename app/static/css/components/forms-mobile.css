@@ -8,7 +8,7 @@
     --mobile-control-height: 36px;
   }
 
-  :root body .btn,
+  :root body .btn:not(.tm-action-btn),
   :root body button:not(.tm-action-btn):not(.avatar-remove-btn):not(.msg-compose-btn):not(.msg-empty-trash-btn):not(.msg-refresh-btn),
   :root body select,
   :root body input:not([type="checkbox"]):not([type="radio"]),
@@ -36,7 +36,7 @@
   }
 
   /* Reset vertical padding and align text for badges and buttons */
-  :root body .btn,
+  :root body .btn:not(.tm-action-btn),
   :root body .meeting-status-display,
   :root body .custom-select-trigger {
     padding-top: 0;
