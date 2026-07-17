@@ -130,6 +130,40 @@
     margin-bottom: 0;
 }
 
+/* Wrap long titles / markdown prose / headings inside narrow text boxes
+   instead of letting the hero card overflow. overflow-wrap:anywhere
+   breaks mid-word only when no soft-wrap opportunity exists, which is
+   the safest setting for prose mixed with arbitrary user input. */
+.markdown-content,
+.topics-hero-title,
+.topics-head-title,
+.topics-prompt-ref-title,
+.topics-archive-title,
+.topics-card-title,
+.topics-card-excerpt,
+.topics-section-title,
+.topics-response-title,
+.topics-compose-title,
+.topics-card-author {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* Flex children default to min-width:auto which can push the parent
+   wider than its container when the child contains a long unbroken
+   string. Reset to 0 so the shrink-to-fit logic actually applies. */
+.topics-hero,
+.topics-hero-body,
+.topics-essay,
+.topics-card,
+.topics-archive-item,
+.topics-collection-item > a,
+.topics-comment,
+.topics-comment-content,
+.topics-card-link {
+    min-width: 0;
+}
+
 /* Comments enhancements */
 .comment-thread-container {
     border-left: 2px solid #f1f3f5;
