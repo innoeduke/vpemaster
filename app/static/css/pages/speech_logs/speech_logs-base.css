@@ -2348,7 +2348,7 @@ div.speech-logs-content.project-view-container {
 	gap: 2px;
 }
 
-.view-toggle-btn {
+.journal-view-toggle .view-toggle-btn {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -2362,12 +2362,12 @@ div.speech-logs-content.project-view-container {
 	transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 
-.view-toggle-btn:hover {
+.journal-view-toggle .view-toggle-btn:hover {
 	color: #772432;
 	background-color: rgba(119, 36, 50, 0.05);
 }
 
-.view-toggle-btn.active {
+.journal-view-toggle .view-toggle-btn.active {
 	background-color: #772432;
 	color: #ffffff;
 	box-shadow: 0 2px 4px rgba(119, 36, 50, 0.2);
