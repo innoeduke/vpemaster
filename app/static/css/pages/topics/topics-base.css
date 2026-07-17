@@ -385,6 +385,7 @@
     letter-spacing: -0.015em;
     color: var(--topics-ink);
     margin: 0;
+    max-width: 32ch;
 }
 
 .topics-head-sub {
@@ -456,6 +457,7 @@
     letter-spacing: -0.01em;
     color: var(--topics-ink);
     margin: 0 0 10px;
+    max-width: 28ch;
 }
 
 .topics-hero-text {
@@ -1046,6 +1048,7 @@
     color: var(--topics-ink);
     margin: 0;
     font-variation-settings: "opsz" 96;
+    max-width: 30ch;
 }
 
 .topics-response-meta {
@@ -1892,6 +1895,7 @@ textarea.topics-input:focus {
     font-size: 1.7rem;
     color: var(--topics-ink);
     margin: 0 0 6px;
+    max-width: 30ch;
     font-variation-settings: "opsz" 96;
 }
 
