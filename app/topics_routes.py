@@ -663,7 +663,7 @@ def admin_create():
     body = request.form.get('body', '').strip()
 
     if not title or not body:
-        flash(_('Title and prompt context are both required.'), 'error')
+        flash(_('Title and topic context are both required.'), 'error')
         return redirect(url_for('topics_bp.admin'))
 
     TopicService.create_topic(title=title, body=body, creator_id=current_user.id)

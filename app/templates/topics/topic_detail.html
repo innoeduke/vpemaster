@@ -2,12 +2,6 @@
 
 {% block title %}{{ topic.title }}{% endblock %}
 
-{% block head_extra %}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
-{% endblock %}
-
 {% block content %}
 {% import 'topics/_macros.html' as ui %}
 <div class="msg-layout msg-layout--topics">
@@ -31,13 +25,13 @@
             </div>
         </header>
 
-        <!-- Prompt -->
+        <!-- Topic -->
         <article class="topics-hero">
             <div class="topics-hero-rule"></div>
             <div class="topics-hero-body">
                 <div class="topics-hero-eyebrow">
                     <span class="topics-eyebrow-tick" aria-hidden="true"></span>
-                    <span>{{ _('PROMPT QUESTION') }}</span>
+                    <span>{{ _('TOPIC QUESTION') }}</span>
                 </div>
                 <div class="markdown-content topics-hero-text" data-markdown="{{ topic.body | escape }}"></div>
             </div>
@@ -74,7 +68,7 @@
         {% else %}
         <div class="topics-empty">
             <i class="fas fa-pen-fancy" aria-hidden="true"></i>
-            <p>{{ _("You haven't written a response to this prompt yet.") }}</p>
+            <p>{{ _("You haven't written a response to this topic yet.") }}</p>
             <a href="{{ url_for('topics_bp.respond', topic_id=topic.id) }}" class="topics-btn topics-btn--primary">
                 <i class="fas fa-pen-fancy" aria-hidden="true"></i>{{ _('Write Reflection') }}
             </a>

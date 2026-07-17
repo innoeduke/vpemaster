@@ -277,10 +277,10 @@
 }
 
 @media (min-width: 769px) {
-	body:has(.msg-layout) {
+	body:has(.msg-layout:not(.msg-layout--topics):not(.msg-layout--issues)) {
 		overflow: hidden;
 	}
-	body:has(.msg-layout) .main-content {
+	body:has(.msg-layout:not(.msg-layout--topics):not(.msg-layout--issues)) .main-content {
 		height: 100vh;
 		overflow: hidden;
 	}

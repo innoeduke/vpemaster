@@ -4,12 +4,6 @@
     {% if response %}{{ _('Edit Reflection') }}{% else %}{{ _('Write Reflection') }}{% endif %}
 {% endblock %}
 
-{% block head_extra %}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
-{% endblock %}
-
 {% block content %}
 <div class="msg-layout msg-layout--topics">
     <!-- Sidebar Partial -->
@@ -26,9 +20,9 @@
                 {% if response %}{{ _('Edit My Reflection') }}{% else %}{{ _('Write Reflection') }}{% endif %}
             </h2>
 
-            <!-- Prompt reference -->
+            <!-- Topic reference -->
             <aside class="topics-prompt-ref">
-                <p class="topics-prompt-ref-eyebrow">{{ _('Topic Prompt:') }}</p>
+                <p class="topics-prompt-ref-eyebrow">{{ _('Topic:') }}</p>
                 <a href="{{ url_for('topics_bp.topic_detail', topic_id=topic.id) }}" class="topics-prompt-ref-title">{{ topic.title }}</a>
                 <div class="markdown-content topics-prompt-ref-body" data-markdown="{{ topic.body | escape }}"></div>
             </aside>
@@ -43,7 +37,7 @@
                     <label for="body" class="topics-field-label">
                         {{ _('My Essay') }} <span class="topics-field-hint">({{ _('Markdown supported') }})</span>
                     </label>
-                    <textarea id="body" name="body" class="topics-input" rows="15" placeholder="{{ _('Reflect on the prompt and compose your essay here...') }}" required oninput="countWords(this)">{{ response.body if response else '' }}</textarea>
+                    <textarea id="body" name="body" class="topics-input" rows="15" placeholder="{{ _('Reflect on the topic and compose your essay here...') }}" required oninput="countWords(this)">{{ response.body if response else '' }}</textarea>
                     <div class="topics-field-meta">
                         <span id="word-count-display">0 {{ _('words') }}</span>
                         <span>{{ _('Tip: Use **bold** for emphasis, *italics* for style.') }}</span>

@@ -2,12 +2,6 @@
 
 {% block title %}{{ _('Table Topics') }}{% endblock %}
 
-{% block head_extra %}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
-{% endblock %}
-
 {% block content %}
 {% import 'topics/_macros.html' as ui %}
 <div class="msg-layout msg-layout--topics">
@@ -18,18 +12,18 @@
     <div class="msg-main topics-main">
         <header class="topics-head">
             <p class="topics-overline">{{ _('Table Topics') }}</p>
-            <h2 class="topics-head-title">{{ _('Table Topics Dashboard') }}</h2>
-            <p class="topics-head-sub">{{ _('A daily prompt to sharpen your impromptu voice. Reflect, read, and collect what inspires you.') }}</p>
+            <h2 class="topics-head-title">{{ _('Featured Topic') }}</h2>
+            <p class="topics-head-sub">{{ _('Think on your feet and write down your reflections.') }}</p>
         </header>
 
         {% if featured_topic %}
-        <!-- Featured Prompt -->
+        <!-- Featured Topic -->
         <article class="topics-hero">
             <div class="topics-hero-rule"></div>
             <div class="topics-hero-body">
                 <div class="topics-hero-eyebrow">
                     <span class="topics-eyebrow-tick" aria-hidden="true"></span>
-                    <span>{{ _("Today's Prompt") }}</span>
+                    <span>{{ _("Today's Topic") }}</span>
                     {% if featured_topic.published_at %}
                     <span class="topics-hero-date">{{ featured_topic.published_at.strftime('%m-%d') }}</span>
                     {% endif %}
@@ -60,7 +54,7 @@
         {% else %}
         <div class="topics-empty topics-empty--hero">
             <i class="fas fa-feather-alt" aria-hidden="true"></i>
-            <p>{{ _('No featured prompt is active today. Check back later!') }}</p>
+            <p>{{ _('No featured topic is active today. Check back later!') }}</p>
         </div>
         {% endif %}
 
@@ -116,10 +110,10 @@
                 {% endif %}
             </section>
 
-            <!-- Past Prompts archive -->
+            <!-- Past Topics archive -->
             <aside class="topics-archive">
                 <div class="topics-section-head">
-                    <h4 class="topics-section-title">{{ _('Past Prompts') }}</h4>
+                    <h4 class="topics-section-title">{{ _('Past Topics') }}</h4>
                 </div>
 
                 {% if past_topics %}
@@ -138,7 +132,7 @@
                 </ol>
                 {% else %}
                 <div class="topics-empty topics-empty--sm">
-                    <p>{{ _('No past prompts found.') }}</p>
+                    <p>{{ _('No past topics found.') }}</p>
                 </div>
                 {% endif %}
             </aside>

@@ -174,35 +174,34 @@
    Scoped under .msg-layout--topics so the Issues page is untouched.
    ========================================================================= */
 .msg-layout--topics {
-    --topics-paper:      #faf6ef;
-    --topics-paper-2:    #f2e9da;
-    --topics-card:       #fffdf8;
-    --topics-ink:        #2b231f;
-    --topics-ink-soft:   #6f655a;
-    --topics-ink-faint:  #a99e90;
-    --topics-rule:       #e7dcc9;
-    --topics-rule-soft:  #efe6d6;
-    --topics-maroon:     #772432;
-    --topics-maroon-deep:#5d1a25;
-    --topics-maroon-tint:#f7e9eb;
-    --topics-gold:       #b08442;
-    --topics-serif:      'Fraunces', 'Iowan Old Style', 'Georgia', serif;
+    --topics-paper:      #fdfdfd;       /* Soft warm-tinted white for main content surface */
+    --topics-paper-2:    #f7f9fa;       /* Very light cool gray for sidebar */
+    --topics-card:       #ffffff;       /* Pure white cards */
+    --topics-ink:        #1e293b;       /* Slate 800 for high-contrast, clean body/headings */
+    --topics-ink-soft:   #475569;       /* Slate 600 for secondary text */
+    --topics-ink-faint:  #94a3b8;       /* Slate 400 for borders/subtle text */
+    --topics-rule:       #e2e8f0;       /* Slate 200 for clean separator lines */
+    --topics-rule-soft:  #f1f5f9;       /* Slate 100 for very soft borders */
+    --topics-maroon:     #772432;       /* Retain Shanghai Leadership maroon for brand identity */
+    --topics-maroon-deep:#5a1822;       /* Hover state deep maroon */
+    --topics-maroon-tint:#faf0f1;       /* Light maroon background for highlights/active states */
+    --topics-gold:       #b08442;       /* Accent color (subtle, clean gold) */
+    --topics-serif:      'Montserrat', 'Inter', -apple-system, sans-serif; /* Repurposed to clean sans-serif */
 
     gap: 0;
     padding: 0;
     background: var(--topics-paper);
 }
 
-/* Warm paper grain over the whole page */
+/* Warm paper grain disabled for modern look */
 .msg-layout--topics::before {
     content: "";
     position: absolute;
     inset: 0;
     pointer-events: none;
     z-index: var(--z-bg);
-    opacity: 0.05;
-    mix-blend-mode: multiply;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0;
+    display: none;
 }
 
 /* --- Sidebar spine --- */
@@ -217,7 +216,7 @@
 .msg-layout--topics .msg-sidebar-eyebrow {
     font-family: var(--topics-serif);
     font-size: 0.72rem;
-    letter-spacing: 0.22em;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
     color: var(--topics-ink-faint);
     margin-left: 12px;
@@ -227,12 +226,12 @@
 
 .msg-layout--topics .msg-nav-item {
     padding: 9px 14px;
-    border-radius: 7px;
+    border-radius: 8px;
     color: var(--topics-ink-soft);
     font-size: 0.9rem;
     font-weight: 500;
     position: relative;
-    transition: color 0.18s ease, background 0.18s ease;
+    transition: color 0.18s ease, background 0.18s ease, transform 0.1s ease;
 }
 
 .msg-layout--topics .msg-nav-item i {
@@ -241,19 +240,19 @@
 }
 
 .msg-layout--topics .msg-nav-item:hover {
-    background: rgba(255, 253, 248, 0.6);
+    background: rgba(15, 23, 42, 0.04);
     color: var(--topics-ink);
 }
 
 .msg-layout--topics .msg-nav-item:hover i {
-    color: var(--topics-gold);
+    color: var(--topics-maroon);
     transform: translateX(1px);
 }
 
 .msg-layout--topics .msg-nav-item.active {
     background: var(--topics-card);
     color: var(--topics-maroon);
-    box-shadow: 0 1px 0 var(--topics-rule);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
 }
 
 .msg-layout--topics .msg-nav-item.active::before {
@@ -272,9 +271,46 @@
     color: var(--topics-maroon);
 }
 
-/* Collection create row inherits the warm palette */
-.msg-layout--topics .msg-sidebar .btn-link {
-    color: var(--topics-maroon) !important;
+/* Modern clean style for create collection button */
+.msg-layout--topics .msg-sidebar .topics-create-col-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    height: 36px;
+    padding: 0 14px;
+    background: transparent;
+    border: 1px dashed var(--topics-rule);
+    border-radius: 8px;
+    color: var(--topics-ink-soft);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    box-sizing: border-box;
+    box-shadow: none;
+    transition: all 0.18s ease;
+    margin-top: 4px;
+}
+
+.msg-layout--topics .msg-sidebar .topics-create-col-btn i {
+    color: var(--topics-maroon);
+    font-size: 0.8rem;
+    transition: transform 0.18s ease;
+}
+
+.msg-layout--topics .msg-sidebar .topics-create-col-btn:hover {
+    background: rgba(119, 36, 50, 0.04);
+    border-color: var(--topics-maroon);
+    color: var(--topics-maroon);
+}
+
+.msg-layout--topics .msg-sidebar .topics-create-col-btn:hover i {
+    transform: scale(1.1);
+}
+
+.msg-layout--topics .msg-sidebar .topics-create-col-btn:active {
+    transform: scale(0.96) !important;
 }
 
 /* --- Main pane --- */
@@ -286,66 +322,66 @@
     max-width: calc(100% - 248px);
     padding: 40px 56px 64px;
     background:
-        radial-gradient(120% 60% at 80% -10%, rgba(176, 132, 66, 0.06), transparent 60%),
+        radial-gradient(120% 60% at 80% -10%, rgba(119, 36, 50, 0.02), transparent 60%),
         var(--topics-paper);
 }
 
-/* Page header */
+/* Page header - simplified and made smaller */
 .topics-head {
-    margin-bottom: 28px;
-    padding-bottom: 22px;
+    margin-bottom: 24px;
+    padding-bottom: 14px;
     border-bottom: 1px solid var(--topics-rule);
 }
 
 .topics-overline {
     font-family: var(--topics-serif);
-    font-style: italic;
-    font-size: 0.82rem;
-    letter-spacing: 0.04em;
-    color: var(--topics-gold);
-    margin: 0 0 4px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--topics-maroon);
+    margin: 0 0 6px;
 }
 
 .topics-head-title {
     font-family: var(--topics-serif);
-    font-weight: 600;
-    font-size: 2.1rem;
-    line-height: 1.1;
-    letter-spacing: -0.01em;
+    font-weight: 700;
+    font-size: 1.6rem;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
     color: var(--topics-ink);
     margin: 0;
-    font-variation-settings: "opsz" 96;
 }
 
 .topics-head-sub {
-    margin: 8px 0 0;
-    max-width: 46ch;
-    font-size: 0.92rem;
-    line-height: 1.55;
+    margin: 6px 0 0;
+    max-width: 60ch;
+    font-size: 0.88rem;
+    line-height: 1.5;
     color: var(--topics-ink-soft);
 }
 
-/* --- Featured hero --- */
+/* --- Featured Today's Topic hero card - highly highlighted and modern --- */
 .topics-hero {
     position: relative;
     display: flex;
-    background: var(--topics-card);
-    border: 1px solid var(--topics-rule);
-    border-radius: 4px;
-    box-shadow: 0 1px 2px rgba(43, 35, 31, 0.03), 0 18px 40px -28px rgba(43, 35, 31, 0.25);
-    margin-bottom: 40px;
+    background: linear-gradient(135deg, var(--topics-maroon-tint) 0%, var(--topics-card) 100%);
+    border: 1px solid rgba(119, 36, 50, 0.15);
+    border-radius: 8px;
+    box-shadow: 0 10px 30px -10px rgba(119, 36, 50, 0.12), 0 1px 3px rgba(0, 0, 0, 0.02);
+    margin-bottom: 36px;
     overflow: hidden;
     animation: topicsRise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
 .topics-hero-rule {
-    width: 4px;
+    width: 5px;
     flex-shrink: 0;
-    background: linear-gradient(180deg, var(--topics-maroon), var(--topics-gold));
+    background: var(--topics-maroon);
 }
 
 .topics-hero-body {
-    padding: 28px 32px 26px;
+    padding: 30px 34px 28px;
     flex: 1;
 }
 
@@ -354,16 +390,17 @@
     align-items: center;
     gap: 9px;
     font-size: 0.72rem;
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--topics-maroon);
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 }
 
 .topics-eyebrow-tick {
-    width: 18px;
-    height: 1px;
+    width: 14px;
+    height: 2px;
+    border-radius: 1px;
     background: var(--topics-maroon);
     display: inline-block;
 }
@@ -371,27 +408,25 @@
 .topics-hero-date {
     margin-left: auto;
     font-family: var(--topics-serif);
-    font-style: italic;
-    font-weight: 400;
+    font-weight: 600;
     letter-spacing: 0.02em;
     text-transform: none;
-    color: var(--topics-ink-faint);
+    color: var(--topics-ink-soft);
 }
 
 .topics-hero-title {
     font-family: var(--topics-serif);
-    font-weight: 600;
-    font-size: 1.7rem;
-    line-height: 1.2;
+    font-weight: 700;
+    font-size: 1.5rem;
+    line-height: 1.25;
     letter-spacing: -0.01em;
     color: var(--topics-ink);
-    margin: 0 0 12px;
-    font-variation-settings: "opsz" 96;
+    margin: 0 0 10px;
 }
 
 .topics-hero-text {
-    font-size: 0.98rem;
-    line-height: 1.7;
+    font-size: 0.95rem;
+    line-height: 1.6;
     color: var(--topics-ink-soft);
     max-width: 62ch;
 }
@@ -400,7 +435,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-top: 22px;
+    margin-top: 20px;
 }
 
 /* --- Buttons --- */
@@ -409,14 +444,14 @@
     align-items: center;
     gap: 7px;
     padding: 8px 16px;
-    border-radius: 3px;
+    border-radius: 6px;
     font-size: 0.85rem;
     font-weight: 600;
     letter-spacing: 0.01em;
     text-decoration: none !important;
     border: 1px solid transparent;
     cursor: pointer;
-    transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+    transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.1s ease;
 }
 
 .topics-btn i {
@@ -431,7 +466,6 @@
 .topics-btn--primary:hover {
     background: var(--topics-maroon-deep);
     color: #fff;
-    transform: translateY(-1px);
 }
 
 .topics-btn--ghost {
@@ -443,6 +477,15 @@
 .topics-btn--ghost:hover {
     border-color: var(--topics-maroon);
     color: var(--topics-maroon);
+    background: rgba(119, 36, 50, 0.02);
+}
+
+.topics-btn:active,
+.topics-icon-btn:active,
+.topics-archive-item:active,
+.topics-nav-item:active,
+.topics-back-link:active {
+    transform: scale(0.96) !important;
 }
 
 .topics-icon-btn {
@@ -451,12 +494,12 @@
     justify-content: center;
     width: 36px;
     height: 36px;
-    border-radius: 3px;
+    border-radius: 6px;
     border: 1px solid var(--topics-rule);
     background: transparent;
-    color: var(--topics-ink-faint);
+    color: var(--topics-ink-soft);
     cursor: pointer;
-    transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease, transform 0.1s ease;
 }
 
 .topics-icon-btn:hover {
@@ -528,7 +571,7 @@
     position: relative;
     background: var(--topics-card);
     border: 1px solid var(--topics-rule);
-    border-radius: 4px;
+    border-radius: 8px;
     padding: 16px 20px 14px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
     animation: topicsRise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
@@ -551,7 +594,7 @@
 
 .topics-card:hover {
     border-color: var(--topics-rule-soft);
-    box-shadow: 0 1px 2px rgba(43, 35, 31, 0.03), 0 14px 30px -22px rgba(43, 35, 31, 0.3);
+    box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08);
     transform: translateY(-1px);
 }
 
@@ -774,7 +817,7 @@
     color: var(--topics-ink-faint);
     background: var(--topics-card);
     border: 1px dashed var(--topics-rule);
-    border-radius: 4px;
+    border-radius: 8px;
     font-size: 0.88rem;
 }
 
@@ -862,7 +905,7 @@
     background: var(--topics-card);
     border: 1px solid var(--topics-rule);
     border-left: 3px solid var(--topics-maroon);
-    border-radius: 0 4px 4px 0;
+    border-radius: 0 8px 8px 0;
     padding: 14px 18px;
     margin-bottom: 28px;
 }
@@ -912,10 +955,10 @@
 .topics-essay {
     background: var(--topics-card);
     border: 1px solid var(--topics-rule);
-    border-radius: 4px;
+    border-radius: 8px;
     padding: 30px 34px;
     margin-bottom: 40px;
-    box-shadow: 0 1px 2px rgba(43, 35, 31, 0.03), 0 18px 40px -30px rgba(43, 35, 31, 0.22);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.02), 0 12px 36px -12px rgba(15, 23, 42, 0.08);
     animation: topicsRise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
@@ -984,7 +1027,7 @@
     gap: 12px;
     background: var(--topics-card);
     border: 1px solid var(--topics-rule);
-    border-radius: 4px;
+    border-radius: 8px;
     padding: 14px 16px;
     margin-bottom: 24px;
 }
@@ -1152,7 +1195,7 @@ textarea.topics-comment-input {
     width: 100%;
     background: var(--topics-paper);
     border: 1px solid var(--topics-rule);
-    border-radius: 3px;
+    border-radius: 6px;
     padding: 9px 12px;
     font-size: 0.86rem;
     line-height: 1.5;
@@ -1401,7 +1444,7 @@ textarea.topics-comment-input:focus {
     height: 34px;
     padding: 0 10px;
     margin: 0 2px;
-    border-radius: 3px;
+    border-radius: 6px;
     border: 1px solid var(--topics-rule);
     background: var(--topics-card);
     color: var(--topics-ink-soft);
@@ -1431,7 +1474,7 @@ textarea.topics-comment-input:focus {
 .topics-manage-form {
     background: var(--topics-card);
     border: 1px solid var(--topics-rule);
-    border-radius: 4px;
+    border-radius: 8px;
     padding: 26px 28px;
     margin-bottom: 32px;
 }
@@ -1464,14 +1507,14 @@ textarea.topics-comment-input:focus {
 .topics-manage-item {
     background: var(--topics-card);
     border: 1px solid var(--topics-rule);
-    border-radius: 4px;
+    border-radius: 8px;
     padding: 14px 16px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .topics-manage-item:hover {
     border-color: var(--topics-rule-soft);
-    box-shadow: 0 14px 30px -22px rgba(43, 35, 31, 0.25);
+    box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.08);
 }
 
 .topics-manage-item-row {
@@ -1588,7 +1631,7 @@ textarea.topics-input {
     width: 100%;
     background: var(--topics-paper);
     border: 1px solid var(--topics-rule);
-    border-radius: 3px;
+    border-radius: 6px;
     padding: 10px 13px;
     font-size: 0.92rem;
     line-height: 1.55;
@@ -1636,7 +1679,7 @@ textarea.topics-input:focus {
     gap: 10px;
     padding: 11px 14px;
     border: 1px solid var(--topics-rule);
-    border-radius: 4px;
+    border-radius: 6px;
     background: var(--topics-paper);
     cursor: pointer;
     transition: border-color 0.18s ease, background 0.18s ease;
@@ -1674,9 +1717,9 @@ textarea.topics-input:focus {
 .topics-compose-form {
     background: var(--topics-card);
     border: 1px solid var(--topics-rule);
-    border-radius: 4px;
+    border-radius: 8px;
     padding: 30px 34px;
-    box-shadow: 0 1px 2px rgba(43, 35, 31, 0.03), 0 18px 40px -30px rgba(43, 35, 31, 0.22);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.02), 0 12px 36px -12px rgba(15, 23, 42, 0.08);
     max-width: 760px;
 }
 
@@ -1718,9 +1761,8 @@ textarea.topics-input:focus {
     inset: 0;
     pointer-events: none;
     z-index: var(--z-bg);
-    opacity: 0.05;
-    mix-blend-mode: multiply;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0;
+    display: none;
 }
 
 .topics-standalone-card {
@@ -1730,9 +1772,9 @@ textarea.topics-input:focus {
     text-align: center;
     background: var(--topics-card);
     border: 1px solid var(--topics-rule);
-    border-radius: 4px;
+    border-radius: 12px;
     padding: 44px 36px;
-    box-shadow: 0 18px 40px -28px rgba(43, 35, 31, 0.25);
+    box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.1);
 }
 
 .topics-standalone-card > i {

@@ -2,12 +2,6 @@
 
 {% block title %}{{ _('Explore Reflections') }}{% endblock %}
 
-{% block head_extra %}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
-{% endblock %}
-
 {% block content %}
 {% import 'topics/_macros.html' as ui %}
 <div class="msg-layout msg-layout--topics">
@@ -55,7 +49,7 @@
 
                         {% if resp.topic_id %}
                             <a href="{{ url_for('topics_bp.topic_detail', topic_id=resp.topic_id) }}" class="topics-card-foot-link">
-                                <i class="fas fa-hashtag" aria-hidden="true"></i>{{ _('View Prompt') }}
+                                <i class="fas fa-hashtag" aria-hidden="true"></i>{{ _('View Topic') }}
                             </a>
                         {% endif %}
                     </div>

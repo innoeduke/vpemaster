@@ -24,13 +24,13 @@
     </div>
 
     <!-- Create Collection Input -->
-    <div style="padding: 10px 14px;">
+    <div style="padding: 6px 0 10px;">
         <div class="input-group input-group-sm" id="create-col-box" style="display: none;">
             <input type="text" class="form-control" id="new-col-name" placeholder="{{ _('Folder Name...') }}" style="font-size: 0.8rem; height: 28px;">
             <button class="btn btn-sm btn-outline-secondary" onclick="submitNewCollection()" style="height: 28px; padding: 2px 8px;"><i class="fas fa-check"></i></button>
             <button class="btn btn-sm btn-outline-secondary" onclick="toggleColInput(false)" style="height: 28px; padding: 2px 8px;"><i class="fas fa-times"></i></button>
         </div>
-        <button class="btn btn-link btn-sm text-decoration-none text-muted" id="add-col-btn" onclick="toggleColInput(true)" style="font-size: 0.8rem; padding: 0; color: #772432 !important; font-weight: 500;">
+        <button class="topics-create-col-btn" id="add-col-btn" onclick="toggleColInput(true)">
             <i class="fas fa-plus" style="margin-right: 4px;"></i>{{ _('Create Collection') }}
         </button>
     </div>

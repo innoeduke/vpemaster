@@ -2,12 +2,6 @@
 
 {% block title %}{{ collection.name }}{% endblock %}
 
-{% block head_extra %}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
-{% endblock %}
-
 {% block content %}
 {% import 'topics/_macros.html' as ui %}
 <div class="msg-layout msg-layout--topics">
@@ -20,7 +14,7 @@
             <div class="topics-head-main">
                 <p class="topics-overline">{{ _('My Collections') }}</p>
                 <h2 class="topics-head-title"><i class="fas fa-folder-open topics-card-ic" aria-hidden="true"></i>{{ collection.name }}</h2>
-                <p class="topics-head-sub">{{ _('A private collection of saved prompts and essays.') }}</p>
+                <p class="topics-head-sub">{{ _('A private collection of saved topics and essays.') }}</p>
             </div>
             <div class="topics-head-actions">
                 <button class="topics-btn topics-btn--ghost topics-btn--danger" onclick="confirmDeleteCollection()">
@@ -29,9 +23,9 @@
             </div>
         </header>
 
-        <!-- Saved Prompts -->
+        <!-- Saved Topics -->
         <div class="topics-section-head">
-            <h4 class="topics-section-title">{{ _('Saved Prompts') }}</h4>
+            <h4 class="topics-section-title">{{ _('Saved Topics') }}</h4>
             <span class="topics-section-ornament" aria-hidden="true">⁂</span>
         </div>
 
@@ -51,7 +45,7 @@
         </ol>
         {% else %}
         <div class="topics-empty topics-empty--sm">
-            <p>{{ _('No saved prompts in this collection.') }}</p>
+            <p>{{ _('No saved topics in this collection.') }}</p>
         </div>
         {% endif %}
 
