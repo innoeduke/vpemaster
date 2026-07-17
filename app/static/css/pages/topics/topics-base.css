@@ -526,6 +526,8 @@
 
 /* Sidebar: create-collection widget */
 .topics-col-form {
+    --col-size: 28px;
+    --col-font: 0.78rem;
     display: flex;
     gap: 6px;
     padding: 10px 14px;
@@ -534,8 +536,8 @@
 .topics-col-input {
     flex: 1;
     min-width: 0;
-    height: 28px;
-    font-size: 0.78rem;
+    height: var(--col-size);
+    font-size: var(--col-font);
     padding: 4px 9px !important;
     line-height: 1.2;
     border-radius: 3px !important;
@@ -543,8 +545,8 @@
 
 .topics-col-icon-btn {
     flex-shrink: 0;
-    width: 28px;
-    height: 28px;
+    width: var(--col-size);
+    height: var(--col-size);
     padding: 0;
     display: inline-flex;
     align-items: center;

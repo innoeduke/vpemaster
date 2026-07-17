@@ -8,10 +8,12 @@
         <!-- Checkboxes loaded via JS -->
     </div>
     
-    <div style="border-top: 1px solid #eee; padding-top: 8px; margin-top: 8px;">
-        <div class="input-group input-group-sm">
-            <input type="text" id="dropdown-new-col-name" class="form-control form-control-sm" placeholder="{{ _('New collection...') }}" style="font-size: 0.75rem; height: 26px;">
-            <button class="btn btn-sm btn-outline-secondary" onclick="createCollectionFromDropdown()" style="height: 26px; padding: 2px 6px;"><i class="fas fa-plus"></i></button>
+    <div style="border-top: 1px solid #eee; padding-top: 4px; margin-top: 8px;">
+        <div class="topics-col-form" style="--col-size: 26px; --col-font: 0.75rem; padding: 6px 0 0;">
+            <input type="text" id="dropdown-new-col-name" class="topics-input topics-col-input" placeholder="{{ _('New collection...') }}">
+            <button class="topics-col-icon-btn topics-col-icon-btn--confirm" onclick="createCollectionFromDropdown()" title="{{ _('Create folder') }}" aria-label="{{ _('Create folder') }}">
+                <i class="fas fa-plus" aria-hidden="true"></i>
+            </button>
         </div>
     </div>
 </div>
