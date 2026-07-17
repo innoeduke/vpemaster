@@ -49,11 +49,11 @@
                     <span class="topics-field-label">{{ _('Visibility Settings') }}</span>
                     {% set current_visibility = response.visibility if response else 'private' %}
                     <div class="topics-radio-group">
-                        <label class="topics-radio" for="vis-private">
-                            <input type="radio" name="visibility" id="vis-private" value="private" {% if current_visibility == 'private' %}checked{% endif %}>
+                        <label class="topics-radio" for="vis-public">
+                            <input type="radio" name="visibility" id="vis-public" value="public" {% if current_visibility == 'public' %}checked{% endif %}>
                             <span class="topics-radio-label">
-                                <strong>{{ _('Private') }}</strong>
-                                <span>{{ _('Visible only to you. Perfect for personal logging.') }}</span>
+                                <strong>{{ _('Public') }}</strong>
+                                <span>{{ _('Visible to all registered users of the system. Featured on the explore board.') }}</span>
                             </span>
                         </label>
 
@@ -65,11 +65,11 @@
                             </span>
                         </label>
 
-                        <label class="topics-radio" for="vis-public">
-                            <input type="radio" name="visibility" id="vis-public" value="public" {% if current_visibility == 'public' %}checked{% endif %}>
+                        <label class="topics-radio" for="vis-private">
+                            <input type="radio" name="visibility" id="vis-private" value="private" {% if current_visibility == 'private' %}checked{% endif %}>
                             <span class="topics-radio-label">
-                                <strong>{{ _('Public (All Clubs)') }}</strong>
-                                <span>{{ _('Visible to all registered users of the system. Featured on the explore board.') }}</span>
+                                <strong>{{ _('Private') }}</strong>
+                                <span>{{ _('Visible only to you. Perfect for personal logging.') }}</span>
                             </span>
                         </label>
                     </div>
