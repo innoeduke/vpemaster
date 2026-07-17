@@ -508,6 +508,132 @@
     background: var(--topics-maroon-tint);
 }
 
+/* Small (28px) variant — used inline in the sidebar */
+.topics-icon-btn--sm {
+    width: 28px;
+    height: 28px;
+    font-size: 0.72rem;
+    border-radius: 3px;
+}
+
+/* Confirm (green-tinted hover) variant — e.g. accept input */
+.topics-icon-btn--success:hover,
+.topics-icon-btn--success:focus-visible {
+    color: #4a7a52;
+    border-color: #4a7a52;
+    background: rgba(74, 122, 82, 0.10);
+}
+
+/* Sidebar: create-collection widget */
+.topics-col-form {
+    display: flex;
+    gap: 6px;
+    padding: 10px 14px;
+}
+
+.topics-col-input {
+    flex: 1;
+    min-width: 0;
+    height: 28px;
+    font-size: 0.78rem;
+    padding: 4px 9px !important;
+    line-height: 1.2;
+    border-radius: 3px !important;
+}
+
+.topics-col-icon-btn {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid var(--topics-rule);
+    border-radius: 3px;
+    color: var(--topics-ink-soft);
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.topics-col-icon-btn:hover {
+    color: var(--topics-maroon);
+    border-color: var(--topics-maroon);
+}
+
+.topics-col-icon-btn--confirm:hover {
+    color: #4a7a52;
+    border-color: #4a7a52;
+    background: rgba(74, 122, 82, 0.1);
+}
+
+.topics-create-col-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    padding: 0 14px 0 14px;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--topics-maroon);
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.18s ease, transform 0.18s ease;
+}
+
+.topics-create-col-btn:hover {
+    color: var(--topics-maroon-deep);
+    transform: translateX(1px);
+}
+
+/* Sidebar: "Create Collection" toggle link (alias used outside the input form) */
+.topics-sidebar-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--topics-maroon);
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.18s ease, transform 0.18s ease;
+}
+
+.topics-sidebar-link:hover {
+    color: var(--topics-maroon-deep);
+    transform: translateX(1px);
+}
+
+.topics-sidebar-link i {
+    font-size: 0.78rem;
+}
+
+/* Sidebar: create-collection input group (input + confirm + cancel) */
+.topics-sidebar-create {
+    display: flex;
+    gap: 6px;
+    padding: 10px 14px;
+}
+
+.topics-sidebar-create .topics-input {
+    flex: 1;
+    min-width: 0;
+    height: 28px;
+    font-size: 0.78rem;
+    padding: 4px 9px;
+    line-height: 1.2;
+    border-radius: 3px;
+}
+
 /* --- Two-column grid: feed + archive --- */
 .topics-grid {
     display: grid;

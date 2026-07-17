@@ -25,10 +25,10 @@
 
     <!-- Create Collection Input -->
     <div style="padding: 6px 0 10px;">
-        <div class="input-group input-group-sm" id="create-col-box" style="display: none;">
-            <input type="text" class="form-control" id="new-col-name" placeholder="{{ _('Folder Name...') }}" style="font-size: 0.8rem; height: 28px;">
-            <button class="btn btn-sm btn-outline-secondary" onclick="submitNewCollection()" style="height: 28px; padding: 2px 8px;"><i class="fas fa-check"></i></button>
-            <button class="btn btn-sm btn-outline-secondary" onclick="toggleColInput(false)" style="height: 28px; padding: 2px 8px;"><i class="fas fa-times"></i></button>
+        <div class="topics-col-form" id="create-col-box" style="display: none;">
+            <input type="text" class="topics-input topics-col-input" id="new-col-name" placeholder="{{ _('Folder Name...') }}">
+            <button class="topics-col-icon-btn topics-col-icon-btn--confirm" onclick="submitNewCollection()" title="{{ _('Create') }}"><i class="fas fa-check"></i></button>
+            <button class="topics-col-icon-btn topics-col-icon-btn--cancel" onclick="toggleColInput(false)" title="{{ _('Cancel') }}"><i class="fas fa-times"></i></button>
         </div>
         <button class="topics-create-col-btn" id="add-col-btn" onclick="toggleColInput(true)">
             <i class="fas fa-plus" style="margin-right: 4px;"></i>{{ _('Create Collection') }}
