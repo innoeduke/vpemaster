@@ -1763,6 +1763,20 @@ textarea.topics-comment-input:focus {
     color: #b03a2e;
 }
 
+/* Warning variant: amber tint for "revert / stand down" actions */
+.topics-btn--warning {
+    background: transparent;
+    color: #b08442;
+    border-color: var(--topics-rule);
+}
+
+.topics-btn--warning:hover,
+.topics-btn--warning:focus-visible {
+    border-color: #b08442;
+    color: #8a6728;
+    background: rgba(176, 132, 66, 0.08);
+}
+
 .topics-btn--block {
     width: 100%;
     justify-content: center;

@@ -28,6 +28,23 @@ class TopicService:
         return topic
 
     @staticmethod
+    def unpublish_topic(topic_id):
+        """Revert a published topic back to draft, preserving all responses.
+
+        Sets status='draft' and clears published_at so the dashboard hero
+        and past-prompts list no longer surface it. Existing essay
+        responses and bookmarks are left intact — they remain attached
+        to the topic so the admin can re-publish later.
+        """
+        topic = db.session.get(Topic, topic_id)
+        if not topic:
+            raise ValueError(f"Topic with ID {topic_id} not found.")
+        topic.status = 'draft'
+        topic.published_at = None
+        db.session.commit()
+        return topic
+
+    @staticmethod
     def update_topic(topic_id, title, body):
         """Update an existing topic."""
         topic = db.session.get(Topic, topic_id)

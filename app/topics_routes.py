@@ -690,7 +690,23 @@ def admin_publish(topic_id):
         flash(_('Topic has been published successfully.'), 'success')
     except Exception as e:
         flash(str(e), 'error')
-        
+
+    return redirect(url_for('topics_bp.admin'))
+
+
+@topics_bp.route('/topics/admin/<int:topic_id>/unpublish', methods=['POST'])
+@login_required
+def admin_unpublish(topic_id):
+    """Revert a published topic back to draft, keeping responses intact."""
+    if not is_authorized(Permissions.TOPICS_MANAGE):
+        abort(403)
+
+    try:
+        TopicService.unpublish_topic(topic_id)
+        flash(_('Topic has been unpublished.'), 'success')
+    except Exception as e:
+        flash(str(e), 'error')
+
     return redirect(url_for('topics_bp.admin'))
 
 
@@ -706,5 +722,5 @@ def admin_delete(topic_id):
         flash(_('Topic has been deleted.'), 'success')
     except Exception as e:
         flash(str(e), 'error')
-        
+
     return redirect(url_for('topics_bp.admin'))
