@@ -1,0 +1,492 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if response.title %}{{ response.title }}{% else %}{{ _('Reflection') }}{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="msg-layout msg-layout--issues">
+    <!-- Sidebar Partial -->
+    {% include 'topics/_sidebar.html' %}
+
+    <!-- Main Content Pane -->
+    <div class="msg-main">
+        <div class="msg-header" style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <a href="{% if response.topic_id %}{{ url_for('topics_bp.topic_detail', topic_id=response.topic_id) }}{% else %}{{ url_for('topics_bp.dashboard') }}{% endif %}" class="text-muted text-decoration-none" style="font-size: 0.85rem; display: flex; align-items: center; gap: 4px; margin-bottom: 6px;">
+                    <i class="fas fa-arrow-left"></i> 
+                    {% if response.topic_id %}{{ _('Back to Topic') }}{% else %}{{ _('Back to Dashboard') }}{% endif %}
+                </a>
+                <h2 class="msg-header-title">{% if response.title %}{{ response.title }}{% else %}{{ _('Reflection Essay') }}{% endif %}</h2>
+                <div class="text-muted" style="font-size: 0.85rem;">
+                    {{ _('Published') }} {{ response.created_at.strftime('%Y-%m-%d %H:%M') }}
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                {% if response.author_id == current_user.id %}
+                <a href="{{ url_for('topics_bp.edit_response', response_id=response.id) }}" class="btn btn-sm btn-outline-secondary" style="border-radius: 20px;">
+                    <i class="fas fa-edit" style="margin-right: 6px;"></i>{{ _('Edit Essay') }}
+                </a>
+                {% endif %}
+                <button class="btn btn-sm btn-outline-secondary" onclick="openBookmarkDropdown(this, null, {{ response.id }})" style="border-radius: 20px;" title="{{ _('Save Reflection') }}">
+                    <i class="far fa-bookmark" style="margin-right: 6px; color: #772432;"></i>{{ _('Save') }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Topic Prompt Summary Box -->
+        {% if topic %}
+        <div class="p-3 mb-4" style="background: #faf0f1; border-left: 4px solid #772432; border-radius: 6px; font-size: 0.85rem;">
+            <strong style="color: #772432; display: block; margin-bottom: 2px;">{{ _('In response to:') }} <a href="{{ url_for('topics_bp.topic_detail', topic_id=topic.id) }}" style="color: #772432; font-weight: 600; text-decoration: underline;">{{ topic.title }}</a></strong>
+            <div class="markdown-content text-muted text-truncate" data-markdown="{{ topic.body | escape }}" style="max-width: 90%;"></div>
+        </div>
+        {% else %}
+        <div class="p-2 mb-4 text-muted" style="background: #f8f9fa; border-left: 4px solid #ccc; border-radius: 6px; font-size: 0.85rem;">
+            <i class="fas fa-ban" style="margin-right: 4px;"></i>{{ _('[Topic Deleted]') }}
+        </div>
+        {% endif %}
+
+        <!-- Essay Display Box -->
+        <div class="card shadow-sm border-0 mb-4" style="border-radius: 8px; background: #fff;">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-3 border-bottom pb-3 mb-3">
+                    <img src="{{ response.author.avatar_url or url_for('static', filename='images/default_avatar.png') }}" class="rounded-circle" style="width: 42px; height: 42px; object-fit: cover;">
+                    <div>
+                        <h4 style="font-size: 1rem; font-weight: 700; margin: 0; color: #333;">{{ response.author.username }}</h4>
+                        <span class="text-muted" style="font-size: 0.75rem;">
+                            {% if response.visibility == 'public' %}
+                                <span class="text-success"><i class="fas fa-globe-asia" style="margin-right: 4px;"></i>{{ _('Public Reflection') }}</span>
+                            {% elif response.visibility == 'club' %}
+                                <span class="text-info"><i class="fas fa-users" style="margin-right: 4px;"></i>{{ _('Club-Only Reflection') }}</span>
+                            {% else %}
+                                <span class="text-muted"><i class="fas fa-lock" style="margin-right: 4px;"></i>{{ _('Private Reflection') }}</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="markdown-content text-dark" data-markdown="{{ response.body | escape }}" style="font-size: 1.05rem; line-height: 1.7; min-height: 200px;"></div>
+            </div>
+        </div>
+
+        <!-- Comments Section -->
+        <div class="comments-section-container">
+            <h4 style="color: #444; font-weight: 600; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 8px;">
+                <i class="far fa-comments" style="color: #772432;"></i>
+                <span>{{ _('Comments') }} (<span id="total-comments-count">{{ top_comments | length + replies_map.values() | map('length') | sum }}</span>)</span>
+            </h4>
+
+            <!-- Add Top-Level Comment Form -->
+            {% if is_authorized(Permissions.TOPICS_COMMENT) %}
+            <div class="card p-3 mb-4 shadow-sm border-0" style="border-radius: 8px; background: #fff;">
+                <div class="d-flex align-items-start gap-3">
+                    <img src="{{ current_user.avatar_url or url_for('static', filename='images/default_avatar.png') }}" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
+                    <div style="flex-grow: 1;">
+                        <textarea id="new-comment-body" class="form-control" rows="3" placeholder="{{ _('Add a comment... (Markdown supported)') }}" style="font-size: 0.85rem; border-radius: 6px;"></textarea>
+                        <div class="d-flex justify-content-end mt-2">
+                            <button class="btn btn-sm btn-primary" onclick="submitComment()" style="background-color: #772432; border-color: #772432; border-radius: 20px; font-weight: 500; font-size: 0.8rem;">
+                                {{ _('Post Comment') }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Comments Feed -->
+            <div class="d-flex flex-column gap-3" id="comments-feed-list">
+                {% if top_comments %}
+                    {% for comment in top_comments %}
+                    <div class="comment-thread-container" id="comment-container-{{ comment.id }}">
+                        <!-- Top Comment Card -->
+                        <div class="card p-3 shadow-sm border-0" style="border-radius: 8px; background: #fff;">
+                            <div class="d-flex align-items-start gap-3">
+                                <img src="{{ comment.author.avatar_url or url_for('static', filename='images/default_avatar.png') }}" class="rounded-circle" style="width: 30px; height: 30px; object-fit: cover;">
+                                <div style="flex-grow: 1;" class="position-relative">
+                                    <div class="d-flex align-items-center gap-2 mb-1" style="font-size: 0.8rem;">
+                                        <strong style="color: #444;">{{ comment.author.username }}</strong>
+                                        <span class="text-muted" style="font-size: 0.75rem;">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                                    </div>
+                                    
+                                    <!-- Comment content view -->
+                                    <div class="comment-body markdown-content text-muted" id="comment-body-{{ comment.id }}" data-markdown="{{ comment.body | escape }}" style="font-size: 0.85rem; line-height: 1.5;"></div>
+                                    
+                                    <!-- Inline Edit Textarea (hidden by default) -->
+                                    <div id="comment-edit-box-{{ comment.id }}" style="display: none; margin-top: 6px;">
+                                        <textarea class="form-control" id="comment-edit-textarea-{{ comment.id }}" rows="2" style="font-size: 0.85rem; border-radius: 6px;"></textarea>
+                                        <div class="d-flex justify-content-end gap-2 mt-2">
+                                            <button class="btn btn-sm btn-light" onclick="toggleEditComment({{ comment.id }}, false)">{{ _('Cancel') }}</button>
+                                            <button class="btn btn-sm btn-primary" onclick="saveEditComment({{ comment.id }})" style="background-color: #772432; border-color: #772432;">{{ _('Save') }}</button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Action Buttons -->
+                                    <div class="d-flex align-items-center gap-3 mt-2" style="font-size: 0.75rem; color: #777;">
+                                        <button class="btn btn-link p-0 text-decoration-none text-muted" onclick="toggleReplyBox({{ comment.id }}, true)" style="font-size: 0.75rem;">
+                                            <i class="far fa-comment-dots" style="margin-right: 4px;"></i>{{ _('Reply') }}
+                                        </button>
+                                        
+                                        {% if comment.author_id == current_user.id %}
+                                        <button class="btn btn-link p-0 text-decoration-none text-muted" onclick="toggleEditComment({{ comment.id }}, true)" style="font-size: 0.75rem;">
+                                            <i class="fas fa-edit" style="margin-right: 4px;"></i>{{ _('Edit') }}
+                                        </button>
+                                        {% endif %}
+                                        
+                                        {% if comment.author_id == current_user.id or response.author_id == current_user.id or current_user.is_sysadmin %}
+                                        <button class="btn btn-link p-0 text-decoration-none text-danger" onclick="deleteComment({{ comment.id }})" style="font-size: 0.75rem;">
+                                            <i class="fas fa-trash-alt" style="margin-right: 4px;"></i>{{ _('Delete') }}
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Nested Replies Container -->
+                        <div class="replies-sub-list ps-5 mt-2 d-flex flex-column gap-2" id="replies-list-{{ comment.id }}">
+                            {% set replies = replies_map.get(comment.id, []) %}
+                            {% for reply in replies %}
+                            <div class="card p-2 shadow-sm border-0" id="comment-container-{{ reply.id }}" style="border-radius: 6px; background: #fafafa; border-left: 2px solid #ccc;">
+                                <div class="d-flex align-items-start gap-2">
+                                    <img src="{{ reply.author.avatar_url or url_for('static', filename='images/default_avatar.png') }}" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;">
+                                    <div style="flex-grow: 1;" class="position-relative">
+                                        <div class="d-flex align-items-center gap-2 mb-1" style="font-size: 0.75rem;">
+                                            <strong style="color: #444;">{{ reply.author.username }}</strong>
+                                            <span class="text-muted" style="font-size: 0.7rem;">{{ reply.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                                        </div>
+                                        
+                                        <!-- Reply body -->
+                                        <div class="comment-body markdown-content text-muted" id="comment-body-{{ reply.id }}" data-markdown="{{ reply.body | escape }}" style="font-size: 0.8rem; line-height: 1.4;"></div>
+                                        
+                                        <!-- Reply Inline Edit Textarea -->
+                                        <div id="comment-edit-box-{{ reply.id }}" style="display: none; margin-top: 4px;">
+                                            <textarea class="form-control" id="comment-edit-textarea-{{ reply.id }}" rows="2" style="font-size: 0.8rem; border-radius: 6px;"></textarea>
+                                            <div class="d-flex justify-content-end gap-2 mt-2">
+                                                <button class="btn btn-sm btn-light py-1px" onclick="toggleEditComment({{ reply.id }}, false)" style="font-size: 0.75rem;">{{ _('Cancel') }}</button>
+                                                <button class="btn btn-sm btn-primary py-1px" onclick="saveEditComment({{ reply.id }})" style="background-color: #772432; border-color: #772432; font-size: 0.75rem;">{{ _('Save') }}</button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Reply Actions -->
+                                        <div class="d-flex align-items-center gap-3 mt-1" style="font-size: 0.7rem; color: #777;">
+                                            {% if reply.author_id == current_user.id %}
+                                            <button class="btn btn-link p-0 text-decoration-none text-muted" onclick="toggleEditComment({{ reply.id }}, true)" style="font-size: 0.7rem;">
+                                                <i class="fas fa-edit" style="margin-right: 4px;"></i>{{ _('Edit') }}
+                                            </button>
+                                            {% endif %}
+                                            
+                                            {% if reply.author_id == current_user.id or response.author_id == current_user.id or current_user.is_sysadmin %}
+                                            <button class="btn btn-link p-0 text-decoration-none text-danger" onclick="deleteComment({{ reply.id }})" style="font-size: 0.7rem;">
+                                                <i class="fas fa-trash-alt" style="margin-right: 4px;"></i>{{ _('Delete') }}
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Add Reply Input Box (hidden by default) -->
+                        <div class="ps-5 mt-2" id="reply-box-{{ comment.id }}" style="display: none;">
+                            <div class="d-flex align-items-start gap-2">
+                                <textarea class="form-control form-control-sm" id="reply-textarea-{{ comment.id }}" rows="1" placeholder="{{ _('Reply to comment...') }}" style="font-size: 0.8rem; border-radius: 6px;"></textarea>
+                                <button class="btn btn-sm btn-primary" onclick="submitReply({{ comment.id }})" style="background-color: #772432; border-color: #772432; height: 32px;"><i class="fas fa-paper-plane"></i></button>
+                                <button class="btn btn-sm btn-light" onclick="toggleReplyBox({{ comment.id }}, false)" style="height: 32px;"><i class="fas fa-times"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center py-4" id="no-comments-prompt">
+                        {{ _('No comments yet. Start the conversation!') }}
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bookmark Dropdown Portal -->
+{% include 'topics/_bookmark_dropdown.html' %}
+
+<!-- Markdown JS Parser Scripts -->
+<script src="{{ url_for('static', filename='vendor/js/marked.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/js/purify.min.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    marked.use({ gfm: true, breaks: true });
+    renderAllMarkdown();
+});
+
+function renderAllMarkdown() {
+    document.querySelectorAll('.markdown-content').forEach(el => {
+        const raw = el.getAttribute('data-markdown');
+        if (raw) {
+            el.innerHTML = DOMPurify.sanitize(marked.parse(raw));
+        }
+    });
+}
+
+// Comments Count Helper
+function incrementCommentCount(amount) {
+    const el = document.getElementById('total-comments-count');
+    if (el) {
+        let current = parseInt(el.textContent, 10) || 0;
+        el.textContent = current + amount;
+    }
+}
+
+// 1. Submit Top-Level Comment (AJAX)
+function submitComment() {
+    const textarea = document.getElementById('new-comment-body');
+    const body = textarea.value.trim();
+    if (!body) return;
+
+    fetch("{{ url_for('topics_bp.add_comment', response_id=response.id) }}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ body: body })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            textarea.value = '';
+            
+            // Remove "No comments yet" if present
+            const noPrompt = document.getElementById('no-comments-prompt');
+            if (noPrompt) noPrompt.remove();
+            
+            // Build comment HTML block
+            const commentHTML = `
+            <div class="comment-thread-container" id="comment-container-${data.comment_id}">
+                <div class="card p-3 shadow-sm border-0" style="border-radius: 8px; background: #fff;">
+                    <div class="d-flex align-items-start gap-3">
+                        <img src="${data.avatar_url}" class="rounded-circle" style="width: 30px; height: 30px; object-fit: cover;">
+                        <div style="flex-grow: 1;" class="position-relative">
+                            <div class="d-flex align-items-center gap-2 mb-1" style="font-size: 0.8rem;">
+                                <strong style="color: #444;">${data.author}</strong>
+                                <span class="text-muted" style="font-size: 0.75rem;">${data.created_at}</span>
+                            </div>
+                            
+                            <div class="comment-body markdown-content text-muted" id="comment-body-${data.comment_id}" data-markdown="${escapeHtml(data.body)}" style="font-size: 0.85rem; line-height: 1.5;"></div>
+                            
+                            <div id="comment-edit-box-${data.comment_id}" style="display: none; margin-top: 6px;">
+                                <textarea class="form-control" id="comment-edit-textarea-${data.comment_id}" rows="2" style="font-size: 0.85rem; border-radius: 6px;"></textarea>
+                                <div class="d-flex justify-content-end gap-2 mt-2">
+                                    <button class="btn btn-sm btn-light" onclick="toggleEditComment(${data.comment_id}, false)">Cancel</button>
+                                    <button class="btn btn-sm btn-primary" onclick="saveEditComment(${data.comment_id})" style="background-color: #772432; border-color: #772432;">Save</button>
+                                </div>
+                            </div>
+
+                            <div class="d-flex align-items-center gap-3 mt-2" style="font-size: 0.75rem; color: #777;">
+                                <button class="btn btn-link p-0 text-decoration-none text-muted" onclick="toggleReplyBox(${data.comment_id}, true)" style="font-size: 0.75rem;">
+                                    <i class="far fa-comment-dots" style="margin-right: 4px;"></i>Reply
+                                </button>
+                                <button class="btn btn-link p-0 text-decoration-none text-muted" onclick="toggleEditComment(${data.comment_id}, true)" style="font-size: 0.75rem;">
+                                    <i class="fas fa-edit" style="margin-right: 4px;"></i>Edit
+                                </button>
+                                <button class="btn btn-link p-0 text-decoration-none text-danger" onclick="deleteComment(${data.comment_id})" style="font-size: 0.75rem;">
+                                    <i class="fas fa-trash-alt" style="margin-right: 4px;"></i>Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="replies-sub-list ps-5 mt-2 d-flex flex-column gap-2" id="replies-list-${data.comment_id}"></div>
+                
+                <div class="ps-5 mt-2" id="reply-box-${data.comment_id}" style="display: none;">
+                    <div class="d-flex align-items-start gap-2">
+                        <textarea class="form-control form-control-sm" id="reply-textarea-${data.comment_id}" rows="1" placeholder="Reply to comment..." style="font-size: 0.8rem; border-radius: 6px;"></textarea>
+                        <button class="btn btn-sm btn-primary" onclick="submitReply(${data.comment_id})" style="background-color: #772432; border-color: #772432; height: 32px;"><i class="fas fa-paper-plane"></i></button>
+                        <button class="btn btn-sm btn-light" onclick="toggleReplyBox(${data.comment_id}, false)" style="height: 32px;"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+            </div>`;
+            
+            const feed = document.getElementById('comments-feed-list');
+            feed.insertAdjacentHTML('beforeend', commentHTML);
+            renderAllMarkdown();
+            incrementCommentCount(1);
+        } else {
+            alert(data.error || 'Failed to post comment.');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('An error occurred.');
+    });
+}
+
+// 2. Submit Nested Reply (AJAX)
+function submitReply(parentId) {
+    const textarea = document.getElementById(`reply-textarea-${parentId}`);
+    const body = textarea.value.trim();
+    if (!body) return;
+
+    fetch("{{ url_for('topics_bp.add_comment', response_id=response.id) }}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ body: body, parent_id: parentId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            textarea.value = '';
+            toggleReplyBox(parentId, false); // Hide reply box
+            
+            // Build reply HTML block
+            const replyHTML = `
+            <div class="card p-2 shadow-sm border-0" id="comment-container-${data.comment_id}" style="border-radius: 6px; background: #fafafa; border-left: 2px solid #ccc;">
+                <div class="d-flex align-items-start gap-2">
+                    <img src="${data.avatar_url}" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;">
+                    <div style="flex-grow: 1;" class="position-relative">
+                        <div class="d-flex align-items-center gap-2 mb-1" style="font-size: 0.75rem;">
+                            <strong style="color: #444;">${data.author}</strong>
+                            <span class="text-muted" style="font-size: 0.7rem;">${data.created_at}</span>
+                        </div>
+                        
+                        <div class="comment-body markdown-content text-muted" id="comment-body-${data.comment_id}" data-markdown="${escapeHtml(data.body)}" style="font-size: 0.8rem; line-height: 1.4;"></div>
+                        
+                        <div id="comment-edit-box-${data.comment_id}" style="display: none; margin-top: 4px;">
+                            <textarea class="form-control" id="comment-edit-textarea-${data.comment_id}" rows="2" style="font-size: 0.8rem; border-radius: 6px;"></textarea>
+                            <div class="d-flex justify-content-end gap-2 mt-2">
+                                <button class="btn btn-sm btn-light py-1px" onclick="toggleEditComment(${data.comment_id}, false)" style="font-size: 0.75rem;">Cancel</button>
+                                <button class="btn btn-sm btn-primary py-1px" onclick="saveEditComment(${data.comment_id})" style="background-color: #772432; border-color: #772432; font-size: 0.75rem;">Save</button>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-3 mt-1" style="font-size: 0.7rem; color: #777;">
+                            <button class="btn btn-link p-0 text-decoration-none text-muted" onclick="toggleEditComment(${data.comment_id}, true)" style="font-size: 0.7rem;">
+                                <i class="fas fa-edit" style="margin-right: 4px;"></i>Edit
+                            </button>
+                            <button class="btn btn-link p-0 text-decoration-none text-danger" onclick="deleteComment(${data.comment_id})" style="font-size: 0.7rem;">
+                                <i class="fas fa-trash-alt" style="margin-right: 4px;"></i>Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+            
+            const sublist = document.getElementById(`replies-list-${parentId}`);
+            sublist.insertAdjacentHTML('beforeend', replyHTML);
+            renderAllMarkdown();
+            incrementCommentCount(1);
+        } else {
+            alert(data.error || 'Failed to post reply.');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('An error occurred.');
+    });
+}
+
+// 3. Edit Comment Toggles
+function toggleEditComment(commentId, show) {
+    const bodyDiv = document.getElementById(`comment-body-${commentId}`);
+    const editBox = document.getElementById(`comment-edit-box-${commentId}`);
+    const textarea = document.getElementById(`comment-edit-textarea-${commentId}`);
+    
+    if (show) {
+        // Pre-populate raw markdown content
+        const rawMarkdown = bodyDiv.getAttribute('data-markdown');
+        textarea.value = rawMarkdown;
+        bodyDiv.style.display = 'none';
+        editBox.style.display = 'block';
+        textarea.focus();
+    } else {
+        bodyDiv.style.display = 'block';
+        editBox.style.display = 'none';
+    }
+}
+
+// 4. Save Edited Comment (AJAX)
+function saveEditComment(commentId) {
+    const textarea = document.getElementById(`comment-edit-textarea-${commentId}`);
+    const body = textarea.value.trim();
+    if (!body) return;
+
+    fetch("{{ url_for('topics_bp.add_comment', response_id=response.id) }}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ comment_id: commentId, body: body })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const bodyDiv = document.getElementById(`comment-body-${commentId}`);
+            bodyDiv.setAttribute('data-markdown', data.body);
+            bodyDiv.innerHTML = DOMPurify.sanitize(marked.parse(data.body));
+            toggleEditComment(commentId, false);
+        } else {
+            alert(data.error || 'Failed to save comment.');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('An error occurred.');
+    });
+}
+
+// 5. Delete Comment (AJAX)
+function deleteComment(commentId) {
+    if (!confirm("{{ _('Are you sure you want to delete this comment?') }}")) return;
+
+    fetch(`/comment/${commentId}/delete`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const el = document.getElementById(`comment-container-${commentId}`);
+            if (el) {
+                // Fade out effect
+                el.style.transition = 'opacity 0.3s';
+                el.style.opacity = '0';
+                setTimeout(() => {
+                    el.remove();
+                    incrementCommentCount(-1);
+                }, 300);
+            }
+        } else {
+            alert(data.error || 'Failed to delete comment.');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('An error occurred.');
+    });
+}
+
+// 6. Reply box toggle UI
+function toggleReplyBox(parentId, show) {
+    const box = document.getElementById(`reply-box-${parentId}`);
+    box.style.display = show ? 'block' : 'none';
+    if (show) {
+        document.getElementById(`reply-textarea-${parentId}`).focus();
+    }
+}
+
+// HTML Entity escaper helper for AJAX dynamic additions
+function escapeHtml(text) {
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+</script>
+{% endblock %}

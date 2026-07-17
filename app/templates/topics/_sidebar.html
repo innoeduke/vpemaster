@@ -1,0 +1,106 @@
+<div class="msg-sidebar">
+    <p class="msg-sidebar-eyebrow">{{ _('Table Topics') }}</p>
+    
+    <div class="msg-nav-container">
+        <a href="{{ url_for('topics_bp.dashboard') }}" class="msg-nav-item {% if active_tab == 'dashboard' %}active{% endif %}">
+            <i class="fas fa-star"></i> <span>{{ _('Featured Topic') }}</span>
+        </a>
+        <a href="{{ url_for('topics_bp.explore') }}" class="msg-nav-item {% if active_tab == 'explore' %}active{% endif %}">
+            <i class="fas fa-globe"></i> <span>{{ _('Explore Board') }}</span>
+        </a>
+        <a href="{{ url_for('topics_bp.mine') }}" class="msg-nav-item {% if active_tab == 'mine' %}active{% endif %}">
+            <i class="fas fa-book-open"></i> <span>{{ _('My Journal') }}</span>
+        </a>
+    </div>
+
+    <p class="msg-sidebar-eyebrow" style="margin-top: 1.5rem;">{{ _('My Collections') }}</p>
+    
+    <div class="msg-nav-container" id="collections-list">
+        {% for col in collections %}
+        <a href="{{ url_for('topics_bp.collection_detail', collection_id=col.id) }}" class="msg-nav-item {% if active_tab == 'collection_' ~ col.id %}active{% endif %}" id="sidebar-col-{{ col.id }}">
+            <i class="fas fa-folder"></i> <span>{{ col.name }}</span>
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- Create Collection Input -->
+    <div style="padding: 10px 14px;">
+        <div class="input-group input-group-sm" id="create-col-box" style="display: none;">
+            <input type="text" class="form-control" id="new-col-name" placeholder="{{ _('Folder Name...') }}" style="font-size: 0.8rem; height: 28px;">
+            <button class="btn btn-sm btn-outline-secondary" onclick="submitNewCollection()" style="height: 28px; padding: 2px 8px;"><i class="fas fa-check"></i></button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="toggleColInput(false)" style="height: 28px; padding: 2px 8px;"><i class="fas fa-times"></i></button>
+        </div>
+        <button class="btn btn-link btn-sm text-decoration-none text-muted" id="add-col-btn" onclick="toggleColInput(true)" style="font-size: 0.8rem; padding: 0; color: #772432 !important; font-weight: 500;">
+            <i class="fas fa-plus" style="margin-right: 4px;"></i>{{ _('Create Collection') }}
+        </button>
+    </div>
+
+    {% if is_authorized(Permissions.TOPICS_MANAGE) %}
+    <p class="msg-sidebar-eyebrow" style="margin-top: 1.5rem;">{{ _('Admin') }}</p>
+    <div class="msg-nav-container">
+        <a href="{{ url_for('topics_bp.admin') }}" class="msg-nav-item {% if active_tab == 'admin' %}active{% endif %}">
+            <i class="fas fa-tasks"></i> <span>{{ _('Manage Topics') }}</span>
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function toggleColInput(show) {
+    document.getElementById('create-col-box').style.display = show ? 'flex' : 'none';
+    document.getElementById('add-col-btn').style.display = show ? 'none' : 'block';
+    if (show) {
+        document.getElementById('new-col-name').focus();
+    }
+}
+
+function submitNewCollection() {
+    const nameInput = document.getElementById('new-col-name');
+    const name = nameInput.value.trim();
+    if (!name) return;
+
+    fetch("{{ url_for('topics_bp.create_collection') }}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ name: name })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            // Append to sidebar list
+            const list = document.getElementById('collections-list');
+            const url = "{{ url_for('topics_bp.collection_detail', collection_id=0) }}".replace('/0', '/' + data.collection_id);
+            const item = document.createElement('a');
+            item.href = url;
+            item.className = 'msg-nav-item';
+            item.id = 'sidebar-col-' + data.collection_id;
+            item.innerHTML = `<i class="fas fa-folder"></i> <span>${data.name}</span>`;
+            list.appendChild(item);
+            
+            // Clean up and hide input
+            nameInput.value = '';
+            toggleColInput(false);
+            
+            // If bookmark dropdown is open, reload dropdown checklist
+            if (typeof loadCollectionsInDropdown === 'function') {
+                loadCollectionsInDropdown();
+            }
+        } else {
+            alert(data.error || 'Failed to create collection.');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('An error occurred.');
+    });
+}
+
+// Add enter key handler for name input
+document.getElementById('new-col-name').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        submitNewCollection();
+    }
+});
+</script>

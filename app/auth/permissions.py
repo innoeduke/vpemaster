@@ -134,6 +134,12 @@ class Permissions:
     CHAT_COMMANDS = 'CHAT_COMMANDS'
     CHAT_AI = 'CHAT_AI'
 
+    # Table Topics (Category: topics)
+    TOPICS_VIEW = 'TOPICS_VIEW'
+    TOPICS_WRITE = 'TOPICS_WRITE'
+    TOPICS_COMMENT = 'TOPICS_COMMENT'
+    TOPICS_MANAGE = 'TOPICS_MANAGE'
+
     # Roles
     SYSADMIN = 'SysAdmin'
     CLUBADMIN = 'ClubAdmin'

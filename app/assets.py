@@ -80,6 +80,8 @@ css_all = Bundle(
     'css/pages/issues/list.css',
     'css/pages/issues/detail.css',
     'css/pages/issues/new_issue_modal.css',
+    # Table Topics CSS
+    'css/pages/topics/topics-base.css',
     # Settings page CSS
     'css/pages/settings/settings-page.css',
     # Uploads page CSS

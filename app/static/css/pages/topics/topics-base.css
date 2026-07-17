@@ -1,0 +1,167 @@
+/* Table Topics specific stylesheets */
+
+/* Layout & Sidebar styling */
+.msg-layout {
+    display: flex;
+    gap: 24px;
+    padding: 24px;
+    min-height: calc(100vh - 60px);
+}
+
+.msg-sidebar {
+    width: 250px;
+    flex-shrink: 0;
+    background: #fbfbfb;
+    border-right: 1px solid #eef0f2;
+    padding-right: 16px;
+}
+
+.msg-main {
+    flex-grow: 1;
+    max-width: calc(100% - 274px);
+}
+
+.msg-sidebar-eyebrow {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #888;
+    margin-bottom: 8px;
+    margin-left: 10px;
+    font-weight: 600;
+}
+
+.msg-nav-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.msg-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    color: #555;
+    text-decoration: none !important;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.msg-nav-item i {
+    font-size: 0.95rem;
+    width: 18px;
+    text-align: center;
+    color: #888;
+    transition: color 0.2s ease;
+}
+
+.msg-nav-item:hover {
+    background: #f1f3f5;
+    color: #111;
+}
+
+.msg-nav-item:hover i {
+    color: #772432;
+}
+
+.msg-nav-item.active {
+    background: #faf0f1;
+    color: #772432;
+}
+
+.msg-nav-item.active i {
+    color: #772432;
+}
+
+/* Bookmark dropdown style */
+.bookmark-dropdown {
+    animation: dropdownFadeIn 0.2s ease;
+}
+
+@keyframes dropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.bookmark-dropdown label {
+    font-size: 0.8rem;
+    color: #444;
+}
+
+.bookmark-dropdown input[type="checkbox"] {
+    accent-color: #772432;
+    cursor: pointer;
+}
+
+/* Card customizations */
+.text-truncate-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.border-dashed {
+    border-style: dashed !important;
+}
+
+.btn-xs {
+    padding: 1px 6px;
+    font-size: 0.75rem;
+}
+
+/* Markdown parsing adjustments */
+.markdown-content p {
+    margin-bottom: 0.75rem;
+}
+.markdown-content p:last-child {
+    margin-bottom: 0;
+}
+
+/* Comments enhancements */
+.comment-thread-container {
+    border-left: 2px solid #f1f3f5;
+    padding-left: 2px;
+}
+
+.comment-body p {
+    margin-bottom: 0.25rem;
+}
+.comment-body p:last-child {
+    margin-bottom: 0;
+}
+
+.replies-sub-list {
+    margin-bottom: 6px;
+}
+
+/* Responsive adjustment */
+@media (max-width: 768px) {
+    .msg-layout {
+        flex-direction: column;
+        padding: 12px;
+    }
+    
+    .msg-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #eef0f2;
+        padding-right: 0;
+        padding-bottom: 16px;
+        margin-bottom: 16px;
+    }
+    
+    .msg-main {
+        max-width: 100%;
+    }
+}

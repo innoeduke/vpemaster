@@ -25,6 +25,8 @@ from .program import Program, ProgramTask, ProgramEnrollment
 from .upload_link import UploadLink
 from .chat_message import ChatMessage
 from .issue import Issue, IssueComment
+from .topic import Topic, TopicResponse, TopicComment, TopicCollection, CollectionItem
+
 
 # Import permission system models
 from .permission import Permission
@@ -99,4 +101,9 @@ __all__ = [
     'ChatMessage',
     'Issue',
     'IssueComment',
+    'Topic',
+    'TopicResponse',
+    'TopicComment',
+    'TopicCollection',
+    'CollectionItem',
 ]

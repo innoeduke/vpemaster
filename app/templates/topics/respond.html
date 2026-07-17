@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if response %}{{ _('Edit Reflection') }}{% else %}{{ _('Write Reflection') }}{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 800px;">
+    <div class="mb-3">
+        <a href="{% if response %}{{ url_for('topics_bp.response_detail', response_id=response.id) }}{% else %}{{ url_for('topics_bp.topic_detail', topic_id=topic.id) }}{% endif %}" class="text-muted text-decoration-none" style="font-size: 0.85rem; display: flex; align-items: center; gap: 4px;">
+            <i class="fas fa-arrow-left"></i> {{ _('Cancel and Back') }}
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0" style="border-radius: 8px;">
+        <div class="card-body p-4">
+            <h2 class="card-title mb-4" style="color: #772432; font-weight: 700;">
+                {% if response %}{{ _('Edit My Reflection') }}{% else %}{{ _('Write Reflection') }}{% endif %}
+            </h2>
+
+            <!-- Prompt Preview Box -->
+            <div class="p-3 mb-4" style="background: #faf0f1; border-left: 4px solid #772432; border-radius: 6px; font-size: 0.9rem;">
+                <strong style="color: #772432; display: block; margin-bottom: 4px;">{{ _('Topic Prompt:') }} {{ topic.title }}</strong>
+                <div class="markdown-content text-muted" data-markdown="{{ topic.body | escape }}"></div>
+            </div>
+
+            <form method="POST">
+                <div class="form-group mb-3">
+                    <label for="title" style="font-weight: 600; color: #444; margin-bottom: 6px;">{{ _('Reflection Title (Optional)') }}</label>
+                    <input type="text" id="title" name="title" class="form-control" placeholder="{{ _('Give your thoughts a title...') }}" value="{{ response.title if response and response.title else '' }}" style="border-radius: 6px;">
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="body" style="font-weight: 600; color: #444; margin-bottom: 6px;">
+                        {{ _('My Essay') }} <span class="text-muted" style="font-weight: normal; font-size: 0.8rem;">({{ _('Markdown supported') }})</span>
+                    </label>
+                    <textarea id="body" name="body" class="form-control" rows="15" placeholder="{{ _('Reflect on the prompt and compose your essay here...') }}" required style="font-family: inherit; font-size: 0.95rem; line-height: 1.6; border-radius: 6px;" oninput="countWords(this)">{{ response.body if response else '' }}</textarea>
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-1" style="font-size: 0.8rem; color: #777;">
+                        <span id="word-count-display">0 {{ _('words') }}</span>
+                        <span>{{ _('Tip: Use **bold** for emphasis, *italics* for style.') }}</span>
+                    </div>
+                </div>
+
+                <!-- Visibility Radio Group -->
+                <div class="form-group mb-4">
+                    <label style="font-weight: 600; color: #444; display: block; margin-bottom: 8px;">{{ _('Visibility Settings') }}</label>
+                    
+                    {% set current_visibility = response.visibility if response else 'private' %}
+                    
+                    <div class="d-flex flex-column gap-2">
+                        <div class="form-check" style="display: flex; align-items: flex-start; gap: 8px;">
+                            <input class="form-check-input" type="radio" name="visibility" id="vis-private" value="private" {% if current_visibility == 'private' %}checked{% endif %}>
+                            <label class="form-check-label" for="vis-private" style="cursor: pointer;">
+                                <strong>{{ _('Private') }}</strong>
+                                <span class="text-muted d-block" style="font-size: 0.75rem;">{{ _('Visible only to you. Perfect for personal logging.') }}</span>
+                            </label>
+                        </div>
+                        
+                        <div class="form-check" style="display: flex; align-items: flex-start; gap: 8px;">
+                            <input class="form-check-input" type="radio" name="visibility" id="vis-club" value="club" {% if current_visibility == 'club' %}checked{% endif %}>
+                            <label class="form-check-label" for="vis-club" style="cursor: pointer;">
+                                <strong>{{ _('Club Members') }}</strong>
+                                <span class="text-muted d-block" style="font-size: 0.75rem;">{{ _('Visible to anyone sharing a club membership with you. Great for peer evaluations.') }}</span>
+                            </label>
+                        </div>
+                        
+                        <div class="form-check" style="display: flex; align-items: flex-start; gap: 8px;">
+                            <input class="form-check-input" type="radio" name="visibility" id="vis-public" value="public" {% if current_visibility == 'public' %}checked{% endif %}>
+                            <label class="form-check-label" for="vis-public" style="cursor: pointer;">
+                                <strong>{{ _('Public (All Clubs)') }}</strong>
+                                <span class="text-muted d-block" style="font-size: 0.75rem;">{{ _('Visible to all registered users of the system. Featured on the explore board.') }}</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4" style="background-color: #772432; border-color: #772432; border-radius: 20px;">
+                        <i class="fas fa-save" style="margin-right: 6px;"></i>{{ _('Save Reflection') }}
+                    </button>
+                    {% if response %}
+                        <button type="button" class="btn btn-outline-danger" onclick="confirmDeleteReflection()" style="border-radius: 20px;">
+                            <i class="fas fa-trash-alt" style="margin-right: 6px;"></i>{{ _('Delete') }}
+                        </button>
+                    {% endif %}
+                </div>
+            </form>
+            
+            {% if response %}
+                <form id="delete-reflection-form" action="{{ url_for('topics_bp.delete_response', response_id=response.id) }}" method="POST" style="display: none;"></form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function countWords(textarea) {
+    const text = textarea.value.trim();
+    if (!text) {
+        document.getElementById('word-count-display').textContent = '0 words';
+        return;
+    }
+    const words = text.split(/\s+/).length;
+    document.getElementById('word-count-display').textContent = `${words} words`;
+}
+
+function confirmDeleteReflection() {
+    if (confirm("{{ _('Are you sure you want to delete this reflection permanently? This action cannot be undone.') }}")) {
+        document.getElementById('delete-reflection-form').submit();
+    }
+}
+
+// Initial word count trigger on page load
+document.addEventListener("DOMContentLoaded", function() {
+    countWords(document.getElementById('body'));
+});
+</script>
+
+<!-- Markdown JS Parser Scripts -->
+<script src="{{ url_for('static', filename='vendor/js/marked.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/js/purify.min.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    marked.use({ gfm: true, breaks: true });
+    
+    document.querySelectorAll('.markdown-content').forEach(el => {
+        const raw = el.getAttribute('data-markdown');
+        if (raw) {
+            el.innerHTML = DOMPurify.sanitize(marked.parse(raw));
+        }
+    });
+});
+</script>
+{% endblock %}

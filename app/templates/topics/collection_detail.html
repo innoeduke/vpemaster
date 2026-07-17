@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}{{ collection.name }}{% endblock %}
+
+{% block content %}
+<div class="msg-layout msg-layout--issues">
+    <!-- Sidebar Partial -->
+    {% include 'topics/_sidebar.html' %}
+
+    <!-- Main Content Pane -->
+    <div class="msg-main">
+        <div class="msg-header" style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <h2 class="msg-header-title"><i class="fas fa-folder-open" style="color: #772432; margin-right: 8px;"></i>{{ collection.name }}</h2>
+                <div class="text-muted" style="font-size: 0.85rem;">{{ _('A private collection of saved prompts and essays.') }}</div>
+            </div>
+            
+            <button class="btn btn-sm btn-outline-danger" onclick="confirmDeleteCollection()" style="border-radius: 20px;">
+                <i class="fas fa-trash-alt" style="margin-right: 6px;"></i>{{ _('Delete Folder') }}
+            </button>
+        </div>
+
+        <!-- Saved Topics list -->
+        <h4 style="color: #555; font-weight: 600; margin-bottom: 1rem;">
+            <i class="fas fa-hashtag" style="color: #772432; margin-right: 6px;"></i>
+            <span>{{ _('Saved Prompts') }}</span>
+        </h4>
+        
+        {% if saved_topics %}
+            <div class="list-group shadow-sm mb-4" style="border-radius: 8px; overflow: hidden; border: none;">
+                {% for topic in saved_topics %}
+                <div class="list-group-item border-0 mb-1" style="background: #fff; padding: 14px; position: relative;">
+                    <!-- Bookmark dropdown toggle -->
+                    <button class="btn btn-link text-muted position-absolute" onclick="openBookmarkDropdown(this, {{ topic.id }}, null)" style="top: 14px; right: 14px; padding: 0;" title="{{ _('Remove from Collection') }}">
+                        <i class="fas fa-bookmark" style="color: #772432; font-size: 0.95rem;"></i>
+                    </button>
+                    
+                    <a href="{{ url_for('topics_bp.topic_detail', topic_id=topic.id) }}" class="text-decoration-none" style="color: inherit;">
+                        <h6 class="mb-1 text-truncate" style="font-weight: 600; color: #333; max-width: 90%;">{{ topic.title }}</h6>
+                        <p class="mb-0 text-muted" style="font-size: 0.85rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 90%;">{{ topic.body }}</p>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-muted text-center py-3 mb-4" style="font-size: 0.85rem; border: 1px dashed #eee; border-radius: 8px;">
+                {{ _('No saved prompts in this collection.') }}
+            </p>
+        {% endif %}
+
+        <!-- Saved Reflections list -->
+        <h4 style="color: #555; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem;">
+            <i class="fas fa-book-open" style="color: #772432; margin-right: 6px;"></i>
+            <span>{{ _('Saved Reflections') }}</span>
+        </h4>
+        
+        {% if saved_responses %}
+            <div class="d-flex flex-column gap-3 mb-4">
+                {% for resp in saved_responses %}
+                <div class="card p-3 shadow-sm border-0 position-relative" style="border-radius: 8px; background: #fff;">
+                    <!-- Bookmark dropdown toggle -->
+                    <button class="btn btn-link text-muted position-absolute" onclick="openBookmarkDropdown(this, null, {{ resp.id }})" style="top: 12px; right: 12px; padding: 0;" title="{{ _('Remove from Collection') }}">
+                        <i class="fas fa-bookmark" style="color: #772432; font-size: 0.95rem;"></i>
+                    </button>
+                    
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <img src="{{ resp.author.avatar_url or url_for('static', filename='images/default_avatar.png') }}" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;">
+                        <div>
+                            <strong style="font-size: 0.85rem; color: #444;">{{ resp.author.username }}</strong>
+                        </div>
+                        <span class="text-muted" style="font-size: 0.75rem; margin-left: auto; margin-right: 20px;">
+                            {{ resp.created_at.strftime('%Y-%m-%d') }}
+                        </span>
+                    </div>
+
+                    <a href="{{ url_for('topics_bp.response_detail', response_id=resp.id) }}" class="text-decoration-none" style="color: inherit;">
+                        <h5 class="card-title mb-1" style="font-size: 0.95rem; font-weight: 600; color: #333;">
+                            {% if resp.title %}{{ resp.title }}{% else %}{{ _('Reflection on Topic') }} #{{ resp.topic_id or '' }}{% endif %}
+                        </h5>
+                        <div class="text-muted card-text text-truncate-3" style="font-size: 0.85rem; max-height: 52px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
+                            {{ resp.body }}
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-muted text-center py-3" style="font-size: 0.85rem; border: 1px dashed #eee; border-radius: 8px;">
+                {{ _('No saved reflections in this collection.') }}
+            </p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Bookmark Dropdown Portal -->
+{% include 'topics/_bookmark_dropdown.html' %}
+
+<form id="delete-collection-form" action="{{ url_for('topics_bp.delete_collection', collection_id=collection.id) }}" method="POST" style="display: none;"></form>
+
+<script>
+function confirmDeleteCollection() {
+    if (confirm("{{ _('Are you sure you want to delete this folder? All bookmarks in it will be removed.') }}")) {
+        document.getElementById('delete-collection-form').submit();
+    }
+}
+</script>
+{% endblock %}

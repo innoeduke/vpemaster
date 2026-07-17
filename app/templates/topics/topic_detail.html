@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}{{ topic.title }}{% endblock %}
+
+{% block content %}
+<div class="msg-layout msg-layout--issues">
+    <!-- Sidebar Partial -->
+    {% include 'topics/_sidebar.html' %}
+
+    <!-- Main Content Pane -->
+    <div class="msg-main">
+        <div class="msg-header" style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <a href="{{ url_for('topics_bp.dashboard') }}" class="text-muted text-decoration-none" style="font-size: 0.85rem; display: flex; align-items: center; gap: 4px; margin-bottom: 6px;">
+                    <i class="fas fa-arrow-left"></i> {{ _('Back to Dashboard') }}
+                </a>
+                <h2 class="msg-header-title">{{ topic.title }}</h2>
+                <div class="text-muted" style="font-size: 0.85rem;">
+                    {{ _('Published') }} {{ topic.published_at.strftime('%Y-%m-%d') if topic.published_at else '' }}
+                </div>
+            </div>
+            
+            <button class="btn btn-sm btn-outline-secondary" onclick="openBookmarkDropdown(this, {{ topic.id }}, null)" style="border-radius: 20px;" title="{{ _('Save Topic') }}">
+                <i class="far fa-bookmark" style="margin-right: 6px; color: #772432;"></i>{{ _('Save Topic') }}
+            </button>
+        </div>
+
+        <!-- Topic Prompt Box -->
+        <div class="card mb-4" style="background: #faf0f1; border-left: 4px solid #772432; border-radius: 8px;">
+            <div class="card-body">
+                <h5 class="card-title text-muted mb-2" style="font-size: 0.85rem; font-weight: 600;">{{ _('PROMPT QUESTION') }}</h5>
+                <div class="markdown-content text-dark" data-markdown="{{ topic.body | escape }}" style="font-size: 1rem; line-height: 1.6;"></div>
+            </div>
+        </div>
+
+        <!-- User's Own Response Section -->
+        <h4 style="color: #555; font-weight: 600; margin-bottom: 1rem;">{{ _('My Reflection') }}</h4>
+        
+        {% if my_response %}
+            <div class="card p-3 shadow-sm border-0 mb-4" style="border-radius: 8px; background: #fff;">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div>
+                        <span class="text-muted" style="font-size: 0.75rem;">
+                            {{ _('Written on') }} {{ my_response.created_at.strftime('%Y-%m-%d %H:%M') }}
+                        </span>
+                    </div>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        {% if my_response.visibility == 'public' %}
+                            <span class="badge bg-success" style="font-size: 0.7rem; padding: 3px 8px;"><i class="fas fa-globe-asia" style="margin-right: 4px;"></i>{{ _('Public') }}</span>
+                        {% elif my_response.visibility == 'club' %}
+                            <span class="badge bg-info text-dark" style="font-size: 0.7rem; padding: 3px 8px;"><i class="fas fa-users" style="margin-right: 4px;"></i>{{ _('Club only') }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary" style="font-size: 0.7rem; padding: 3px 8px;"><i class="fas fa-lock" style="margin-right: 4px;"></i>{{ _('Private') }}</span>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('topics_bp.edit_response', response_id=my_response.id) }}" class="btn btn-sm btn-light py-1px" style="font-size: 0.75rem;">
+                            <i class="fas fa-edit"></i> {{ _('Edit') }}
+                        </a>
+                    </div>
+                </div>
+
+                <a href="{{ url_for('topics_bp.response_detail', response_id=my_response.id) }}" class="text-decoration-none" style="color: inherit;">
+                    {% if my_response.title %}
+                        <h5 style="font-size: 0.95rem; font-weight: 600; color: #333; margin-bottom: 8px;">{{ my_response.title }}</h5>
+                    {% endif %}
+                    <div class="text-muted text-truncate-3" style="font-size: 0.85rem; max-height: 52px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
+                        {{ my_response.body }}
+                    </div>
+                </a>
+            </div>
+        {% else %}
+            <div class="card text-center py-4 mb-4 border-dashed" style="border: 1px dashed #772432; border-radius: 8px; background: #fff;">
+                <div class="card-body">
+                    <p class="text-muted mb-3">{{ _("You haven't written a response to this prompt yet.") }}</p>
+                    <a href="{{ url_for('topics_bp.respond', topic_id=topic.id) }}" class="btn btn-sm btn-primary" style="background-color: #772432; border-color: #772432; border-radius: 20px;">
+                        <i class="fas fa-pen-fancy" style="margin-right: 6px;"></i>{{ _('Write Reflection') }}
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Others' Responses Section -->
+        <h4 style="color: #555; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem;">
+            {{ _('Reflections from others') }}
+        </h4>
+        
+        {% if other_responses %}
+            <div class="d-flex flex-column gap-3">
+                {% for resp in other_responses %}
+                <div class="card p-3 shadow-sm border-0 position-relative" style="border-radius: 8px; background: #fff;">
+                    <!-- Bookmark dropdown toggle -->
+                    <button class="btn btn-link text-muted position-absolute" onclick="openBookmarkDropdown(this, null, {{ resp.id }})" style="top: 12px; right: 12px; padding: 0;" title="{{ _('Save Reflection') }}">
+                        <i class="far fa-bookmark" style="color: #772432; font-size: 0.95rem;"></i>
+                    </button>
+                    
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <img src="{{ resp.author.avatar_url or url_for('static', filename='images/default_avatar.png') }}" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;">
+                        <div>
+                            <strong style="font-size: 0.85rem; color: #444;">{{ resp.author.username }}</strong>
+                        </div>
+                        <span class="text-muted" style="font-size: 0.75rem; margin-left: auto; margin-right: 20px;">
+                            {{ resp.created_at.strftime('%Y-%m-%d') }}
+                        </span>
+                    </div>
+
+                    <a href="{{ url_for('topics_bp.response_detail', response_id=resp.id) }}" class="text-decoration-none" style="color: inherit;">
+                        <h5 class="card-title mb-1" style="font-size: 0.95rem; font-weight: 600; color: #333;">
+                            {% if resp.title %}{{ resp.title }}{% else %}{{ _('Reflection on Topic') }}{% endif %}
+                        </h5>
+                        <div class="text-muted card-text text-truncate-3" style="font-size: 0.85rem; max-height: 52px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
+                            {{ resp.body }}
+                        </div>
+                    </a>
+                    
+                    <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between" style="font-size: 0.8rem; color: #777;">
+                        <div>
+                            {% if resp.visibility == 'public' %}
+                                <span class="text-success"><i class="fas fa-globe-asia" style="margin-right: 4px;"></i>{{ _('Public') }}</span>
+                            {% elif resp.visibility == 'club' %}
+                                <span class="text-info"><i class="fas fa-users" style="margin-right: 4px;"></i>{{ _('Club only') }}</span>
+                            {% endif %}
+                        </div>
+                        <a href="{{ url_for('topics_bp.response_detail', response_id=resp.id) }}" style="color: #772432; font-weight: 500; text-decoration: none;">
+                            <i class="far fa-comments" style="margin-right: 4px;"></i>{{ resp.comments | length }} {{ _('Comments') }}
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-muted text-center py-4" style="background: #fdfdfd; border: 1px dashed #eee; border-radius: 8px;">
+                {{ _('No other visible reflections on this topic yet.') }}
+            </p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Bookmark Dropdown Portal -->
+{% include 'topics/_bookmark_dropdown.html' %}
+
+<!-- Markdown JS Parser Scripts -->
+<script src="{{ url_for('static', filename='vendor/js/marked.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/js/purify.min.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    marked.use({ gfm: true, breaks: true });
+    
+    document.querySelectorAll('.markdown-content').forEach(el => {
+        const raw = el.getAttribute('data-markdown');
+        if (raw) {
+            el.innerHTML = DOMPurify.sanitize(marked.parse(raw));
+        }
+    });
+});
+</script>
+{% endblock %}

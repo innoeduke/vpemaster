@@ -1,0 +1,209 @@
+<div id="bookmark-dropdown-menu" class="bookmark-dropdown" style="display: none; position: absolute; z-index: var(--z-popover); background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); width: 220px; padding: 10px; font-size: 0.85rem; box-sizing: border-box;">
+    <div style="font-weight: 600; color: #772432; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+        <i class="fas fa-bookmark"></i>
+        <span>{{ _('Save to Collection') }}</span>
+    </div>
+    
+    <div id="dropdown-collections-list" style="max-height: 160px; overflow-y: auto; margin-bottom: 8px; padding-right: 2px;">
+        <!-- Checkboxes loaded via JS -->
+    </div>
+    
+    <div style="border-top: 1px solid #eee; padding-top: 8px; margin-top: 8px;">
+        <div class="input-group input-group-sm">
+            <input type="text" id="dropdown-new-col-name" class="form-control form-control-sm" placeholder="{{ _('New collection...') }}" style="font-size: 0.75rem; height: 26px;">
+            <button class="btn btn-sm btn-outline-secondary" onclick="createCollectionFromDropdown()" style="height: 26px; padding: 2px 6px;"><i class="fas fa-plus"></i></button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentDropdownTarget = { topicId: null, responseId: null };
+
+function openBookmarkDropdown(btn, topicId, responseId) {
+    event.stopPropagation();
+    currentDropdownTarget.topicId = topicId || null;
+    currentDropdownTarget.responseId = responseId || null;
+    
+    const menu = document.getElementById('bookmark-dropdown-menu');
+    
+    // Position dropdown under the clicked button
+    const rect = btn.getBoundingClientRect();
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    
+    menu.style.top = (rect.bottom + scrollTop + 6) + 'px';
+    // Align right edges if close to screen border
+    if (rect.left + 220 > window.innerWidth) {
+        menu.style.left = (rect.right + scrollLeft - 220) + 'px';
+    } else {
+        menu.style.left = (rect.left + scrollLeft) + 'px';
+    }
+    
+    menu.style.display = 'block';
+    
+    // Load checklist
+    loadCollectionsInDropdown();
+    
+    // Global click listener to close dropdown when clicking outside
+    document.addEventListener('click', closeDropdownOnOutsideClick);
+}
+
+function closeDropdownOnOutsideClick(e) {
+    const menu = document.getElementById('bookmark-dropdown-menu');
+    if (menu && !menu.contains(e.target) && e.target.id !== 'bookmark-dropdown-menu') {
+        menu.style.display = 'none';
+        document.removeEventListener('click', closeDropdownOnOutsideClick);
+    }
+}
+
+function loadCollectionsInDropdown() {
+    const list = document.getElementById('dropdown-collections-list');
+    list.innerHTML = `<div class="text-muted text-center py-2" style="font-size: 0.75rem;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>`;
+    
+    // We first query the active saved status for this specific item
+    // In our backend service, we have an API or route we can fetch, or we can check the DOM or query.
+    // Let's call a quick ajax get or just check if saved_collection_ids is passed.
+    // To make it fully dynamic, we fetch: /topics/collections/check-saved?topic_id=X&response_id=Y
+    // Wait, let's write a route or simple json check, or we can query using a POST body to toggle-item
+    // Since we don't have a dedicated GET check route, let's fetch the list of user collections and their checked status in one AJAX POST call to a helper json endpoint,
+    // or let's fetch user's collections from the sidebar HTML list, and call a simple GET endpoint to see which ones are saved.
+    // Let's implement a quick GET `/topics/collections/saved-status` endpoint in routes!
+    // Wait! Let's check if we added `/topics/collections/saved-status` in routes:
+    // We didn't, but we can write a quick endpoint or let the JS check the `data-saved-ids` on the page itself!
+    // Wait, if each page renders a list of `saved_collection_ids` (as we did in topic_detail and response_detail), the page can store them.
+    // But for the Explore feed where there are many cards, it's much better to fetch the checked state dynamically!
+    // Let's fetch it via `/topics/collections/add-item` but using a GET request or a query.
+    // Wait! In `topics_routes.py`, we can add a route or we can just fetch the status by passing an empty update.
+    // Yes! If we call `POST /topics/collections/add-item` with empty `add` and `remove` arrays, it returns `success: true`. But wait, it doesn't return the list of saved collection IDs.
+    // Let's add a GET endpoint `/topics/collections/saved-status` to `topics_routes.py`!
+    // Wait, let's see if we can do this. Yes, we can easily add it, or we can write a custom method. Let's add it to route handlers.
+    // Let's inspect if we can query it directly in the frontend, or write a simple route.
+    // Let's write the frontend code first:
+    
+    const params = new URLSearchParams();
+    if (currentDropdownTarget.topicId) params.append('topic_id', currentDropdownTarget.topicId);
+    if (currentDropdownTarget.responseId) params.append('response_id', currentDropdownTarget.responseId);
+    
+    // We'll fetch from a route: /topics/collections/status?topic_id=X
+    fetch(`/topics/collections/status?${params.toString()}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                list.innerHTML = '';
+                if (data.collections.length === 0) {
+                    list.innerHTML = `<div class="text-muted text-center py-2" style="font-size: 0.75rem;">No folders created yet.</div>`;
+                    return;
+                }
+                
+                data.collections.forEach(col => {
+                    const div = document.createElement('div');
+                    div.style.margin = '4px 0';
+                    div.style.display = 'flex';
+                    div.style.alignItems = 'center';
+                    div.style.gap = '6px';
+                    
+                    const checked = col.saved ? 'checked' : '';
+                    div.innerHTML = `
+                        <input type="checkbox" id="col-cb-${col.id}" value="${col.id}" ${checked} onchange="toggleItemInCollection(${col.id}, this)">
+                        <label for="col-cb-${col.id}" style="margin: 0; cursor: pointer; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 170px;">${col.name}</label>
+                    `;
+                    list.appendChild(div);
+                });
+            } else {
+                list.innerHTML = `<div class="text-danger py-2" style="font-size: 0.75rem;">Error loading folders.</div>`;
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            list.innerHTML = `<div class="text-danger py-2" style="font-size: 0.75rem;">Error loading folders.</div>`;
+        });
+}
+
+function toggleItemInCollection(collectionId, cb) {
+    const body = {
+        add_collection_ids: cb.checked ? [collectionId] : [],
+        remove_collection_ids: cb.checked ? [] : [collectionId]
+    };
+    if (currentDropdownTarget.topicId) body.topic_id = currentDropdownTarget.topicId;
+    if (currentDropdownTarget.responseId) body.response_id = currentDropdownTarget.responseId;
+
+    fetch("{{ url_for('topics_bp.toggle_collection_item') }}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) {
+            cb.checked = !cb.checked; // Revert
+            alert(data.error || 'Failed to update folder.');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        cb.checked = !cb.checked; // Revert
+        alert('An error occurred.');
+    });
+}
+
+function createCollectionFromDropdown() {
+    const input = document.getElementById('dropdown-new-col-name');
+    const name = input.value.trim();
+    if (!name) return;
+
+    fetch("{{ url_for('topics_bp.create_collection') }}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ name: name })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            input.value = '';
+            
+            // Add to sidebar collections list if present
+            const list = document.getElementById('collections-list');
+            if (list) {
+                const url = "{{ url_for('topics_bp.collection_detail', collection_id=0) }}".replace('/0', '/' + data.collection_id);
+                const item = document.createElement('a');
+                item.href = url;
+                item.className = 'msg-nav-item';
+                item.id = 'sidebar-col-' + data.collection_id;
+                item.innerHTML = `<i class="fas fa-folder"></i> <span>${data.name}</span>`;
+                list.appendChild(item);
+            }
+            
+            // Reload dropdown list to include the new collection and check it automatically
+            // by calling add-item on it first
+            const body = {
+                add_collection_ids: [data.collection_id],
+                remove_collection_ids: []
+            };
+            if (currentDropdownTarget.topicId) body.topic_id = currentDropdownTarget.topicId;
+            if (currentDropdownTarget.responseId) body.response_id = currentDropdownTarget.responseId;
+            
+            return fetch("{{ url_for('topics_bp.toggle_collection_item') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(body)
+            })
+            .then(res => res.json())
+            .then(toggleData => {
+                loadCollectionsInDropdown();
+            });
+        } else {
+            alert(data.error || 'Failed to create collection.');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('An error occurred.');
+    });
+}
+</script>
