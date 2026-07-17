@@ -104,11 +104,6 @@
                                         <i class="fas fa-archive" aria-hidden="true"></i>{{ _('Unpublish') }}
                                     </button>
                                 </form>
-                                <form action="{{ url_for('topics_bp.admin_delete', topic_id=topic.id) }}" method="POST" onsubmit="return confirm('{{ _('Delete this topic? Responses will be preserved but the topic will display as deleted.') }}')">
-                                    <button type="submit" class="topics-btn topics-btn--danger topics-btn--block topics-btn--sm">
-                                        <i class="fas fa-trash-alt" aria-hidden="true"></i>{{ _('Delete') }}
-                                    </button>
-                                </form>
                             </div>
                         </div>
                     </div>
