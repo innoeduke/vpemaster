@@ -1,0 +1,41 @@
+{# Reusable Topics components. Imported by every topics template:
+     {% import 'topics/_macros.html' as ui %}
+     {{ ui.avatar(user, size=28) }}
+     {{ ui.author_name(user) }}
+#}
+
+{# Curated muted, editorial palette — keyed by user.id for deterministic
+   warm-but-harmonious colours (maroon, ochre, sage, plum, slate, rust…). #}
+{% set _palette = [
+    '#772432',
+    '#b08442',
+    '#4a7a52',
+    '#7a6a90',
+    '#5e6b73',
+    '#a6553a',
+    '#44628a',
+    '#8a5a44'
+] %}
+
+{% macro avatar(user, size=28) -%}
+    {%- if user and user.full_avatar_url -%}
+        <img src="{{ user.full_avatar_url }}" class="topics-avatar" alt="" width="{{ size }}" height="{{ size }}" loading="lazy">
+    {%- else -%}
+        {%- set idx = ((user.id if user else 0) % 8) -%}
+        {%- set palette = _palette -%}
+        {%- set first = (user.first_name if user and user.first_name else '') -%}
+        {%- set uname = (user.username if user and user.username else '') -%}
+        {%- set initial = (first[0] if first else (uname[0] if uname else '?')) -%}
+        <span class="topics-avatar topics-avatar--initial" style="width: {{ size }}px; height: {{ size }}px; background: {{ palette[idx] }}; font-size: calc({{ size }}px * 0.4);" aria-hidden="true">{{ initial|upper }}</span>
+    {%- endif -%}
+{%- endmacro %}
+
+{% macro author_name(user) -%}
+    {%- if user and (user.first_name or user.display_name) -%}
+        {{- user.first_name or user.display_name -}}
+    {%- elif user -%}
+        —
+    {%- else -%}
+        —
+    {%- endif -%}
+{%- endmacro %}

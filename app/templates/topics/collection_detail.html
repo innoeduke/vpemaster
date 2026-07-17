@@ -9,6 +9,7 @@
 {% endblock %}
 
 {% block content %}
+{% import 'topics/_macros.html' as ui %}
 <div class="msg-layout msg-layout--topics">
     <!-- Sidebar Partial -->
     {% include 'topics/_sidebar.html' %}
@@ -69,8 +70,8 @@
 
                 <a href="{{ url_for('topics_bp.response_detail', response_id=resp.id) }}" class="topics-card-link">
                     <div class="topics-card-meta">
-                        <img src="{{ resp.author.avatar_url or url_for('static', filename='images/default_avatar.png') }}" class="topics-avatar" alt="" width="26" height="26">
-                        <span class="topics-card-author">{{ resp.author.username }}</span>
+                        {{ ui.avatar(resp.author, size=26) }}
+                        <span class="topics-card-author">{{ ui.author_name(resp.author) }}</span>
                         <span class="topics-card-sep" aria-hidden="true">·</span>
                         <time class="topics-card-date" datetime="{{ resp.created_at.strftime('%Y-%m-%d') }}">{{ resp.created_at.strftime('%Y-%m-%d') }}</time>
                     </div>

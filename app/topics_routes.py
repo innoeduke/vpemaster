@@ -496,8 +496,8 @@ def add_comment(response_id):
             
             # Retrieve author info for display
             from .models import Contact
-            avatar_url = current_user.avatar_url or url_for('static', filename='images/default_avatar.png')
-            author_name = current_user.username
+            avatar_url = current_user.full_avatar_url
+            author_name = current_user.first_name or current_user.display_name or current_user.username
             
             # Try to get display club
             club_name = "—"

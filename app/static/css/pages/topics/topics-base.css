@@ -604,6 +604,20 @@
     box-shadow: 0 0 0 1px var(--topics-rule);
 }
 
+.topics-avatar--initial {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--topics-serif);
+    font-weight: 600;
+    font-size: 0.7rem;
+    letter-spacing: 0.02em;
+    color: #fff7f4;
+    flex-shrink: 0;
+    user-select: none;
+    text-transform: uppercase;
+}
+
 .topics-card-author {
     font-size: 0.82rem;
     font-weight: 600;
