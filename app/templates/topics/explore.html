@@ -38,7 +38,7 @@
                         </span>
                     </div>
 
-                    <a href="{{ url_for('topics_bp.response_detail', response_id=resp.id) }}" class="text-decoration-none" style="color: inherit;">
+                    <a href="{{ url_for('topics_bp.response_detail', response_id=resp.id, topic_id=resp.topic_id) }}" class="text-decoration-none" style="color: inherit;">
                         <h5 class="card-title mb-1" style="font-size: 1rem; font-weight: 600; color: #333;">
                             {% if resp.title %}{{ resp.title }}{% else %}{{ _('Reflection on Topic') }} #{{ resp.topic_id or '' }}{% endif %}
                         </h5>
@@ -63,7 +63,7 @@
                                 </a>
                             {% endif %}
                         </div>
-                        <a href="{{ url_for('topics_bp.response_detail', response_id=resp.id) }}" style="color: #772432; font-weight: 500; text-decoration: none;">
+                        <a href="{{ url_for('topics_bp.response_detail', response_id=resp.id, topic_id=resp.topic_id) }}" style="color: #772432; font-weight: 500; text-decoration: none;">
                             <i class="far fa-comments" style="margin-right: 4px;"></i>{{ resp.comments | length }} {{ _('Comments') }}
                         </a>
                     </div>

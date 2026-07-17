@@ -307,7 +307,7 @@ def respond(topic_id):
     # Check if they already responded
     existing = TopicResponse.query.filter_by(topic_id=topic_id, author_id=current_user.id).first()
     if existing:
-        return redirect(url_for('topics_bp.edit_response', response_id=existing.id))
+        return redirect(url_for('topics_bp.edit_response', response_id=existing.id, topic_id=existing.topic_id))
 
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
@@ -332,16 +332,17 @@ def respond(topic_id):
                 visibility=visibility
             )
             flash(_('Your response has been saved.'), 'success')
-            return redirect(url_for('topics_bp.response_detail', response_id=response.id))
+            return redirect(url_for('topics_bp.response_detail', response_id=response.id, topic_id=response.topic_id))
         except Exception as e:
             flash(str(e), 'error')
 
     return render_template('topics/respond.html', topic=topic)
 
 
+@topics_bp.route('/topic/<int:topic_id>/response/<int:response_id>')
 @topics_bp.route('/response/<int:response_id>')
 @login_required
-def response_detail(response_id):
+def response_detail(response_id, topic_id=None):
     """Full essay view + threaded comments."""
     if not is_authorized(Permissions.TOPICS_VIEW):
         abort(403)
@@ -386,9 +387,10 @@ def response_detail(response_id):
     )
 
 
+@topics_bp.route('/topic/<int:topic_id>/response/<int:response_id>/edit', methods=['GET', 'POST'])
 @topics_bp.route('/response/<int:response_id>/edit', methods=['GET', 'POST'])
 @login_required
-def edit_response(response_id):
+def edit_response(response_id, topic_id=None):
     """Edit own response."""
     if not is_authorized(Permissions.TOPICS_WRITE):
         abort(403)
@@ -411,7 +413,7 @@ def edit_response(response_id):
 
         if not body:
             flash(_('Response content cannot be empty.'), 'error')
-            return redirect(url_for('topics_bp.edit_response', response_id=response_id))
+            return redirect(url_for('topics_bp.edit_response', response_id=response_id, topic_id=response.topic_id))
 
         try:
             ResponseService.update_response(
@@ -422,16 +424,17 @@ def edit_response(response_id):
                 visibility=visibility
             )
             flash(_('Your response has been updated.'), 'success')
-            return redirect(url_for('topics_bp.response_detail', response_id=response_id))
+            return redirect(url_for('topics_bp.response_detail', response_id=response_id, topic_id=response.topic_id))
         except Exception as e:
             flash(str(e), 'error')
 
     return render_template('topics/respond.html', response=response, topic=topic)
 
 
+@topics_bp.route('/topic/<int:topic_id>/response/<int:response_id>/delete', methods=['POST'])
 @topics_bp.route('/response/<int:response_id>/delete', methods=['POST'])
 @login_required
-def delete_response(response_id):
+def delete_response(response_id, topic_id=None):
     """Delete own response."""
     response = db.session.get(TopicResponse, response_id)
     if not response:
@@ -449,12 +452,13 @@ def delete_response(response_id):
         return redirect(url_for('topics_bp.dashboard'))
     except Exception as e:
         flash(str(e), 'error')
-        return redirect(url_for('topics_bp.response_detail', response_id=response_id))
+        return redirect(url_for('topics_bp.response_detail', response_id=response_id, topic_id=response.topic_id))
 
 
+@topics_bp.route('/topic/<int:topic_id>/response/<int:response_id>/comment', methods=['POST'])
 @topics_bp.route('/response/<int:response_id>/comment', methods=['POST'])
 @login_required
-def add_comment(response_id):
+def add_comment(response_id, topic_id=None):
     """Add a comment or edit an existing one (AJAX)."""
     if not is_authorized(Permissions.TOPICS_COMMENT):
         return jsonify({'success': False, 'error': 'Unauthorized'}), 403
