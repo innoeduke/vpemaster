@@ -25,7 +25,7 @@
             
             <div style="display: flex; gap: 10px;">
                 {% if response.author_id == current_user.id %}
-                <a href="{{ url_for('topics_bp.edit_response', response_id=response.id, topic_id=response.topic_id) }}" class="btn btn-sm btn-outline-secondary" style="border-radius: 20px;">
+                <a href="{{ url_for('topics_bp.edit_response', response_id=response.id) }}" class="btn btn-sm btn-outline-secondary" style="border-radius: 20px;">
                     <i class="fas fa-edit" style="margin-right: 6px;"></i>{{ _('Edit Essay') }}
                 </a>
                 {% endif %}
@@ -244,7 +244,7 @@ function submitComment() {
     const body = textarea.value.trim();
     if (!body) return;
 
-    fetch("{{ url_for('topics_bp.add_comment', response_id=response.id, topic_id=response.topic_id) }}", {
+    fetch("{{ url_for('topics_bp.add_comment', response_id=response.id) }}", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -328,7 +328,7 @@ function submitReply(parentId) {
     const body = textarea.value.trim();
     if (!body) return;
 
-    fetch("{{ url_for('topics_bp.add_comment', response_id=response.id, topic_id=response.topic_id) }}", {
+    fetch("{{ url_for('topics_bp.add_comment', response_id=response.id) }}", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -413,7 +413,7 @@ function saveEditComment(commentId) {
     const body = textarea.value.trim();
     if (!body) return;
 
-    fetch("{{ url_for('topics_bp.add_comment', response_id=response.id, topic_id=response.topic_id) }}", {
+    fetch("{{ url_for('topics_bp.add_comment', response_id=response.id) }}", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"

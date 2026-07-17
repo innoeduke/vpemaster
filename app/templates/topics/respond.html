@@ -7,7 +7,7 @@
 {% block content %}
 <div class="container py-4" style="max-width: 800px;">
     <div class="mb-3">
-        <a href="{% if response %}{{ url_for('topics_bp.response_detail', response_id=response.id, topic_id=response.topic_id) }}{% else %}{{ url_for('topics_bp.topic_detail', topic_id=topic.id) }}{% endif %}" class="text-muted text-decoration-none" style="font-size: 0.85rem; display: flex; align-items: center; gap: 4px;">
+        <a href="{% if response %}{{ url_for('topics_bp.response_detail', response_id=response.id) }}{% else %}{{ url_for('topics_bp.topic_detail', topic_id=topic.id) }}{% endif %}" class="text-muted text-decoration-none" style="font-size: 0.85rem; display: flex; align-items: center; gap: 4px;">
             <i class="fas fa-arrow-left"></i> {{ _('Cancel and Back') }}
         </a>
     </div>
@@ -88,7 +88,7 @@
             </form>
             
             {% if response %}
-                <form id="delete-reflection-form" action="{{ url_for('topics_bp.delete_response', response_id=response.id, topic_id=response.topic_id) }}" method="POST" style="display: none;"></form>
+                <form id="delete-reflection-form" action="{{ url_for('topics_bp.delete_response', response_id=response.id) }}" method="POST" style="display: none;"></form>
             {% endif %}
         </div>
     </div>

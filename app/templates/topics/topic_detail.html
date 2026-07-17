@@ -53,13 +53,13 @@
                             <span class="badge bg-secondary" style="font-size: 0.7rem; padding: 3px 8px;"><i class="fas fa-lock" style="margin-right: 4px;"></i>{{ _('Private') }}</span>
                         {% endif %}
                         
-                        <a href="{{ url_for('topics_bp.edit_response', response_id=my_response.id, topic_id=my_response.topic_id) }}" class="btn btn-sm btn-light py-1px" style="font-size: 0.75rem;">
+                        <a href="{{ url_for('topics_bp.edit_response', response_id=my_response.id) }}" class="btn btn-sm btn-light py-1px" style="font-size: 0.75rem;">
                             <i class="fas fa-edit"></i> {{ _('Edit') }}
                         </a>
                     </div>
                 </div>
 
-                <a href="{{ url_for('topics_bp.response_detail', response_id=my_response.id, topic_id=my_response.topic_id) }}" class="text-decoration-none" style="color: inherit;">
+                <a href="{{ url_for('topics_bp.response_detail', response_id=my_response.id) }}" class="text-decoration-none" style="color: inherit;">
                     {% if my_response.title %}
                         <h5 style="font-size: 0.95rem; font-weight: 600; color: #333; margin-bottom: 8px;">{{ my_response.title }}</h5>
                     {% endif %}
@@ -103,7 +103,7 @@
                         </span>
                     </div>
 
-                    <a href="{{ url_for('topics_bp.response_detail', response_id=resp.id, topic_id=resp.topic_id) }}" class="text-decoration-none" style="color: inherit;">
+                    <a href="{{ url_for('topics_bp.response_detail', response_id=resp.id) }}" class="text-decoration-none" style="color: inherit;">
                         <h5 class="card-title mb-1" style="font-size: 0.95rem; font-weight: 600; color: #333;">
                             {% if resp.title %}{{ resp.title }}{% else %}{{ _('Reflection on Topic') }}{% endif %}
                         </h5>
@@ -120,7 +120,7 @@
                                 <span class="text-info"><i class="fas fa-users" style="margin-right: 4px;"></i>{{ _('Club only') }}</span>
                             {% endif %}
                         </div>
-                        <a href="{{ url_for('topics_bp.response_detail', response_id=resp.id, topic_id=resp.topic_id) }}" style="color: #772432; font-weight: 500; text-decoration: none;">
+                        <a href="{{ url_for('topics_bp.response_detail', response_id=resp.id) }}" style="color: #772432; font-weight: 500; text-decoration: none;">
                             <i class="far fa-comments" style="margin-right: 4px;"></i>{{ resp.comments | length }} {{ _('Comments') }}
                         </a>
                     </div>
