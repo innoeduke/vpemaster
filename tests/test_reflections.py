@@ -112,6 +112,55 @@ class TableTopicsTestCase(unittest.TestCase):
         TopicService.delete_topic(topic.id)
         self.assertIsNone(db.session.get(Topic, topic.id))
 
+    def test_topics_admin_permissions(self):
+        """Verify that only sysadmin can access the Table Topics admin panel and endpoints."""
+        # 1. Create a sysadmin user
+        sysadmin = User(username='sysadmin', email='sysadmin@example.com', status='active')
+        sysadmin.set_password('password')
+        db.session.add(sysadmin)
+        db.session.commit()
+
+        # Create a regular ClubAdmin user
+        club_admin, _ = self.create_user("club_admin", "ClubAdmin", self.club_a)
+
+        # 2. Try to access topics admin panel as club_admin -> Expect 403
+        self.client.post('/login', data=dict(
+            username="club_admin",
+            password="password",
+            club_names=str(self.club_a.id)
+        ), follow_redirects=True)
+        with self.client.session_transaction() as sess:
+            sess['club_id'] = self.club_a.id
+            sess['current_club_id'] = self.club_a.id
+        
+        response = self.client.get('/topics/admin')
+        self.assertEqual(response.status_code, 403)
+
+        # Try to publish a topic as club_admin -> Expect 403
+        topic = TopicService.create_topic("Test topic", "Body text", sysadmin.id)
+        response = self.client.post(f'/topics/admin/{topic.id}/publish')
+        self.assertEqual(response.status_code, 403)
+
+        # 3. Try to access topics admin panel as sysadmin -> Expect 200
+        self.client.get('/logout') # Log out first
+        self.client.post('/login', data=dict(
+            username="sysadmin",
+            password="password",
+            club_names=str(self.club_a.id)
+        ), follow_redirects=True)
+        with self.client.session_transaction() as sess:
+            sess['club_id'] = self.club_a.id
+            sess['current_club_id'] = self.club_a.id
+
+        response = self.client.get('/topics/admin')
+        self.assertEqual(response.status_code, 200)
+
+        # Publish a topic as sysadmin -> Expect 302 redirect
+        response = self.client.post(f'/topics/admin/{topic.id}/publish')
+        self.assertEqual(response.status_code, 302)
+        db.session.refresh(topic)
+        self.assertEqual(topic.status, 'published')
+
     def test_response_scoping_and_visibility(self):
         """Test Private, Club, and Public visibility levels for essay responses."""
         # Setup three users:

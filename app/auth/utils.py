@@ -34,6 +34,10 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
     # Imports inside function to avoid circular dependency
     from app.auth.permissions import Permissions
 
+    # TOPICS_MANAGE is strictly restricted to sysadmins
+    if target_perm == Permissions.TOPICS_MANAGE:
+        return bool(current_user.is_authenticated and hasattr(current_user, 'is_sysadmin') and current_user.is_sysadmin)
+
     # 1. SysAdmin Override: Full access to all resources/actions of all clubs
     # Relies on the helper method on User model
     if hasattr(current_user, 'is_sysadmin') and current_user.is_sysadmin:
