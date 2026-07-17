@@ -2,126 +2,125 @@
 
 {% block title %}{{ _('Manage Table Topics') }}{% endblock %}
 
+{% block head_extra %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
-<div class="msg-layout msg-layout--issues">
+<div class="msg-layout msg-layout--topics">
     <!-- Sidebar Partial -->
     {% include 'topics/_sidebar.html' %}
 
     <!-- Main Content Pane -->
-    <div class="msg-main">
-        <div class="msg-header" style="margin-bottom: 1.5rem;">
-            <h2 class="msg-header-title">{{ _('Table Topics Administration') }}</h2>
-            <div class="text-muted" style="font-size: 0.85rem;">{{ _('Create new topic prompts and manage the published queue.') }}</div>
+    <div class="msg-main topics-main">
+        <header class="topics-head">
+            <p class="topics-overline">{{ _('Table Topics') }}</p>
+            <h2 class="topics-head-title">{{ _('Table Topics Administration') }}</h2>
+            <p class="topics-head-sub">{{ _('Create new topic prompts and manage the published queue.') }}</p>
+        </header>
+
+        <!-- Create Draft -->
+        <div class="topics-manage-form">
+            <h3 class="topics-manage-form-title"><i class="fas fa-plus-circle" aria-hidden="true"></i>{{ _('Create Topic Draft') }}</h3>
+
+            <form action="{{ url_for('topics_bp.admin_create') }}" method="POST">
+                <div class="topics-field">
+                    <label for="title" class="topics-field-label">{{ _('Topic Title') }}</label>
+                    <input type="text" id="title" name="title" class="topics-input" placeholder="{{ _('E.g. On Persistence, Daily Reflection...') }}" required>
+                </div>
+
+                <div class="topics-field">
+                    <label for="body" class="topics-field-label">{{ _('Prompt Context / Question') }}</label>
+                    <textarea id="body" name="body" class="topics-input" rows="5" placeholder="{{ _('Describe the reflection prompt or write the question here...') }}" required></textarea>
+                </div>
+
+                <button type="submit" class="topics-btn topics-btn--primary">
+                    <i class="fas fa-save" aria-hidden="true"></i>{{ _('Save Draft') }}
+                </button>
+            </form>
         </div>
 
-        <!-- Create New Prompt Draft -->
-        <div class="card mb-4 shadow-sm border-0" style="border-radius: 8px; background: #fff;">
-            <div class="card-body p-4">
-                <h4 style="color: #772432; font-weight: 700; margin-bottom: 1rem;"><i class="fas fa-plus-circle" style="margin-right: 6px;"></i>{{ _('Create Topic Draft') }}</h4>
-                
-                <form action="{{ url_for('topics_bp.admin_create') }}" method="POST">
-                    <div class="form-group mb-3">
-                        <label for="title" style="font-weight: 600; color: #444; margin-bottom: 6px;">{{ _('Topic Title') }}</label>
-                        <input type="text" id="title" name="title" class="form-control" placeholder="{{ _('E.g. On Persistence, Daily Reflection...') }}" required style="border-radius: 6px;">
-                    </div>
-                    
-                    <div class="form-group mb-3">
-                        <label for="body" style="font-weight: 600; color: #444; margin-bottom: 6px;">{{ _('Prompt Context / Question') }}</label>
-                        <textarea id="body" name="body" class="form-control" rows="5" placeholder="{{ _('Describe the reflection prompt or write the question here...') }}" required style="border-radius: 6px; font-size: 0.9rem; line-height: 1.5;"></textarea>
-                    </div>
+        <div class="topics-manage-grid">
+            <!-- Drafts -->
+            <section>
+                <div class="topics-section-head">
+                    <h4 class="topics-section-title">{{ _('Draft Prompts') }} ({{ drafts | length }})</h4>
+                </div>
 
-                    <button type="submit" class="btn btn-sm btn-primary px-3" style="background-color: #772432; border-color: #772432; border-radius: 20px;">
-                        <i class="fas fa-save" style="margin-right: 6px;"></i>{{ _('Save Draft') }}
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <div class="row">
-            <!-- Drafts Queue -->
-            <div class="col-md-6 mb-4">
-                <h4 style="color: #555; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
-                    <i class="fas fa-edit" style="color: #772432;"></i>
-                    <span>{{ _('Draft Prompts') }} ({{ drafts | length }})</span>
-                </h4>
-                
                 {% if drafts %}
-                    <div class="d-flex flex-column gap-3">
-                        {% for topic in drafts %}
-                        <div class="card p-3 border shadow-sm" style="border: 1px solid #eef0f2 !important; border-radius: 12px; background: #fff; transition: transform 0.2s ease, box-shadow 0.2s ease;">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
-                                <div style="flex-grow: 1;">
-                                    <h5 style="font-size: 0.95rem; font-weight: 600; color: #772432; margin-bottom: 6px; text-wrap: balance;">{{ topic.title }}</h5>
-                                    <p class="text-muted mb-0" style="font-size: 0.825rem; line-height: 1.5; text-wrap: pretty;">
-                                        {{ topic.body }}
-                                    </p>
+                <div class="topics-feed-list">
+                    {% for topic in drafts %}
+                    <div class="topics-manage-item topics-manage-item--draft">
+                        <div class="topics-manage-item-row">
+                            <div class="topics-manage-item-main">
+                                <div class="topics-manage-item-head">
+                                    <h5 class="topics-manage-item-title">{{ topic.title }}</h5>
                                 </div>
-                                <div style="display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; min-width: 96px;">
-                                    <form action="{{ url_for('topics_bp.admin_publish', topic_id=topic.id) }}" method="POST" style="margin: 0; width: 100%;">
-                                        <button type="submit" class="btn btn-sm btn-success w-100" style="border-radius: 20px; font-size: 0.75rem; padding: 4px 12px; display: flex; align-items: center; justify-content: center; gap: 6px; transition: transform 0.1s ease; cursor: pointer; border: none; background-color: #2e7d32;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'" onmouseleave="this.style.transform='scale(1)'">
-                                            <i class="fas fa-paper-plane" style="font-size: 0.7rem;"></i>{{ _('Publish') }}
-                                        </button>
-                                    </form>
-                                    <form action="{{ url_for('topics_bp.admin_delete', topic_id=topic.id) }}" method="POST" onsubmit="return confirm('{{ _('Delete this draft permanently?') }}')" style="margin: 0; width: 100%;">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger w-100" style="border-radius: 20px; font-size: 0.75rem; padding: 4px 12px; display: flex; align-items: center; justify-content: center; gap: 6px; transition: transform 0.1s ease; cursor: pointer;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'" onmouseleave="this.style.transform='scale(1)'">
-                                            <i class="fas fa-trash-alt" style="font-size: 0.7rem;"></i>{{ _('Delete') }}
-                                        </button>
-                                    </form>
-                                </div>
+                                <p class="topics-manage-item-body">{{ topic.body }}</p>
+                            </div>
+                            <div class="topics-manage-item-actions">
+                                <form action="{{ url_for('topics_bp.admin_publish', topic_id=topic.id) }}" method="POST">
+                                    <button type="submit" class="topics-btn topics-btn--success topics-btn--block topics-btn--sm">
+                                        <i class="fas fa-paper-plane" aria-hidden="true"></i>{{ _('Publish') }}
+                                    </button>
+                                </form>
+                                <form action="{{ url_for('topics_bp.admin_delete', topic_id=topic.id) }}" method="POST" onsubmit="return confirm('{{ _('Delete this draft permanently?') }}')">
+                                    <button type="submit" class="topics-btn topics-btn--danger topics-btn--block topics-btn--sm">
+                                        <i class="fas fa-trash-alt" aria-hidden="true"></i>{{ _('Delete') }}
+                                    </button>
+                                </form>
                             </div>
                         </div>
-                        {% endfor %}
                     </div>
+                    {% endfor %}
+                </div>
                 {% else %}
-                    <p class="text-muted text-center py-4" style="background: #fdfdfd; border: 1px dashed #eee; border-radius: 8px; font-size: 0.85rem;">
-                        {{ _('No drafts. Create a draft topic above.') }}
-                    </p>
+                <div class="topics-empty topics-empty--sm">
+                    <p>{{ _('No drafts. Create a draft topic above.') }}</p>
+                </div>
                 {% endif %}
-            </div>
+            </section>
 
-            <!-- Published Queue -->
-            <div class="col-md-6 mb-4">
-                <h4 style="color: #555; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
-                    <i class="fas fa-check-circle" style="color: #772432;"></i>
-                    <span>{{ _('Published Prompts') }} ({{ published | length }})</span>
-                </h4>
-                
+            <!-- Published -->
+            <section>
+                <div class="topics-section-head">
+                    <h4 class="topics-section-title">{{ _('Published Prompts') }} ({{ published | length }})</h4>
+                </div>
+
                 {% if published %}
-                    <div class="d-flex flex-column gap-3">
-                        {% for topic in published %}
-                        <div class="card p-3 border shadow-sm" style="border: 1px solid #eef0f2 !important; border-radius: 12px; background: #fff; transition: transform 0.2s ease, box-shadow 0.2s ease;">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
-                                <div style="flex-grow: 1;">
-                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
-                                        <h5 style="font-size: 0.95rem; font-weight: 600; color: #333; margin: 0; text-wrap: balance;">{{ topic.title }}</h5>
-                                        <span class="badge bg-light text-muted" style="font-size: 0.7rem; border: 1px solid #eee; font-weight: normal; padding: 2px 6px;">
-                                            {{ topic.published_at.strftime('%Y-%m-%d') if topic.published_at else '' }}
-                                        </span>
-                                    </div>
-                                    <p class="text-muted mb-0" style="font-size: 0.825rem; line-height: 1.5; text-wrap: pretty;">
-                                        {{ topic.body }}
-                                    </p>
+                <div class="topics-feed-list">
+                    {% for topic in published %}
+                    <div class="topics-manage-item">
+                        <div class="topics-manage-item-row">
+                            <div class="topics-manage-item-main">
+                                <div class="topics-manage-item-head">
+                                    <h5 class="topics-manage-item-title">{{ topic.title }}</h5>
+                                    <span class="topics-manage-item-date">{{ topic.published_at.strftime('%Y-%m-%d') if topic.published_at else '' }}</span>
                                 </div>
-                                <div style="display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; min-width: 96px;">
-                                    <a href="{{ url_for('topics_bp.topic_detail', topic_id=topic.id) }}" class="btn btn-sm btn-light w-100" style="border-radius: 20px; font-size: 0.75rem; padding: 4px 12px; display: flex; align-items: center; justify-content: center; gap: 6px; transition: transform 0.1s ease; border: 1px solid #ddd;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'" onmouseleave="this.style.transform='scale(1)'">
-                                        <i class="fas fa-eye" style="font-size: 0.7rem; color: #555;"></i>{{ _('View') }}
-                                    </a>
-                                    <form action="{{ url_for('topics_bp.admin_delete', topic_id=topic.id) }}" method="POST" onsubmit="return confirm('{{ _('Delete this topic? Responses will be preserved but the prompt will display as deleted.') }}')" style="margin: 0; width: 100%;">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger w-100" style="border-radius: 20px; font-size: 0.75rem; padding: 4px 12px; display: flex; align-items: center; justify-content: center; gap: 6px; transition: transform 0.1s ease; cursor: pointer;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'" onmouseleave="this.style.transform='scale(1)'">
-                                            <i class="fas fa-trash-alt" style="font-size: 0.7rem;"></i>{{ _('Delete') }}
-                                        </button>
-                                    </form>
-                                </div>
+                                <p class="topics-manage-item-body">{{ topic.body }}</p>
+                            </div>
+                            <div class="topics-manage-item-actions">
+                                <a href="{{ url_for('topics_bp.topic_detail', topic_id=topic.id) }}" class="topics-btn topics-btn--ghost topics-btn--block topics-btn--sm">
+                                    <i class="fas fa-eye" aria-hidden="true"></i>{{ _('View') }}
+                                </a>
+                                <form action="{{ url_for('topics_bp.admin_delete', topic_id=topic.id) }}" method="POST" onsubmit="return confirm('{{ _('Delete this topic? Responses will be preserved but the prompt will display as deleted.') }}')">
+                                    <button type="submit" class="topics-btn topics-btn--danger topics-btn--block topics-btn--sm">
+                                        <i class="fas fa-trash-alt" aria-hidden="true"></i>{{ _('Delete') }}
+                                    </button>
+                                </form>
                             </div>
                         </div>
-                        {% endfor %}
                     </div>
+                    {% endfor %}
+                </div>
                 {% else %}
-                    <p class="text-muted text-center py-4" style="background: #fdfdfd; border: 1px dashed #eee; border-radius: 8px; font-size: 0.85rem;">
-                        {{ _('No published topics yet.') }}
-                    </p>
+                <div class="topics-empty topics-empty--sm">
+                    <p>{{ _('No published topics yet.') }}</p>
+                </div>
                 {% endif %}
-            </div>
+            </section>
         </div>
     </div>
 </div>

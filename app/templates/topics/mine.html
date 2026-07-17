@@ -2,105 +2,102 @@
 
 {% block title %}{{ _('My Journal') }}{% endblock %}
 
+{% block head_extra %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
-<div class="msg-layout msg-layout--issues">
+<div class="msg-layout msg-layout--topics">
     <!-- Sidebar Partial -->
     {% include 'topics/_sidebar.html' %}
 
     <!-- Main Content Pane -->
-    <div class="msg-main">
-        <div class="msg-header" style="margin-bottom: 1.5rem;">
-            <h2 class="msg-header-title">{{ _('My Reflections') }}</h2>
-            <div class="text-muted" style="font-size: 0.85rem;">{{ _('Your personal catalog of written table topics responses.') }}</div>
-        </div>
+    <div class="msg-main topics-main">
+        <header class="topics-head">
+            <p class="topics-overline">{{ _('Table Topics') }}</p>
+            <h2 class="topics-head-title">{{ _('My Reflections') }}</h2>
+            <p class="topics-head-sub">{{ _('Your personal catalog of written table topics responses.') }}</p>
+        </header>
 
         {% if responses %}
-            <div class="d-flex flex-column gap-3 mb-4">
-                {% for resp in responses %}
-                <div class="card p-3 shadow-sm border-0 position-relative" style="border-radius: 8px; background: #fff;">
-                    <!-- Bookmark dropdown toggle -->
-                    <button class="btn btn-link text-muted position-absolute" onclick="openBookmarkDropdown(this, null, {{ resp.id }})" style="top: 12px; right: 12px; padding: 0;" title="{{ _('Save Reflection') }}">
-                        <i class="far fa-bookmark" style="color: #772432; font-size: 0.95rem;"></i>
-                    </button>
-                    
-                    <div class="d-flex align-items-center gap-2 mb-2">
-                        <div>
-                            <span class="text-dark" style="font-weight: 600; font-size: 0.85rem;"><i class="fas fa-calendar-day" style="margin-right: 6px; color: #772432;"></i>{{ resp.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
-                        </div>
-                    </div>
+        <div class="topics-feed-list">
+            {% for resp in responses %}
+            <article class="topics-card" style="--i: {{ loop.index0 }}">
+                <button class="topics-card-bookmark" onclick="openBookmarkDropdown(this, null, {{ resp.id }})" title="{{ _('Save Reflection') }}" aria-label="{{ _('Save Reflection') }}">
+                    <i class="far fa-bookmark" aria-hidden="true"></i>
+                </button>
 
-                    <a href="{{ url_for('topics_bp.response_detail', response_id=resp.id) }}" class="text-decoration-none" style="color: inherit;">
-                        <h5 class="card-title mb-1" style="font-size: 1rem; font-weight: 600; color: #333;">
-                            {% if resp.title %}{{ resp.title }}{% else %}{{ _('Reflection on Topic') }} #{{ resp.topic_id or '' }}{% endif %}
-                        </h5>
-                        <div class="text-muted card-text text-truncate-3" style="font-size: 0.85rem; max-height: 52px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
-                            {{ resp.body }}
-                        </div>
-                    </a>
-                    
-                    <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between" style="font-size: 0.8rem; color: #777;">
-                        <div style="display: flex; gap: 15px;">
-                            {% if resp.visibility == 'public' %}
-                                <span class="text-success"><i class="fas fa-globe-asia" style="margin-right: 4px;"></i>{{ _('Public') }}</span>
-                            {% elif resp.visibility == 'club' %}
-                                <span class="text-info"><i class="fas fa-users" style="margin-right: 4px;"></i>{{ _('Club only') }}</span>
-                            {% else %}
-                                <span class="text-muted"><i class="fas fa-lock" style="margin-right: 4px;"></i>{{ _('Private') }}</span>
-                            {% endif %}
-                            
-                            {% if resp.topic_id %}
-                                <a href="{{ url_for('topics_bp.topic_detail', topic_id=resp.topic_id) }}" class="text-muted text-decoration-none">
-                                    <i class="fas fa-hashtag" style="margin-right: 4px;"></i>{{ _('View Prompt') }}
-                                </a>
-                            {% endif %}
-                        </div>
-                        
-                        <div style="display: flex; gap: 12px; align-items: center;">
-                            <a href="{{ url_for('topics_bp.edit_response', response_id=resp.id) }}" class="text-muted text-decoration-none" style="font-weight: 500;">
-                                <i class="fas fa-edit" style="margin-right: 4px;"></i>{{ _('Edit') }}
+                <a href="{{ url_for('topics_bp.response_detail', response_id=resp.id) }}" class="topics-card-link">
+                    <div class="topics-card-meta">
+                        <span class="topics-card-date"><i class="fas fa-calendar-day topics-card-ic" aria-hidden="true"></i>{{ resp.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    </div>
+                    <h5 class="topics-card-title">
+                        {% if resp.title %}{{ resp.title }}{% else %}{{ _('Reflection on Topic') }} #{{ resp.topic_id or '' }}{% endif %}
+                    </h5>
+                    <p class="topics-card-excerpt">{{ resp.body }}</p>
+                </a>
+
+                <div class="topics-card-foot">
+                    <div class="topics-card-foot-left">
+                        {% if resp.visibility == 'public' %}
+                            <span class="topics-vis topics-vis--public"><i class="fas fa-globe-asia" aria-hidden="true"></i>{{ _('Public') }}</span>
+                        {% elif resp.visibility == 'club' %}
+                            <span class="topics-vis topics-vis--club"><i class="fas fa-users" aria-hidden="true"></i>{{ _('Club only') }}</span>
+                        {% else %}
+                            <span class="topics-vis topics-vis--private"><i class="fas fa-lock" aria-hidden="true"></i>{{ _('Private') }}</span>
+                        {% endif %}
+
+                        {% if resp.topic_id %}
+                            <a href="{{ url_for('topics_bp.topic_detail', topic_id=resp.topic_id) }}" class="topics-card-foot-link">
+                                <i class="fas fa-hashtag" aria-hidden="true"></i>{{ _('View Prompt') }}
                             </a>
-                            <a href="{{ url_for('topics_bp.response_detail', response_id=resp.id) }}" style="color: #772432; font-weight: 500; text-decoration: none;">
-                                <i class="far fa-comments" style="margin-right: 4px;"></i>{{ resp.comments | length }} {{ _('Comments') }}
-                            </a>
-                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="topics-card-foot-left">
+                        <a href="{{ url_for('topics_bp.edit_response', response_id=resp.id) }}" class="topics-card-foot-link">
+                            <i class="fas fa-edit" aria-hidden="true"></i>{{ _('Edit') }}
+                        </a>
+                        <a href="{{ url_for('topics_bp.response_detail', response_id=resp.id) }}" class="topics-card-comments">
+                            <i class="far fa-comments" aria-hidden="true"></i>{{ resp.comments | length }} {{ _('Comments') }}
+                        </a>
                     </div>
                 </div>
-                {% endfor %}
-            </div>
+            </article>
+            {% endfor %}
+        </div>
 
-            <!-- Pagination block -->
-            {% if pagination and pagination.pages > 1 %}
-            <nav class="d-flex justify-content-center">
-                <ul class="pagination pagination-sm">
-                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                        <a class="page-line" href="{{ url_for('topics_bp.mine', page=pagination.prev_num) if pagination.has_prev else '#' }}">&laquo;</a>
-                    </li>
-                    {% for p in pagination.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
-                        {% if p %}
-                            <li class="page-item {% if p == pagination.page %}active{% endif %}">
-                                <a class="page-line" href="{{ url_for('topics_bp.mine', page=p) }}">{{ p }}</a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled"><span class="page-line">...</span></li>
-                        {% endif %}
-                    {% endfor %}
-                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-                        <a class="page-line" href="{{ url_for('topics_bp.mine', page=pagination.next_num) if pagination.has_next else '#' }}">&raquo;</a>
-                    </li>
-                </ul>
-            </nav>
-            {% endif %}
+        {% if pagination and pagination.pages > 1 %}
+        <nav class="topics-pagination">
+            <ul class="pagination pagination-sm">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-line" href="{{ url_for('topics_bp.mine', page=pagination.prev_num) if pagination.has_prev else '#' }}">&laquo;</a>
+                </li>
+                {% for p in pagination.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+                    {% if p %}
+                        <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                            <a class="page-line" href="{{ url_for('topics_bp.mine', page=p) }}">{{ p }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-line">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-line" href="{{ url_for('topics_bp.mine', page=pagination.next_num) if pagination.has_next else '#' }}">&raquo;</a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
 
         {% else %}
-            <div class="card text-center py-5 text-muted" style="border-radius: 8px;">
-                <div class="card-body">
-                    <i class="fas fa-book fa-3x mb-3" style="color: #ccc;"></i>
-                    <p>{{ _("You haven't written any reflections yet!") }}</p>
-                    <a href="{{ url_for('topics_bp.dashboard') }}" class="btn btn-sm btn-primary" style="background-color: #772432; border-color: #772432; margin-top: 10px;">
-                        {{ _('Go to Dashboard') }}
-                    </a>
-                </div>
-            </div>
+        <div class="topics-empty topics-empty--hero">
+            <i class="fas fa-book" aria-hidden="true"></i>
+            <p>{{ _("You haven't written any reflections yet!") }}</p>
+            <a href="{{ url_for('topics_bp.dashboard') }}" class="topics-btn topics-btn--primary">
+                {{ _('Go to Dashboard') }}
+            </a>
+        </div>
         {% endif %}
     </div>
 </div>
