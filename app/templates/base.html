@@ -32,7 +32,8 @@
       'Club Directory': {{ is_module_enabled('Club Directory') | tojson }},
       'Planner': {{ is_module_enabled('Planner') | tojson }},
       'Lucky Draw': {{ is_module_enabled('Lucky Draw') | tojson }},
-      'Upload': {{ is_module_enabled('Upload') | tojson }}
+      'Upload': {{ is_module_enabled('Upload') | tojson }},
+      'Topics': {{ is_module_enabled('Topics') | tojson }}
     };
     window.isModuleEnabled = function(moduleName) {
       if (moduleName === 'Core') return true;
@@ -86,7 +87,8 @@
                         or (is_module_enabled('Planner') and current_user.is_authenticated and (is_authorized(Permissions.PROGRAMS_SELF) or is_authorized(Permissions.PROGRAMS_MANAGE)))
                         or is_authorized(Permissions.LIBRARY_VIEW)
                         or (is_module_enabled('Lucky Draw') and is_authorized(Permissions.MEETING_MANAGE))
-                        or (is_module_enabled('Upload') and is_authorized(Permissions.UPLOAD_MANAGE)) %}
+                        or (is_module_enabled('Upload') and is_authorized(Permissions.UPLOAD_MANAGE))
+                        or (is_module_enabled('Topics') and is_authorized(Permissions.TOPICS_VIEW)) %}
       {% set has_club_nav = is_authorized(Permissions.MEMBERS_MANAGE)
                       or is_authorized(Permissions.ROSTER_VIEW)
                       or is_authorized(Permissions.MEETING_VIEW_ALL)
@@ -174,7 +176,7 @@
           </a>
         </li>
         {% endif %}
-        {% if is_authorized(Permissions.TOPICS_VIEW) %}
+        {% if is_module_enabled('Topics') and is_authorized(Permissions.TOPICS_VIEW) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('topics_bp') %}active{% endif %}">
           <a href="{{ url_for('topics_bp.dashboard') }}" title="{{ _('Table Topics Reflections') }}">
             <i class="fas fa-pen-fancy nav-icon"></i>
@@ -433,7 +435,7 @@
                 </a>
               </li>
               {% endif %}
-              {% if is_authorized(Permissions.TOPICS_VIEW) %}
+              {% if is_module_enabled('Topics') and is_authorized(Permissions.TOPICS_VIEW) %}
               <li class="{% if request.endpoint and request.endpoint.startswith('topics_bp') %}submenu-active{% endif %}">
                 <a href="{{ url_for('topics_bp.dashboard') }}">
                   <i class="fas fa-pen-fancy"></i> {{ _('Table Topics') }}

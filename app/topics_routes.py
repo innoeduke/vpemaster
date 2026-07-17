@@ -12,6 +12,13 @@ from .services.topics_service import TopicService, ResponseService, CommentServi
 
 topics_bp = Blueprint('topics_bp', __name__)
 
+@topics_bp.before_request
+def check_topics_enabled():
+    from app.club_context import is_module_enabled
+    from flask import abort
+    if not is_module_enabled('Topics'):
+        abort(404)
+
 
 def check_response_visible(response, user):
     """

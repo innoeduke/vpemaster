@@ -1757,7 +1757,7 @@ def get_modules():
     defined_modules = [
         "Core", "Booking", "Voting", "Roster", "Calendar",
         "Chatbot", "Journal", "Club Directory", "Planner", "Lucky Draw", "Upload", "Data/Slides Export",
-        "Self Check-In"
+        "Self Check-In", "Topics"
     ]
 
     # Display metadata for modules. Keep the order here = display order in the table.
@@ -1775,6 +1775,7 @@ def get_modules():
         "Upload": "Upload and share files with the club.",
         "Data/Slides Export": "Export meeting data, slides, and reports.",
         "Self Check-In": "Members check themselves in to meetings.",
+        "Topics": "Daily Table Topics prompts with member reflections, comments, and private collections.",
     }
 
     # Query database for existing settings
@@ -1820,7 +1821,7 @@ def toggle_module():
     defined_switchable = [
         "Booking", "Voting", "Roster", "Calendar",
         "Chatbot", "Journal", "Club Directory", "Planner", "Lucky Draw", "Upload", "Data/Slides Export",
-        "Self Check-In"
+        "Self Check-In", "Topics"
     ]
 
     if module_name not in defined_switchable:

@@ -26,7 +26,7 @@ class ClubModule(db.Model):
         switchable_modules = [
             "Booking", "Voting", "Roster", "Calendar",
             "Chatbot", "Journal", "Club Directory", "Planner", "Lucky Draw", "Upload", "Data/Slides Export",
-            "Self Check-In"
+            "Self Check-In", "Topics"
         ]
         for name in switchable_modules:
             mod = cls(club_id=club_id, module_name=name, is_enabled=False)
