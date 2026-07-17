@@ -385,7 +385,6 @@
     letter-spacing: -0.015em;
     color: var(--topics-ink);
     margin: 0;
-    max-width: 32ch;
 }
 
 .topics-head-sub {
@@ -457,14 +456,13 @@
     letter-spacing: -0.01em;
     color: var(--topics-ink);
     margin: 0 0 10px;
-    max-width: 28ch;
 }
 
 .topics-hero-text {
     font-size: 0.95rem;
     line-height: 1.6;
     color: var(--topics-ink-soft);
-    max-width: 62ch;
+    max-width: 100ch;
 }
 
 .topics-hero-actions {
@@ -1048,7 +1046,6 @@
     color: var(--topics-ink);
     margin: 0;
     font-variation-settings: "opsz" 96;
-    max-width: 30ch;
 }
 
 .topics-response-meta {
@@ -1895,7 +1892,6 @@ textarea.topics-input:focus {
     font-size: 1.7rem;
     color: var(--topics-ink);
     margin: 0 0 6px;
-    max-width: 30ch;
     font-variation-settings: "opsz" 96;
 }
 
