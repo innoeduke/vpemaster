@@ -1642,6 +1642,7 @@ textarea.topics-input {
 
 textarea.topics-input {
     resize: vertical;
+    min-height: 300px;
 }
 
 input.topics-input::placeholder,
