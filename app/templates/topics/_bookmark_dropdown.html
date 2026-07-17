@@ -20,19 +20,25 @@
 
 <script>
 let currentDropdownTarget = { topicId: null, responseId: null };
+// Flips to true when the user toggles a save or creates a folder in this
+// dropdown session. The page reloads when the dropdown closes so the
+// saved-topics listing on the surrounding page reflects the new state
+// without requiring a manual refresh.
+let dropdownDirty = false;
 
 function openBookmarkDropdown(btn, topicId, responseId) {
     event.stopPropagation();
     currentDropdownTarget.topicId = topicId || null;
     currentDropdownTarget.responseId = responseId || null;
-    
+    dropdownDirty = false;
+
     const menu = document.getElementById('bookmark-dropdown-menu');
-    
+
     // Position dropdown under the clicked button
     const rect = btn.getBoundingClientRect();
     const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    
+
     menu.style.top = (rect.bottom + scrollTop + 6) + 'px';
     // Align right edges if close to screen border
     if (rect.left + 220 > window.innerWidth) {
@@ -40,12 +46,12 @@ function openBookmarkDropdown(btn, topicId, responseId) {
     } else {
         menu.style.left = (rect.left + scrollLeft) + 'px';
     }
-    
+
     menu.style.display = 'block';
-    
+
     // Load checklist
     loadCollectionsInDropdown();
-    
+
     // Global click listener to close dropdown when clicking outside
     document.addEventListener('click', closeDropdownOnOutsideClick);
 }
@@ -55,6 +61,12 @@ function closeDropdownOnOutsideClick(e) {
     if (menu && !menu.contains(e.target) && e.target.id !== 'bookmark-dropdown-menu') {
         menu.style.display = 'none';
         document.removeEventListener('click', closeDropdownOnOutsideClick);
+        // If the user made changes during this session, refresh the page
+        // so the saved-topics listings re-render with the new state.
+        if (dropdownDirty) {
+            dropdownDirty = false;
+            window.location.reload();
+        }
     }
 }
 
@@ -141,7 +153,9 @@ function toggleItemInCollection(collectionId, cb) {
         if (!data.success) {
             cb.checked = !cb.checked; // Revert
             alert(data.error || 'Failed to update folder.');
+            return;
         }
+        dropdownDirty = true;
     })
     .catch(err => {
         console.error(err);
@@ -166,7 +180,8 @@ function createCollectionFromDropdown() {
     .then(data => {
         if (data.success) {
             input.value = '';
-            
+            dropdownDirty = true;
+
             // Add to sidebar collections list if present
             const list = document.getElementById('collections-list');
             if (list) {
