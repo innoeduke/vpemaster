@@ -55,6 +55,9 @@
                                 <p class="topics-manage-item-body">{{ topic.body }}</p>
                             </div>
                             <div class="topics-manage-item-actions">
+                                <a href="{{ url_for('topics_bp.admin_edit_topic', topic_id=topic.id) }}" class="topics-btn topics-btn--ghost topics-btn--block topics-btn--sm">
+                                    <i class="fas fa-pen" aria-hidden="true"></i>{{ _('Edit') }}
+                                </a>
                                 <form action="{{ url_for('topics_bp.admin_publish', topic_id=topic.id) }}" method="POST">
                                     <button type="submit" class="topics-btn topics-btn--success topics-btn--block topics-btn--sm">
                                         <i class="fas fa-paper-plane" aria-hidden="true"></i>{{ _('Publish') }}

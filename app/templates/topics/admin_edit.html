@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Edit Topic Draft') }}{% endblock %}
+
+{% block head_extra %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="msg-layout msg-layout--topics">
+    {% include 'topics/_sidebar.html' %}
+    <div class="msg-main topics-main topics-response">
+        <a href="{{ url_for('topics_bp.admin') }}" class="topics-back-link">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>{{ _('Back to Administration') }}
+        </a>
+
+        <div class="topics-manage-form">
+            <h3 class="topics-manage-form-title"><i class="fas fa-pen" aria-hidden="true"></i>{{ _('Edit Topic Draft') }}</h3>
+
+            <form action="{{ url_for('topics_bp.admin_edit_topic', topic_id=topic.id) }}" method="POST">
+                <div class="topics-field">
+                    <label for="title" class="topics-field-label">{{ _('Topic Title') }}</label>
+                    <input type="text" id="title" name="title" class="topics-input"
+                           value="{{ topic.title }}"
+                           placeholder="{{ _('E.g. On Persistence, Daily Reflection...') }}" required>
+                </div>
+
+                <div class="topics-field">
+                    <label for="body" class="topics-field-label">{{ _('Question / Context') }}</label>
+                    <textarea id="body" name="body" class="topics-input" rows="5"
+                              placeholder="{{ _('Describe the reflection topic or write the question here...') }}" required>{{ topic.body }}</textarea>
+                </div>
+
+                <div class="topics-compose-actions">
+                    <button type="submit" class="topics-btn topics-btn--primary">
+                        <i class="fas fa-save" aria-hidden="true"></i>{{ _('Save Changes') }}
+                    </button>
+                    <a href="{{ url_for('topics_bp.admin') }}" class="topics-btn topics-btn--ghost">
+                        {{ _('Cancel') }}
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

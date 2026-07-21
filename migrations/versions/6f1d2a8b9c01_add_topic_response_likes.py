@@ -43,8 +43,4 @@ def upgrade():
 
 
 def downgrade():
-    with op.batch_alter_table('topic_response_likes', schema=None) as batch_op:
-        batch_op.drop_index(op.f('ix_topic_response_likes_user_id'))
-        batch_op.drop_index(op.f('ix_topic_response_likes_response_id'))
-
     op.drop_table('topic_response_likes')
