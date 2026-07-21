@@ -95,9 +95,12 @@
                             {% else %}
                                 <span class="topics-vis topics-vis--private"><i class="fas fa-lock" aria-hidden="true"></i>{{ _('Private') }}</span>
                             {% endif %}
-                            <a href="{{ url_for('topics_bp.response_detail', response_id=resp.id) }}" class="topics-card-comments">
-                                <i class="far fa-comments" aria-hidden="true"></i>{{ resp.comments | length }} {{ _('Comments') }}
-                            </a>
+                            <div class="topics-card-foot-right">
+                                {{ ui.like_button(resp) }}
+                                <a href="{{ url_for('topics_bp.response_detail', response_id=resp.id) }}" class="topics-card-comments">
+                                    <i class="far fa-comments" aria-hidden="true"></i>{{ resp.comments | length }} {{ _('Comments') }}
+                                </a>
+                            </div>
                         </div>
                     </article>
                     {% endfor %}

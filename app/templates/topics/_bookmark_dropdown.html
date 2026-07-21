@@ -193,7 +193,7 @@ function createCollectionFromDropdown() {
                 item.innerHTML = `<i class="fas fa-folder"></i> <span>${data.name}</span>`;
                 list.appendChild(item);
             }
-            
+
             // Reload dropdown list to include the new collection and check it automatically
             // by calling add-item on it first
             const body = {
@@ -202,7 +202,7 @@ function createCollectionFromDropdown() {
             };
             if (currentDropdownTarget.topicId) body.topic_id = currentDropdownTarget.topicId;
             if (currentDropdownTarget.responseId) body.response_id = currentDropdownTarget.responseId;
-            
+
             return fetch("{{ url_for('topics_bp.toggle_collection_item') }}", {
                 method: "POST",
                 headers: {
@@ -216,6 +216,45 @@ function createCollectionFromDropdown() {
             });
         } else {
             alert(data.error || 'Failed to create collection.');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('An error occurred.');
+    });
+}
+
+// --- Like toggle (shared across Topics card + essay pages) ---
+// Each like button carries data-response-id and data-liked. The server
+// echoes back the new total count and state, so we keep the DOM and
+// server in sync without a full page reload.
+function toggleLike(btn) {
+    event.preventDefault();
+    event.stopPropagation();
+    const responseId = btn.getAttribute('data-response-id');
+    if (!responseId) return;
+
+    const url = `{{ url_for('topics_bp.toggle_like', response_id=0) }}`.replace('/0', '/' + responseId);
+
+    fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) {
+            alert(data.error || 'Failed to update like.');
+            return;
+        }
+        btn.setAttribute('data-liked', data.liked ? '1' : '0');
+        const countEl = btn.querySelector('.topics-like-count');
+        if (countEl) {
+            countEl.textContent = String(data.count);
+        }
+        const icon = btn.querySelector('i');
+        if (icon) {
+            icon.classList.toggle('fas', data.liked);
+            icon.classList.toggle('far', !data.liked);
         }
     })
     .catch(err => {

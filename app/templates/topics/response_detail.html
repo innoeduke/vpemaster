@@ -64,6 +64,10 @@
             </div>
 
             <div class="markdown-content topics-essay-text" data-markdown="{{ response.body | escape }}"></div>
+
+            <div class="topics-essay-actions">
+                {{ ui.like_button(response, class='topics-essay-like') }}
+            </div>
         </article>
 
         <!-- Comments -->

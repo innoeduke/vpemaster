@@ -59,6 +59,15 @@ To match the look and feel of the platform (especially the Issue Tracker and Jou
 * Displays a list of the user's collections with checkbox toggles. Checking a checkbox adds the item, unchecking removes it via an AJAX request.
 * A small inline text field: `Create & Add` at the bottom of the dropdown enables instant folder creation.
 
+#### F. Likes on Reflections
+* Every reflection card footer and the full essay view expose a heart button showing the like count. Clicking toggles the current user's like (idempotent).
+* The button is rendered for *any* authenticated viewer with the `TOPICS_COMMENT` permission; visibility is still gated server-side by `check_response_visible` — you can only like what you can read.
+* Users may like their own reflections. There is no separate `TOPICS_LIKE` permission; reusing `TOPICS_COMMENT` keeps the social affordances gated by a single grant.
+* UI surface contract:
+  * Card footers — Expl Feed, Featured-Today community list, My Journal, Topic-detail "Reflections from others".
+  * Essay view — a `.topics-essay-actions` row directly under the rendered markdown body.
+* Batch loading rule: list-route handlers must call `TopicResponse.populate_likes(responses, current_user.id)` after `populate_authors(...)`. Templates read `resp._like_count` and `resp._liked_by_me`; both default to `0` / `false` when unset so partial renders remain safe.
+
 ---
 
 ## 2. Database Models & Schema
@@ -114,13 +123,21 @@ We will add a new model file `app/models/topic.py` with the following schemas:
 
 *Unique constraints will ensure a topic or response is only added to a specific collection once.*
 
+#### `TopicResponseLike` (user likes a reflection)
+* `id`: PK (`db.Integer`)
+* `response_id`: `db.Integer` (FK to `topic_responses.id`, `nullable=False`, `ondelete='CASCADE'`, `index=True`)
+* `user_id`: `db.Integer` (FK to `users.id`, `nullable=False`, `ondelete='CASCADE'`, `index=True`)
+* `created_at`: `db.DateTime`, `default=utc`
+
+*Unique constraint `(response_id, user_id)` guarantees a user likes a given reflection at most once; toggle via `ResponseService.toggle_like(response_id, user_id)` returns `(liked, count)`.*
+
 ---
 
 ## 3. Web Service Layer (`app/services/topics_service.py`)
 
 Handles atomic operations:
 * **Topic CRUD**: `create_topic`, `publish_topic`, `update_topic`, `delete_topic`.
-* **Response CRUD**: `create_response`, `update_response`, `delete_response`.
+* **Response CRUD**: `create_response`, `update_response`, `delete_response`, `toggle_like(response_id, user_id) -> (liked, count)`.
 * **Comment CRUD**: `add_comment`, `update_comment`, `delete_comment`.
 * **Collection CRUD**:
   * `create_collection(user_id, name)`
@@ -143,6 +160,7 @@ Registered blueprint `topics_bp`:
 * **`GET /topic/<int:topic_id>`**: Individual topic detail.
 * **`POST /topic/<int:topic_id>/respond`**: Essay submission endpoint.
 * **`GET /response/<int:response_id>`**: Essay details + comments stream.
+* **`POST /response/<int:response_id>/like`**: Toggle the current user's like on a reflection (AJAX, JSON; reuses `TOPICS_COMMENT` gate; returns `{success, liked, count}`).
 * **`POST /response/<int:response_id>/comment`**: Add/edit comment.
 * **`POST /comment/<int:comment_id>/delete`**: Delete comment.
 * **`GET /topics/admin`**: sysadmin-only panel.

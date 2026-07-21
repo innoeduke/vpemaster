@@ -905,6 +905,73 @@
     color: var(--topics-maroon);
 }
 
+/* Like button on reflection cards and essay view */
+.topics-card-foot-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.topics-card-likes {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--topics-ink-faint);
+    font-size: 0.78rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    transition: color 0.18s ease, transform 0.1s ease;
+}
+
+.topics-card-likes i {
+    font-size: 0.82rem;
+    transition: transform 0.18s ease;
+}
+
+.topics-card-likes:hover {
+    color: var(--topics-maroon);
+}
+
+.topics-card-likes:hover i {
+    transform: scale(1.12);
+}
+
+.topics-card-likes[data-liked="1"] {
+    color: var(--topics-maroon);
+}
+
+.topics-card-likes[data-liked="1"] i {
+    animation: topicsHeartPop 0.28s ease;
+}
+
+@keyframes topicsHeartPop {
+    0%   { transform: scale(1); }
+    45%  { transform: scale(1.35); }
+    100% { transform: scale(1); }
+}
+
+/* Like button on the essay action row under the reflection text */
+.topics-essay-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-top: 18px;
+    margin-top: 18px;
+    border-top: 1px solid var(--topics-rule-soft);
+}
+
+.topics-essay-like {
+    font-size: 0.86rem;
+}
+
+.topics-essay-like i {
+    font-size: 0.95rem;
+}
+
 /* --- Archive (past prompts) --- */
 .topics-archive-list {
     list-style: none;

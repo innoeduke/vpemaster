@@ -7,7 +7,7 @@ from . import db
 from .auth.permissions import Permissions
 from .auth.utils import is_authorized
 from .translations.translations import translate as _
-from .models import Topic, TopicResponse, TopicComment, TopicCollection, CollectionItem, User, Club
+from .models import Topic, TopicResponse, TopicResponseLike, TopicComment, TopicCollection, CollectionItem, User, Club
 from .services.topics_service import TopicService, ResponseService, CommentService, CollectionService
 
 topics_bp = Blueprint('topics_bp', __name__)
@@ -97,6 +97,7 @@ def dashboard():
 
     recent_feed = visible_responses_query.order_by(TopicResponse.created_at.desc()).limit(5).all()
     TopicResponse.populate_authors(recent_feed)
+    TopicResponse.populate_likes(recent_feed, current_user.id)
 
     # Get user's collections
     collections = TopicCollection.query.filter_by(user_id=current_user.id).order_by(TopicCollection.name.asc()).all()
@@ -147,6 +148,7 @@ def explore():
     )
     responses = pagination.items
     TopicResponse.populate_authors(responses)
+    TopicResponse.populate_likes(responses, current_user.id)
 
     # Get user's collections
     collections = TopicCollection.query.filter_by(user_id=current_user.id).order_by(TopicCollection.name.asc()).all()
@@ -175,6 +177,7 @@ def mine():
     )
     responses = pagination.items
     TopicResponse.populate_authors(responses)
+    TopicResponse.populate_likes(responses, current_user.id)
 
     # Get user's collections
     collections = TopicCollection.query.filter_by(user_id=current_user.id).order_by(TopicCollection.name.asc()).all()
@@ -220,6 +223,7 @@ def collection_detail(collection_id):
                 saved_responses.append(response)
 
     TopicResponse.populate_authors(saved_responses)
+    TopicResponse.populate_likes(saved_responses, current_user.id)
 
     # Get user's collections
     collections = TopicCollection.query.filter_by(user_id=current_user.id).order_by(TopicCollection.name.asc()).all()
@@ -275,6 +279,7 @@ def topic_detail(topic_id):
 
     other_responses = other_responses_query.order_by(TopicResponse.created_at.desc()).all()
     TopicResponse.populate_authors(other_responses)
+    TopicResponse.populate_likes(other_responses, current_user.id)
 
     # User collections
     collections = TopicCollection.query.filter_by(user_id=current_user.id).order_by(TopicCollection.name.asc()).all()
@@ -356,6 +361,8 @@ def response_detail(response_id):
     response = db.session.get(TopicResponse, response_id)
     if not response or not check_response_visible(response, current_user):
         abort(403)
+
+    TopicResponse.populate_likes([response], current_user.id)
 
     topic = None
     if response.topic_id:
@@ -543,6 +550,36 @@ def delete_comment(comment_id):
         return jsonify({'success': False, 'error': str(e)}), 403
 
 
+@topics_bp.route('/response/<int:response_id>/like', methods=['POST'])
+@login_required
+def toggle_like(response_id):
+    """Toggle the current user's like on a reflection (AJAX, JSON).
+
+    Reuses the TOPICS_COMMENT gate — liking is the lightest social
+    affordance and we don't want to introduce a separate permission /
+    role grant just for it. Visibility is re-checked server-side via
+    `check_response_visible` so users cannot like private reflections
+    they shouldn't be able to read.
+
+    Returns `{success, liked, count}` on success.
+    """
+    if not is_authorized(Permissions.TOPICS_COMMENT):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+
+    response = db.session.get(TopicResponse, response_id)
+    if not response or not check_response_visible(response, current_user):
+        return jsonify({'success': False, 'error': 'Response not found or hidden.'}), 404
+
+    try:
+        liked, count = ResponseService.toggle_like(
+            response_id=response_id,
+            user_id=current_user.id
+        )
+        return jsonify({'success': True, 'liked': liked, 'count': count})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
 # ==========================================
 # Collections AJAX Endpoints
 # ==========================================
@@ -692,6 +729,40 @@ def admin_publish(topic_id):
         flash(str(e), 'error')
 
     return redirect(url_for('topics_bp.admin'))
+
+
+@topics_bp.route('/topics/admin/<int:topic_id>/edit', methods=['GET', 'POST'])
+@login_required
+def admin_edit_topic(topic_id):
+    """Edit a topic draft (published topics must be unpublished first)."""
+    if not is_authorized(Permissions.TOPICS_MANAGE):
+        abort(403)
+
+    topic = db.session.get(Topic, topic_id)
+    if not topic:
+        abort(404)
+
+    # Editing is restricted to drafts. Admins must Unpublish before edits
+    # so that any bookmarked/responded copy is never silently mutated under
+    # members' noses.
+    if topic.status != 'draft':
+        flash(_('Only drafts can be edited. Unpublish the topic first.'), 'error')
+        return redirect(url_for('topics_bp.admin'))
+
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        body = request.form.get('body', '').strip()
+        if not title or not body:
+            flash(_('Title and prompt body are required.'), 'error')
+        else:
+            try:
+                TopicService.update_topic(topic_id, title=title, body=body)
+                flash(_('Topic has been updated.'), 'success')
+                return redirect(url_for('topics_bp.admin'))
+            except Exception as e:
+                flash(str(e), 'error')
+
+    return render_template('topics/admin_edit.html', topic=topic)
 
 
 @topics_bp.route('/topics/admin/<int:topic_id>/unpublish', methods=['POST'])

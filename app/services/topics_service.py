@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from .. import db
-from ..models import Topic, TopicResponse, TopicComment, TopicCollection, CollectionItem, User, Club
+from ..models import Topic, TopicResponse, TopicResponseLike, TopicComment, TopicCollection, CollectionItem, User, Club
 
 class TopicService:
     @staticmethod
@@ -135,6 +135,38 @@ class ResponseService:
         db.session.delete(response)
         db.session.commit()
         return True
+
+    @staticmethod
+    def toggle_like(response_id, user_id):
+        """Toggle the current user's like on a reflection.
+
+        Returns a tuple `(liked, count)`:
+          * `liked` — True if the user now likes the response, False if
+            they unliked it.
+          * `count` — total like count on the response after the change.
+        Likes are idempotent — toggling twice returns to the original
+        state. A user may like their own reflection.
+        """
+        response = db.session.get(TopicResponse, response_id)
+        if not response:
+            raise ValueError(f"Response with ID {response_id} not found.")
+
+        existing = TopicResponseLike.query.filter_by(
+            response_id=response_id, user_id=user_id
+        ).first()
+        if existing:
+            db.session.delete(existing)
+            db.session.commit()
+            liked = False
+        else:
+            db.session.add(TopicResponseLike(
+                response_id=response_id, user_id=user_id
+            ))
+            db.session.commit()
+            liked = True
+
+        count = TopicResponseLike.query.filter_by(response_id=response_id).count()
+        return liked, count
 
 
 class CommentService:

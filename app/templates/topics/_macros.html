@@ -39,3 +39,25 @@
         —
     {%- endif -%}
 {%- endmacro %}
+
+{# Like button for a reflection card or essay view.
+
+   Reads `_like_count` and `_liked_by_me` set by
+   `TopicResponse.populate_likes`. Falls back to 0 / unliked when the
+   attributes are absent so the macro is safe to render anywhere `resp`
+   is available. #}
+{% macro like_button(resp, class='') -%}
+    {%- set liked = resp._liked_by_me | default(false, true) -%}
+    {%- set count = resp._like_count | default(0, true) -%}
+    <button type="button"
+            class="topics-card-likes {{ class }}"
+            data-response-id="{{ resp.id }}"
+            data-liked="{{ '1' if liked else '0' }}"
+            onclick="toggleLike(this)"
+            title="{{ _('Like this reflection') }}"
+            aria-label="{{ _('Like this reflection') }}"
+            aria-pressed="{{ 'true' if liked else 'false' }}">
+        <i class="{{ 'fas' if liked else 'far' }} fa-heart" aria-hidden="true"></i>
+        <span class="topics-like-count">{{ count }}</span>
+    </button>
+{%- endmacro %}

@@ -3,6 +3,7 @@
 {% block title %}{{ _('My Reflections') }}{% endblock %}
 
 {% block content %}
+{% import 'topics/_macros.html' as ui %}
 <div class="msg-layout msg-layout--topics">
     <!-- Sidebar Partial -->
     {% include 'topics/_sidebar.html' %}
@@ -49,10 +50,11 @@
                             </a>
                         {% endif %}
                     </div>
-                    <div class="topics-card-foot-left">
+                    <div class="topics-card-foot-right">
                         <a href="{{ url_for('topics_bp.edit_response', response_id=resp.id) }}" class="topics-card-foot-link">
                             <i class="fas fa-edit" aria-hidden="true"></i>{{ _('Edit') }}
                         </a>
+                        {{ ui.like_button(resp) }}
                         <a href="{{ url_for('topics_bp.response_detail', response_id=resp.id) }}" class="topics-card-comments">
                             <i class="far fa-comments" aria-hidden="true"></i>{{ resp.comments | length }} {{ _('Comments') }}
                         </a>

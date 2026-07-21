@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app, db
 from app.models import (
-    Topic, TopicResponse, TopicComment, TopicCollection, CollectionItem,
+    Topic, TopicResponse, TopicResponseLike, TopicComment, TopicCollection, CollectionItem,
     User, Club, Contact, UserClub, AuthRole, Permission,
 )
 from app.auth.permissions import Permissions
@@ -244,7 +244,7 @@ class TableTopicsTestCase(unittest.TestCase):
     def test_collections_saving(self):
         """Test private folders creation and bookmark additions/removals."""
         a1, _ = self.create_user("user_a1", "Member", self.club_a)
-        
+
         topic = TopicService.create_topic("Prompt", "Reflect on this", a1.id)
         TopicService.publish_topic(topic.id)
 
@@ -265,6 +265,108 @@ class TableTopicsTestCase(unittest.TestCase):
         CollectionService.remove_item_from_collection(collection_id=col.id, user_id=a1.id, topic_id=topic.id)
         saved_status = CollectionService.get_user_collections_for_item(user_id=a1.id, topic_id=topic.id)
         self.assertNotIn(col.id, saved_status)
+
+    def test_like_toggle_service_and_visibility_gating(self):
+        """Likes are idempotent, unique per (user, response), and respect
+        the same visibility gate as reading the reflection."""
+        a1, _ = self.create_user("user_a1", "Member", self.club_a)
+        a2, _ = self.create_user("user_a2", "Member", self.club_a)
+        b, _ = self.create_user("user_b", "Member", self.club_b)
+
+        topic = TopicService.create_topic("Prompt", "Reflect on this", a1.id)
+        TopicService.publish_topic(topic.id)
+
+        # Public reflection — everyone can like
+        resp_pub = ResponseService.create_response(
+            topic_id=topic.id, author_id=a1.id, club_id=self.club_a.id,
+            title=None, body="For everyone", visibility="public"
+        )
+
+        # Like -> toggle returns (True, 1)
+        liked, count = ResponseService.toggle_like(resp_pub.id, a2.id)
+        self.assertTrue(liked)
+        self.assertEqual(count, 1)
+
+        # Author may like their own reflection
+        liked, count = ResponseService.toggle_like(resp_pub.id, a1.id)
+        self.assertTrue(liked)
+        self.assertEqual(count, 2)
+
+        # Unliking returns (False, decremented)
+        liked, count = ResponseService.toggle_like(resp_pub.id, a2.id)
+        self.assertFalse(liked)
+        self.assertEqual(count, 1)
+
+        # Unique constraint — rapidly toggling must never create more
+        # than one row per (response, user). At this point a1 is still
+        # liked (from step 291) and a2 has unliked, so count == 1.
+        ResponseService.toggle_like(resp_pub.id, a1.id)   # unlike -> 0
+        ResponseService.toggle_like(resp_pub.id, a1.id)   # re-like -> 1
+        ResponseService.toggle_like(resp_pub.id, a1.id)   # unlike -> 0
+        self.assertEqual(
+            TopicResponseLike.query.filter_by(response_id=resp_pub.id).count(),
+            0
+        )
+
+        # Private reflection — visibility gate blocks liking as a non-author
+        resp_priv = ResponseService.create_response(
+            topic_id=topic.id, author_id=a1.id, club_id=self.club_a.id,
+            title=None, body="Only me", visibility="private"
+        )
+        from app.topics_routes import check_response_visible
+        self.assertFalse(check_response_visible(resp_priv, b))
+
+        # Liking is gated on the route side; the service itself just
+        # returns (liked, count) — visibility is the route's call.
+        liked, count = ResponseService.toggle_like(resp_priv.id, a1.id)
+        self.assertTrue(liked)
+
+        # populate_likes batch-loads count + liked-by-me flag
+        TopicResponse.populate_likes([resp_pub, resp_priv], user_id=a1.id)
+        self.assertEqual(resp_pub._like_count, 0)
+        self.assertFalse(resp_pub._liked_by_me)
+        self.assertEqual(resp_priv._like_count, 1)
+        self.assertTrue(resp_priv._liked_by_me)
+
+    def test_like_route_ajax(self):
+        """The /response/<id>/like endpoint toggles and returns the
+        updated (liked, count) payload; visibility is enforced."""
+        a1, _ = self.create_user("user_a1", "Member", self.club_a)
+        b, _ = self.create_user("user_b", "Member", self.club_b)
+
+        topic = TopicService.create_topic("Prompt", "Reflect on this", a1.id)
+        TopicService.publish_topic(topic.id)
+
+        # Public reflection visible to B
+        resp = ResponseService.create_response(
+            topic_id=topic.id, author_id=a1.id, club_id=self.club_a.id,
+            title=None, body="Public essay", visibility="public"
+        )
+
+        self.login("user_b", self.club_b)
+
+        # First call — like
+        r = self.client.post(f'/response/{resp.id}/like')
+        self.assertEqual(r.status_code, 200)
+        payload = r.get_json()
+        self.assertTrue(payload['success'])
+        self.assertTrue(payload['liked'])
+        self.assertEqual(payload['count'], 1)
+
+        # Second call — unlike
+        r = self.client.post(f'/response/{resp.id}/like')
+        payload = r.get_json()
+        self.assertTrue(payload['success'])
+        self.assertFalse(payload['liked'])
+        self.assertEqual(payload['count'], 0)
+
+        # Private reflection not visible to B — endpoint returns 404
+        priv = ResponseService.create_response(
+            topic_id=topic.id, author_id=a1.id, club_id=self.club_a.id,
+            title=None, body="Secret", visibility="private"
+        )
+        r = self.client.post(f'/response/{priv.id}/like')
+        self.assertEqual(r.status_code, 404)
 
 
 if __name__ == '__main__':

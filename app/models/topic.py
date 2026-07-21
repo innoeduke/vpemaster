@@ -69,8 +69,68 @@ class TopicResponse(db.Model):
         for r in responses:
             r._author = user_map.get(r.author_id)
 
+    @staticmethod
+    def populate_likes(responses, user_id):
+        """Batch-load like counts and a `liked by me` flag for a list of
+        responses, mirroring the populate_authors N+1 avoidance pattern.
+
+        Sets two private attributes consumed by templates:
+          * `_like_count`    — total likes on the response (int)
+          * `_liked_by_me`  — True if `user_id` has liked the response
+        Both default to 0 / False when the response has no likes, so the
+        template can read them unconditionally.
+        """
+        if not responses:
+            return
+        ids = [r.id for r in responses]
+        counts = dict(
+            db.session.query(TopicResponseLike.response_id, db.func.count())
+            .filter(TopicResponseLike.response_id.in_(ids))
+            .group_by(TopicResponseLike.response_id)
+            .all()
+        )
+        mine = set()
+        if user_id is not None:
+            mine = {
+                row[0] for row in
+                db.session.query(TopicResponseLike.response_id)
+                .filter(TopicResponseLike.response_id.in_(ids),
+                        TopicResponseLike.user_id == user_id)
+                .all()
+            }
+        for r in responses:
+            r._like_count = counts.get(r.id, 0)
+            r._liked_by_me = r.id in mine
+
     def __repr__(self):
         return f'<TopicResponse {self.id} author={self.author_id} visibility={self.visibility}>'
+
+
+class TopicResponseLike(db.Model):
+    """Association table recording one user's like on a single reflection.
+
+    Invariants:
+      * A user can like a reflection at most once — enforced by a
+        unique constraint on (user_id, response_id).
+      * Likes cascade on response deletion; on user deletion the row is
+        removed as well so stale likes never accumulate.
+      * Any authenticated member can like any reflection they can view
+        (including their own); there is no `TOPICS_LIKE` permission —
+        visibility is the only gating rule.
+    """
+    __tablename__ = 'topic_response_likes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    response_id = db.Column(db.Integer, db.ForeignKey('topic_responses.id', ondelete='CASCADE'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    __table_args__ = (
+        db.UniqueConstraint('response_id', 'user_id', name='uq_topic_response_likes_response_user'),
+    )
+
+    def __repr__(self):
+        return f'<TopicResponseLike response={self.response_id} user={self.user_id}>'
 
 
 class TopicComment(db.Model):
