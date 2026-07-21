@@ -120,27 +120,84 @@ def test_file_backups_full_and_incremental(app):
                 shutil.rmtree(test_dir_abs)
 
 def test_cli_commands(app):
-    from click.testing import CliRunner
+    from unittest.mock import patch
     from app.commands.backup import resources
     
-    runner = CliRunner()
+    runner = app.test_cli_runner()
     
     # Help commands verification
     result = runner.invoke(resources, ['--help'])
     assert result.exit_code == 0
-    assert 'db' in result.output
-    assert 'system' in result.output
-    assert 'club' in result.output
-    assert 'all' in result.output
+    assert 'backup' in result.output
+    assert 'restore' in result.output
     
-    # Test db group help
-    result = runner.invoke(resources, ['db', '--help'])
+    # Test backup command help
+    result = runner.invoke(resources, ['backup', '--help'])
     assert result.exit_code == 0
-    assert 'backup' in result.output
-    assert 'restore' in result.output
+    assert '--type' in result.output
+    assert '-t' in result.output
 
-    # Test system group help
-    result = runner.invoke(resources, ['system', '--help'])
+    # Test restore command help
+    result = runner.invoke(resources, ['restore', '--help'])
     assert result.exit_code == 0
-    assert 'backup' in result.output
-    assert 'restore' in result.output
+    assert '--type' in result.output
+    assert '-t' in result.output
+
+    # Test invalid type option
+    result = runner.invoke(resources, ['backup', '--type', 'invalid'])
+    assert result.exit_code != 0
+
+    with patch('app.services.backup_service.BackupService.create_database_backup', return_value=(True, '/path/db.sql')), \
+         patch('app.services.backup_service.BackupService.create_file_backup', return_value=(True, '/path/res.zip')), \
+         patch('app.services.backup_service.BackupService.restore_database', return_value=(True, 'DB Restored')), \
+         patch('app.services.backup_service.BackupService.restore_file_backup', return_value=(True, 'Files Restored')), \
+         patch('app.services.backup_service.BackupService.get_latest_backup', return_value='/path/latest_db.sql'):
+
+        # Test backup with --type db
+        result = runner.invoke(resources, ['backup', '--type', 'db'])
+        assert result.exit_code == 0, f"Output: {result.output}"
+        assert 'Creating database backup' in result.output
+
+        # Test backup with -t system
+        result = runner.invoke(resources, ['backup', '-t', 'system'])
+        assert result.exit_code == 0, f"Output: {result.output}"
+        assert 'Creating system resources backup' in result.output
+
+        # Test backup with -t club
+        result = runner.invoke(resources, ['backup', '-t', 'club'])
+        assert result.exit_code == 0, f"Output: {result.output}"
+        assert 'Creating club resources backup' in result.output
+
+        # Test backup with -t db at group level (e.g., flask resources -t db backup)
+        result = runner.invoke(resources, ['-t', 'db', 'backup'])
+        assert result.exit_code == 0, f"Output: {result.output}"
+        assert 'Creating database backup' in result.output
+
+
+        # Test backup with default type (all)
+        result = runner.invoke(resources, ['backup'])
+        assert result.exit_code == 0, f"Output: {result.output}"
+        assert 'Creating database backup' in result.output
+        assert 'Creating system resources backup' in result.output
+        assert 'Creating club resources backup' in result.output
+        assert 'All backups completed' in result.output
+
+        # Test restore with --type db --latest
+        result = runner.invoke(resources, ['restore', '--type', 'db', '--latest'])
+        assert result.exit_code == 0, f"Output: {result.output}"
+        assert 'Restoring database' in result.output
+
+        # Test restore with -t system --latest
+        result = runner.invoke(resources, ['restore', '-t', 'system', '--latest'])
+        assert result.exit_code == 0, f"Output: {result.output}"
+        assert 'Restoring system resources' in result.output
+
+        # Test restore with default type (all) --latest
+        result = runner.invoke(resources, ['restore', '--latest'])
+        assert result.exit_code == 0, f"Output: {result.output}"
+        assert 'Restoring database' in result.output
+        assert 'Restoring system resources' in result.output
+        assert 'Restoring club resources' in result.output
+
+
+

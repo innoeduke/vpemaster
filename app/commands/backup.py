@@ -3,28 +3,28 @@ import click
 from flask.cli import with_appcontext
 from ..services.backup_service import BackupService
 
-class DefaultGroup(click.Group):
-    def resolve_command(self, ctx, args):
-        if args and args[0] not in self.commands:
-            if not args[0].startswith('-'):
-                args.insert(0, 'all')
-        return super().resolve_command(ctx, args)
+TYPE_CHOICES = click.Choice(['db', 'system', 'club', 'all'], case_sensitive=False)
 
-@click.group('resources', cls=DefaultGroup)
-def resources():
+
+@click.group('resources')
+@click.option('--type', '-t', 'group_type', type=TYPE_CHOICES, default=None, help='Resource type to operate on (db, system, club, all).')
+@click.pass_context
+def resources(ctx, group_type):
     """Database and resource backup management."""
-    pass
+    ctx.ensure_object(dict)
+    if isinstance(ctx.obj, dict):
+        ctx.obj['type'] = group_type
+    ctx.group_type = group_type
 
-# --- DB Command Group ---
-@resources.group('db')
-def db_group():
-    """Database backup operations."""
-    pass
 
-@db_group.command('backup')
-@with_appcontext
-def db_backup():
-    """Creates a database backup."""
+def _get_res_type(ctx, cmd_type):
+    group_type = getattr(ctx, 'group_type', None)
+    if not group_type and isinstance(ctx.obj, dict):
+        group_type = ctx.obj.get('type')
+    return (cmd_type or group_type or 'all').lower()
+
+
+def _do_db_backup():
     from flask import current_app
     backup_dir = os.path.join(current_app.instance_path, 'backup', 'db')
     click.echo("Creating database backup...")
@@ -35,45 +35,8 @@ def db_backup():
         click.secho(f"Database backup failed: {result}", fg='red')
         raise click.ClickException(f"Database backup failed: {result}")
 
-@db_group.command('restore')
-@click.option('--file', '-f', help='Path to database backup file.')
-@click.option('--latest', is_flag=True, help='Restore latest database backup.')
-@click.option('--upgrade/--no-upgrade', default=True, help='Automatically run migrations after restore.')
-@click.option('--stamp', help='Explicitly stamp to this version if restoring unversioned data.')
-@with_appcontext
-def db_restore(file, latest, upgrade, stamp):
-    """Restores database from a backup."""
-    from flask import current_app
-    backup_dir = os.path.join(current_app.instance_path, 'backup', 'db')
-    
-    if latest:
-        file = BackupService.get_latest_backup(backup_dir, 'backup_db_')
-        
-    if not file:
-        click.secho("Error: Please specify --file or --latest", fg='red')
-        raise click.ClickException("Error: Please specify --file or --latest")
-        
-    click.echo(f"Restoring database from {file}...")
-    success, message = BackupService.restore_database(file, upgrade=upgrade, stamp_version=stamp)
-    if success:
-        click.secho(f"✅ {message}", fg='green')
-    else:
-        click.secho(f"❌ {message}", fg='red')
-        raise click.ClickException(f"Database restore failed: {message}")
 
-
-# --- System Command Group ---
-@resources.group('system')
-def system_group():
-    """System resource backup operations (avatars, platform images, logos)."""
-    pass
-
-@system_group.command('backup')
-@click.option('--increment', is_flag=True, help='Perform an incremental backup.')
-@click.option('--full', is_flag=True, help='Perform a full backup (default).')
-@with_appcontext
-def system_backup(increment, full):
-    """Creates a system resources backup."""
+def _do_system_backup(increment, full):
     from flask import current_app
     backup_dir = os.path.join(current_app.instance_path, 'backup', 'system')
     strategy = 'increment' if increment and not full else 'full'
@@ -94,36 +57,8 @@ def system_backup(increment, full):
         click.secho(f"System backup failed: {result}", fg='red')
         raise click.ClickException(f"System backup failed: {result}")
 
-@system_group.command('restore')
-@click.option('--file', '-f', help='Path to system backup zip file.')
-@click.option('--latest', is_flag=True, help='Restore latest system backup.')
-@with_appcontext
-def system_restore(file, latest):
-    """Restores system resources from a backup."""
-    from flask import current_app
-    backup_dir = os.path.join(current_app.instance_path, 'backup', 'system')
-    
-    click.echo("Restoring system resources...")
-    success, message = BackupService.restore_file_backup(backup_dir, target_file=file, latest=latest, resource_name='system')
-    if success:
-        click.secho(message, fg='green')
-    else:
-        click.secho(message, fg='red')
-        raise click.ClickException(f"System restore failed: {message}")
 
-
-# --- Club Command Group ---
-@resources.group('club')
-def club_group():
-    """Club resource backup operations (club resources)."""
-    pass
-
-@club_group.command('backup')
-@click.option('--increment', is_flag=True, help='Perform an incremental backup.')
-@click.option('--full', is_flag=True, help='Perform a full backup (default).')
-@with_appcontext
-def club_backup(increment, full):
-    """Creates a club resources backup."""
+def _do_club_backup(increment, full):
     from flask import current_app
     backup_dir = os.path.join(current_app.instance_path, 'backup', 'club')
     strategy = 'increment' if increment and not full else 'full'
@@ -141,15 +76,77 @@ def club_backup(increment, full):
         click.secho(f"Club backup failed: {result}", fg='red')
         raise click.ClickException(f"Club backup failed: {result}")
 
-@club_group.command('restore')
-@click.option('--file', '-f', help='Path to club backup zip file.')
-@click.option('--latest', is_flag=True, help='Restore latest club backup.')
+
+@resources.command('backup')
+@click.option('--type', '-t', type=TYPE_CHOICES, default=None, help='Resource type to backup (db, system, club, all).')
+@click.option('--increment', is_flag=True, help='Perform an incremental backup for file resources.')
+@click.option('--full', is_flag=True, help='Perform a full backup for file resources (default).')
+@click.pass_context
 @with_appcontext
-def club_restore(file, latest):
-    """Restores club resources from a backup."""
+def backup(ctx, type, increment, full):
+    """Creates a backup for database, system, club, or all resources."""
+    res_type = _get_res_type(ctx, type)
+    if res_type == 'db':
+        _do_db_backup()
+    elif res_type == 'system':
+        _do_system_backup(increment, full)
+    elif res_type == 'club':
+        _do_club_backup(increment, full)
+    elif res_type == 'all':
+        click.echo("--- Starting database backup ---")
+        _do_db_backup()
+        click.echo("--- Starting system resources backup ---")
+        _do_system_backup(increment, full)
+        click.echo("--- Starting club resources backup ---")
+        _do_club_backup(increment, full)
+        click.echo("✅ All backups completed.")
+
+
+def _do_db_restore(file, latest, upgrade, stamp):
+    from flask import current_app
+    backup_dir = os.path.join(current_app.instance_path, 'backup', 'db')
+    
+    if latest:
+        file = BackupService.get_latest_backup(backup_dir, 'backup_db_')
+        
+    if not file:
+        click.secho("Error: Please specify --file or --latest", fg='red')
+        raise click.ClickException("Error: Please specify --file or --latest")
+        
+    click.echo(f"Restoring database from {file}...")
+    success, message = BackupService.restore_database(file, upgrade=upgrade, stamp_version=stamp)
+    if success:
+        click.secho(f"✅ {message}", fg='green')
+    else:
+        click.secho(f"❌ {message}", fg='red')
+        raise click.ClickException(f"Database restore failed: {message}")
+
+
+def _do_system_restore(file, latest):
+    from flask import current_app
+    backup_dir = os.path.join(current_app.instance_path, 'backup', 'system')
+    
+    if not file and not latest:
+        click.secho("Error: Please specify --file or --latest", fg='red')
+        raise click.ClickException("Error: Please specify --file or --latest")
+        
+    click.echo("Restoring system resources...")
+    success, message = BackupService.restore_file_backup(backup_dir, target_file=file, latest=latest, resource_name='system')
+    if success:
+        click.secho(message, fg='green')
+    else:
+        click.secho(message, fg='red')
+        raise click.ClickException(f"System restore failed: {message}")
+
+
+def _do_club_restore(file, latest):
     from flask import current_app
     backup_dir = os.path.join(current_app.instance_path, 'backup', 'club')
     
+    if not file and not latest:
+        click.secho("Error: Please specify --file or --latest", fg='red')
+        raise click.ClickException("Error: Please specify --file or --latest")
+        
     click.echo("Restoring club resources...")
     success, message = BackupService.restore_file_backup(backup_dir, target_file=file, latest=latest, resource_name='club')
     if success:
@@ -159,55 +156,53 @@ def club_restore(file, latest):
         raise click.ClickException(f"Club restore failed: {message}")
 
 
-# --- All Command Group ---
-@resources.group('all')
-def all_group():
-    """All backups operations."""
-    pass
-
-@all_group.command('backup')
-@click.option('--increment', is_flag=True, help='Perform incremental backup for files.')
-@click.option('--full', is_flag=True, help='Perform full backup for files (default).')
-@click.pass_context
-def all_backup(ctx, increment, full):
-    """Creates backups for db, system, and club."""
-    click.echo("--- Starting database backup ---")
-    ctx.invoke(db_backup)
-    click.echo("--- Starting system resources backup ---")
-    ctx.invoke(system_backup, increment=increment, full=full)
-    click.echo("--- Starting club resources backup ---")
-    ctx.invoke(club_backup, increment=increment, full=full)
-    click.echo("✅ All backups completed.")
-
-@all_group.command('restore')
-@click.option('--latest', is_flag=True, help='Restore latest for all backups.')
-@click.option('--db-file', help='Path to database backup file.')
-@click.option('--system-file', help='Path to system backup zip file.')
-@click.option('--club-file', help='Path to club backup zip file.')
+@resources.command('restore')
+@click.option('--type', '-t', type=TYPE_CHOICES, default=None, help='Resource type to restore (db, system, club, all).')
+@click.option('--file', '-f', help='Path to backup file.')
+@click.option('--latest', is_flag=True, help='Restore latest backup.')
 @click.option('--upgrade/--no-upgrade', default=True, help='Automatically run migrations after db restore.')
 @click.option('--stamp', help='Explicitly stamp to this version if restoring unversioned DB.')
+@click.option('--db-file', help='Path to database backup file (when type is all).')
+@click.option('--system-file', help='Path to system backup zip file (when type is all).')
+@click.option('--club-file', help='Path to club backup zip file (when type is all).')
 @click.pass_context
-def all_restore(ctx, latest, db_file, system_file, club_file, upgrade, stamp):
-    """Restores db, system, and club resources."""
-    if latest:
-        click.echo("--- Restoring database (latest) ---")
-        ctx.invoke(db_restore, latest=True, upgrade=upgrade, stamp=stamp)
-        click.echo("--- Restoring system resources (latest) ---")
-        ctx.invoke(system_restore, latest=True)
-        click.echo("--- Restoring club resources (latest) ---")
-        ctx.invoke(club_restore, latest=True)
-    else:
-        if db_file:
-            click.echo(f"--- Restoring database ({db_file}) ---")
-            ctx.invoke(db_restore, file=db_file, upgrade=upgrade, stamp=stamp)
-        if system_file:
-            click.echo(f"--- Restoring system resources ({system_file}) ---")
-            ctx.invoke(system_restore, file=system_file)
-        if club_file:
-            click.echo(f"--- Restoring club resources ({club_file}) ---")
-            ctx.invoke(club_restore, file=club_file)
+@with_appcontext
+def restore(ctx, type, file, latest, upgrade, stamp, db_file, system_file, club_file):
+    """Restores database, system, club, or all resources from a backup."""
+    res_type = _get_res_type(ctx, type)
+    
+    if res_type == 'db':
+        target_file = file or db_file
+        _do_db_restore(target_file, latest, upgrade, stamp)
+    elif res_type == 'system':
+        target_file = file or system_file
+        _do_system_restore(target_file, latest)
+    elif res_type == 'club':
+        target_file = file or club_file
+        _do_club_restore(target_file, latest)
+    elif res_type == 'all':
+        if latest:
+            click.echo("--- Restoring database (latest) ---")
+            _do_db_restore(db_file or (file if not system_file and not club_file else None), latest=True, upgrade=upgrade, stamp=stamp)
+            click.echo("--- Restoring system resources (latest) ---")
+            _do_system_restore(system_file, latest=True)
+            click.echo("--- Restoring club resources (latest) ---")
+            _do_club_restore(club_file, latest=True)
+        else:
+            eff_db = db_file or file
+            eff_sys = system_file
+            eff_club = club_file
             
-        if not db_file and not system_file and not club_file:
-            click.secho("Error: Please specify --latest or at least one of --db-file, --system-file, --club-file.", fg='red')
-            raise click.ClickException("Error: Please specify --latest or at least one of --db-file, --system-file, --club-file.")
-
+            if not eff_db and not eff_sys and not eff_club:
+                click.secho("Error: Please specify --latest or at least one of --db-file, --system-file, --club-file.", fg='red')
+                raise click.ClickException("Error: Please specify --latest or at least one of --db-file, --system-file, --club-file.")
+            
+            if eff_db:
+                click.echo(f"--- Restoring database ({eff_db}) ---")
+                _do_db_restore(eff_db, latest=False, upgrade=upgrade, stamp=stamp)
+            if eff_sys:
+                click.echo(f"--- Restoring system resources ({eff_sys}) ---")
+                _do_system_restore(eff_sys, latest=False)
+            if eff_club:
+                click.echo(f"--- Restoring club resources ({eff_club}) ---")
+                _do_club_restore(eff_club, latest=False)
