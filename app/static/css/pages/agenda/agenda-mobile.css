@@ -91,18 +91,16 @@
      A leading 1fr column eats remaining space so row-1 items pack right.
      .action-bar-left and .status-group both use display:contents so their
      children become direct grid items. */
+  /* --- Action Bar: 2-row layout on mobile ---
+     Row 1: action-bar-right containing action buttons (Start/Stop, Edit, New, Actions)
+     Row 2: meeting-filter-wrapper containing meeting selector full width */
   .action-bar {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    grid-template-rows: auto auto;
-    gap: 18px 8px;
-    margin: 16px auto 6px !important;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 12px;
+    margin: 14px auto 6px !important;
     padding: 0 5px;
-    align-items: center;
-  }
-
-  .action-bar-left {
-    display: contents;
+    align-items: stretch;
   }
 
   .wod-display {
@@ -111,25 +109,12 @@
     z-index: var(--z-inline);
   }
 
-  /* Row 2: meeting filter spans the full grid width */
-  .action-bar-left-content {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    min-width: 0;
+  .meeting-filter-wrapper {
     width: 100%;
     overflow: visible;
   }
 
-  .action-bar-left .wod-display {
-    margin: 15px 0 0 0 !important;
-    order: unset !important;
-    position: relative !important;
-    top: auto !important;
-    left: auto !important;
-    transform: none !important;
-  }
-
-  .action-bar-left .inline-filter-group {
+  .inline-filter-group {
     order: unset !important;
     width: 100%;
     justify-content: center;
@@ -200,52 +185,19 @@
     text-align: center;
   }
 
-  /* Status pill — inherit desktop sizing (padding: 6px 14px, min-height: 34px) */
-
   .action-bar .button-group {
     margin-top: 0;
     flex-wrap: nowrap;
     max-width: 100%;
   }
 
-  /* Row 1, col 4: ellipsis menu (action-bar-right wraps it) — content width.
-     !important on placement to harden against any leaking page-level rules. */
   .action-bar-right {
-    grid-column: 3 !important;
-    grid-row: 1 !important;
-    min-width: 0;
-    width: auto;
     display: flex;
     align-items: center;
     justify-content: flex-end;
-  }
-
-  /* Row 1: status-group children become individual grid items
-     ([status display][status button]) — content-width, right-aligned. */
-  .action-bar-left .status-group,
-  .status-group {
-    display: contents !important;
-    padding-left: 0 !important;
-    border-left: none !important;
-  }
-
-  .meeting-status-display {
-    grid-column: 2 !important;
-    grid-row: 1 !important;
     width: 100%;
-    box-sizing: border-box;
-    white-space: nowrap;
-  }
-
-  .action-bar-left .status-group #meeting-status-btn,
-  .status-group #meeting-status-btn {
-    grid-column: 1 !important;
-    grid-row: 1 !important;
-    width: 100px !important;
-    min-width: 100px !important;
-    flex-grow: 0 !important;
-    flex-shrink: 0 !important;
-    justify-content: center;
+    min-width: 0;
+    gap: 8px;
   }
 
   .action-group .action-icon-btn,

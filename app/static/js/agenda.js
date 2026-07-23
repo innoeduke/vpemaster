@@ -35,46 +35,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const clockEl = document.getElementById("meeting-clock");
   const clockDisplayEl = document.getElementById("meeting-clock-display");
 
-  // -----------------------------------------------------------------------
-  // Status group placement
-  // -----------------------------------------------------------------------
-  // Desktop layout: the .status-group lives inside .action-bar-left, paired
-  // visually with the meeting picker (both describe the *selected meeting*).
-  // Mobile layout: that placement forces the status cluster onto its own row
-  // because .action-bar stacks vertically; users see two empty-ish rows.
-  // Solution: move the .status-group node into .action-bar-right > #view-mode-buttons
-  // when the viewport is mobile-width, so it sits inline with .action-group.
-  // Reverse on widening. Uses matchMedia for cheap reactive updates.
-  // Status group stays in its natural DOM position inside .action-bar-left.
-  // On mobile the CSS grid (display:contents on wrappers + explicit grid-column/row)
-  // handles placement — no DOM relocation needed.
-  (function relocateStatusGroup() {
-    const statusGroup = document.querySelector(".action-bar-left > .status-group");
-    if (!statusGroup) return;
-    const desktopHome = document.querySelector(".action-bar-left");
-    const mobileHome = document.querySelector(".action-bar-right #view-mode-buttons");
-    if (!desktopHome || !mobileHome) return;
-    const mobileMQ = window.matchMedia("(max-width: 768px)");
-    const apply = (e) => {
-      if (e.matches) {
-        // Mobile: CSS grid handles layout via display:contents — leave statusGroup in place.
-        // Ensure it's back in desktopHome if a legacy move happened.
-        if (statusGroup.parentElement !== desktopHome) {
-          desktopHome.appendChild(statusGroup);
-        }
-      } else {
-        // Desktop: ensure it's in action-bar-left after the picker wrapper.
-        if (statusGroup.parentElement !== desktopHome) {
-          desktopHome.appendChild(statusGroup);
-        }
-      }
-    };
-    apply(mobileMQ);
-    mobileMQ.addEventListener
-      ? mobileMQ.addEventListener("change", apply)
-      : mobileMQ.addListener(apply); // legacy Safari
-  })();
-
   // Global identifier for classification
   let GLOBAL_CLUB_ID = 1; // Default fallback, will be updated from API
 
@@ -98,6 +58,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Clock & Session Highlighting ---
 
+  function getMeetingStatus() {
+    if (meetingStatusBtn && meetingStatusBtn.dataset.currentStatus) {
+      return meetingStatusBtn.dataset.currentStatus;
+    }
+    return (agendaContent && agendaContent.dataset.meetingStatus) || '';
+  }
+
   function getMeetingStartDateTime() {
     const dateStr = agendaContent.dataset.meetingDate;
     const timeStr = meetingStartTime || agendaContent.dataset.meetingStartTime;
@@ -105,10 +72,12 @@ document.addEventListener("DOMContentLoaded", () => {
     return new Date(dateStr + 'T' + timeStr + ':00');
   }
 
+  const clockTimeWrapper = clockEl ? clockEl.querySelector(".clock-time-wrapper") : null;
+
   function startClock() {
     if (!clockEl) return;
     stopClock();
-    clockEl.classList.remove('hidden');
+    if (clockTimeWrapper) clockTimeWrapper.style.display = 'inline-flex';
 
     function tick() {
       const now = new Date(Date.now() + clockOffset);
@@ -131,6 +100,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (serverSyncInterval) {
       clearInterval(serverSyncInterval);
       serverSyncInterval = null;
+    }
+    if (clockTimeWrapper) {
+      clockTimeWrapper.style.display = 'none';
     }
   }
 
@@ -217,9 +189,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     meetingStartTime = agendaContent.dataset.meetingStartTime || null;
 
-    const status = meetingStatusBtn
-      ? meetingStatusBtn.dataset.currentStatus
-      : '';
+    const status = getMeetingStatus();
 
     if (status === 'running') {
       startClock();
@@ -480,7 +450,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function openMeetingDetailsModal() {
-      const currentStatus = meetingStatusBtn ? meetingStatusBtn.dataset.currentStatus : '';
+      const currentStatus = getMeetingStatus();
       const isFinished = (currentStatus === 'finished');
       // Update the global finished flag and render the awards table
       window.__meetingFinished = isFinished;
@@ -1871,6 +1841,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             const newStatus = data.new_status;
             button.dataset.currentStatus = newStatus;
+            if (agendaContent) {
+              agendaContent.dataset.meetingStatus = newStatus;
+            }
 
             statusDisplayElement.classList.remove(
               "status-unpublished",
@@ -1942,12 +1915,8 @@ document.addEventListener("DOMContentLoaded", () => {
                   agendaContent.dataset.meetingStartTime = data.start_time;
                 }
                 startClock();
-              } else if (newStatus === 'finished') {
-                stopClock();
-                clearHighlights();
               } else {
                 stopClock();
-                clockEl.classList.add('hidden');
                 clearHighlights();
               }
             }

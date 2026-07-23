@@ -35,7 +35,8 @@
 		flex-wrap: nowrap;
 	}
 
-	.action-bar-left {
+	.meeting-filter-wrapper {
+		display: flex;
 		flex-direction: row;
 		flex-wrap: nowrap;
 		align-items: center;
@@ -52,8 +53,6 @@
 		width: auto;
 	}
 
-	/* Status cluster + action cluster — inline, compact, no flex-grow. */
-	.action-bar-left .status-group,
 	.action-bar-right .action-group {
 		display: flex;
 		flex-wrap: nowrap;
@@ -61,35 +60,19 @@
 		align-items: center;
 	}
 
-	/* iPad keeps the vertical separator from desktop but tighter. */
-	.action-bar-left .status-group {
-		margin-left: 2px;
-		padding-left: 10px;
-		border-left: 1px solid rgba(119, 36, 50, 0.14);
-	}
-
-	.action-bar-left .button-group,
 	.action-bar-right .button-group {
 		flex-wrap: nowrap;
 		gap: 6px;
 	}
 
-	/* Tighter pill button sizing across the row — matches the desktop
-	   34 px language but shrunk slightly to fit a narrower iPad viewport. */
-	.action-bar-left .status-group #meeting-status-btn,
+	/* Tighter pill button sizing across the row — matches desktop 34px language. */
+	.action-bar-right .action-group #meeting-status-btn,
 	.action-bar-right .action-group #edit-btn,
 	.action-bar-right .action-group #create-btn {
 		font-size: 0.82rem;
 		padding: 0 12px;
 		height: 32px;
 		min-width: 0;
-	}
-
-	.action-bar-left .status-group .meeting-status-display {
-		font-size: 0.82rem;
-		padding: 5px 12px;
-		min-height: 32px;
-		white-space: nowrap;
 	}
 
 	/* Icon buttons compact, still 32 px ghost pills. */
