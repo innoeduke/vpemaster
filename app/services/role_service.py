@@ -134,6 +134,14 @@ class RoleService:
         cache.delete(f"meeting_roles_None_{meeting_id}")
         cache.delete(f"role_takers_{club_id}_{meeting_id}")
         cache.delete(f"role_takers_None_{meeting_id}")
+        cache.delete(f"agenda_processed_data_{club_id}_{meeting_id}")
+        cache.delete(f"agenda_processed_data_None_{meeting_id}")
+        cache.delete(f"voting_html_guest_{club_id}_{meeting_id}")
+        cache.delete(f"voting_html_guest_None_{meeting_id}")
+        cache.delete(f"agenda_html_guest_{club_id}_{meeting_id}_en")
+        cache.delete(f"agenda_html_guest_{club_id}_{meeting_id}_zh")
+        cache.delete(f"agenda_html_guest_None_{meeting_id}_en")
+        cache.delete(f"agenda_html_guest_None_{meeting_id}_zh")
 
     @staticmethod
     def is_role_approval_required(role_obj, club_id):

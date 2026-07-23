@@ -616,6 +616,28 @@ def _get_processed_logs_data(meeting_id, show_media=False):
     Returns the list of log dictionaries ready for the frontend.
     """
     club_id = get_current_club_id()
+
+    from app import cache
+    cache_key = f"agenda_processed_data_{club_id}_{meeting_id}_{show_media}"
+    try:
+        cached_logs_data = cache.get(cache_key)
+    except Exception:
+        cached_logs_data = None
+
+    if cached_logs_data is not None:
+        selected_meeting = None
+        if meeting_id:
+            from app.models.voting import MeetingAwardWinner
+            query = Meeting.query.options(
+                orm.joinedload(Meeting.award_winners).joinedload(MeetingAwardWinner.contact),
+                orm.joinedload(Meeting.media),
+                orm.joinedload(Meeting.sharing_master)
+            ).filter(Meeting.id == meeting_id)
+            if club_id:
+                query = query.filter(Meeting.club_id == club_id)
+            selected_meeting = query.first()
+        return cached_logs_data, selected_meeting
+
     if meeting_id:
         from app.models.voting import MeetingAwardWinner
         query = Meeting.query.options(
@@ -894,9 +916,57 @@ def _get_processed_logs_data(meeting_id, show_media=False):
                 sum(1 for i in topics_speaker_indices if i < tt_session_index) + 1
             logs_data[final_insert_index:final_insert_index] = topics_speaker_sessions
     
+    try:
+        cache.set(cache_key, logs_data, timeout=300)
+    except Exception:
+        pass
     return logs_data, selected_meeting
 
 
+
+
+@agenda_bp.before_request
+def short_circuit_cached_agenda():
+    """Return the cached agenda HTML before any DB / auth work for guest users.
+
+    Runs on GET /agenda when current_user is anonymous.
+    """
+    from flask import request, make_response
+    from flask_login import current_user
+    from app.club_context import get_current_club_id
+    from app.translations.translations import get_locale
+    from app import cache
+
+    if request.method != 'GET':
+        return None
+    if request.endpoint != 'agenda_bp.agenda':
+        return None
+    if current_user.is_authenticated:
+        return None
+
+    meeting_id = request.args.get('meeting_id')
+    url_club_id = request.args.get('club_id')
+    if url_club_id:
+        try:
+            club_id = int(url_club_id)
+        except (TypeError, ValueError):
+            club_id = get_current_club_id()
+    else:
+        club_id = get_current_club_id()
+
+    locale = get_locale() or 'en'
+    cache_key = f"agenda_html_guest_{club_id}_{meeting_id or 'default'}_{locale}"
+    try:
+        cached_html = cache.get(cache_key)
+    except Exception:
+        cached_html = None
+        
+    if cached_html is None:
+        return None
+
+    resp = make_response(cached_html)
+    resp.headers['Cache-Control'] = 'private, max-age=10'
+    return resp
 
 
 # --- Main Route ---
@@ -915,6 +985,24 @@ def agenda():
             pass
     
     club_id = get_current_club_id()
+
+    is_cacheable = not current_user.is_authenticated
+    cache_key = None
+    if is_cacheable:
+        from app.translations.translations import get_locale
+        from app import cache
+        locale = get_locale() or 'en'
+        selected_m_id = request.args.get('meeting_id')
+        cache_key = f"agenda_html_guest_{club_id}_{selected_m_id or 'default'}_{locale}"
+        try:
+            cached_html = cache.get(cache_key)
+        except Exception:
+            cached_html = None
+        if cached_html is not None:
+            from flask import make_response
+            resp = make_response(cached_html)
+            resp.headers['Cache-Control'] = 'private, max-age=10'
+            return resp
     from app.models.club_rule import ClubRule
     rule_record = ClubRule.query.filter_by(club_id=club_id, rule_name='session_end_time').first()
     show_end_time = rule_record.is_enabled if rule_record else False
@@ -1173,7 +1261,7 @@ def agenda():
         'EVALUATION_PROJECTS': ProjectID.EVALUATION_PROJECTS
     }
     
-    return render_template('agenda.html',
+    rendered = render_template('agenda.html',
                            logs_data=logs_data,               # Use the processed list of dictionaries
                            pathways=pathways,               # For modals
                            pathway_mapping=pathway_mapping,
@@ -1194,6 +1282,15 @@ def agenda():
                            meeting_roles=meeting_roles,
                            role_candidates=role_candidates,
                            show_end_time=show_end_time)
+
+    if is_cacheable and cache_key:
+        try:
+            from app import cache
+            cache.set(cache_key, rendered, timeout=30)
+        except Exception:
+            pass
+
+    return rendered
 
 
 # --- API Endpoints for Asynchronous Data Loading ---

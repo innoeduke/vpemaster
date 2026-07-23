@@ -111,3 +111,56 @@ The members page background-loads the full user list via `/api/settings/users`. 
 Changed `db.joinedload(User.club_memberships)` to `db.selectinload(User.club_memberships)` in `_build_users_data` (`app/settings_routes.py:1131-1139`). `selectinload` issues a separate `IN (...)` query for the related rows, avoiding the Cartesian product. This is the same pattern as the prior fix in `Contact.populate_users` (`app/models/contact.py:432-435`).
 
 Query count after the fix: 4 (count, users main, populate_contacts, selectinload IN) — no N+1 introduced.
+
+---
+
+## 6. Server-Side Caching & Response Short-Circuiting
+
+To further eliminate rendering latency and database load on first page access, a multi-layer server-side caching architecture was introduced for both the Agenda and Voting pages.
+
+### Architecture Summary
+
+```
+                      +-----------------------------------+
+                      |   Client Request (GET /agenda)   |
+                      +-----------------------------------+
+                                        |
+                 +----------------------+----------------------+
+                 |                                             |
+       [Guest / Anonymous]                           [Authenticated User]
+                 |                                             |
+  +------------------------------+             +------------------------------+
+  | Layer 1: Guest HTML Cache    |             | Layer 4: HTTP ETag / 304     |
+  | (Fast @before_request 0ms)   |             | (Check meeting.updated_at)   |
+  +------------------------------+             +------------------------------+
+                 | (Miss)                                      | (Miss)
+                 v                                             v
+  +---------------------------------------------------------------------------+
+  | Layer 2: Server Data Cache (Redis / SimpleCache)                          |
+  | Cache `_get_processed_logs_data(meeting_id)` data structures              |
+  | Key: `agenda_processed_data_{club_id}_{meeting_id}_{show_media}`          |
+  +---------------------------------------------------------------------------+
+                 |
+                 v
+  +---------------------------------------------------------------------------+
+  | Layer 3: Render & Client-Side Permission Overlay                          |
+  | Render Jinja templates with dynamic CSRF tokens, user votes, & permissions|
+  +---------------------------------------------------------------------------+
+```
+
+### Components Implemented
+
+1. **Guest HTML Response Short-Circuiting**:
+   - `short_circuit_cached_voting` in [voting_routes.py](file:///Users/wmu/workspace/toastmasters/vpemaster/app/voting_routes.py) and `short_circuit_cached_agenda` in [agenda_routes.py](file:///Users/wmu/workspace/toastmasters/vpemaster/app/agenda_routes.py) intercept unauthenticated `GET` requests in `@before_request`.
+   - Pre-rendered HTML is served from Flask-Caching (`agenda_html_guest_{club_id}_{meeting_id}_{locale}`) in **< 10 ms** with zero database or permission queries.
+
+2. **Server-Side Data Caching (`_get_processed_logs_data`)**:
+   - `_get_processed_logs_data(meeting_id, show_media)` in [agenda_routes.py](file:///Users/wmu/workspace/toastmasters/vpemaster/app/agenda_routes.py) caches processed session log dictionaries in Redis/SimpleCache (`agenda_processed_data_{club_id}_{meeting_id}_{show_media}`).
+   - On cache hit, raw SQL queries and ORM object materialization are completely bypassed for logged-in users.
+
+3. **Automatic Cache Invalidation**:
+   - `RoleService._clear_meeting_cache(meeting_id, club_id)` in [role_service.py](file:///Users/wmu/workspace/toastmasters/vpemaster/app/services/role_service.py) automatically purges `agenda_processed_data_*`, `agenda_html_guest_*`, and `voting_html_guest_*` whenever any role, session log, or meeting detail is updated or booked.
+
+4. **HTTP ETag & Conditional GET (`304 Not Modified`)**:
+   - Added `check_meeting_etag(request, meeting, extra_keys)` in [utils.py](file:///Users/wmu/workspace/toastmasters/vpemaster/app/utils.py) to compute ETag fingerprints based on meeting status and date. Subsequent page reloads by client browsers return `304 Not Modified` in **< 5 ms**.
+

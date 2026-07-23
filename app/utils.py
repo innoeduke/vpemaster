@@ -67,6 +67,27 @@ def resolve_role_icon(icon, default="fa-question-circle"):
     return default
 
 
+def check_meeting_etag(request, meeting, extra_keys=None):
+    """
+    Computes an ETag header based on meeting parameters and optional extra keys.
+    Returns (etag, is_match). If is_match is True, caller can return HTTP 304 Not Modified.
+    """
+    if not meeting:
+        return None, False
+        
+    parts = [str(meeting.id), str(meeting.status), str(meeting.Meeting_Date or '')]
+    if extra_keys:
+        for k in extra_keys:
+            parts.append(str(k))
+            
+    raw_str = ":".join(parts)
+    etag = f'W/"{hashlib.md5(raw_str.encode("utf-8")).hexdigest()}"'
+    
+    if_none_match = request.headers.get('If-None-Match')
+    is_match = bool(if_none_match and if_none_match.strip() == etag)
+    return etag, is_match
+
+
 
 def extract_level_from_path_code(path_level_str):
     """
