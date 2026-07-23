@@ -86,56 +86,96 @@ class BackupService:
         )
 
     @staticmethod
-    def create_file_backup(backup_dir, target_dirs, resource_name, strategy='full'):
-        """Creates a full or incremental backup of file directories."""
+    def _collect_changed_files(target_dirs, baseline_time):
+        """Walks target_dirs and returns [(file_path, arcname)] for files whose
+        mtime (truncated to seconds) is strictly greater than baseline_time."""
+        changed_files = []
+        for target_dir in target_dirs:
+            full_path = os.path.join(current_app.root_path, target_dir)
+            if not os.path.exists(full_path):
+                continue
+            if os.path.isdir(full_path):
+                for root, _, files in os.walk(full_path):
+                    for file in files:
+                        # Skip hidden files
+                        if file.startswith('.'):
+                            continue
+                        file_path = os.path.join(root, file)
+                        try:
+                            file_mtime_dt = datetime.fromtimestamp(os.path.getmtime(file_path)).replace(microsecond=0)
+                            if file_mtime_dt > baseline_time:
+                                arcname = os.path.relpath(file_path, current_app.root_path)
+                                changed_files.append((file_path, arcname))
+                        except Exception:
+                            continue
+            else:
+                try:
+                    file_mtime_dt = datetime.fromtimestamp(os.path.getmtime(full_path)).replace(microsecond=0)
+                    if file_mtime_dt > baseline_time:
+                        arcname = os.path.relpath(full_path, current_app.root_path)
+                        changed_files.append((full_path, arcname))
+                except Exception:
+                    continue
+        return changed_files
+
+    @staticmethod
+    def _find_latest_full(backup_dir, resource_name, ext):
+        """Returns the most recent 'full' backup dict, or None."""
+        all_backups = BackupService.get_backups_sorted(backup_dir, resource_name, ext)
+        for b in reversed(all_backups):
+            if b['type'] == 'full':
+                return b
+        return None
+
+    @staticmethod
+    def create_file_backup(backup_dir, target_dirs, resource_name, strategy='auto'):
+        """Creates a full, incremental, differential, or auto backup of file
+        directories.
+
+        Strategies:
+            full         — every file under target_dirs (snapshot).
+            increment    — files changed since the *latest backup of any type*.
+                           Restore replays parent_full + all backups up to target.
+            differential — files changed since the *latest full backup*.
+                           Restore applies parent_full + target diff only.
+            auto         — incremental if a prior full backup exists, otherwise
+                           full. This is the default; it keeps the backup set
+                           small without requiring the caller to track state.
+        """
         import zipfile
         os.makedirs(backup_dir, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
-        if strategy == 'increment':
-            all_backups = BackupService.get_backups_sorted(backup_dir, resource_name, 'zip')
-            if not all_backups:
-                # Fallback to full
-                return BackupService.create_file_backup(backup_dir, target_dirs, resource_name, strategy='full')
-                
-            latest_backup = all_backups[-1]
-            baseline_time = latest_backup['timestamp']
-            
-            # Find changed files
-            changed_files = []
-            for target_dir in target_dirs:
-                full_path = os.path.join(current_app.root_path, target_dir)
-                if not os.path.exists(full_path):
-                    continue
-                if os.path.isdir(full_path):
-                    for root, _, files in os.walk(full_path):
-                        for file in files:
-                            # Skip hidden files
-                            if file.startswith('.'):
-                                continue
-                            file_path = os.path.join(root, file)
-                            try:
-                                file_mtime_dt = datetime.fromtimestamp(os.path.getmtime(file_path)).replace(microsecond=0)
-                                if file_mtime_dt > baseline_time:
-                                    arcname = os.path.relpath(file_path, current_app.root_path)
-                                    changed_files.append((file_path, arcname))
-                            except Exception:
-                                continue
-                else:
-                    try:
-                        file_mtime_dt = datetime.fromtimestamp(os.path.getmtime(full_path)).replace(microsecond=0)
-                        if file_mtime_dt > baseline_time:
-                            arcname = os.path.relpath(full_path, current_app.root_path)
-                            changed_files.append((full_path, arcname))
-                    except Exception:
-                        continue
-                        
+
+        if strategy == 'auto':
+            if BackupService._find_latest_full(backup_dir, resource_name, 'zip') is not None:
+                strategy = 'increment'
+            else:
+                strategy = 'full'
+
+        if strategy in ('increment', 'differential'):
+            if strategy == 'differential':
+                latest_full = BackupService._find_latest_full(backup_dir, resource_name, 'zip')
+                if not latest_full:
+                    # No full baseline yet — must take a full backup first.
+                    return BackupService.create_file_backup(backup_dir, target_dirs, resource_name, strategy='full')
+                baseline_time = latest_full['timestamp']
+                token = 'diff'
+            else:
+                all_backups = BackupService.get_backups_sorted(backup_dir, resource_name, 'zip')
+                if not all_backups:
+                    # Fallback to full
+                    return BackupService.create_file_backup(backup_dir, target_dirs, resource_name, strategy='full')
+                baseline_time = all_backups[-1]['timestamp']
+                token = 'inc'
+
+            changed_files = BackupService._collect_changed_files(target_dirs, baseline_time)
+
             if not changed_files:
-                return True, "No changes detected. Incremental backup skipped."
-                
-            filename = f"backup_{resource_name}_inc_{timestamp}.zip"
+                return True, f"No changes detected. {strategy.capitalize()} backup skipped."
+
+            filename = f"backup_{resource_name}_{token}_{timestamp}.zip"
             filepath = os.path.join(backup_dir, filename)
-            
+
             try:
                 with zipfile.ZipFile(filepath, 'w', zipfile.ZIP_DEFLATED) as zipf:
                     for fpath, arcname in changed_files:
@@ -145,7 +185,7 @@ class BackupService:
                 if os.path.exists(filepath):
                     os.remove(filepath)
                 return False, str(e)
-                
+
         else:  # strategy == 'full'
             filename = f"backup_{resource_name}_full_{timestamp}.zip"
             filepath = os.path.join(backup_dir, filename)
@@ -415,27 +455,36 @@ class BackupService:
             except Exception as e:
                 return False, f"Failed to restore {resource_name} full backup: {e}"
                 
-        # Incremental restore
+        # Incremental or differential restore
         parent_full = None
         for b in reversed(all_backups):
             if b['timestamp'] < target_backup['timestamp'] and b['type'] == 'full':
                 parent_full = b
                 break
-                
+
         if not parent_full:
-            return False, f"Base full backup for incremental backup {target_backup['filename']} not found."
-            
-        chain = [parent_full]
-        for b in all_backups:
-            if parent_full['timestamp'] < b['timestamp'] <= target_backup['timestamp']:
-                chain.append(b)
-                
+            return False, f"Base full backup for {target_backup['filename']} not found."
+
+        if target_backup['type'] == 'diff':
+            # Differential: parent full + target diff only. The diff is a
+            # complete delta against the full, so no intermediate backups
+            # need to be replayed.
+            chain = [parent_full, target_backup]
+            label = 'Differential'
+        else:
+            # Incremental: replay parent full + every backup up to target.
+            chain = [parent_full]
+            for b in all_backups:
+                if parent_full['timestamp'] < b['timestamp'] <= target_backup['timestamp']:
+                    chain.append(b)
+            label = 'Incremental'
+
         try:
             for b in chain:
                 shutil.unpack_archive(b['filepath'], current_app.root_path, 'zip')
-            return True, f"Incremental restore of {resource_name} successful. Applied {len(chain)} backup(s) in order starting from {parent_full['filename']}."
+            return True, f"{label} restore of {resource_name} successful. Applied {len(chain)} backup(s) in order starting from {parent_full['filename']}."
         except Exception as e:
-            return False, f"Failed to restore {resource_name} incremental backup chain: {e}"
+            return False, f"Failed to restore {resource_name} {label.lower()} backup chain: {e}"
 
     @classmethod
     def get_latest_backup(cls, backup_dir, prefix):
@@ -463,7 +512,7 @@ class BackupService:
             if resource_name == 'db':
                 pattern = r"^backup_db_full_(\d{8})_(\d{6})\.sql$"
             else:
-                pattern = rf"^backup_{resource_name}_(full|inc)_(\d{{8}})_(\d{{6}})\.{ext}$"
+                pattern = rf"^backup_{resource_name}_(full|inc|diff)_(\d{{8}})_(\d{{6}})\.{ext}$"
                 
             match = re.match(pattern, filename)
             if match:
@@ -505,12 +554,12 @@ class BackupService:
                     except Exception:
                         pass
                         
-                # Also delete associated incremental backups
+                # Also delete associated incremental and differential backups
                 next_fb_idx = full_backups.index(fb) + 1
                 next_fb_time = full_backups[next_fb_idx]['timestamp'] if next_fb_idx < len(full_backups) else datetime.max
                 
                 for b in all_backups:
-                    if b['type'] == 'inc' and fb['timestamp'] <= b['timestamp'] < next_fb_time:
+                    if b['type'] in ('inc', 'diff') and fb['timestamp'] <= b['timestamp'] < next_fb_time:
                         if os.path.exists(b['filepath']):
                             try:
                                 os.remove(b['filepath'])

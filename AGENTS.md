@@ -17,6 +17,7 @@ the doc in the same change.
 - [docs/MAILBOX_REALTIME_DESIGN.md](file:///Users/wmu/workspace/toastmasters/vpemaster/docs/MAILBOX_REALTIME_DESIGN.md) — real-time message notification design (Server-Sent Events, MessageAnnouncer queue architecture, deployment WSGI guidelines).
 - [docs/PERFORMANCE_WALKTHROUGH.md](file:///Users/wmu/workspace/toastmasters/vpemaster/docs/PERFORMANCE_WALKTHROUGH.md) — Voting and Agenda pages performance optimization history, load testing benchmarks, and SQL query count reduction analysis.
 - [docs/TABLE_TOPICS_DESIGN.md](file:///Users/wmu/workspace/toastmasters/vpemaster/docs/TABLE_TOPICS_DESIGN.md) — design details for the Table Topics daily question forum and collections subsystem.
+- [docs/BACKUP_DESIGN.md](file:///Users/wmu/workspace/toastmasters/vpemaster/docs/BACKUP_DESIGN.md) — backup subsystem design (filename contract, full/incremental/differential strategies, rotation, restore semantics).
 
 When you add new design rules, give them their own file under `docs/`
 and link it here.
