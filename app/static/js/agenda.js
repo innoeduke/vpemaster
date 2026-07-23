@@ -3525,8 +3525,10 @@ window.closeCreateAgendaModal = function () {
 
         document.addEventListener('DOMContentLoaded', function () {
             // Initialize custom selects for New Meeting form
-            new CustomSelect('meeting_type');
-            new CustomSelect('ge_mode');
+            if (typeof CustomSelect !== 'undefined') {
+                new CustomSelect('meeting_type');
+                new CustomSelect('ge_mode');
+            }
         });
 
         function dismissAgendaMessage(elementId) {

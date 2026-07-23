@@ -1485,10 +1485,14 @@ a.owner-link:hover {
 
 @media (max-width: 768px) {
     .meeting-clock {
-        font-size: 0.85rem;
-        padding: 6px 12px;
-        top: 4px;
-        right: 4px;
+        position: absolute;
+        top: 2px;
+        right: 6px;
+        left: auto;
+        margin: 0;
+        font-size: 0.72rem;
+        padding: 4px 7px;
+        border-radius: 8px;
     }
 }
 

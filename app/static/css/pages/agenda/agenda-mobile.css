@@ -91,16 +91,125 @@
      A leading 1fr column eats remaining space so row-1 items pack right.
      .action-bar-left and .status-group both use display:contents so their
      children become direct grid items. */
-  /* --- Action Bar: 2-row layout on mobile ---
-     Row 1: action-bar-right containing action buttons (Start/Stop, Edit, New, Actions)
-     Row 2: meeting-filter-wrapper containing meeting selector full width */
+  /* --- Header & Clock Position on Mobile ---
+     Stacked vertical status + time widget aligned to the top-right corner */
+  .agenda-header-container {
+    padding-bottom: 10px;
+    position: relative;
+  }
+
+  .meeting-clock {
+    position: absolute !important;
+    top: 2px !important;
+    right: 6px !important;
+    left: auto !important;
+    margin: 0 !important;
+    display: inline-flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(119, 36, 50, 0.20) !important;
+    overflow: hidden !important;
+    z-index: 10 !important;
+    box-shadow: 0 4px 12px rgba(119, 36, 50, 0.10), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  }
+
+  .meeting-clock .meeting-status-display {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.66rem !important;
+    font-weight: 700 !important;
+    padding: 4px 8px !important;
+    min-height: 0 !important;
+    height: auto !important;
+    gap: 4px !important;
+    letter-spacing: 0.04em !important;
+    box-sizing: border-box !important;
+    line-height: 1.1 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .meeting-clock .meeting-status-display.status-running {
+    background: #772432 !important;
+    color: #ffffff !important;
+  }
+
+  .meeting-clock .meeting-status-display.status-not-started {
+    background: #b45309 !important;
+    color: #ffffff !important;
+  }
+
+  .meeting-clock .meeting-status-display.status-finished {
+    background: #15803d !important;
+    color: #ffffff !important;
+  }
+
+  .meeting-clock .meeting-status-display.status-unpublished {
+    background: #6b4f55 !important;
+    color: #ffffff !important;
+  }
+
+  .meeting-clock .meeting-status-display.status-cancelled {
+    background: #4b5563 !important;
+    color: #ffffff !important;
+  }
+
+  .meeting-clock .meeting-status-display i {
+    color: #ffffff !important;
+    font-size: 0.8em !important;
+    line-height: 1 !important;
+  }
+
+  .meeting-clock .clock-time-wrapper {
+    width: 100% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    padding: 4px 8px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    background: #ffffff !important;
+    border-top: 1.5px solid rgba(119, 36, 50, 0.18) !important;
+    border-left: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    line-height: 1.1 !important;
+    letter-spacing: 0.02em !important;
+    color: #4a1a26 !important;
+    font-variant-numeric: tabular-nums !important;
+  }
+
+  .meeting-clock .clock-time-wrapper i {
+    color: #772432 !important;
+    font-size: 0.8em !important;
+    line-height: 1 !important;
+  }
+
+  /* --- Action Bar: Single-row layout on mobile ---
+     Left: meeting selector (< #983 - Date >)
+     Right: action buttons (Start/Stop, Cog) */
   .action-bar {
-    display: flex;
-    flex-direction: column-reverse;
-    gap: 12px;
-    margin: 14px auto 6px !important;
-    padding: 0 5px;
-    align-items: stretch;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin: 12px auto 6px !important;
+    padding: 0 4px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    flex-wrap: nowrap !important;
   }
 
   .wod-display {
@@ -110,14 +219,16 @@
   }
 
   .meeting-filter-wrapper {
-    width: 100%;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: auto !important;
     overflow: visible;
   }
 
   .inline-filter-group {
     order: unset !important;
     width: 100%;
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .wod-display .envelope-flap {
@@ -192,12 +303,13 @@
   }
 
   .action-bar-right {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    width: 100%;
-    min-width: 0;
-    gap: 8px;
+    flex: 0 0 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    width: auto !important;
+    min-width: 0 !important;
+    gap: 6px !important;
   }
 
   .action-group .action-icon-btn,
