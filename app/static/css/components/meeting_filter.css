@@ -278,14 +278,11 @@
     gap: 4px;
   }
 
-  .nav-btn {
-    font-size: 1.8rem;
-    width: 36px;
-    height: 36px;
-  }
-
-  .nav-btn i {
-    font-size: 1.8rem;
+  .nav-btn,
+  #meeting-filter-prev,
+  #meeting-filter-next,
+  .meeting-autocomplete-container .nav-btn {
+    display: none !important;
   }
 
   .search-input-wrapper,

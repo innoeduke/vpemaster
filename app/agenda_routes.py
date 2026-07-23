@@ -2544,7 +2544,45 @@ def update_meeting_status(meeting_id):
                        start_time=meeting.Start_Time.strftime('%H:%M') if meeting.Start_Time else '')
     except Exception as e:
         db.session.rollback()
-        return jsonify(success=False, message=str(e)), 500
+@agenda_bp.route('/agenda/delete-meeting/<int:meeting_id>', methods=['POST'])
+@login_required
+@authorized_club_required
+def delete_meeting(meeting_id):
+    """Deletes a meeting and all its associated records."""
+    club_id = get_current_club_id()
+    meeting = db.session.get(Meeting, meeting_id)
+
+    if not meeting or (club_id and meeting.club_id != club_id):
+        return jsonify(success=False, message="Meeting not found"), 404
+
+    if not (is_authorized(Permissions.MEETING_CREATE, meeting=meeting) or is_authorized(Permissions.MEETING_MANAGE, meeting=meeting)):
+        return jsonify(success=False, message="Permission denied"), 403
+
+    if current_user.is_authenticated:
+        club_name = meeting.club.club_name if meeting.club else f"Club {meeting.club_id}"
+        target_label = f"#{meeting.Meeting_Number}"
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+        db.session.add(PermissionAudit(
+            admin_id=current_user.id,
+            action='DELETE_MEETING',
+            target_type='MEETING',
+            target_id=meeting.id,
+            target_name=target_label,
+            changes=(
+                f'Club "{club_name}" '
+                f'(by {current_user.username} at {now}): '
+                f'deleted (was {meeting.status})'
+            ),
+        ))
+
+    try:
+        success, error_msg = meeting.delete_full()
+        if success:
+            return jsonify(success=True, deleted=True, redirect_url=url_for('agenda_bp.agenda'))
+        else:
+            return jsonify(success=False, message=f"Deletion failed: {error_msg}"), 500
+    except Exception as e:
+        return jsonify(success=False, message=f"Deletion failed: {str(e)}"), 500
 
 
 @agenda_bp.route('/agenda/sync_tally/<int:meeting_id>', methods=['POST'])

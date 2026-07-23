@@ -324,6 +324,41 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     }
+    const deleteMeetingBtn = document.getElementById("delete-meeting-btn");
+    if (deleteMeetingBtn) {
+      deleteMeetingBtn.addEventListener("click", async () => {
+        const meetingId = deleteMeetingBtn.dataset.meetingId || (agendaContent && agendaContent.dataset.meetingId);
+        if (!meetingId) {
+          showCustomAlert("Error", "No meeting selected.");
+          return;
+        }
+        const confirmed = await showCustomConfirm(
+          "Delete Meeting",
+          "Are you sure you want to <strong>PERMANENTLY DELETE</strong> this meeting and all its associated records (logs, votes, media)?<br><br><span style='color: #c53030; font-size: 0.88rem;'>This action cannot be undone.</span>",
+          "alert"
+        );
+        if (!confirmed) return;
+
+        try {
+          const response = await fetch(`/agenda/delete-meeting/${meetingId}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Requested-With": "XMLHttpRequest",
+            },
+          });
+          const data = await response.json();
+          if (data.success) {
+            window.location.href = data.redirect_url || "/agenda";
+          } else {
+            showCustomAlert("Deletion Failed", data.message || "Failed to delete meeting.");
+          }
+        } catch (err) {
+          console.error("Error deleting meeting:", err);
+          showCustomAlert("Error", "An unexpected error occurred while deleting the meeting.");
+        }
+      });
+    }
     if (addRowButton) {
       addRowButton.addEventListener("click", addNewRow);
     }
@@ -1255,39 +1290,27 @@ document.addEventListener("DOMContentLoaded", () => {
                 button.dataset.currentStatus = newStatus;
                 button.className = "btn"; // Reset class list base
                 button.disabled = false;
-                button.style.display = "";
 
                 if (newStatus === "not started") {
+                  button.style.display = "";
                   button.innerHTML = '<i class="fas fa-fw fa-play"></i> Start';
                   button.classList.remove("btn-danger", "btn-secondary", "btn-light");
                   button.classList.add("btn-success");
                   button.title = "Start to let audience vote.";
                 } else if (newStatus === "running") {
+                  button.style.display = "";
                   button.innerHTML = '<i class="fas fa-fw fa-stop"></i> Stop';
                   button.classList.remove("btn-primary", "btn-success", "btn-secondary", "btn-light");
                   button.classList.add("btn-danger");
                   button.title = "Stop to end voting and show results.";
-                } else if (newStatus === "finished") {
-                  const canDelete = agendaContent && agendaContent.dataset.canDelete === "true";
-                  if (canDelete) {
-                    button.innerHTML = '<i class="fas fa-fw fa-check-circle"></i> Delete';
-                    button.classList.remove("btn-success", "btn-danger", "btn-light");
-                    button.classList.add("btn-secondary");
-                    button.title = "";
-                  } else {
-                    button.style.display = "none";
-                  }
-                } else if (newStatus === "cancelled") {
-                  button.innerHTML = '<i class="fas fa-fw fa-ban"></i> Cancelled';
-                  button.disabled = true;
-                  button.classList.remove("btn-success", "btn-danger", "btn-light");
-                  button.classList.add("btn-secondary");
-                  button.title = "";
                 } else if (newStatus === "unpublished") {
+                  button.style.display = "";
                   button.innerHTML = 'Publish';
                   button.classList.remove("btn-danger", "btn-secondary", "btn-success");
                   button.classList.add("btn-light");
                   button.title = "Publish to allow members to book roles.";
+                } else {
+                  button.style.display = "none";
                 }
               }
             }

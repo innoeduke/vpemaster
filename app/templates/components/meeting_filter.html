@@ -124,8 +124,18 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
     const prevBtn = document.getElementById('{{ select_id }}-prev');
     const nextBtn = document.getElementById('{{ select_id }}-next');
     let highlightedIndex = -1;
+    input.dataset.initialValue = input.value;
 
     if (!input || !results || !realSelect) return;
+
+    function getSelectedText() {
+        if (realSelect.selectedIndex >= 0 && realSelect.options[realSelect.selectedIndex]) {
+            const selectedOpt = realSelect.options[realSelect.selectedIndex];
+            const item = results.querySelector(`.autocomplete-result-item[data-value="${selectedOpt.value}"]`);
+            if (item && item.dataset.text) return item.dataset.text;
+        }
+        return input.dataset.initialValue || input.value;
+    }
 
     function showResults() {
         results.style.display = 'block';
@@ -135,16 +145,31 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
     function hideResults() {
         setTimeout(() => {
             results.style.display = 'none';
+            const selectedText = getSelectedText();
+            if (!input.value || input.value.trim() === '') {
+                input.value = selectedText;
+            } else {
+                const match = Array.from(items).find(item => item.dataset.text.toLowerCase() === input.value.trim().toLowerCase());
+                if (match) {
+                    selectItem(match);
+                } else {
+                    input.value = selectedText;
+                }
+            }
         }, 200);
     }
 
     function filterItems() {
-        const query = input.value.toLowerCase();
+        const query = input.value.toLowerCase().trim();
+        const selectedText = getSelectedText().toLowerCase().trim();
         let firstVisible = -1;
         let visibleCount = 0;
+
+        const showAll = query === '' || query === selectedText;
+
         items.forEach((item, index) => {
             const text = item.innerText.toLowerCase();
-            if (text.includes(query)) {
+            if (showAll || text.includes(query)) {
                 item.style.display = 'flex';
                 visibleCount++;
                 if (firstVisible === -1) firstVisible = index;
@@ -170,6 +195,7 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
         const value = item.dataset.value;
         const text = item.dataset.text;
         input.value = text;
+        input.dataset.initialValue = text;
         realSelect.value = value;
         
         // Trigger change event for any listeners
@@ -213,9 +239,10 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
         });
     }
 
-    input.addEventListener('focus', showResults);
+    input.addEventListener('focus', () => {
+        showResults();
+    });
     input.addEventListener('click', () => {
-        input.value = '';
         showResults();
     });
     input.addEventListener('input', showResults);

@@ -225,6 +225,12 @@
     overflow: visible;
   }
 
+  #meeting-filter-prev,
+  #meeting-filter-next,
+  .meeting-autocomplete-container .nav-btn {
+    display: none !important;
+  }
+
   .inline-filter-group {
     order: unset !important;
     width: 100%;
