@@ -374,14 +374,15 @@
     display: grid !important;
     grid-template-columns: 1fr;
     width: 100%;
+    font-size: 0.85rem !important;
   }
 
   #logs-table tbody tr.section-row td {
     grid-column: 1 !important;
     width: 100%;
-    padding: 12px 12px !important;
+    padding: 10px 12px !important;
     border: 1px solid #d0d0d0 !important;
-    font-size: 0.95em !important;
+    font-size: 0.85rem !important;
   }
 
   .owner-row {
